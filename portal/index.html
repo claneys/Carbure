@@ -1161,6 +1161,11 @@
                                     <p class="rules-help">{{ t('accountsHelp') }}</p>
                                 </div>
                                 <div class="panel-actions">
+                                    <!-- Every followed account, with the progress panel below -->
+                                    <button type="button" class="btn-secondary accounts-sync-all" @click="startSync()" :disabled="syncStatus === 'running' || bankAccounts.length === 0">
+                                        <span class="material-icons" :class="{ spin: syncStatus === 'running' && syncTarget === null }" aria-hidden="true">sync</span>
+                                        {{ t('syncAllAccounts') }}
+                                    </button>
                                     <button class="btn-add btn-add-icon" @click="openAccountModal()" :title="t('addAccountTitle')" :aria-label="t('addAccountTitle')">
                                         <span class="material-icons" aria-hidden="true">add</span>
                                     </button>

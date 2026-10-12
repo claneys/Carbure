@@ -83,6 +83,11 @@ foreach (parse_ini_file($configCopy) as $key => $value) {
 if ($path === '/api/__e2e/reset') {
     header('Content-Type: application/json');
     try {
+        // The state kept by the fake woob (bank added, module installed...): a test must
+        // not see the bank added by a previous one
+        foreach (glob(sys_get_temp_dir() . '/carbure-fake-woob-*') ?: [] as $file) {
+            @unlink($file);
+        }
         carbure_e2e_seed();
         echo json_encode(['reset' => true]);
     } catch (Throwable $e) {

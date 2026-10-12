@@ -60,6 +60,18 @@ test('shows the debug logs of woob in the synchronization log', async ({ adminPa
     await expect(page.locator('.sync-log')).toContainText('Notifying users of fail@bank');
 });
 
+test('synchronizes every account at once', async ({ adminPage: page }) => {
+    await openTab(page, tr('tabAccounts'));
+    await page.getByRole('button', { name: tr('syncAllAccounts') }).click();
+
+    // Both followed accounts: fail@bank ends in error, the BNP account is synchronized
+    await expect(page.locator('.sync-status')).toContainText(tr('syncStatus_error'));
+    await expect(page.locator('.sync-account')).toHaveCount(2);
+    await expect(account(page, '00012345678@bnp').locator('.account-sync-state')).toHaveText(tr('lastSync_OK'));
+    await expect(account(page, 'fail@bank').locator('.account-sync-state')).toHaveText(tr('lastSync_ERROR'));
+    await expect(page.getByRole('button', { name: tr('syncAllAccounts') })).toBeEnabled();
+});
+
 test('reports a synchronization error', async ({ adminPage: page }) => {
     await openTab(page, tr('tabAccounts'));
     await account(page, 'fail@bank').getByRole('button', { name: tr('syncAccount') }).click();
