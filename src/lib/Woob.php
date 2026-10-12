@@ -397,24 +397,27 @@ final class Woob {
         $woob_path = self::path();
         $woob_transactions = Config::get('woob_transactions');
         $woob_auto_update = Config::get('woob_auto_update');
-        $woob_debug = Config::get('woob_debug');
 
         $auto_update_flag = $woob_auto_update ? " --auto-update" : "";
-        $debug_flag = $woob_debug ? " --debug" : "";
 
         $bankId = escapeshellarg($bankId);
 
-        return "$woob_path bank $type $bankId --count $woob_transactions$auto_update_flag$debug_flag" . self::loggingOptions()
+        return "$woob_path bank $type $bankId --count $woob_transactions$auto_update_flag" . self::loggingOptions()
             . " -f json -s date,rdate,amount,raw,type,category,card";
     }
 
     /**
-     * Options of woob for the level of woob_logging (nothing for an unknown level).
+     * Options of woob for its logs: --debug when woob_debug is enabled (it supersedes the
+     * level: never "--debug --quiet"), else the level of woob_logging (nothing for an
+     * unknown level).
      *
      * @return string The options, with a leading space
      */
     private static function loggingOptions(): string
     {
+        if (Config::get('woob_debug')) {
+            return self::LOGGING_OPTIONS['debug'];
+        }
         return self::LOGGING_OPTIONS[(string)Config::get('woob_logging')] ?? '';
     }
 

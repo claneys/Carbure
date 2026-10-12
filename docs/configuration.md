@@ -84,7 +84,7 @@ transaction importée.
 | `woob_path` | Commande woob : binaire local (`/usr/bin/woob`), conteneur (`docker run -v …:/root/ ltoinel/woob:3.7 woob`) ou, dans l'image Docker, `env HOME=/data/woob woob` (variable `CARBURE_WOOB_PATH`) |
 | `woob_transactions` ✏️ | Nombre d'opérations demandées par appel (`--count`) |
 | `woob_logging` ✏️ | Niveau de log de woob, sur sa sortie d'erreur (jamais dans un fichier) : `debug` (`--debug`), `info` (`--verbose`), `warning` (par défaut), `error`/`critical` (`--quiet`) |
-| `woob_debug` ✏️ | `true` pour journaliser la sortie complète de woob et l'afficher dans le journal de synchronisation du portail (administrateurs) |
+| `woob_debug` ✏️ | `true` pour lancer woob en `--debug` (prioritaire sur `woob_logging`), journaliser sa sortie complète et l'afficher dans le journal de synchronisation du portail (administrateurs) |
 | `woob_auto_update` ✏️ | `true` pour laisser woob mettre à jour ses modules |
 
 ## `[apns]`

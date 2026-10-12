@@ -145,6 +145,23 @@ class WoobTest extends TestCase
         ];
     }
 
+    public function testDebugSupersedesTheLoggingLevel()
+    {
+        $previous = Config::get('woob_logging');
+        Config::set('woob_logging', 'error');
+        Config::set('woob_debug', true);
+        try {
+            $command = (new ReflectionMethod(Woob::class, 'buildCommand'))->invoke(null, 'coming', '123@bnp');
+        } finally {
+            Config::set('woob_debug', false);
+            Config::set('woob_logging', $previous);
+        }
+
+        // Never "--debug --quiet"
+        $this->assertSame(1, substr_count($command, ' --debug'));
+        $this->assertStringNotContainsString('--quiet', $command);
+    }
+
     #[\PHPUnit\Framework\Attributes\DataProvider('loggingLevels')]
     public function testLoggingLevelGivesAWoobOptionNotALogFile(string $level, string $expected)
     {
