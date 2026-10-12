@@ -209,3 +209,17 @@ test('sync: the debug logs of woob are not steps nor transactions', async () => 
     assert.deepEqual(steps.global, []);
     assert.deepEqual(steps.accounts[0].steps.map(s => [s.kind, s.status, s.count]), [['coming', 'error', 0], ['notify', 'ok', 0]]);
 });
+
+test('accounts: a bank already configured stays offered, with a free backend name', async () => {
+    const { createAccountsModule } = await import('../../portal/modules/accountsModule.js');
+    const { methods } = createAccountsModule(() => null);
+    const context = {
+        bankBackends: [{ name: 'bnp', module: 'bnp' }, { name: 'bnp_2', module: 'bnp' }, { name: 'cic_pro', module: 'cic' }],
+        bankModules: [{ module: 'bnp', description: 'BNP Paribas' }, { module: 'boursorama', description: 'Boursorama' }],
+    };
+    assert.deepEqual(methods.otherBankModules.call(context).map(m => [m.module, m.configured]), [['bnp', true], ['boursorama', false]]);
+    assert.equal(methods.freeBackendName.call(context, 'bnp'), 'bnp_3');
+    assert.equal(methods.freeBackendName.call(context, 'boursorama'), 'boursorama');
+    assert.equal(methods.backendModule.call(context, 'cic_pro'), 'cic');
+    assert.equal(methods.backendModule.call(context, 'unknown'), 'unknown');
+});

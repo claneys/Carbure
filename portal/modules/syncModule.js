@@ -133,11 +133,13 @@ export function createSyncModule(getApiService) {
 
             /**
              * Search of the woob issues about a bank module (known problems and fixes)
-             * @param {string} bankId - Account "<number>@<backend>" (backend named after the module)
+             * @param {string} bankId - Account "<number>@<backend>"
              * @returns {string} URL of the search on the woob GitLab
              */
             woobIssuesUrl(bankId) {
-                const module = String(bankId).split('@').pop();
+                // The module of the backend (bnp for bnp_2), known by the administrators
+                const backend = String(bankId).split('@').pop();
+                const module = typeof this.backendModule === 'function' ? this.backendModule(backend) : backend;
                 return 'https://gitlab.com/search?group_id=11540390&project_id=25520182&scope=work_items'
                     + `&search=${encodeURIComponent(module)}&sort=created_desc`;
             },

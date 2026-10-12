@@ -169,9 +169,39 @@ test('asks the settings of a bank not configured in woob yet', async ({ adminPag
     await page.getByRole('button', { name: tr('addAccountTitle') }).click();
 
     const modal = page.getByRole('dialog', { name: tr('addAccountTitle') });
-    await modal.locator('#field-2').selectOption('boursorama');
+    await modal.locator('#field-2').selectOption('__new:boursorama');
     const setup = modal.locator('fieldset.bank-setup');
     await expect(setup).toBeVisible();
     await expect(setup.getByLabel('Numéro client *')).toBeVisible();
     await expect(setup.getByLabel('Code secret *')).toHaveAttribute('type', 'password');
+});
+
+test('connects a second login of a bank already configured', async ({ adminPage: page }) => {
+    await openTab(page, tr('tabAccounts'));
+    await page.getByRole('button', { name: tr('addAccountTitle') }).click();
+
+    // BNP is configured (backend bnp): it stays offered for another login
+    const modal = page.getByRole('dialog', { name: tr('addAccountTitle') });
+    const bank = modal.locator('#field-2');
+    await expect(bank.locator('option[value="__new:bnp"]')).toContainText(tr('bankAnotherLogin'));
+    await bank.selectOption('__new:bnp');
+
+    // A free name is proposed for this access
+    const setup = modal.locator('fieldset.bank-setup');
+    await expect(setup.getByLabel(tr('bankBackendName'))).toHaveValue('bnp_2');
+    await setup.getByLabel('Numéro client *').fill('87654321');
+    await setup.getByLabel('Code secret *').fill('123456');
+    await setup.getByRole('button', { name: tr('bankConnect') }).click();
+
+    // The accounts of this login, under its own name
+    await expect(page.locator('.toast')).toHaveText(tr('bankConnected'));
+    await expect(bank).toHaveValue('bnp_2');
+    const discovered = modal.locator('.discovered .account-item');
+    await expect(discovered).toHaveCount(2);
+    await discovered.filter({ hasText: 'Livret A' }).getByRole('button', { name: tr('followAccount') }).click();
+    await modal.getByRole('button', { name: tr('save') }).click();
+
+    await expect(page.locator('.toast')).toHaveText(tr('accountAdded'));
+    await expect(account(page, '00087654321@bnp_2')).toBeVisible();
+    await expect(account(page, '00012345678@bnp')).toBeVisible();
 });

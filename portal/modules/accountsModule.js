@@ -27,7 +27,8 @@ export function createAccountsModule(getApiService) {
                 bankBackends: [],
                 // Banks supported by woob: [{module, description}]
                 bankModules: [],
-                // Bank of the manual form: a backend name, or '__other' to type it
+                // Bank of the manual form: a backend name, '__new:<module>' to connect a
+                // (new) login of a supported bank, or '__other' to type it
                 newAccountBank: '',
                 discovering: false,
                 discoverError: null,
@@ -42,7 +43,7 @@ export function createAccountsModule(getApiService) {
              */
             newAccountBank() {
                 if (this.showAccountModal && this.chosenBankNotConfigured()) {
-                    this.loadBankSetup(this.newAccountBank);
+                    this.loadBankSetup(this.newAccountBank.slice('__new:'.length));
                 } else {
                     this.bankSetup = { ...this.bankSetup, module: '', fields: [], error: null };
                 }
@@ -56,7 +57,7 @@ export function createAccountsModule(getApiService) {
              * @returns {Promise<void>}
              */
             async loadBankSetup(module) {
-                this.bankSetup = { module, backend: module, description: '', fields: [], values: {}, loading: true, busy: false, error: null };
+                this.bankSetup = { module, backend: this.freeBackendName(module), description: '', fields: [], values: {}, loading: true, busy: false, error: null };
                 try {
                     const info = await getApiService().fetchBankModuleFields(module);
                     if (this.bankSetup.module !== module) {
@@ -125,21 +126,47 @@ export function createAccountsModule(getApiService) {
             },
 
             /**
-             * Supported banks not configured in woob yet
-             * @returns {Array}
+             * Supported banks, to connect a login: every one, even if already configured
+             * (another login of the same bank, e.g. a joint or professional one)
+             * @returns {Array<{module: string, description: string, configured: boolean}>}
              */
             otherBankModules() {
-                const configured = new Set(this.bankBackends.map(b => b.name));
-                return this.bankModules.filter(m => !configured.has(m.module));
+                const configured = new Set(this.bankBackends.map(b => b.module));
+                return this.bankModules.map(m => ({ ...m, configured: configured.has(m.module) }));
+            },
+
+            /**
+             * First backend name not used in woob for a module: the module itself, then
+             * module_2, module_3...
+             * @param {string} module - woob module
+             * @returns {string}
+             */
+            freeBackendName(module) {
+                const used = new Set(this.bankBackends.map(b => b.name));
+                let name = module;
+                for (let n = 2; used.has(name); n++) {
+                    name = `${module}_${n}`;
+                }
+                return name;
+            },
+
+            /**
+             * Module of a woob backend (the backend is named after it unless renamed)
+             * @param {string} backend - Backend name
+             * @returns {string}
+             */
+            backendModule(backend) {
+                const found = (this.bankBackends || []).find(b => b.name === backend);
+                return found ? found.module : backend;
             },
 
             /**
              * Checks if the bank chosen in the form still has to be configured in woob
+             * (a login to connect)
              * @returns {boolean}
              */
             chosenBankNotConfigured() {
-                const bank = this.newAccountBank;
-                return bank !== '' && bank !== '__other' && !this.bankBackends.some(b => b.name === bank);
+                return this.newAccountBank.startsWith('__new:');
             },
 
             /**
@@ -206,8 +233,11 @@ export function createAccountsModule(getApiService) {
                     ? { id: account.id, account_number: account.account_number, bank_name: account.bank_name, label: account.label || '' }
                     : { id: null, account_number: '', bank_name: '', label: '' };
                 const bank = account ? account.bank_name : '';
-                const known = this.bankBackends.some(b => b.name === bank) || this.bankModules.some(m => m.module === bank);
-                this.newAccountBank = !bank ? '' : known ? bank : '__other';
+                if (!bank || this.bankBackends.some(b => b.name === bank)) {
+                    this.newAccountBank = bank;
+                } else {
+                    this.newAccountBank = this.bankModules.some(m => m.module === bank) ? `__new:${bank}` : '__other';
+                }
                 this.discoveredAccounts = [];
                 this.discoverError = null;
                 this.showAccountModal = true;
@@ -239,7 +269,10 @@ export function createAccountsModule(getApiService) {
              */
             async submitAccountForm() {
                 const form = this.accountForm;
-                if (this.newAccountBank !== '__other') {
+                if (this.chosenBankNotConfigured()) {
+                    // Login not connected: the account is followed under the backend name
+                    form.bank_name = this.bankSetup.backend || this.newAccountBank.slice('__new:'.length);
+                } else if (this.newAccountBank !== '__other') {
                     form.bank_name = this.newAccountBank;
                 }
                 const number = String(form.account_number).trim();

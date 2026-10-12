@@ -215,7 +215,9 @@ protégée.
   l'identifiant du compte. Pour une banque pas encore configurée, le formulaire demande les
   identifiants attendus par son module woob (numéro client, code, type de compte…) :
   **Connecter la banque** les confie à woob (Carbure ne les enregistre ni ne les journalise)
-  et affiche les comptes trouvés, à suivre en un clic.
+  et affiche les comptes trouvés, à suivre en un clic. Une banque déjà configurée reste
+  proposée (« autre identifiant ») pour connecter un second accès avec d'autres
+  identifiants (compte joint, professionnel…) : un nom libre lui est proposé (`bnp_2`…).
 - **Synchronisation** : progression en direct, statut OK/KO de chaque étape par compte
   (opérations à venir, historique, notifications), nombre de transactions reçues et
   nouvelles, journal détaillé. Avec le réglage `woob_debug`, le journal affiche aussi, en

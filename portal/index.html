@@ -2150,8 +2150,8 @@
                                 </option>
                             </optgroup>
                             <optgroup v-if="otherBankModules().length" :label="t('banksSupported')">
-                                <option v-for="m in otherBankModules()" :key="m.module" :value="m.module">
-                                    {{ m.description ? m.description + ' (' + m.module + ')' : m.module }}
+                                <option v-for="m in otherBankModules()" :key="m.module" :value="'__new:' + m.module">
+                                    {{ (m.description ? m.description + ' (' + m.module + ')' : m.module) + (m.configured ? ' — ' + t('bankAnotherLogin') : '') }}
                                 </option>
                             </optgroup>
                             <option value="__other">{{ t('accountBankOther') }}</option>
@@ -2160,7 +2160,7 @@
                     </div>
                     <!-- Bank not configured in woob yet: its settings, sent to woob only -->
                     <fieldset v-if="chosenBankNotConfigured()" class="bank-setup">
-                        <legend>{{ t('bankSetupTitle', { bank: bankSetup.description || newAccountBank }) }}</legend>
+                        <legend>{{ t('bankSetupTitle', { bank: bankSetup.description || bankSetup.module }) }}</legend>
                         <p class="setup-help">
                             <span class="material-icons inline-icon" aria-hidden="true">lock</span>{{ t('bankSetupHelp') }}
                         </p>
