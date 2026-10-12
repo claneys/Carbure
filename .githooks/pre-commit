@@ -1,5 +1,5 @@
 #!/bin/sh
-# Lint the staged PHP and JavaScript files.
+# Lint the staged PHP and JavaScript files, and check the types of the PHP code.
 # Enable with: git config core.hooksPath .githooks
 
 PHP=${PHP:-php}
@@ -14,6 +14,24 @@ for file in $(echo "$files" | grep -E '\.php$'); do
     fi
     "$PHP" -l "$file" >/dev/null || status=1
 done
+
+# Types of the PHP code (PHPStan, see phpstan.neon): the whole code is analysed, a change
+# of signature can break a caller in another file (result cached: fast after the first run)
+if echo "$files" | grep -qE '\.php$|^phpstan\.neon$'; then
+    if command -v "$PHP" >/dev/null 2>&1; then
+        if [ ! -f vendor/bin/phpstan ]; then
+            echo "pre-commit: PHPStan not installed, run: composer install" >&2
+            status=1
+        else
+            "$PHP" vendor/bin/phpstan analyse --memory-limit=1G --no-progress || {
+                echo "pre-commit: PHP types (PHPStan) not valid" >&2
+                status=1
+            }
+        fi
+    else
+        echo "pre-commit: php not found, PHP types (PHPStan) not checked (set PHP=/path/to/php)" >&2
+    fi
+fi
 
 for file in $(echo "$files" | grep -E '^portal/.*\.js$'); do
     if ! command -v node >/dev/null 2>&1; then

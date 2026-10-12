@@ -16,11 +16,11 @@ final class Bank {
     /**
      * Get the bank accounts of the household (every user sees all of them).
      * Each bank account is returned with bankId = account_number@bank_name
-     * @return array List of bank accounts with bankId and details (label: name given to
-     *               the account, null if none)
+     * @return list<array<string, mixed>> List of bank accounts with bankId and details
+     *               (label: name given to the account, null if none)
      */
     #[ApiRoute('/bank', method: 'GET')]
-    public static function get()
+    public static function get(): array
     {
         $sql = "SELECT MIN(id) AS id, account_number, bank_name, MAX(label) AS label FROM bank_account
                 GROUP BY account_number, bank_name ORDER BY bank_name, account_number";
@@ -51,12 +51,12 @@ final class Bank {
      * @return void
      * @throws Error If one of them is invalid
      */
-    private static function validateAccount($accountNumber, $bankName)
+    private static function validateAccount(string $accountNumber, string $bankName): void
     {
-        if (!preg_match('/^[A-Za-z0-9_.:-]{1,100}$/', (string)$accountNumber)) {
+        if (!preg_match('/^[A-Za-z0-9_.:-]{1,100}$/', $accountNumber)) {
             throw new Error("Invalid account number", 400);
         }
-        if (!preg_match('/^[A-Za-z0-9_-]{1,50}$/', (string)$bankName)) {
+        if (!preg_match('/^[A-Za-z0-9_-]{1,50}$/', $bankName)) {
             throw new Error("Invalid bank (woob backend) name", 400);
         }
     }
@@ -69,7 +69,7 @@ final class Bank {
      * @return string|null The name to store
      * @throws Error If it is too long
      */
-    private static function normalizeLabel($label)
+    private static function normalizeLabel(?string $label): ?string
     {
         $label = trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', (string)$label) ?? '');
         if ($label === '') {
@@ -85,10 +85,10 @@ final class Bank {
      * Get a bank account of the household.
      *
      * @param int $id The account id
-     * @return array The account
+     * @return array<string, mixed> The account
      * @throws Error If the account does not exist
      */
-    private static function existingAccount($id)
+    private static function existingAccount(int $id): array
     {
         $account = Db::queryOne("SELECT * FROM bank_account WHERE id = ?", "i", $id);
         if (!$account) {
@@ -101,12 +101,12 @@ final class Bank {
      * All the bank accounts of the household with the user who added them and the
      * result of their last synchronization (administrators).
      *
-     * @return array The accounts: id, bankId, account_number, bank_name, label (name
-     *               given to the account, null if none), user_id and username (who added it),
-     *               last_sync_at, last_sync_status (OK|ERROR), last_sync_message
+     * @return list<array<string, mixed>> The accounts: id, bankId, account_number, bank_name,
+     *               label (name given to the account, null if none), user_id and username
+     *               (who added it), last_sync_at, last_sync_status (OK|ERROR), last_sync_message
      */
     #[ApiRoute('/bank/accounts', method: 'GET')]
-    public static function accounts()
+    public static function accounts(): array
     {
         User::requireAdmin();
         $sql = "SELECT a.id, a.account_number, a.bank_name, a.label, a.user_id, u.username,
@@ -126,11 +126,11 @@ final class Bank {
      * @param string      $account_number The account identifier in woob
      * @param string      $bank_name      The woob backend name
      * @param string|null $label          Name given to the account (optional)
-     * @return array The account (user_id: the administrator who added it)
+     * @return array<string, mixed> The account (user_id: the administrator who added it)
      * @throws Error If invalid or already followed by the household
      */
     #[ApiRoute('/bank', method: 'POST')]
-    public static function create($account_number, $bank_name, $label = null)
+    public static function create(string $account_number, string $bank_name, ?string $label = null): array
     {
         User::requireAdmin();
         self::validateAccount($account_number, $bank_name);
@@ -154,11 +154,11 @@ final class Bank {
      * @param string      $bank_name      The woob backend name
      * @param string|null $label          Name given to the account: omitted (null) keeps
      *                                    the current one, empty removes it
-     * @return array The account
+     * @return array<string, mixed> The account
      * @throws Error If not found, invalid or already followed by the household
      */
     #[ApiRoute('/bank', method: 'PUT')]
-    public static function update($id, $account_number, $bank_name, $label = null)
+    public static function update(int $id, string $account_number, string $bank_name, ?string $label = null): array
     {
         User::requireAdmin();
         $account = self::existingAccount($id);
@@ -172,7 +172,7 @@ final class Bank {
 
         Db::execute("UPDATE bank_account SET account_number = ?, bank_name = ?, label = ? WHERE id = ?", "sssi", $account_number, $bank_name, $label, $id);
 
-        return ['id' => (int)$id, 'bankId' => "$account_number@$bank_name", 'account_number' => $account_number, 'bank_name' => $bank_name, 'label' => $label, 'user_id' => $userId];
+        return ['id' => $id, 'bankId' => "$account_number@$bank_name", 'account_number' => $account_number, 'bank_name' => $bank_name, 'label' => $label, 'user_id' => $userId];
     }
 
     /**
@@ -183,7 +183,7 @@ final class Bank {
      * @throws Error If not found
      */
     #[ApiRoute('/bank', method: 'DELETE')]
-    public static function delete($id)
+    public static function delete(int $id): bool
     {
         User::requireAdmin();
         self::existingAccount($id);
@@ -194,10 +194,10 @@ final class Bank {
     /**
      * Bank backends configured in woob (name and module), to choose the bank of an account.
      *
-     * @return array The backends: [{name, module}]
+     * @return list<array{name: mixed, module: mixed}> The backends
      */
     #[ApiRoute('/bank/backends', method: 'GET')]
-    public static function backends()
+    public static function backends(): array
     {
         User::requireAdmin();
         return Woob::listBackends();
@@ -207,10 +207,10 @@ final class Bank {
      * Banks supported by woob (module and description); a bank must be configured
      * in woob (from the portal, POST /bank/backend) before its accounts can be synchronized.
      *
-     * @return array The modules: [{module, description}]
+     * @return list<array{module: mixed, description: mixed}> The modules
      */
     #[ApiRoute('/bank/modules', method: 'GET')]
-    public static function modules()
+    public static function modules(): array
     {
         User::requireAdmin();
         return Woob::listBankModules();
@@ -221,14 +221,14 @@ final class Bank {
      * (administrators).
      *
      * @param string $module The woob module (e.g. bnp)
-     * @return array module, description, fields [{key, label, description, default, required, masked, choices}]
+     * @return array<string, mixed> module, description, fields [{key, label, description, default, required, masked, choices}]
      * @throws Error If the module name is invalid
      */
     #[ApiRoute('/bank/module', method: 'GET')]
-    public static function module($module)
+    public static function module(string $module): array
     {
         User::requireAdmin();
-        if (!preg_match('/^[a-z0-9_]{1,50}$/', (string)$module)) {
+        if (!preg_match('/^[a-z0-9_]{1,50}$/', $module)) {
             throw new Error("Invalid woob module", 400);
         }
         return Woob::moduleFields($module);
@@ -241,15 +241,17 @@ final class Bank {
      *
      * @param string $module   The woob module (e.g. bnp)
      * @param string $backend  Name of the woob backend (e.g. bnp, bnp_pro)
-     * @param array  $settings The settings of the module (login, password...)
-     * @return array backend, accounts [{bankId, account_number, bank_name, label, balance, currency, followed}]
+     * @param mixed  $settings The settings of the module (login, password...): key => value
+     *                         (anything else is taken as no setting, as sent by the client)
+     * @return array{backend: string, accounts: list<array<string, mixed>>} backend, accounts
+     *               [{bankId, account_number, bank_name, label, balance, currency, followed}]
      * @throws Error If a setting is missing or invalid, or woob refuses the bank
      */
     #[ApiRoute('/bank/backend', method: 'POST')]
-    public static function createBackend($module, $backend, $settings = [])
+    public static function createBackend(string $module, string $backend, mixed $settings = []): array
     {
         User::requireAdmin();
-        if (!preg_match('/^[a-z0-9_]{1,50}$/', (string)$module) || !preg_match('/^[a-z0-9_-]{1,50}$/', (string)$backend)) {
+        if (!preg_match('/^[a-z0-9_]{1,50}$/', $module) || !preg_match('/^[a-z0-9_-]{1,50}$/', $backend)) {
             throw new Error("Invalid woob module or bank name (lowercase letters, digits, - and _)", 400);
         }
         if (in_array($backend, array_column(Woob::listBackends(), 'name'), true)) {
@@ -301,11 +303,12 @@ final class Bank {
     /**
      * Accounts available in the configured woob backends, to follow them in one click.
      *
-     * @return array The accounts (bankId, account_number, bank_name, label, balance, currency, followed)
+     * @return list<array<string, mixed>> The accounts (bankId, account_number, bank_name, label,
+     *               balance, currency, followed)
      * @throws Exception If woob fails
      */
     #[ApiRoute('/bank/discover', method: 'GET')]
-    public static function discover()
+    public static function discover(): array
     {
         User::requireAdmin();
         $followed = array_column(self::accounts(), 'bankId');
@@ -339,9 +342,9 @@ final class Bank {
      * @param string $bankId      The bank id to sync (account_number@bank_name)
      * @param bool   $interactive Allow the bank to ask a two-factor authentication
      * @param bool   $debug       Send the debug logs of woob (woob_debug) in the progress
-     * @return array The new transactions
+     * @return list<array<string, mixed>> The new transactions
      */
-    private static function syncBankData($kind, $bankId, $interactive = false, $debug = false)
+    private static function syncBankData(string $kind, string $bankId, bool $interactive = false, bool $debug = false): array
     {
         $transactions = self::getBankData($kind, $bankId, $interactive, $debug);
         if (empty($transactions)) {
@@ -369,11 +372,11 @@ final class Bank {
      * @return bool True for an authenticated user, false for the scheduler
      * @throws Error If the caller is not allowed
      */
-    private static function checkSyncAccess($token)
+    private static function checkSyncAccess(?string $token): bool
     {
         $token = Webservice::getHeader('X-Sync-Token') ?? $token;
 
-        if ($token !== null && Config::has('sync_token') && hash_equals((string)Config::get('sync_token'), (string)$token)) {
+        if ($token !== null && Config::has('sync_token') && hash_equals((string)Config::get('sync_token'), $token)) {
             return false;
         }
 
@@ -399,12 +402,13 @@ final class Bank {
      *
      * @param string|null $token       The sync token (for the scheduler)
      * @param string|null $account     Synchronize only this account (account_number@bank_name)
-     * @param string|null $interactive "true": allow a two-factor authentication (needs $account)
+     * @param bool|string|null $interactive "true": allow a two-factor authentication (needs
+     *                                      $account); parsed as a boolean ("false" is false)
      * @return void
      * @throws Error If unauthorized, the account is not followed or the interactive mode not allowed
      */
     #[ApiRoute('/bank/sync', method: 'GET', public: true, stream: true)]
-    public static function getSync($token = null, $account = null, $interactive = null)
+    public static function getSync(?string $token = null, ?string $account = null, bool|string|null $interactive = null): void
     {
         $user = self::checkSyncAccess($token);
 
@@ -501,7 +505,7 @@ final class Bank {
      * @return int The user id
      * @throws Exception If the bank account has no owner
      */
-    private static function getBankOwner($bankId)
+    private static function getBankOwner(string $bankId): int
     {
         list($accountNumber, $bankName) = explode('@', $bankId, 2);
 
@@ -516,10 +520,6 @@ final class Bank {
     }
 
     /**
-     * Get all bank IDs from the database.
-     * @return array List of bankIds (account_number@bank_name)
-     */
-    /**
      * Store the date and result of the last synchronization of an account.
      *
      * @param string      $bankId  The account (account_number@bank_name)
@@ -527,14 +527,19 @@ final class Bank {
      * @param string|null $message The number of new transactions or the error
      * @return void
      */
-    private static function recordSyncResult($bankId, $success, $message)
+    private static function recordSyncResult(string $bankId, bool $success, ?string $message): void
     {
         [$number, $bank] = explode('@', $bankId, 2);
         Db::execute("UPDATE bank_account SET last_sync_at = NOW(), last_sync_status = ?, last_sync_message = ? WHERE account_number = ? AND bank_name = ?",
             "ssss", $success ? 'OK' : 'ERROR', mb_substr((string)$message, 0, 500), $number, $bank);
     }
 
-    private static function getBankIds()
+    /**
+     * Get all bank IDs from the database.
+     *
+     * @return list<string> List of bankIds (account_number@bank_name)
+     */
+    private static function getBankIds(): array
     {
         $sql = "SELECT DISTINCT account_number, bank_name FROM bank_account ORDER BY bank_name, account_number";
         $stmt = Db::execute($sql, "");
@@ -560,7 +565,7 @@ final class Bank {
      * @param string|null $error  The error of a failed synchronization
      * @return void
      */
-        public static function notifyBankUsers($bankId, $status, $error = null)
+    public static function notifyBankUsers(string $bankId, bool $status, ?string $error = null): void
     {
         // Parse bankId to extract account_number and bank_name
         list($accountNumber, $bankName) = explode('@', $bankId, 2);
@@ -605,21 +610,13 @@ final class Bank {
     }
 
     /**
-     * Push an alert to the owners of a bank account for each new expense whose
-     * amount reaches their alert threshold (users.alert_threshold, NULL = disabled).
-     *
-     * @param string $bankId       The bank ID (account_number@bank_name)
-     * @param array  $transactions The new transactions (label, amount)
-     * @return int The number of alerts sent
-     */
-    /**
      * Notify the household of the new transactions matching a rule marked
      * "notify" (one notification per transaction and user).
      *
-     * @param array $transactions The new transactions (label, amount)
+     * @param array<array<string, mixed>> $transactions The new transactions (label, amount)
      * @return int The number of notifications sent
      */
-    public static function alertRuleMatches($transactions)
+    public static function alertRuleMatches(array $transactions): int
     {
         if (empty($transactions)) {
             return 0;
@@ -659,7 +656,15 @@ final class Bank {
         return $sent;
     }
 
-    public static function alertLargeExpenses($bankId, $transactions)
+    /**
+     * Push an alert to the owners of a bank account for each new expense whose
+     * amount reaches their alert threshold (users.alert_threshold, NULL = disabled).
+     *
+     * @param string                      $bankId       The bank ID (account_number@bank_name)
+     * @param array<array<string, mixed>> $transactions The new transactions (label, amount)
+     * @return int The number of alerts sent
+     */
+    public static function alertLargeExpenses(string $bankId, array $transactions): int
     {
         if (empty($transactions)) {
             return 0;
@@ -702,9 +707,9 @@ final class Bank {
      * @param string $bankId      The bank id
      * @param bool   $interactive Allow the bank to ask a two-factor authentication
      * @param bool   $debug       Send the debug logs of woob in the progress
-     * @return array|null The transaction data or null if no data
+     * @return list<mixed>|null The transaction data or null if no data
      */
-    private static function getBankData($type, $bankId, $interactive = false, $debug = false)
+    private static function getBankData(string $type, string $bankId, bool $interactive = false, bool $debug = false): ?array
     {
         return Woob::getBankData($type, $bankId, $interactive,
             fn($message) => Webservice::sendProgress("Bank message $bankId: $message"),

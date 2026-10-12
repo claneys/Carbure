@@ -26,12 +26,12 @@ final class User {
      *
      * @param string $username The username
      * @param string $password The password
-     * @param array|null $device Associative array with 'name' and 'token' (mobile app only)
-     * @return array The JWT token data
+     * @param array<string, mixed>|null $device Associative array with 'name' and 'token' (mobile app only)
+     * @return array{exp: int, sub: int, iat: int, token: string} The JWT token data
      * @throws Error If the credentials are invalid
      */
     #[ApiRoute('/user/login', method: 'POST', public: true)]
-    public static function login($username, $password, ?array $device = null){
+    public static function login(string $username, string $password, ?array $device = null): array {
 
         // check if the $username and the $password are valid in database
         $sql = "SELECT * FROM users where username=?";
@@ -76,7 +76,7 @@ final class User {
      * @param string $password The clear password
      * @return string The password hash
      */
-    private static function hashPassword($password)
+    private static function hashPassword(string $password): string
     {
         return password_hash($password, PASSWORD_DEFAULT);
     }
@@ -85,11 +85,11 @@ final class User {
      * Check a password against the stored hash.
      * Legacy salted SHA256 hashes are upgraded to password_hash() on success.
      *
-     * @param array  $user     The user row from database
-     * @param string $password The clear password
+     * @param array<string, mixed> $user     The user row from database
+     * @param string               $password The clear password
      * @return bool True if the password is valid
      */
-    private static function verifyPassword($user, $password)
+    private static function verifyPassword(array $user, string $password): bool
     {
         $hash = $user['password'];
 
@@ -128,10 +128,10 @@ final class User {
     /**
      * Count a failed login and lock the account at the limit.
      *
-     * @param array $user The user
+     * @param array<string, mixed> $user The user
      * @return void
      */
-    private static function recordFailedLogin($user)
+    private static function recordFailedLogin(array $user): void
     {
         $failures = (int)$user['failed_logins'] + 1;
         if ($failures >= self::MAX_FAILED_LOGINS) {
@@ -150,7 +150,7 @@ final class User {
      * @throws Error If not an administrator or the user does not exist
      */
     #[ApiRoute('/user/unlock', method: 'POST')]
-    public static function unlock($id)
+    public static function unlock(int $id): bool
     {
         self::requireAdmin();
         if (!Db::queryOne("SELECT id FROM users WHERE id = ?", "i", $id)) {
@@ -165,7 +165,7 @@ final class User {
      *
      * @return bool True if the user is an administrator
      */
-    public static function isAdmin()
+    public static function isAdmin(): bool
     {
         $user = Db::queryOne("SELECT is_admin FROM users WHERE id=?", "i", Jwt::getUserIdFromToken());
         return $user !== null && (bool)$user['is_admin'];
@@ -177,7 +177,7 @@ final class User {
      * @return void
      * @throws Error If the user is not an administrator
      */
-    public static function requireAdmin()
+    public static function requireAdmin(): void
     {
         if (!self::isAdmin()) {
             throw new Error("Forbidden - Administrator only", 403);
@@ -187,10 +187,10 @@ final class User {
     /**
      * Get all users (administrator) or the authenticated user only, with the date
      * of their last login.
-     * @return array List of users (without passwords)
+     * @return list<array<string, mixed>> List of users (without passwords)
      */
     #[ApiRoute('/user', method: 'GET')]
-    public static function get()
+    public static function get(): array
     {
         $sql = "SELECT " . self::COLUMNS . ", last_login, locked_until FROM users";
         if (self::isAdmin()) {
@@ -212,10 +212,11 @@ final class User {
 
     /**
      * Get the authenticated user profile.
-     * @return array The user (without password)
+     * @return array<string, mixed> The user (without password)
+     * @throws Error If the user does not exist anymore
      */
     #[ApiRoute('/user/me', method: 'GET')]
-    public static function me()
+    public static function me(): array
     {
         $sql = "SELECT " . self::COLUMNS . " FROM users WHERE id=?";
         $user = Db::queryOne($sql, "i", Jwt::getUserIdFromToken());
@@ -235,12 +236,12 @@ final class User {
      * @param string      $email     The email
      * @param string|null $firstname The first name (optional)
      * @param string|null $lastname  The last name (optional)
-     * @param bool        $is_admin  Administrator profile (optional, user by default)
-     * @return array The created user data with id
+     * @param bool|int|string|null $is_admin Administrator profile (optional, user by default): true, "true", 1...
+     * @return array<string, mixed> The created user data with id
      * @throws Error If the username or email already exists or the caller is not an administrator
      */
     #[ApiRoute('/user', method: 'POST')]
-    public static function create($username, $password, $email, $firstname = null, $lastname = null, $is_admin = false)
+    public static function create(string $username, string $password, string $email, ?string $firstname = null, ?string $lastname = null, bool|int|string|null $is_admin = false): array
     {
         self::requireAdmin();
 
@@ -290,11 +291,11 @@ final class User {
      * @throws Error If the user is not found or the caller is not an administrator
      */
     #[ApiRoute('/user', method: 'DELETE')]
-    public static function delete($id)
+    public static function delete(int $id): bool
     {
         self::requireAdmin();
 
-        if ((int)$id === (int)Jwt::getUserIdFromToken()) {
+        if ($id === (int)Jwt::getUserIdFromToken()) {
             throw new Error("You cannot delete your own account", 400);
         }
 
@@ -331,15 +332,16 @@ final class User {
      * @param string|null $language  The interface language (optional, fr|en)
      * @param float|string|null $alertThreshold Push alert threshold for new expenses
      *                                    (optional, "" or 0 disables the alerts)
-     * @param bool|null   $is_admin  Administrator profile (optional, administrators only)
-     * @return array The updated user data
+     * @param bool|int|string|null $is_admin Administrator profile (optional, administrators only): true, "true", 1...
+     * @return array<string, mixed> The updated user data
      * @throws Error If the user is not found, email already exists or the caller is not allowed
      */
     #[ApiRoute('/user', method: 'PUT')]
-    public static function update($id, $email = null, $firstname = null, $lastname = null, $password = null, $language = null, $alertThreshold = null, $is_admin = null)
+    public static function update(int $id, ?string $email = null, ?string $firstname = null, ?string $lastname = null, ?string $password = null,
+        ?string $language = null, float|int|string|null $alertThreshold = null, bool|int|string|null $is_admin = null): array
     {
         // A user can only update his own profile, unless administrator
-        if ((int)$id !== (int)Jwt::getUserIdFromToken()) {
+        if ($id !== (int)Jwt::getUserIdFromToken()) {
             self::requireAdmin();
         }
 
@@ -439,10 +441,10 @@ final class User {
         }
 
         // Get updated user data
-        $sql = "SELECT " . self::COLUMNS . " FROM users WHERE id=?";
-        $stmt = Db::execute($sql, "i", $id);
-        $result = $stmt->get_result();
-        $updatedUser = $result->fetch_assoc();
+        $updatedUser = Db::queryOne("SELECT " . self::COLUMNS . " FROM users WHERE id=?", "i", $id);
+        if ($updatedUser === null) {
+            throw new Error("User not found", 404);
+        }
 
         return $updatedUser;
     }

@@ -44,18 +44,21 @@ final class Mcp {
     /**
      * Handle a JSON-RPC message of an MCP client.
      *
-     * @param string|null     $jsonrpc Always "2.0"
-     * @param string|null     $method  The method (initialize, tools/list, tools/call...)
-     * @param int|string|null $id      The request id (none for a notification)
-     * @param array|null      $params  The parameters of the method
-     * @param mixed           $result  Response of the client to a server request (unused)
-     * @param mixed           $error   Error of the client to a server request (unused)
-     * @param string|null     $token   API token, for the agents that cannot send a header
+     * The members of the message are those sent by the client, of any JSON type: they
+     * are checked here (an invalid one gets a JSON-RPC error, not an HTTP one).
+     *
+     * @param mixed       $jsonrpc Always "2.0"
+     * @param mixed       $method  The method (initialize, tools/list, tools/call...)
+     * @param mixed       $id      The request id: int or string (none for a notification)
+     * @param mixed       $params  The parameters of the method (an object)
+     * @param mixed       $result  Response of the client to a server request (unused)
+     * @param mixed       $error   Error of the client to a server request (unused)
+     * @param string|null $token   API token, for the agents that cannot send a header
      * @return string The JSON-RPC response, or '' (HTTP 202) for a notification
      * @throws Error If disabled (403), unauthenticated (401) or from another site (403)
      */
     #[ApiRoute('/mcp', method: 'POST', public: true, raw: true)]
-    public static function handle($jsonrpc = null, $method = null, $id = null, $params = null, $result = null, $error = null, $token = null)
+    public static function handle(mixed $jsonrpc = null, mixed $method = null, mixed $id = null, mixed $params = null, mixed $result = null, mixed $error = null, ?string $token = null): string
     {
         if (!self::enabled()) {
             throw new Error("The MCP server is disabled: an administrator enables it in the AI agents tab", 403);
@@ -94,10 +97,10 @@ final class Mcp {
     /**
      * State of the MCP server, for the AI agents tab.
      *
-     * @return array enabled
+     * @return array{enabled: bool} enabled
      */
     #[ApiRoute('/mcp/settings', method: 'GET')]
-    public static function settings()
+    public static function settings(): array
     {
         return ['enabled' => self::enabled()];
     }
@@ -105,11 +108,11 @@ final class Mcp {
     /**
      * Enable or disable the MCP server (administrators).
      *
-     * @param bool $enabled True to enable it
-     * @return array enabled
+     * @param bool|int|string|null $enabled True to enable it (or "true", "1"...)
+     * @return array{enabled: bool} enabled
      */
     #[ApiRoute('/mcp/settings', method: 'PUT')]
-    public static function updateSettings($enabled)
+    public static function updateSettings(bool|int|string|null $enabled): array
     {
         User::requireAdmin();
         Setting::set('mcp_enabled', filter_var($enabled, FILTER_VALIDATE_BOOLEAN) ? '1' : '0');
@@ -121,7 +124,7 @@ final class Mcp {
      *
      * @return bool True if enabled
      */
-    public static function enabled()
+    public static function enabled(): bool
     {
         return Setting::get('mcp_enabled', '0') === '1';
     }
@@ -129,11 +132,11 @@ final class Mcp {
     /**
      * The server does not open SSE streams: GET is not allowed (MCP specification).
      *
-     * @return void
+     * @return never
      * @throws Error Always (405)
      */
     #[ApiRoute('/mcp', method: 'GET', public: true)]
-    public static function stream()
+    public static function stream(): never
     {
         if (!headers_sent()) {
             header('Allow: POST');
@@ -148,7 +151,7 @@ final class Mcp {
      * @return void
      * @throws Error If the origin is another site
      */
-    private static function checkOrigin()
+    private static function checkOrigin(): void
     {
         $origin = Webservice::getHeader('Origin');
         if ($origin === null || $origin === '' || $origin === 'null') {
@@ -170,7 +173,7 @@ final class Mcp {
      * @return int The user id
      * @throws Error If the token is missing or invalid (401)
      */
-    private static function authenticate($queryToken = null)
+    private static function authenticate(?string $queryToken = null): int
     {
         $token = Jwt::getTokenFromHeader() ?: $queryToken;
         $userId = null;
@@ -198,10 +201,10 @@ final class Mcp {
     /**
      * Answer to initialize: the protocol version and the capabilities of the server.
      *
-     * @param array $params The parameters of the client
-     * @return array The result
+     * @param array<mixed> $params The parameters of the client
+     * @return array<string, mixed> The result
      */
-    private static function initialize($params)
+    private static function initialize(array $params): array
     {
         $requested = $params['protocolVersion'] ?? null;
         $version = in_array($requested, self::PROTOCOL_VERSIONS, true) ? $requested : self::PROTOCOL_VERSIONS[0];
@@ -219,9 +222,9 @@ final class Mcp {
     /**
      * Definition of the tools (JSON Schema of their arguments).
      *
-     * @return array The tools
+     * @return list<array<string, mixed>> The tools
      */
-    private static function tools()
+    private static function tools(): array
     {
         $month = ['type' => 'integer', 'minimum' => 1, 'maximum' => 12, 'description' => 'Month (1-12), current month by default'];
         $year = ['type' => 'integer', 'minimum' => 2000, 'maximum' => 2100, 'description' => 'Year, current year by default'];
@@ -299,11 +302,11 @@ final class Mcp {
      * Call a tool: its result is returned as JSON text; an invalid argument is
      * reported as a tool error so that the model can correct it.
      *
-     * @param int|string $id     The request id
-     * @param array      $params name and arguments
+     * @param int|string   $id     The request id
+     * @param array<mixed> $params name and arguments
      * @return string The JSON-RPC response
      */
-    private static function callTool($id, $params)
+    private static function callTool(int|string $id, array $params): string
     {
         $name = $params['name'] ?? null;
         $arguments = is_array($params['arguments'] ?? null) ? $params['arguments'] : [];
@@ -327,12 +330,12 @@ final class Mcp {
     /**
      * Run a tool.
      *
-     * @param string $name      The tool
-     * @param array  $arguments Its arguments
+     * @param string       $name      The tool
+     * @param array<mixed> $arguments Its arguments
      * @return mixed The data
      * @throws Error If an argument is invalid
      */
-    private static function runTool($name, $arguments)
+    private static function runTool(string $name, array $arguments): mixed
     {
         $int = fn($key, $default = null) => isset($arguments[$key]) && $arguments[$key] !== '' ? (int)$arguments[$key] : $default;
 
@@ -365,9 +368,9 @@ final class Mcp {
     /**
      * Categories with the name of their parent.
      *
-     * @return array id, name, parent (name or null), type
+     * @return list<array{id: int, name: mixed, parent: mixed, type: mixed}> id, name, parent (name or null), type
      */
-    private static function categories()
+    private static function categories(): array
     {
         $categories = Category::get();
         $names = array_column($categories, 'name', 'id');
@@ -382,10 +385,10 @@ final class Mcp {
     /**
      * Transactions reduced to what an analysis needs, with the category name.
      *
-     * @param array $transactions Rows of bank_transaction
-     * @return array date, label, amount, category, checked
+     * @param array<array<string, mixed>> $transactions Rows of bank_transaction
+     * @return array<array<string, mixed>> date, label, amount, category, checked
      */
-    private static function compact($transactions)
+    private static function compact(array $transactions): array
     {
         $names = [];
         foreach (self::categories() as $category) {
@@ -403,12 +406,12 @@ final class Mcp {
     /**
      * Total and number of transactions per category over a period.
      *
-     * @param string|null $from First month (YYYY-MM)
-     * @param string|null $to   Last month (YYYY-MM)
-     * @return array The period and the categories, largest expenses first
+     * @param mixed $from First month (YYYY-MM), as sent by the client
+     * @param mixed $to   Last month (YYYY-MM), as sent by the client
+     * @return array<string, mixed> The period and the categories, largest expenses first
      * @throws Error If a month is invalid or the period is reversed
      */
-    private static function spendingByCategory($from, $to)
+    private static function spendingByCategory(mixed $from, mixed $to): array
     {
         $to = $to ?: date('Y-m');
         $from = $from ?: date('Y-m', strtotime(date('Y-m-01') . ' -11 months'));
@@ -452,7 +455,7 @@ final class Mcp {
      * @param mixed      $result The result
      * @return string The response
      */
-    private static function result($id, $result)
+    private static function result(int|string $id, mixed $result): string
     {
         return self::encode(['jsonrpc' => '2.0', 'id' => $id, 'result' => $result]);
     }
@@ -460,12 +463,12 @@ final class Mcp {
     /**
      * JSON-RPC error response.
      *
-     * @param int|string|null $id      The request id
-     * @param int             $code    The error code
-     * @param string          $message The message
+     * @param mixed  $id      The request id (as sent, even if invalid)
+     * @param int    $code    The error code
+     * @param string $message The message
      * @return string The response
      */
-    private static function error($id, $code, $message)
+    private static function error(mixed $id, int $code, string $message): string
     {
         return self::encode(['jsonrpc' => '2.0', 'id' => $id, 'error' => ['code' => $code, 'message' => $message]]);
     }
@@ -473,10 +476,10 @@ final class Mcp {
     /**
      * Encode a message (ids and texts are kept as they are).
      *
-     * @param array $message The message
+     * @param array<string, mixed> $message The message
      * @return string The JSON
      */
-    private static function encode($message)
+    private static function encode(array $message): string
     {
         return json_encode($message, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE);
     }

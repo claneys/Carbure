@@ -2,6 +2,9 @@
 data/
 
 # conf/ only holds versioned templates
+# Development tools installed by Composer (composer install)
+vendor/
+
 .phpunit.result.cache
 .phpunit.cache/
 CLAUDE.md

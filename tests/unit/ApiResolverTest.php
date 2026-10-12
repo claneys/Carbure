@@ -58,4 +58,31 @@ class ApiResolverTest extends TestCase
             'GET /oauth/authorize', 'POST /mcp', 'POST /oauth/register', 'POST /oauth/token', 'POST /user/login',
         ], $public);
     }
+
+    public function testRouteParamsAcceptWhatTheClientsSend()
+    {
+        $problems = [];
+        foreach (glob(__DIR__ . '/../../src/resources/*.php') as $file) {
+            $class = new ReflectionClass(basename($file, '.php'));
+            foreach ($class->getMethods() as $method) {
+                if (!$method->getAttributes(ApiRoute::class)) {
+                    continue;
+                }
+                foreach ($method->getParameters() as $param) {
+                    $type = $param->getType();
+                    $name = $class->getName() . '::' . $method->getName() . '($' . $param->getName() . ')';
+                    if ($type === null) {
+                        $problems[] = "$name has no type";
+                    } elseif (in_array((string)$type, ['bool', '?bool'], true)) {
+                        // From the query string, "false" would be coerced to true
+                        $problems[] = "$name is a bare bool";
+                    } elseif ($param->isDefaultValueAvailable() && $param->getDefaultValue() === null && !$type->allowsNull()) {
+                        $problems[] = "$name defaults to null but does not accept it";
+                    }
+                }
+            }
+        }
+
+        $this->assertSame([], $problems);
+    }
 }

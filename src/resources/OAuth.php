@@ -48,7 +48,7 @@ final class OAuth {
      * @return string JSON
      */
     #[ApiRoute('/.well-known/oauth-protected-resource', method: 'GET', public: true, raw: true)]
-    public static function protectedResource()
+    public static function protectedResource(): string
     {
         return self::json([
             'resource' => self::baseUrl() . '/api/mcp',
@@ -65,7 +65,7 @@ final class OAuth {
      * @return string JSON
      */
     #[ApiRoute('/.well-known/oauth-protected-resource/api/mcp', method: 'GET', public: true, raw: true)]
-    public static function protectedResourceOfMcp()
+    public static function protectedResourceOfMcp(): string
     {
         return self::protectedResource();
     }
@@ -76,7 +76,7 @@ final class OAuth {
      * @return string JSON
      */
     #[ApiRoute('/.well-known/oauth-authorization-server', method: 'GET', public: true, raw: true)]
-    public static function authorizationServer()
+    public static function authorizationServer(): string
     {
         $base = self::baseUrl();
         return self::json([
@@ -94,14 +94,17 @@ final class OAuth {
     /**
      * Register a client (RFC 7591). The other fields of the metadata are ignored.
      *
-     * @param array|null  $redirect_uris              Redirection URIs: https, or http on the loopback
-     * @param string|null $client_name                Name shown to the user (and given to the token)
-     * @param string      $token_endpoint_auth_method none (public client, PKCE), client_secret_post or client_secret_basic
-     * @param mixed       ...$metadata                Other fields of the metadata (ignored)
+     * The fields are the decoded JSON of an unknown agent, of any type: they are
+     * checked here, to answer with an OAuth error (RFC 7591) when invalid.
+     *
+     * @param mixed $redirect_uris              Redirection URIs (list): https, or http on the loopback
+     * @param mixed $client_name                Name shown to the user (and given to the token)
+     * @param mixed $token_endpoint_auth_method none (public client, PKCE), client_secret_post or client_secret_basic
+     * @param mixed ...$metadata                Other fields of the metadata (ignored)
      * @return string JSON: the client, 201
      */
     #[ApiRoute('/oauth/register', method: 'POST', public: true, raw: true)]
-    public static function register($redirect_uris = null, $client_name = null, $token_endpoint_auth_method = 'none', ...$metadata)
+    public static function register(mixed $redirect_uris = null, mixed $client_name = null, mixed $token_endpoint_auth_method = 'none', mixed ...$metadata): string
     {
         if (!Mcp::enabled()) {
             return self::error(403, 'access_denied', 'The MCP server is disabled');
@@ -117,7 +120,7 @@ final class OAuth {
         if (!in_array($token_endpoint_auth_method, self::AUTH_METHODS, true)) {
             return self::error(400, 'invalid_client_metadata', 'Unsupported token_endpoint_auth_method');
         }
-        $name = trim((string)$client_name);
+        $name = is_scalar($client_name) ? trim((string)$client_name) : '';
         $name = $name === '' ? 'AI agent' : mb_substr($name, 0, 100);
 
         // Registration is open: the number of clients is bounded
@@ -151,11 +154,25 @@ final class OAuth {
      * Authorization endpoint: checks the request, then sends the browser to the portal,
      * where the user logs in and allows the agent (or to the agent with an error).
      *
+     * The fields come from the query string (a string, or an array for "x[]=..."): only
+     * the non-empty strings are kept.
+     *
+     * @param string|array<mixed>|null $response_type         code
+     * @param string|array<mixed>|null $client_id             The registered client
+     * @param string|array<mixed>|null $redirect_uri          A registered redirection URI of the client
+     * @param string|array<mixed>|null $state                 State of the agent, given back
+     * @param string|array<mixed>|null $code_challenge        PKCE challenge
+     * @param string|array<mixed>|null $code_challenge_method S256
+     * @param string|array<mixed>|null $scope                 Scope asked (kept as is)
+     * @param string|array<mixed>|null $resource              Resource asked (kept as is)
+     * @param string|array<mixed>|null ...$other              Other parameters (ignored)
      * @return string Empty body, 302 (JSON error when the agent cannot be trusted)
      */
     #[ApiRoute('/oauth/authorize', method: 'GET', public: true, raw: true)]
-    public static function authorize($response_type = null, $client_id = null, $redirect_uri = null, $state = null,
-        $code_challenge = null, $code_challenge_method = null, $scope = null, $resource = null, ...$other)
+    public static function authorize(string|array|null $response_type = null, string|array|null $client_id = null,
+        string|array|null $redirect_uri = null, string|array|null $state = null, string|array|null $code_challenge = null,
+        string|array|null $code_challenge_method = null, string|array|null $scope = null, string|array|null $resource = null,
+        string|array|null ...$other): string
     {
         try {
             $location = self::authorizationRedirect(compact(self::REQUEST_FIELDS));
@@ -171,11 +188,11 @@ final class OAuth {
      * Where the authorize endpoint sends the browser: the consent page of the portal, or
      * the agent with an error.
      *
-     * @param array $request Fields of the authorization request
+     * @param array<string, mixed> $request Fields of the authorization request
      * @return string The URL
      * @throws Error If the client or its redirection URI is unknown: the browser must not go there
      */
-    public static function authorizationRedirect(array $request)
+    public static function authorizationRedirect(array $request): string
     {
         try {
             self::checkRequest($request);
@@ -189,12 +206,12 @@ final class OAuth {
     /**
      * Agent asking for the authorization, for the consent page of the portal.
      *
-     * @param string $request The authorization request (query string given to the portal)
-     * @return array name of the agent and host where the browser goes back
+     * @param string|null $request The authorization request (query string given to the portal)
+     * @return array{name: mixed, redirect_host: string|false|null} name of the agent and host where the browser goes back
      * @throws Error If the request is invalid
      */
     #[ApiRoute('/oauth/client', method: 'GET')]
-    public static function client($request)
+    public static function client(?string $request): array
     {
         $fields = self::parseRequest($request);
         $client = self::checkRequestOrFail($fields);
@@ -205,13 +222,13 @@ final class OAuth {
      * Answer of the user on the consent page: an authorization code for the agent
      * (valid 5 minutes, once), or a refusal.
      *
-     * @param string $request  The authorization request (query string given to the portal)
-     * @param bool   $approved True if the user allows the agent
-     * @return array redirect: where the browser goes back to the agent
+     * @param string|null          $request  The authorization request (query string given to the portal)
+     * @param bool|int|string|null $approved True if the user allows the agent (also "true"/"false", 1/0)
+     * @return array{redirect: string} redirect: where the browser goes back to the agent
      * @throws Error If the request is invalid, or the MCP server disabled (403)
      */
     #[ApiRoute('/oauth/approve', method: 'POST')]
-    public static function approve($request, $approved = true)
+    public static function approve(?string $request, bool|int|string|null $approved = true): array
     {
         $fields = self::parseRequest($request);
         $client = self::checkRequestOrFail($fields);
@@ -233,11 +250,26 @@ final class OAuth {
      * Token endpoint: an authorization code (with its PKCE verifier) or a refresh token
      * for an access token and a new refresh token.
      *
+     * The fields come from the form (or JSON) of the agent: strings, or arrays when
+     * malformed (refused by the checks).
+     *
+     * @param string|array<mixed>|null $grant_type    authorization_code or refresh_token
+     * @param string|array<mixed>|null $code          The authorization code
+     * @param string|array<mixed>|null $redirect_uri  The redirection URI of the authorization request
+     * @param string|array<mixed>|null $client_id     The client (or HTTP Basic)
+     * @param string|array<mixed>|null $code_verifier The PKCE verifier
+     * @param string|array<mixed>|null $refresh_token The refresh token
+     * @param string|array<mixed>|null $client_secret The secret of a confidential client (or HTTP Basic)
+     * @param string|array<mixed>|null $resource      Resource asked (ignored)
+     * @param string|array<mixed>|null $scope         Scope asked (ignored)
+     * @param string|array<mixed>|null ...$other      Other parameters (ignored)
      * @return string JSON: the tokens, or an OAuth error
      */
     #[ApiRoute('/oauth/token', method: 'POST', public: true, raw: true)]
-    public static function token($grant_type = null, $code = null, $redirect_uri = null, $client_id = null,
-        $code_verifier = null, $refresh_token = null, $client_secret = null, $resource = null, $scope = null, ...$other)
+    public static function token(string|array|null $grant_type = null, string|array|null $code = null,
+        string|array|null $redirect_uri = null, string|array|null $client_id = null, string|array|null $code_verifier = null,
+        string|array|null $refresh_token = null, string|array|null $client_secret = null, string|array|null $resource = null,
+        string|array|null $scope = null, string|array|null ...$other): string
     {
         if (!Mcp::enabled()) {
             return self::error(403, 'access_denied', 'The MCP server is disabled');
@@ -248,7 +280,8 @@ final class OAuth {
         $clientId = $basic[0] ?? $client_id;
         $secret = $basic[1] ?? $client_secret;
         $client = is_string($clientId) ? Db::queryOne("SELECT client_id, client_secret_hash, name FROM oauth_clients WHERE client_id = ?", "s", $clientId) : null;
-        if (!$client || ($client['client_secret_hash'] !== null && !hash_equals($client['client_secret_hash'], hash('sha256', (string)$secret)))) {
+        if (!$client || ($client['client_secret_hash'] !== null && (!is_string($secret)
+            || !hash_equals($client['client_secret_hash'], hash('sha256', $secret))))) {
             if (!headers_sent()) {
                 header('WWW-Authenticate: Basic realm="Carbure"');
             }
@@ -256,10 +289,11 @@ final class OAuth {
         }
 
         if ($grant_type === 'authorization_code') {
-            return self::exchangeCode($client, $code, $redirect_uri, $code_verifier);
+            return self::exchangeCode($client, is_string($code) ? $code : null, is_string($redirect_uri) ? $redirect_uri : null,
+                is_string($code_verifier) ? $code_verifier : null);
         }
         if ($grant_type === 'refresh_token') {
-            return self::refresh($client, $refresh_token);
+            return self::refresh($client, is_string($refresh_token) ? $refresh_token : null);
         }
         return self::error(400, 'unsupported_grant_type', 'grant_type must be authorization_code or refresh_token');
     }
@@ -270,7 +304,7 @@ final class OAuth {
      *
      * @return string The header value
      */
-    public static function challenge()
+    public static function challenge(): string
     {
         return 'Bearer realm="Carbure", resource_metadata="' . self::baseUrl() . '/.well-known/oauth-protected-resource"';
     }
@@ -281,7 +315,7 @@ final class OAuth {
      *
      * @return string The URL, without trailing slash
      */
-    public static function baseUrl()
+    public static function baseUrl(): string
     {
         if (Config::has('public_url')) {
             return rtrim(Config::get('public_url'), '/');
@@ -298,13 +332,13 @@ final class OAuth {
     /**
      * Exchange an authorization code (once) for the tokens.
      *
-     * @param array       $client   The client
-     * @param string|null $code     The authorization code
-     * @param string|null $redirect The redirection URI of the authorization request
-     * @param string|null $verifier The PKCE verifier
+     * @param array<string, mixed> $client   The client
+     * @param string|null          $code     The authorization code
+     * @param string|null          $redirect The redirection URI of the authorization request
+     * @param string|null          $verifier The PKCE verifier
      * @return string JSON
      */
-    private static function exchangeCode($client, $code, $redirect, $verifier)
+    private static function exchangeCode(array $client, ?string $code, ?string $redirect, ?string $verifier): string
     {
         $hash = hash('sha256', (string)$code);
         $row = Db::queryOne("SELECT user_id, redirect_uri, code_challenge FROM oauth_codes
@@ -314,7 +348,7 @@ final class OAuth {
         if (!$row || $redirect !== $row['redirect_uri']) {
             return self::error(400, 'invalid_grant', 'Invalid or expired authorization code');
         }
-        if (!is_string($verifier) || !preg_match('/^[A-Za-z0-9\-._~]{43,128}$/', $verifier)
+        if ($verifier === null || !preg_match('/^[A-Za-z0-9\-._~]{43,128}$/', $verifier)
             || !hash_equals($row['code_challenge'], self::base64url(hash('sha256', $verifier, true)))) {
             return self::error(400, 'invalid_grant', 'Invalid code_verifier');
         }
@@ -324,11 +358,11 @@ final class OAuth {
     /**
      * New tokens for a refresh token (rotation: the old ones stop working).
      *
-     * @param array       $client  The client
-     * @param string|null $refresh The refresh token
+     * @param array<string, mixed> $client  The client
+     * @param string|null          $refresh The refresh token
      * @return string JSON
      */
-    private static function refresh($client, $refresh)
+    private static function refresh(array $client, ?string $refresh): string
     {
         $row = Db::queryOne("SELECT id, user_id FROM api_tokens WHERE refresh_hash = ? AND client_id = ?",
             "ss", hash('sha256', (string)$refresh), $client['client_id']);
@@ -343,11 +377,11 @@ final class OAuth {
      * Create the access token (an API token of the user, named after the agent) and its
      * refresh token; the previous tokens of the same agent for this user are replaced.
      *
-     * @param int   $userId The user
-     * @param array $client The client
+     * @param int                  $userId The user
+     * @param array<string, mixed> $client The client
      * @return string JSON
      */
-    private static function issueTokens($userId, $client)
+    private static function issueTokens(int $userId, array $client): string
     {
         Db::execute("DELETE FROM api_tokens WHERE user_id = ? AND client_id = ?", "is", $userId, $client['client_id']);
 
@@ -369,12 +403,12 @@ final class OAuth {
     /**
      * Check an authorization request.
      *
-     * @param array $request Fields of the request
-     * @return array The client
+     * @param array<string, mixed> $request Fields of the request
+     * @return array<string, mixed> The client
      * @throws Error If the client or its redirection URI is unknown (no redirection possible)
      * @throws InvalidArgumentException Other errors, with the OAuth error code, sent back to the agent
      */
-    private static function checkRequest(array $request)
+    private static function checkRequest(array $request): array
     {
         $clientId = $request['client_id'] ?? null;
         $client = is_string($clientId) ? Db::queryOne("SELECT client_id, name, redirect_uris FROM oauth_clients WHERE client_id = ?", "s", $clientId) : null;
@@ -399,11 +433,11 @@ final class OAuth {
     /**
      * Check an authorization request coming back from the portal.
      *
-     * @param array $request Fields of the request
-     * @return array The client
+     * @param array<string, mixed> $request Fields of the request
+     * @return array<string, mixed> The client
      * @throws Error If the request is invalid (400), or the MCP server disabled (403)
      */
-    private static function checkRequestOrFail(array $request)
+    private static function checkRequestOrFail(array $request): array
     {
         try {
             return self::checkRequest($request);
@@ -418,10 +452,10 @@ final class OAuth {
     /**
      * Fields of an authorization request given as a query string.
      *
-     * @param string $request The query string
-     * @return array The fields
+     * @param string|null $request The query string
+     * @return array<string, string> The fields
      */
-    private static function parseRequest($request)
+    private static function parseRequest(?string $request): array
     {
         parse_str((string)$request, $fields);
         return self::requestFields($fields);
@@ -430,10 +464,10 @@ final class OAuth {
     /**
      * Keep the known fields of an authorization request, as strings.
      *
-     * @param array $request The request
-     * @return array The fields
+     * @param array<mixed> $request The request
+     * @return array<string, string> The fields
      */
-    private static function requestFields(array $request)
+    private static function requestFields(array $request): array
     {
         $fields = [];
         foreach (self::REQUEST_FIELDS as $key) {
@@ -447,11 +481,11 @@ final class OAuth {
     /**
      * Redirection URI of the request with parameters (and the state of the agent).
      *
-     * @param array $request The request (checked redirect_uri)
-     * @param array $params  Parameters to add
+     * @param array<string, mixed>  $request The request (checked redirect_uri)
+     * @param array<string, string> $params  Parameters to add
      * @return string The URL
      */
-    private static function redirectUri(array $request, array $params)
+    private static function redirectUri(array $request, array $params): string
     {
         if (isset($request['state'])) {
             $params['state'] = $request['state'];
@@ -466,7 +500,7 @@ final class OAuth {
      * @param mixed $uri The URI
      * @return bool True if allowed
      */
-    private static function validRedirectUri($uri)
+    private static function validRedirectUri(mixed $uri): bool
     {
         if (!is_string($uri) || strlen($uri) > 500 || str_contains($uri, '#')) {
             return false;
@@ -482,9 +516,9 @@ final class OAuth {
     /**
      * Client id and secret of an HTTP Basic authentication.
      *
-     * @return array|null [client_id, client_secret]
+     * @return list<string>|null [client_id, client_secret]
      */
-    private static function basicCredentials()
+    private static function basicCredentials(): ?array
     {
         $header = (string)Webservice::getHeader('Authorization');
         if (!preg_match('/^Basic\s+(.+)$/i', $header, $m) || ($decoded = base64_decode($m[1], true)) === false || !str_contains($decoded, ':')) {
@@ -499,7 +533,7 @@ final class OAuth {
      * @param string $bytes The bytes
      * @return string The encoded value
      */
-    private static function base64url($bytes)
+    private static function base64url(string $bytes): string
     {
         return rtrim(strtr(base64_encode($bytes), '+/', '-_'), '=');
     }
@@ -507,14 +541,15 @@ final class OAuth {
     /**
      * JSON response.
      *
-     * @param array $data   The data
-     * @param int   $status The HTTP status
+     * @param array<string, mixed> $data   The data
+     * @param int                  $status The HTTP status
      * @return string The JSON
      */
-    private static function json($data, $status = 200)
+    private static function json(array $data, int $status = 200): string
     {
         http_response_code($status);
-        return json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        // Invalid UTF-8 (a client name...) is replaced: the answer is always JSON
+        return json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR);
     }
 
     /**
@@ -525,7 +560,7 @@ final class OAuth {
      * @param string $description The description
      * @return string The JSON
      */
-    private static function error($status, $error, $description)
+    private static function error(int $status, string $error, string $description): string
     {
         return self::json(['error' => $error, 'error_description' => $description], $status);
     }

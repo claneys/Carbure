@@ -35,10 +35,10 @@ final class Insight {
     /**
      * All the insights with their SQL (administrators).
      *
-     * @return array The insights: id, name, color, sql
+     * @return list<array<string, mixed>> The insights: id, name, color, sql
      */
     #[ApiRoute('/insight', method: 'GET')]
-    public static function get()
+    public static function get(): array
     {
         User::requireAdmin();
         return Db::execute("SELECT id, name, color, icon, `sql` FROM budget_insight ORDER BY id", "")->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -47,15 +47,15 @@ final class Insight {
     /**
      * Create an insight (administrators); the query is tested on the current month.
      *
-     * @param string $name  The name (1 to 20 characters)
-     * @param string $color One of Insight::COLORS (red, orange, amber... gray)
+     * @param string      $name  The name (1 to 20 characters)
+     * @param string      $color One of Insight::COLORS (red, orange, amber... gray)
      * @param string      $sql   SELECT … AS amount, with {month} and {year}
      * @param string|null $icon  Material icon (optional: chosen from the name)
-     * @return array The insight with the amount of the current month
+     * @return array<string, mixed> The insight with the amount of the current month
      * @throws Error If a field or the query is invalid
      */
     #[ApiRoute('/insight', method: 'POST')]
-    public static function create($name, $color, $sql, $icon = null)
+    public static function create(string $name, string $color, string $sql, ?string $icon = null): array
     {
         User::requireAdmin();
         [$name, $color, $sql] = self::validate($name, $color, $sql);
@@ -70,16 +70,16 @@ final class Insight {
     /**
      * Modify an insight (administrators); the query is tested on the current month.
      *
-     * @param int    $id    The insight
-     * @param string $name  The name (1 to 20 characters)
-     * @param string $color One of Insight::COLORS (red, orange, amber... gray)
+     * @param int         $id    The insight
+     * @param string      $name  The name (1 to 20 characters)
+     * @param string      $color One of Insight::COLORS (red, orange, amber... gray)
      * @param string      $sql   SELECT … AS amount, with {month} and {year}
      * @param string|null $icon  Material icon (optional: chosen from the name)
-     * @return array The insight with the amount of the current month
+     * @return array<string, mixed> The insight with the amount of the current month
      * @throws Error If not found, or a field or the query is invalid
      */
     #[ApiRoute('/insight', method: 'PUT')]
-    public static function update($id, $name, $color, $sql, $icon = null)
+    public static function update(int $id, string $name, string $color, string $sql, ?string $icon = null): array
     {
         User::requireAdmin();
         if (!Db::queryOne("SELECT id FROM budget_insight WHERE id = ?", "i", $id)) {
@@ -91,20 +91,20 @@ final class Insight {
 
         Db::execute("UPDATE budget_insight SET name = ?, color = ?, icon = ?, `sql` = ? WHERE id = ?", "ssssi", $name, $color, $icon, $sql, $id);
 
-        return ['id' => (int)$id, 'name' => $name, 'color' => $color, 'icon' => $icon, 'sql' => $sql, 'amount' => $amount];
+        return ['id' => $id, 'name' => $name, 'color' => $color, 'icon' => $icon, 'sql' => $sql, 'amount' => $amount];
     }
 
     /**
      * Check a query while it is typed (administrators): the same checks as when
      * saving, and its result on a month.
      *
-     * @param string   $sql   The query
-     * @param int|null $month The month (current month by default)
-     * @param int|null $year  The year (current year by default)
-     * @return array valid, amount (if valid), error (if not)
+     * @param string          $sql   The query
+     * @param int|string|null $month The month (current month by default)
+     * @param int|string|null $year  The year (current year by default)
+     * @return array{valid: bool, amount?: float|null, error?: string|null} valid, amount (if valid), error (if not)
      */
     #[ApiRoute('/insight/check', method: 'POST')]
-    public static function check($sql, $month = null, $year = null)
+    public static function check(string $sql, int|string|null $month = null, int|string|null $year = null): array
     {
         User::requireAdmin();
         try {
@@ -124,12 +124,12 @@ final class Insight {
      * @return string|null The icon, or null for the default one
      * @throws Error If invalid
      */
-    private static function icon($icon)
+    private static function icon(?string $icon): ?string
     {
         if ($icon === null || $icon === '') {
             return null;
         }
-        if (!preg_match('/^[a-z0-9_]{1,50}$/', (string)$icon)) {
+        if (!preg_match('/^[a-z0-9_]{1,50}$/', $icon)) {
             throw new Error("Invalid icon", 400);
         }
         return $icon;
@@ -143,7 +143,7 @@ final class Insight {
      * @throws Error If not found
      */
     #[ApiRoute('/insight', method: 'DELETE')]
-    public static function delete($id)
+    public static function delete(int $id): bool
     {
         User::requireAdmin();
         $stmt = Db::execute("DELETE FROM budget_insight WHERE id = ?", "i", $id);
@@ -161,7 +161,7 @@ final class Insight {
      * @param int    $year  The year
      * @return float|null The amount (null if the query fails)
      */
-    public static function amount($sql, $month, $year)
+    public static function amount(string $sql, int $month, int $year): ?float
     {
         try {
             return self::run($sql, $month, $year);
@@ -177,12 +177,12 @@ final class Insight {
      * @param string $name  The name
      * @param string $color The color
      * @param string $sql   The query
-     * @return array [name, color, sql] normalized
+     * @return array{string, string, string} [name, color, sql] normalized
      * @throws Error If a field is invalid
      */
-    public static function validate($name, $color, $sql)
+    public static function validate(string $name, string $color, string $sql): array
     {
-        $name = trim((string)$name);
+        $name = trim($name);
         if ($name === '' || mb_strlen($name) > 20) {
             throw new Error("The name must contain 1 to 20 characters", 400);
         }
@@ -190,7 +190,7 @@ final class Insight {
             throw new Error("Invalid color", 400);
         }
 
-        $sql = rtrim(trim((string)$sql), "; \t\r\n");
+        $sql = rtrim(trim($sql), "; \t\r\n");
         if ($sql === '' || mb_strlen($sql) > 500) {
             throw new Error("The query must contain 1 to 500 characters", 400);
         }
@@ -221,7 +221,7 @@ final class Insight {
      * @return float|null The amount
      * @throws Error If the query fails
      */
-    private static function test($sql)
+    private static function test(string $sql): ?float
     {
         try {
             return self::run($sql, ...Month::resolve());
@@ -239,9 +239,9 @@ final class Insight {
      * @return float|null The amount
      * @throws Throwable If the query fails or does not return an amount
      */
-    private static function run($sql, $month, $year)
+    private static function run(string $sql, int $month, int $year): ?float
     {
-        $sql = str_replace(['{month}', '{year}'], [(string)(int)$month, (string)(int)$year], $sql);
+        $sql = str_replace(['{month}', '{year}'], [(string)$month, (string)$year], $sql);
 
         Db::query("START TRANSACTION READ ONLY");
         try {

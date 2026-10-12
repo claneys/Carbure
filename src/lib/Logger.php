@@ -14,25 +14,34 @@
 final class Logger {
 
     // Unique ID of the request (or of the script)
-    private static $UID;
+    private static ?string $UID = null;
 
-    // Context of the entries: user once authenticated
-    private static $context = [];
+    /**
+     * Context of the entries: user once authenticated
+     * @var array<string, mixed>
+     */
+    private static array $context = [];
 
-    // Request of the entries: ip, method, path (built once)
-    private static $request = null;
-    
-    // Log buffer for batched writes
-    private static $buffer = [];
+    /**
+     * Request of the entries: ip, method, path (built once)
+     * @var array<string, string|null>|null
+     */
+    private static ?array $request = null;
+
+    /**
+     * Log buffer for batched writes
+     * @var list<string>
+     */
+    private static array $buffer = [];
     
     // Maximum buffer size before auto-flush
-    private static $bufferSize = 50;
+    private static int $bufferSize = 50;
     
     // Cache for log file path
-    private static $logFilePath = null;
+    private static ?string $logFilePath = null;
     
     // Shutdown handler registered flag
-    private static $shutdownRegistered = false;
+    private static bool $shutdownRegistered = false;
 
     // Log level priorities
     private const LEVELS = [
@@ -43,7 +52,7 @@ final class Logger {
     ];
 
     // Cached minimum log level
-    private static $minLevel = null;
+    private static ?int $minLevel = null;
 
     /** Name of a log file: carbure_[scope_]YYYYMMDD.log (the date is captured) */
     public const FILE_PATTERN = '/^carbure_[a-z0-9_]*?(\d{8})\.log$/';
@@ -53,7 +62,7 @@ final class Logger {
      *
      * @return string The unique ID
      */
-    public static function getUID(){
+    public static function getUID(): string {
         if (self::$UID === null){
             // The id given by a proxy (X-Request-Id) follows the request, if it is safe
             $given = $_SERVER['HTTP_X_REQUEST_ID'] ?? '';
@@ -69,7 +78,7 @@ final class Logger {
      * @param mixed  $value The value (null removes it)
      * @return void
      */
-    public static function setContext($key, $value)
+    public static function setContext(string $key, mixed $value): void
     {
         if ($value === null) {
             unset(self::$context[$key]);
@@ -86,7 +95,7 @@ final class Logger {
      *
      * @return string|null The address, null outside of an HTTP request
      */
-    public static function clientIp()
+    public static function clientIp(): ?string
     {
         $peer = $_SERVER['REMOTE_ADDR'] ?? null;
         if ($peer === null || !self::isPrivate($peer)) {
@@ -112,7 +121,7 @@ final class Logger {
      * @param string $ip The address
      * @return bool
      */
-    private static function isPrivate($ip)
+    private static function isPrivate(string $ip): bool
     {
         return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false;
     }
@@ -120,9 +129,9 @@ final class Logger {
     /**
      * Fields of the current HTTP request: ip, method and path (tokens of the URL masked).
      *
-     * @return array
+     * @return array<string, string|null>
      */
-    private static function request()
+    private static function request(): array
     {
         if (self::$request === null) {
             self::$request = isset($_SERVER['REQUEST_METHOD']) ? [
@@ -140,9 +149,9 @@ final class Logger {
      * @param string $url The URL
      * @return string
      */
-    public static function maskUrl($url)
+    public static function maskUrl(string $url): string
     {
-        return preg_replace('/([?&](?:token|access_token|code)=)[^&]*/i', '$1***', (string)$url);
+        return preg_replace('/([?&](?:token|access_token|code)=)[^&]*/i', '$1***', $url) ?? $url;
     }
 
     /**
@@ -151,7 +160,7 @@ final class Logger {
      *
      * @return void
      */
-    public static function access()
+    public static function access(): void
     {
         $status = (int)(http_response_code() ?: 200);
         $start = $_SERVER['REQUEST_TIME_FLOAT'] ?? microtime(true);
@@ -166,7 +175,7 @@ final class Logger {
      *
      * @return int The minimum log level priority
      */
-    private static function getMinLevel()
+    private static function getMinLevel(): int
     {
         if (self::$minLevel === null) {
             $configured = strtoupper(Config::get('log_level') ?? 'INFO');
@@ -182,7 +191,7 @@ final class Logger {
      * @param mixed|null $data The data to log
      * @return void
      */
-    public static function debug($msg, $data=null){
+    public static function debug(string $msg, mixed $data = null): void {
         self::log($msg, $data, "DEBUG");
     }
 
@@ -193,7 +202,7 @@ final class Logger {
      * @param mixed|null $data The data to log
      * @return void
      */
-    public static function info($msg, $data=null){
+    public static function info(string $msg, mixed $data = null): void {
         self::log($msg, $data, "INFO");
     }
 
@@ -204,7 +213,7 @@ final class Logger {
      * @param mixed|null $data The data to log
      * @return void
      */
-    public static function warn($msg, $data=null){
+    public static function warn(string $msg, mixed $data = null): void {
         self::log($msg, $data, "WARNING");
     }
 
@@ -215,7 +224,7 @@ final class Logger {
      * @param mixed|null $data The data to log
      * @return void
      */
-    public static function error($msg, $data=null){
+    public static function error(string $msg, mixed $data = null): void {
         self::log($msg, $data, "ERROR");
     }
 
@@ -227,7 +236,7 @@ final class Logger {
      * @param string     $level The log level
      * @return void
      */
-    private static function log($msg, $data, $level){
+    private static function log(string $msg, mixed $data, string $level): void {
 
         // Skip if below minimum log level
         if (self::LEVELS[$level] < self::getMinLevel()) {
@@ -237,7 +246,7 @@ final class Logger {
         // One JSON object per line: the newlines of a message cannot fake another entry
         $entry = ['time' => (new DateTimeImmutable())->format('Y-m-d\TH:i:s.vP'), 'level' => $level, 'uid' => self::getUID()]
             + self::request() + self::$context
-            + ['caller' => self::getCaller(), 'message' => (string)$msg];
+            + ['caller' => self::getCaller(), 'message' => $msg];
         if ($data !== null) {
             $entry['context'] = $data;
         }
@@ -263,7 +272,7 @@ final class Logger {
      *
      * @return string The caller info formatted as "File.php : Class::method"
      */
-    private static function getCaller()
+    private static function getCaller(): string
     {
         $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 4);
         $caller = $trace[3] ?? $trace[2] ?? [];
@@ -279,7 +288,7 @@ final class Logger {
      *
      * @return void
      */
-    public static function flush(){
+    public static function flush(): void {
         if (empty(self::$buffer)) {
             return;
         }
@@ -302,7 +311,7 @@ final class Logger {
      *
      * @return int The number of days
      */
-    public static function retentionDays()
+    public static function retentionDays(): int
     {
         return Config::has('log_retention_days') ? max(0, (int)Config::get('log_retention_days')) : 0;
     }
@@ -312,7 +321,7 @@ final class Logger {
      *
      * @return string The directory (data/logs)
      */
-    public static function dir()
+    public static function dir(): string
     {
         return Config::get('data_dir') . '/logs';
     }
@@ -320,9 +329,9 @@ final class Logger {
     /**
      * The log files of the instance.
      *
-     * @return array Path of each file, by name
+     * @return array<string, string> Path of each file, by name
      */
-    public static function files()
+    public static function files(): array
     {
         $files = [];
         foreach (glob(self::dir() . '/carbure_*.log') ?: [] as $path) {
@@ -338,9 +347,9 @@ final class Logger {
      * in their name (carbure_[scope_]YYYYMMDD.log).
      *
      * @param int|null $days Days to keep (default: the configuration); 0 keeps everything
-     * @return array The names of the deleted files
+     * @return list<string> The names of the deleted files
      */
-    public static function purge($days = null)
+    public static function purge(?int $days = null): array
     {
         $days ??= self::retentionDays();
         if ($days <= 0) {
@@ -365,7 +374,7 @@ final class Logger {
      *
      * @return string The log file path
      */
-    private static function getLogFilePath()
+    private static function getLogFilePath(): string
     {
         if (self::$logFilePath === null) {
             $postfix = date("Ymd");
@@ -381,8 +390,9 @@ final class Logger {
     /**
      * Set buffer size for performance tuning
      * @param int $size Number of log entries before auto-flush
+     * @return void
      */
-    public static function setBufferSize($size){
-        self::$bufferSize = max(1, (int)$size);
+    public static function setBufferSize(int $size): void {
+        self::$bufferSize = max(1, $size);
     }
 }

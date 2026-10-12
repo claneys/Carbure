@@ -27,12 +27,12 @@ final class Webservice {
      * Return an error message in JSON and log the message.
      *
      * @param int       $code      The HTTP error code
-     * @param Exception $exception The exception to report
+     * @param Throwable $exception The exception or error to report
      * @return void
      */
-    public static function error($code,$exception)
-    {        
-        Logger::error($exception->getMessage(),$exception->getTrace());
+    public static function error(int $code, Throwable $exception): void
+    {
+        Logger::error($exception->getMessage(), $exception->getTrace());
 
         if (!headers_sent()) {
             http_response_code($code);
@@ -58,7 +58,7 @@ final class Webservice {
      * @param string $name The header name (e.g. Authorization)
      * @return string|null The header value or null if not found
      */
-    public static function getHeader($name)
+    public static function getHeader(string $name): ?string
     {
         // Web servers expose the headers as HTTP_* server variables
         $key = 'HTTP_' . strtoupper(str_replace('-', '_', $name));
@@ -83,13 +83,13 @@ final class Webservice {
      *
      * @param string|null $rawPayload  The raw body (read from php://input when null)
      * @param string|null $contentType The Content-Type of the body (header of the request when null)
-     * @return array The decoded JSON payload, or the fields of a form (OAuth token endpoint)
-     * @throws Error If the JSON is invalid
+     * @return array<mixed> The decoded JSON payload, or the fields of a form (OAuth token endpoint)
+     * @throws Error If the JSON is invalid or is not an object
      */
-    public static function getPayload($rawPayload = null, $contentType = null)
+    public static function getPayload(?string $rawPayload = null, ?string $contentType = null): array
     {
         // Get the raw POST data
-        $rawPayload ??= file_get_contents('php://input');
+        $rawPayload ??= (string)file_get_contents('php://input');
         
         if (empty($rawPayload)) {
             return [];
@@ -110,8 +110,13 @@ final class Webservice {
             throw new Error("Invalid JSON payload: " . json_last_error_msg());
         }
 
+        // The parameters of a route: a JSON object (or nothing)
+        if ($payload !== null && !is_array($payload)) {
+            throw new Error("Invalid JSON payload: an object is expected");
+        }
+
         Logger::debug("Payload", is_array($payload) ? self::maskSensitive($payload) : null);
-        
+
         return $payload ?? [];
     }
 
@@ -121,14 +126,14 @@ final class Webservice {
      * @return string The JSON encoded response
      * @throws Error If the route is not found or access is denied
      */
-    public static function exec()
+    public static function exec(): string
     {
         // Get the request path and HTTP method
-        $requestPath = strtok($_SERVER["REQUEST_URI"], '?');
+        $requestPath = (string)strtok($_SERVER["REQUEST_URI"], '?');
         $httpMethod = $_SERVER['REQUEST_METHOD'];
         
         // Remove /api prefix from request path
-        $requestPath = preg_replace('#^/api#', '', $requestPath);
+        $requestPath = (string)preg_replace('#^/api#', '', $requestPath);
         
         $data = self::getPayload();
 
@@ -140,23 +145,24 @@ final class Webservice {
         }
 
         // Set appropriate headers based on route type
-        self::setResponseHeaders($route['apiRoute']->stream ?? false);
+        self::setResponseHeaders($route['apiRoute']->stream);
 
         // Check access control
         self::checkAccess($route['apiRoute']);
 
         // Call the service
-        $response = self::callService($route['class'], $route['method'], $data, $route['apiRoute']->raw ?? false);
+        $response = self::callService($route['class'], $route['method'], $data, $route['apiRoute']->raw);
 
         // A stream has already sent its events: nothing more to output
-        return ($route['apiRoute']->stream ?? false) ? '' : $response;
+        return $route['apiRoute']->stream ? '' : $response;
     }
 
     /**
      * Check access control for the endpoint
      * @param ApiRoute $apiRoute The API route metadata
+     * @return void
      */
-    private static function checkAccess($apiRoute)
+    private static function checkAccess(ApiRoute $apiRoute): void
     {
         // Public endpoints don't require authentication
         if ($apiRoute->public) {
@@ -172,8 +178,9 @@ final class Webservice {
     /**
      * Set appropriate HTTP response headers
      * @param bool $isStream Whether the response is a Server-Sent Events stream
+     * @return void
      */
-    private static function setResponseHeaders($isStream)
+    private static function setResponseHeaders(bool $isStream): void
     {
         self::securityHeaders();
 
@@ -201,7 +208,7 @@ final class Webservice {
      *
      * @return void
      */
-    public static function securityHeaders()
+    public static function securityHeaders(): void
     {
         if (headers_sent()) {
             return;
@@ -219,12 +226,12 @@ final class Webservice {
      *
      * @param string $resource The resource class name
      * @param string $method   The method name to call
-     * @param array  $data     The request data
+     * @param array<mixed> $data The request data
      * @param bool   $raw      True if the method returns the response body itself
      * @return string The JSON encoded response
      * @throws Exception If the response cannot be encoded in JSON (invalid UTF-8...)
      */
-    public static function callService($resource, $method, $data, $raw = false)
+    public static function callService(string $resource, string $method, array $data, bool $raw = false): string
     {
         Logger::info("Calling : $resource.$method", $data ? self::maskSensitive($data) : null);
 
@@ -267,13 +274,13 @@ final class Webservice {
      * @param mixed $value The response
      * @return mixed The response with numbers
      */
-    public static function normalizeNumbers($value)
+    public static function normalizeNumbers(mixed $value): mixed
     {
         if (is_array($value)) {
             return array_map([self::class, 'normalizeNumbers'], $value);
         }
         if (is_string($value) && preg_match('/^-?(0|[1-9][0-9]{0,14})(\.[0-9]{1,15})?$/', $value)) {
-            return $value + 0;
+            return str_contains($value, '.') ? (float)$value : (int)$value;
         }
         return $value;
     }
@@ -281,10 +288,10 @@ final class Webservice {
     /**
      * Mask sensitive values (passwords, tokens) before logging.
      *
-     * @param array $data The request data
-     * @return array The data with sensitive values masked
+     * @param array<mixed> $data The request data
+     * @return array<mixed> The data with sensitive values masked
      */
-    public static function maskSensitive($data)
+    public static function maskSensitive(array $data): array
     {
         foreach ($data as $key => $value) {
             // settings: the bank credentials sent to woob, whatever their names;
@@ -302,8 +309,9 @@ final class Webservice {
     /**
      * Send a progress event via Server-Sent Events
      * @param string $message Progress message
+     * @return void
      */
-    public static function sendProgress($message)
+    public static function sendProgress(string $message): void
     {
         echo "data: " . $message . "\n\n";
         
@@ -317,8 +325,10 @@ final class Webservice {
      * Send an SSE comment as heartbeat to keep the connection alive.
      * SSE comments (lines starting with :) are ignored by EventSource clients
      * but keep proxies and TCP connections from timing out.
+     *
+     * @return void
      */
-    public static function sendHeartbeat()
+    public static function sendHeartbeat(): void
     {
         echo ": heartbeat\n\n";
         

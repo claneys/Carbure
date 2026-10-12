@@ -25,7 +25,7 @@ final class System {
      * @throws Exception If the configuration file cannot be written
      */
     #[ApiRoute('/system/jwt-secret', method: 'POST')]
-    public static function rotateJwtSecret()
+    public static function rotateJwtSecret(): bool
     {
         User::requireAdmin();
         $file = self::$configFile ?? Config::get('config_file');
@@ -46,7 +46,7 @@ final class System {
      *
      * @return bool True if the secret is weak
      */
-    public static function weakJwtSecret()
+    public static function weakJwtSecret(): bool
     {
         $secret = (string)(Config::has('jwtsecret') ? Config::get('jwtsecret') : '');
         return strlen($secret) < 32 || in_array($secret, ['secret', 'changeme', 'change-me'], true);
@@ -56,11 +56,11 @@ final class System {
      * Health of the instance, for the Docker HEALTHCHECK and supervision tools
      * (no authentication, no data): the database answers.
      *
-     * @return array status (ok), version (of Carbure), database (ok), schema (version)
+     * @return array<string, string|null> status (ok), version (of Carbure), database (ok), schema (version)
      * @throws Exception If the database does not answer (HTTP 500)
      */
     #[ApiRoute('/health', method: 'GET', public: true)]
-    public static function health()
+    public static function health(): array
     {
         Db::query("SELECT 1");
         return ['status' => 'ok', 'version' => self::version(), 'database' => 'ok', 'schema' => (new Migrator(Db::getConnection()))->version()];
@@ -71,7 +71,7 @@ final class System {
      *
      * @return string The version
      */
-    public static function version()
+    public static function version(): string
     {
         $file = dirname(__DIR__, 2) . '/VERSION';
         $version = is_file($file) ? trim((string)file_get_contents($file)) : '';
@@ -81,10 +81,10 @@ final class System {
     /**
      * Log files of the instance (administrators), newest first.
      *
-     * @return array The files: name, size (bytes), modified (Y-m-d H:i:s)
+     * @return list<array{name: string, size: int|false, modified: string}> The files: name, size (bytes), modified (Y-m-d H:i:s)
      */
     #[ApiRoute('/system/logs', method: 'GET')]
-    public static function logs()
+    public static function logs(): array
     {
         User::requireAdmin();
         $files = [];
@@ -99,10 +99,10 @@ final class System {
      * How long the log files are kept (administrators): they are deleted at the end
      * of the bank synchronization.
      *
-     * @return array days (0: kept forever)
+     * @return array{days: int} days (0: kept forever)
      */
     #[ApiRoute('/system/logs/retention', method: 'GET')]
-    public static function logRetention()
+    public static function logRetention(): array
     {
         User::requireAdmin();
         return ['days' => Logger::retentionDays()];
@@ -115,12 +115,12 @@ final class System {
      * @param string      $file   The file name (carbure_*.log)
      * @param string|null $level  Minimum level: DEBUG, INFO, WARN or ERROR
      * @param string|null $search Text to find in the entries (or a request uid)
-     * @param int         $limit  Maximum number of entries (1 to 1000)
-     * @return array file, entries [{time, level, uid, caller, message}], truncated
+     * @param int|string  $limit  Maximum number of entries (1 to 1000; query string)
+     * @return array{file: string, entries: list<array<string, mixed>>, truncated: bool} file, entries [{time, level, uid, caller, message}], truncated
      * @throws Error If the file name is invalid or the file does not exist
      */
     #[ApiRoute('/system/logs/entries', method: 'GET')]
-    public static function logEntries($file, $level = null, $search = null, $limit = 200)
+    public static function logEntries(string $file, ?string $level = null, ?string $search = null, int|string $limit = 200): array
     {
         User::requireAdmin();
         // A file of the logs directory only: no path
@@ -171,10 +171,10 @@ final class System {
      * An entry of a log file as shown in the portal.
      *
      * @param string $part A JSON line, or a text entry of the files written before
-     * @return array|null time (Y-m-d H:i:s), level, uid, caller, message (with its
-     *                    context), and for a JSON entry ip, user, method, path
+     * @return array<string, mixed>|null time (Y-m-d H:i:s), level, uid, caller, message (with its
+     *                                    context), and for a JSON entry ip, user, method, path
      */
-    private static function logEntry($part)
+    private static function logEntry(string $part): ?array
     {
         $part = rtrim($part);
         if (str_starts_with($part, '{')) {
@@ -208,10 +208,10 @@ final class System {
     /**
      * Version of the database schema and migrations to apply (administrators).
      *
-     * @return array version, pending
+     * @return array<string, mixed> version, pending
      */
     #[ApiRoute('/system/schema', method: 'GET')]
-    public static function schema()
+    public static function schema(): array
     {
         User::requireAdmin();
         $migrator = new Migrator(Db::getConnection());
@@ -221,11 +221,11 @@ final class System {
     /**
      * Apply the pending migrations (administrators).
      *
-     * @return array version, applied
+     * @return array<string, mixed> version, applied
      * @throws Exception If a migration fails
      */
     #[ApiRoute('/system/migrate', method: 'POST')]
-    public static function migrate()
+    public static function migrate(): array
     {
         User::requireAdmin();
         $migrator = new Migrator(Db::getConnection());

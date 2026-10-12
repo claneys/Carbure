@@ -18,6 +18,7 @@ icon: material/code-braces
 | `tests/e2e/` | Tests de bout en bout du portail (Playwright) |
 | `tools/migrate.php` | Migrations du schéma (`--status`, `--dry-run`, `--baseline`) |
 | `tools/phpunit.phar`, `tools/coverage-check.php` | PHPUnit 11 et contrôle du seuil de couverture |
+| `composer.json`, `phpstan.neon`, `tools/phpstan/` | Outils de développement (PHPStan, installé par Composer dans `vendor/`) et règle de typage de Carbure ; l'API elle-même n'a aucune dépendance |
 | `docker/` | `Dockerfile`, `docker-compose.yml` (avec MariaDB), configuration nginx et PHP-FPM, `entrypoint.sh` |
 | `data/` (non versionné) | Données de l'instance : `conf/` (`prod.ini`, `certs/`), `logs/`, `cache/`, `woob/` (banques et identifiants) |
 | `VERSION` | Version de Carbure (`dev` dans le dépôt, écrite par le build de release) |
@@ -111,6 +112,21 @@ final class Transaction {
     L'API est utilisée par l'app iOS, mise à jour indépendamment du serveur. N'ajouter
     que des routes ou des paramètres facultatifs ; ne jamais renommer ni supprimer.
 
+## Types
+
+Chaque paramètre, valeur de retour et propriété du code PHP a un type natif (vérifié par
+PHP à l'exécution) ; les tableaux sont détaillés dans la PHPDoc (`array<string, mixed>`).
+PHPStan le contrôle (niveau 6 et règle `tools/phpstan/NativeTypesRule.php`) :
+
+```bash
+composer install     # une fois : PHPStan dans vendor/ (outil de développement)
+composer phpstan
+```
+
+Pas de `declare(strict_types=1)` : les paramètres des requêtes arrivent en chaînes
+(query string) et sont convertis. Un indicateur de route n'est jamais typé `bool` seul
+(`"false"` deviendrait vrai).
+
 ## Tests
 
 ```bash
@@ -186,7 +202,7 @@ git config core.hooksPath .githooks
 
 | Hook | Vérification |
 |---|---|
-| `pre-commit` | `php -l` et `node --check` sur les fichiers indexés |
+| `pre-commit` | `php -l` et `node --check` sur les fichiers indexés, PHPStan si un fichier PHP est indexé (`composer install` requis) |
 | `pre-push` | Tests unitaires PHP et du portail |
 
 ## Intégration et livraison continues

@@ -11,8 +11,11 @@
 
 final class Config {
 
-    // Static settings
-    private static $SETTINGS = [];
+    /**
+     * Static settings
+     * @var array<string, mixed>
+     */
+    private static array $SETTINGS = [];
 
     /**
      * Get the config file path based on the environment.
@@ -22,7 +25,7 @@ final class Config {
      * @return string The config file path
      * @throws Exception If the config file is not found
      */
-    private static function getConfigFile($path,$env){
+    private static function getConfigFile(string $path, string $env): string {
 
         // The configuration of the instance is in data/conf; conf/ only holds the
         // versioned templates (prod.sample.ini) and the configuration of the tests
@@ -39,16 +42,20 @@ final class Config {
      *
      * @param string $env The environment (prod, dev, test)
      * @return void
-     * @throws Exception If the config file is not found
+     * @throws Exception If the config file is not found or invalid
      */ 
-    public static function load($env="prod"){
+    public static function load(string $env = "prod"): void {
         
         // Install directory is the root of the project
         $INSTALL_DIR = dirname(dirname(__DIR__));
 
         // Load the settings
         $configFile = self::getConfigFile($INSTALL_DIR,$env);
-        self::$SETTINGS =  parse_ini_file($configFile);
+        $settings = parse_ini_file($configFile);
+        if ($settings === false) {
+            throw new Exception("Invalid config file: $configFile");
+        }
+        self::$SETTINGS = $settings;
 
         // Debug mode
         if (self::get('log_level') === 'debug') {
@@ -70,7 +77,7 @@ final class Config {
      * @return mixed The setting value
      * @throws Exception If the setting is not found
      */
-    public static function get($key){
+    public static function get(string $key): mixed {
        if (array_key_exists($key, self::$SETTINGS)) {
            return self::$SETTINGS[$key];
        } else {
@@ -84,7 +91,7 @@ final class Config {
      * @param string $key The setting key
      * @return bool True if the setting is defined
      */
-    public static function has($key){
+    public static function has(string $key): bool {
         return !empty(self::$SETTINGS[$key]);
     }
 
@@ -95,7 +102,7 @@ final class Config {
      * @param mixed  $value The setting value
      * @return void
      */
-    public static function set($key,$value){
+    public static function set(string $key, mixed $value): void {
         self::$SETTINGS[$key] = $value;
     }
     
@@ -104,7 +111,7 @@ final class Config {
      * @param string $path Path to convert (can be relative or absolute)
      * @return string Absolute path
      */
-    public static function getAbsolutePath($path)
+    public static function getAbsolutePath(string $path): string
     {
         // If already absolute (starts with / or drive letter on Windows), return as is
         if (substr($path, 0, 1) === '/' || preg_match('/^[a-zA-Z]:\\\\/', $path)) {

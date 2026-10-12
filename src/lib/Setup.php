@@ -34,7 +34,7 @@ final class Setup {
      * @param string $clientAddress IP address of the client, or the addresses of the
      *                              request separated by commas (proxy headers included)
      */
-    public function __construct($root, $configFile, $codeFile, $clientAddress = '127.0.0.1')
+    public function __construct(string $root, string $configFile, string $codeFile, string $clientAddress = '127.0.0.1')
     {
         $this->root = $root;
         $this->configFile = $configFile;
@@ -49,7 +49,7 @@ final class Setup {
      *
      * @return string The addresses, separated by commas
      */
-    public static function requestAddresses()
+    public static function requestAddresses(): string
     {
         $addresses = [$_SERVER['REMOTE_ADDR'] ?? ''];
         foreach (['HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'HTTP_CLIENT_IP'] as $header) {
@@ -70,7 +70,7 @@ final class Setup {
      * @param string $env  Name of the configuration (prod)
      * @return void
      */
-    public static function serve($root, $env)
+    public static function serve(string $root, string $env): void
     {
         $setup = new self($root, "$root/data/conf/$env.ini", "$root/data/conf/setup.code", self::requestAddresses());
         $path = preg_replace('#^/api#', '', strtok($_SERVER['REQUEST_URI'] ?? '/', '?'));
@@ -94,10 +94,10 @@ final class Setup {
      *
      * @param string $method HTTP method
      * @param string $path   Path without /api
-     * @param array  $data   JSON body
-     * @return array [HTTP status, response]
+     * @param array<mixed> $data JSON body
+     * @return array{0: int, 1: array<string, mixed>} [HTTP status, response]
      */
-    public function handle($method, $path, $data)
+    public function handle(string $method, string $path, array $data): array
     {
         try {
             if ($path === '/setup' && $method === 'GET') {
@@ -130,9 +130,9 @@ final class Setup {
     /**
      * State of the wizard and default values (environment of the Docker container).
      *
-     * @return array setup, codeFile, defaults
+     * @return array<string, mixed> setup, codeFile, defaults
      */
-    private function status()
+    private function status(): array
     {
         $codeRequired = $this->codeRequired();
         if ($codeRequired) {
@@ -158,10 +158,11 @@ final class Setup {
     /**
      * Connect to the database and tell what the installation will do.
      *
-     * @param array $data db_host, db_port, db_name, db_user, db_password
-     * @return array state (none|current|outdated), version, pending, hasAdmin
+     * @param array<mixed> $data db_host, db_port, db_name, db_user, db_password
+     * @return array{state: string, version: string|null, pending: list<string>, hasAdmin: bool}
+     *         state (none|current|outdated), version, pending, hasAdmin
      */
-    private function database($data)
+    private function database(array $data): array
     {
         $db = $this->connect($data);
         return Installer::state($db, $this->root);
@@ -171,14 +172,14 @@ final class Setup {
      * Install: schema (created, or migrated after confirmation), first
      * administrator if none, configuration file; the setup code is then deleted.
      *
-     * @param array $data Database fields, admin_user, admin_password, admin_email,
+     * @param array<mixed> $data Database fields, admin_user, admin_password, admin_email,
      *                    language, backup_confirmed (to apply migrations), and for a new
      *                    database starter_categories (categories and rules of
      *                    sql/starter.json) and starter_insights (its insights too)
-     * @return array done, version, username
+     * @return array{done: bool, version: string|null, username: string|null} done, version, username
      * @throws SetupError If a migration is not confirmed or the configuration cannot be written
      */
-    private function install($data)
+    private function install(array $data): array
     {
         $db = $this->connect($data);
         $state = Installer::state($db, $this->root);
@@ -233,10 +234,10 @@ final class Setup {
     /**
      * Connect with the database fields of the request.
      *
-     * @param array $data db_host, db_port, db_name, db_user, db_password
+     * @param array<mixed> $data db_host, db_port, db_name, db_user, db_password
      * @return mysqli The connection
      */
-    private function connect($data)
+    private function connect(array $data): mysqli
     {
         foreach (['db_host', 'db_name', 'db_user'] as $field) {
             if (empty($data[$field]) || !is_string($data[$field])) {
@@ -250,10 +251,10 @@ final class Setup {
      * Password of the database: the one typed, or the one of the environment
      * (Docker) for the database of the environment only.
      *
-     * @param array $data Database fields
+     * @param array<mixed> $data Database fields
      * @return string The password
      */
-    private function password($data)
+    private function password(array $data): string
     {
         $typed = (string)($data['db_password'] ?? '');
         $environment = getenv('DB_PASSWORD');
@@ -272,7 +273,7 @@ final class Setup {
      * @return string The code
      * @throws SetupError If the code cannot be written
      */
-    public function code()
+    public function code(): string
     {
         @mkdir(dirname($this->codeFile), 0750, true);
         // A file created by hand may be empty: a new code is written then
@@ -300,13 +301,13 @@ final class Setup {
      *
      * @return bool True if required
      */
-    private function codeRequired()
+    private function codeRequired(): bool
     {
         if (is_file($this->codeFile)) {
             return true;
         }
         // Local only if every address of the request (peer and proxy headers) is private
-        foreach (array_filter(array_map('trim', explode(',', $this->clientAddress)), 'strlen') ?: [''] as $address) {
+        foreach (array_filter(array_map('trim', explode(',', $this->clientAddress)), fn(string $address): bool => $address !== '') ?: [''] as $address) {
             $local = filter_var($address, FILTER_VALIDATE_IP) !== false
                 && filter_var($address, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false;
             if (!$local) {
@@ -319,11 +320,11 @@ final class Setup {
     /**
      * Check the setup code of a request (slowed down when wrong).
      *
-     * @param array $data The request with code
+     * @param array<mixed> $data The request with code
      * @return void
      * @throws SetupError If the code is wrong
      */
-    private function checkCode($data)
+    private function checkCode(array $data): void
     {
         if (!$this->codeRequired()) {
             return;

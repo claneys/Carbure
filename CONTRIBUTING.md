@@ -62,7 +62,9 @@ The rules of the code (architecture, conventions, tests, definition of done) are
 [AGENTS.md](AGENTS.md), for humans and coding agents alike. Before opening a PR:
 
 ```bash
-git config core.hooksPath .githooks          # lint on commit, unit tests on push
+composer install                             # development tools (PHPStan)
+git config core.hooksPath .githooks          # lint + types on commit, unit tests on push
+composer phpstan                             # types of the PHP code
 php tools/phpunit.phar --testsuite unit
 node --test 'tests/portal/*.test.mjs'
 ```

@@ -17,15 +17,15 @@ final class Budget {
      * The budget of a category with sub-categories is its own amount when one is set
      * (an override), otherwise the sum of the budgets of its sub-categories.
      *
-     * @param int|null $month    The month to get the budget
-     * @param int|null $year     The year to get the budget
-     * @param int      $category The parent category id
-     * @return array The list of budget items; besides budget, consummed and progress:
+     * @param int|string|null $month    The month to get the budget
+     * @param int|string|null $year     The year to get the budget
+     * @param int|string|null $category The parent category id
+     * @return list<array<string, mixed>> The list of budget items; besides budget, consummed and progress:
      *               budget_mode ('own' or 'children': sum of the sub-categories),
      *               children (number of sub-categories) and children_budget (their sum)
      */
     #[ApiRoute('/budget', method: 'GET')]
-    public static function get($month = null, $year = null, $category = 0)
+    public static function get(int|string|null $month = null, int|string|null $year = null, int|string|null $category = 0): array
     {
         [$from, $to] = Month::range($month, $year);
 
@@ -82,9 +82,9 @@ final class Budget {
     /**
      * Sub-categories of each category.
      *
-     * @return array [parent id => [child ids]]
+     * @return array<int|string, list<int|string>> [parent id => [child ids]]
      */
-    private static function children()
+    private static function children(): array
     {
         $children = [];
         $sql = "SELECT id, parent_category FROM bank_transaction_category WHERE parent_category <> 0 AND id <> parent_category";
@@ -99,9 +99,9 @@ final class Budget {
      *
      * @param string $from First day of the month
      * @param string $to   First day of the next month
-     * @return array [category id => amount]
+     * @return array<int|string, float> [category id => amount]
      */
-    private static function budgets($from, $to)
+    private static function budgets(string $from, string $to): array
     {
         $sql = "SELECT category, amount FROM budget WHERE date >= ? AND date < ?";
         return array_map('floatval', array_column(Db::execute($sql, "ss", $from, $to)->get_result()->fetch_all(MYSQLI_ASSOC), 'amount', 'category'));
@@ -115,7 +115,7 @@ final class Budget {
      * @param int   $children Number of sub-categories
      * @return string 'own' or 'children'
      */
-    private static function budgetMode($amount, $children)
+    private static function budgetMode(float $amount, int $children): string
     {
         return $children > 0 && $amount == 0 ? 'children' : 'own';
     }
@@ -124,14 +124,14 @@ final class Budget {
      * Set the budget for a category. For a category with sub-categories, the amount
      * overrides the sum of their budgets; 0 goes back to that sum.
      *
-     * @param int      $category The category to set the budget
-     * @param float    $amount   The amount of the budget
-     * @param int|null $month    The month of the budget
-     * @param int|null $year     The year of the budget
+     * @param int              $category The category to set the budget
+     * @param int|float|string $amount   The amount of the budget (a number or a numeric string)
+     * @param int|string|null  $month    The month of the budget
+     * @param int|string|null  $year     The year of the budget
      * @return bool True on success
      */
     #[ApiRoute('/budget', method: 'POST')]
-    public static function create($category, $amount, $month = null, $year = null)
+    public static function create(int $category, int|float|string $amount, int|string|null $month = null, int|string|null $year = null): bool
     {
         // Insert or update the budget for the given category and month
         $date = Month::first($month, $year);
@@ -157,13 +157,13 @@ final class Budget {
      *              ("Epargne" by default, setting savings_category) and its
      *              sub-categories, positive when saved
      *
-     * @param int $months The number of months (1 to 60)
-     * @param int $offset Number of months between the current month and the last month
-     *                    of the period (0 = up to the current month, used for comparisons)
-     * @return array The list of months
+     * @param int|string|null $months The number of months (1 to 60)
+     * @param int|string|null $offset Number of months between the current month and the last month
+     *                                of the period (0 = up to the current month, used for comparisons)
+     * @return list<array<string, mixed>> The list of months
      */
     #[ApiRoute('/budget/trends', method: 'GET')]
-    public static function getTrends($months = 24, $offset = 0)
+    public static function getTrends(int|string|null $months = 24, int|string|null $offset = 0): array
     {
         $months = max(1, min(60, (int)$months));
         $offset = max(0, min(120, (int)$offset));
@@ -236,13 +236,13 @@ final class Budget {
      * category; the off-budget categories (internal transfers) are left out,
      * except the savings category.
      *
-     * @param int|null $month The month (current month by default)
-     * @param int|null $year  The year (current year by default)
-     * @return array month, income [{id, name, color, icon, amount}], expenses [...],
+     * @param int|string|null $month The month (current month by default)
+     * @param int|string|null $year  The year (current year by default)
+     * @return array<string, mixed> month, income [{id, name, color, icon, amount}], expenses [...],
      *               savings (net amount put aside), totalIncome, totalExpenses, balance
      */
     #[ApiRoute('/budget/flow', method: 'GET')]
-    public static function flow($month = null, $year = null)
+    public static function flow(int|string|null $month = null, int|string|null $year = null): array
     {
         [$month, $year] = Month::resolve($month, $year);
         [$categories, $rows] = self::flowRows($month, $year);
@@ -262,7 +262,7 @@ final class Budget {
             }
         }
 
-        $nodes = function ($amounts) use ($categories) {
+        $nodes = function (array $amounts) use ($categories): array {
             $list = [];
             foreach ($amounts as $id => $amount) {
                 if (round($amount, 2) <= 0) {
@@ -296,15 +296,15 @@ final class Budget {
     /**
      * Transactions behind a node of the money flow diagram, most recent first.
      *
-     * @param string      $kind       income, expense or savings
-     * @param string|null $categories Top-level category ids, comma separated (all by default)
-     * @param int|null    $month      The month (current month by default)
-     * @param int|null    $year       The year (current year by default)
-     * @return array The transactions, with their top-level category (top)
+     * @param string          $kind       income, expense or savings
+     * @param int|string|null $categories Top-level category ids, comma separated (all by default)
+     * @param int|string|null $month      The month (current month by default)
+     * @param int|string|null $year       The year (current year by default)
+     * @return list<array<string, mixed>> The transactions, with their top-level category (top)
      * @throws Error If the kind is unknown
      */
     #[ApiRoute('/budget/flow/transactions', method: 'GET')]
-    public static function flowTransactions($kind, $categories = null, $month = null, $year = null)
+    public static function flowTransactions(string $kind, int|string|null $categories = null, int|string|null $month = null, int|string|null $year = null): array
     {
         if (!in_array($kind, ['income', 'expense', 'savings'], true)) {
             throw new Error("Unknown kind: expected income, expense or savings", 400);
@@ -336,9 +336,9 @@ final class Budget {
      *
      * @param int $month The month
      * @param int $year  The year
-     * @return array [categories by id, rows (bank_transaction columns + top + kind)]
+     * @return array{array<int, array<string, mixed>>, list<array<string, mixed>>} [categories by id, rows (bank_transaction columns + top + kind)]
      */
-    private static function flowRows($month, $year)
+    private static function flowRows(int $month, int $year): array
     {
         [$from, $to] = Month::range($month, $year);
         $savings = self::savingsCategories();
@@ -379,9 +379,9 @@ final class Budget {
      * and of its sub-categories. Names are compared without case nor accents, in
      * PHP so that it does not depend on how the database stores the accents.
      *
-     * @return array The category ids (empty if there is no savings category)
+     * @return list<int> The category ids (empty if there is no savings category)
      */
-    private static function savingsCategories()
+    private static function savingsCategories(): array
     {
         // French accents first: iconv transliteration depends on the C library
         $accents = ['é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e', 'É' => 'E', 'È' => 'E', 'Ê' => 'E', 'à' => 'a', 'â' => 'a', 'À' => 'A',
@@ -409,12 +409,12 @@ final class Budget {
     /**
      * Get the insights data.
      *
-     * @param int|null $month The month to get the insights
-     * @param int|null $year  The year to get the insights
-     * @return array The list of insights
+     * @param int|string|null $month The month to get the insights
+     * @param int|string|null $year  The year to get the insights
+     * @return list<array<string, mixed>> The list of insights
      */
     #[ApiRoute('/budget/insights', method: 'GET')]
-    public static function getInsights($month = null, $year = null)
+    public static function getInsights(int|string|null $month = null, int|string|null $year = null): array
     {
         [$month, $year] = Month::resolve($month, $year);
 
@@ -431,11 +431,11 @@ final class Budget {
     /**
      * Get the year insights data.
      *
-     * @param int|null $year The year to get the insights
-     * @return array The list of insights by month
+     * @param int|string|null $year The year to get the insights
+     * @return array<int|string, array<string, mixed>> The list of insights by month (by insight id)
      */
     #[ApiRoute('/budget/insights/history', method: 'GET')]
-    public static function getInsightsHistory($year = null)
+    public static function getInsightsHistory(int|string|null $year = null): array
     {
         // If the date are not set we use the current year
         if (empty($year)) {

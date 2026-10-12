@@ -31,13 +31,13 @@ final class Transaction {
     /**
      * Return the transactions of a month, optionally of one category.
      *
-     * @param int|null $month    The month of the transactions
-     * @param int|null $year     The year of the transactions
-     * @param int|null $category Only this category and its sub-categories (optional)
-     * @return array The list of transactions
+     * @param int|string|null $month    The month of the transactions
+     * @param int|string|null $year     The year of the transactions
+     * @param int|string|null $category Only this category and its sub-categories (optional)
+     * @return list<array<string, mixed>> The list of transactions
      */
     #[ApiRoute('/transaction', method: 'GET')]
-    public static function get($month = null, $year = null, $category = null)
+    public static function get(int|string|null $month = null, int|string|null $year = null, int|string|null $category = null): array
     {
         [$from, $to] = Month::range($month, $year);
 
@@ -67,13 +67,13 @@ final class Transaction {
     /**
      * Search transactions by label, most recent first.
      *
-     * @param string $query The text to find in the label (2 characters minimum)
-     * @param int    $limit The maximum number of transactions (1 to 500)
-     * @return array The list of transactions
+     * @param string|null $query The text to find in the label (2 characters minimum)
+     * @param int|string  $limit The maximum number of transactions (1 to 500)
+     * @return list<array<string, mixed>> The list of transactions
      * @throws Error If the query is too short
      */
     #[ApiRoute('/transaction/search', method: 'GET')]
-    public static function search($query, $limit = 100)
+    public static function search(?string $query, int|string $limit = 100): array
     {
         $query = trim((string)$query);
         if (mb_strlen($query) < 2) {
@@ -93,10 +93,10 @@ final class Transaction {
     /**
      * Months that have transactions, newest first: the periods offered by the portal.
      *
-     * @return array The periods: [{year, month}]
+     * @return list<array<string, mixed>> The periods: [{year, month}]
      */
     #[ApiRoute('/transaction/periods', method: 'GET')]
-    public static function periods()
+    public static function periods(): array
     {
         return Db::query("SELECT DISTINCT YEAR(date) AS year, MONTH(date) AS month FROM bank_transaction ORDER BY year DESC, month DESC")
             ->fetch_all(MYSQLI_ASSOC);
@@ -106,17 +106,17 @@ final class Transaction {
      * Recurring transactions of a month: the ones found about once a month at about the
      * same day (salary, rent, subscriptions, bills), from the label without its numbers.
      *
-     * @param int|null $month  The month (current month by default)
-     * @param int|null $year   The year (current year by default)
-     * @param int      $months Number of previous months looked at (2 to 24)
-     * @return array The series, by day of the month: label, category, amount (last one),
+     * @param int|string|null $month  The month (current month by default)
+     * @param int|string|null $year   The year (current year by default)
+     * @param int|string      $months Number of previous months looked at (2 to 24)
+     * @return list<array<string, mixed>> The series, by day of the month: label, category, amount (last one),
      *               average, variable (amount changing by more than 10 %), day (usual day
      *               of the month), months (number of months seen), last (date of the last
      *               one), ids (its transactions of the month) and status: "received", or
      *               "expected" when it is not in the month yet
      */
     #[ApiRoute('/transaction/recurring', method: 'GET')]
-    public static function recurring($month = null, $year = null, $months = 6)
+    public static function recurring(int|string|null $month = null, int|string|null $year = null, int|string $months = 6): array
     {
         $months = max(2, min(24, (int)$months));
         [$first, $to] = Month::range($month, $year);
@@ -138,11 +138,11 @@ final class Transaction {
      * Card payments must also keep about the same amount (within 20 %: a subscription,
      * not the restaurant); direct debits and transfers may change (electricity bill).
      *
-     * @param array  $rows  The transactions [{id, date, type, label, category, amount}], oldest first
-     * @param string $first First day of the month (Y-m-d)
-     * @return array The series (see recurring())
+     * @param list<array<string, mixed>> $rows  The transactions [{id, date, type, label, category, amount}], oldest first
+     * @param string                     $first First day of the month (Y-m-d)
+     * @return list<array<string, mixed>> The series (see recurring())
      */
-    public static function findRecurring($rows, $first)
+    public static function findRecurring(array $rows, string $first): array
     {
         $current = substr($first, 0, 7);
         $previous = date('Y-m', strtotime("$first -1 month"));
@@ -205,14 +205,16 @@ final class Transaction {
     /**
      * Load transactions from an array.
      *
-     * @param array $data     The array of transactions
-     * @param int   $userId   The user owning the synchronized bank account
-     * @param bool  $progress Send each label as a progress event (synchronization)
-     * @param array $origin   Account the transactions come from: bank_name (woob backend of
-     *                        a synchronized account), account_number (synchronized or imported)
-     * @return array The transactions that were not known yet (label cleaned, amount, uuid)
+     * @param array<array<string, mixed>> $data     The array of transactions
+     * @param int                         $userId   The user owning the synchronized bank account
+     * @param bool                        $progress Send each label as a progress event (synchronization)
+     * @param array<string, string|null>  $origin   Account the transactions come from: bank_name (woob
+     *                                              backend of a synchronized account), account_number
+     *                                              (synchronized or imported)
+     * @return list<array{label: string, amount: float, uuid: string}> The transactions that were not
+     *              known yet (label cleaned, amount, uuid)
      */
-    public static function save($data, $userId, $progress = true, $origin = [])
+    public static function save(array $data, int $userId, bool $progress = true, array $origin = []): array
     {
         $rows = self::prepareAll($data);
         if ($progress) {
@@ -226,13 +228,14 @@ final class Transaction {
     /**
      * Save prepared transactions (duplicates are merged on their UUID).
      *
-     * @param array $rows   The transactions, as returned by prepareAll(), with their raw
-     *                      label to send it as a progress event
-     * @param int   $userId The user owning the transactions
-     * @param array $origin bank_name and account_number of the account they come from
-     * @return array The transactions that were not known yet (label cleaned, amount, uuid)
+     * @param array<array<string, mixed>> $rows   The transactions, as returned by prepareAll(), with
+     *                                            their raw label to send it as a progress event
+     * @param int                         $userId The user owning the transactions
+     * @param array<string, string|null>  $origin bank_name and account_number of the account they come from
+     * @return list<array{label: string, amount: float, uuid: string}> The transactions that were not
+     *              known yet (label cleaned, amount, uuid)
      */
-    private static function store($rows, $userId, $origin = [])
+    private static function store(array $rows, int $userId, array $origin = []): array
     {
         $created = [];
         foreach ($rows as $row) {
@@ -253,10 +256,10 @@ final class Transaction {
      * label and amount, such as two coffees) are told apart by their occurrence. The
      * first one keeps the UUID of prepare(), the next ones get md5(uuid#n).
      *
-     * @param array $data The transactions [{type, raw, amount, date, rdate?, card?}]
-     * @return array The prepared transactions, with the keys of $data
+     * @param array<array<string, mixed>> $data The transactions [{type, raw, amount, date, rdate?, card?}]
+     * @return array<array<string, mixed>> The prepared transactions, with the keys of $data
      */
-    public static function prepareAll($data)
+    public static function prepareAll(array $data): array
     {
         $rows = array_map([self::class, 'prepare'], $data);
 
@@ -280,10 +283,10 @@ final class Transaction {
      * Columns of a transaction as it is stored: cleaned label, date of the salaries
      * moved to the next month, UUID.
      *
-     * @param array $transaction The transaction {type, raw, amount, date, rdate?, card?}
-     * @return array uuid, date, rdate, amount, label, type, card
+     * @param array<string, mixed> $transaction The transaction {type, raw, amount, date, rdate?, card?}
+     * @return array<string, mixed> uuid, date, rdate, amount, label, type, card
      */
-    public static function prepare($transaction)
+    public static function prepare(array $transaction): array
     {
         $type = $transaction['type'];
         $label = self::cleanLabel($transaction['raw']);
@@ -305,12 +308,12 @@ final class Transaction {
     /**
      * Save a transaction in the database.
      *
-     * @param array $row    The transaction, as returned by prepare()
-     * @param int   $userId The user owning the transaction
-     * @param array $origin bank_name and account_number of the account it comes from
+     * @param array<string, mixed>       $row    The transaction, as returned by prepare()
+     * @param int                        $userId The user owning the transaction
+     * @param array<string, string|null> $origin bank_name and account_number of the account it comes from
      * @return bool True if the transaction is new, false if it was already known
      */
-    private static function create($row, $userId, $origin = [])
+    private static function create(array $row, int $userId, array $origin = []): bool
     {
         ['uuid' => $uuid, 'date' => $date, 'rdate' => $rdate, 'amount' => $amount,
          'label' => $label, 'type' => $type, 'card' => $card] = $row;
@@ -335,16 +338,17 @@ final class Transaction {
      * be merged), "duplicate" (a transaction of the same amount a few days apart, most
      * likely the same one synchronized with another label) or "new".
      *
-     * @param string      $file     The content of the file, base64 encoded
+     * @param string|null $file     The content of the file, base64 encoded
      * @param string|null $filename The name of the file (helps to tell the format)
-     * @return array format, account, from, to, counts {new, known, duplicate} and rows
+     * @return array<string, mixed> format, account, from, to, counts {new, known, duplicate} and rows
      *               [{index, date, rdate, amount, label, type, status, match?}]
      * @throws Error If the file is not understood
      */
     #[ApiRoute('/transaction/import/preview', method: 'POST')]
-    public static function previewImport($file, $filename = null)
+    public static function previewImport(?string $file, ?string $filename = null): array
     {
-        [$parsed, $rows] = self::analyzeImport($file, $filename);
+        // No file: refused by the parser as an empty file, as before the types
+        [$parsed, $rows] = self::analyzeImport($file ?? '', $filename);
         $counts = ['new' => 0, 'known' => 0, 'duplicate' => 0];
         foreach ($rows as $row) {
             $counts[$row['status']]++;
@@ -366,16 +370,18 @@ final class Transaction {
      * categorized with the rules. The known ones are skipped; the probable duplicates
      * only when they are not selected.
      *
-     * @param string      $file     The content of the file, base64 encoded
-     * @param string|null $filename The name of the file
-     * @param array|null  $selected Indexes of the rows to import (by default: the new ones)
-     * @return array imported (number of new transactions), categorized, from, to
+     * @param string|null                           $file     The content of the file, base64 encoded
+     * @param string|null                           $filename The name of the file
+     * @param array<int|string>|int|string|null     $selected Indexes of the rows to import (by default:
+     *                                                        the new ones)
+     * @return array{imported: int, categorized: int, from: string|null, to: string|null}
+     *              imported (number of new transactions), categorized, from, to
      * @throws Error If the file is not understood
      */
     #[ApiRoute('/transaction/import', method: 'POST')]
-    public static function import($file, $filename = null, $selected = null)
+    public static function import(?string $file, ?string $filename = null, array|int|string|null $selected = null): array
     {
-        [$parsed, $rows, $prepared] = self::analyzeImport($file, $filename);
+        [$parsed, $rows, $prepared] = self::analyzeImport($file ?? '', $filename);
         $selected = $selected === null ? null : array_map('intval', (array)$selected);
 
         // Prepared with the whole file: a selected row keeps the UUID of its occurrence
@@ -415,13 +421,15 @@ final class Transaction {
      *
      * @param string      $file     The content of the file, base64 encoded
      * @param string|null $filename The name of the file
-     * @return array [parsed file (BankFile::parse), rows with their status, transactions
-     *               as prepared by prepareAll()]
+     * @return array{0: array{format: string, account: string|null, transactions: list<array<string, mixed>>},
+     *               1: list<array<string, mixed>>, 2: array<array<string, mixed>>}
+     *               [parsed file (BankFile::parse), rows with their status, transactions as
+     *               prepared by prepareAll()]
      * @throws Error If the file is not understood
      */
-    private static function analyzeImport($file, $filename)
+    private static function analyzeImport(string $file, ?string $filename): array
     {
-        $content = base64_decode((string)$file, true);
+        $content = base64_decode($file, true);
         if ($content === false) {
             throw new Error("The file must be base64 encoded", 400);
         }
@@ -485,7 +493,7 @@ final class Transaction {
      * @param string|null $b Another date
      * @return int The number of days (a large number if a date is missing)
      */
-    private static function daysBetween($a, $b)
+    private static function daysBetween(?string $a, ?string $b): int
     {
         if (!$a || !$b) {
             return PHP_INT_MAX;
@@ -496,13 +504,13 @@ final class Transaction {
     /**
      * Generate a unique identifier for a transaction.
      *
-     * @param int    $type   The type of the transaction
-     * @param string $rdate  The real date of the transaction
-     * @param string $label  The label of the transaction
-     * @param float  $amount The amount of the transaction
+     * @param int|string       $type   The type of the transaction
+     * @param string           $rdate  The real date of the transaction
+     * @param string           $label  The label of the transaction
+     * @param int|float|string $amount The amount of the transaction (as received: it is part of the UUID)
      * @return string The UUID
      */
-    private static function generateTransactionUuid($type, $rdate, $label, $amount)
+    private static function generateTransactionUuid(int|string $type, string $rdate, string $label, int|float|string $amount): string
     {
         // For card transactions (types 7 and 12), truncate label to 24 chars to avoid duplicates
         $labelPart = ($type == 7 || $type == 12) ? substr($label, 0, 24) : $label;
@@ -512,12 +520,12 @@ final class Transaction {
     /**
      * Fix the date of a transaction.
      *
-     * @param int    $type   The type of the transaction
-     * @param float  $amount The amount of the transaction
-     * @param string $date   The date of the transaction
+     * @param int|string       $type   The type of the transaction
+     * @param int|float|string $amount The amount of the transaction
+     * @param string           $date   The date of the transaction
      * @return string The corrected date
      */
-    private static function fixPrelevementDate($type, $amount, $date)
+    private static function fixPrelevementDate(int|string $type, int|float|string $amount, string $date): string
     {
         // We change the date of the transaction if it's a Salary.
         if ($type == 1) {
@@ -536,12 +544,12 @@ final class Transaction {
     /**
      * Clean the label of a transaction.
      *
-     * @param string $label The label to clean
+     * @param string|null $label The label to clean (none: an empty label)
      * @return string The cleaned label
      */
-    public static function cleanLabel($label)
+    public static function cleanLabel(?string $label): string
     {
-        $label = strtoupper($label);
+        $label = strtoupper((string)$label);
         $label = addslashes($label);
         $label = trim($label);
 
@@ -560,7 +568,7 @@ final class Transaction {
      *
      * @return int The number of unpointed transactions
      */
-    public static function countUnpointed()
+    public static function countUnpointed(): int
     {
         // Count the number of transactions with pointed=0 for the current month only
         $sql = "SELECT COUNT(*) as count FROM bank_transaction WHERE pointed=0 AND date >= ? AND date < ?";
@@ -578,7 +586,7 @@ final class Transaction {
      * @param bool $all Whether to update all transactions or only the last month
      * @return int The number of transactions categorized
      */
-    public static function updateMissingCategories($all=false)
+    public static function updateMissingCategories(bool $all = false): int
     {
         if ($all) {
             // We update all transactions without category
@@ -619,34 +627,34 @@ final class Transaction {
     /**
      * Set a category on a transaction.
      *
-     * @param int  $id          The id of the transaction
-     * @param int  $category    The category to set
-     * @param bool $autoPointed Whether to auto-point the transaction
+     * @param int|string           $id          The id of the transaction
+     * @param int|string           $category    The category to set
+     * @param bool|int|string|null $autoPointed Whether to auto-point the transaction (any true value)
      * @return void
      */
     #[ApiRoute('/transaction/category', method: 'PUT')]
-    public static function updateCategory($id, $category,$autoPointed=true)
+    public static function updateCategory(int|string $id, int|string $category, bool|int|string|null $autoPointed = true): void
     {
         // Set the category
         $sql = "UPDATE bank_transaction SET category = ? WHERE id = ?";
 
-        $stmt = Db::execute($sql, "ii", $category, $id);
-        if ($stmt) {
-            if($autoPointed) {
-                self::updatePointed($id);
-            }
+        // Db::execute() throws on a failure
+        Db::execute($sql, "ii", $category, $id);
+        if ($autoPointed) {
+            self::updatePointed($id);
         }
     }
 
     /**
      * Point (or unpoint) a transaction in database.
      *
-     * @param int  $id      The id of the transaction
-     * @param bool $pointed True to point the transaction, false to unpoint it
+     * @param int|string           $id      The id of the transaction
+     * @param bool|int|string|null $pointed True to point the transaction, false to unpoint it
+     *                                      (also "true"/"false", 1/0)
      * @return void
      */
     #[ApiRoute('/transaction/pointed', method: 'PUT')]
-    public static function updatePointed($id, $pointed = true)
+    public static function updatePointed(int|string $id, bool|int|string|null $pointed = true): void
     {
         // Update the pointed field on a transaction
         $sql = "UPDATE bank_transaction SET pointed=? WHERE id=?";

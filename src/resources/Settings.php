@@ -51,12 +51,12 @@ final class Settings {
     /**
      * The configuration file, by section (administrators).
      *
-     * @return array file (path in the instance), writable, sections [{name, settings:
+     * @return array<string, mixed> file (path in the instance), writable, sections [{name, settings:
      *               [{key, value, set, secret, editable, kind, options?, min?, max?}]}]
      * @throws Exception If the file cannot be read
      */
     #[ApiRoute('/system/config', method: 'GET')]
-    public static function get()
+    public static function get(): array
     {
         User::requireAdmin();
         $file = self::file();
@@ -98,16 +98,16 @@ final class Settings {
      * Change settings of the configuration file (administrators). Every value is
      * checked before anything is written; the previous file is kept as <file>.bak.
      *
-     * @param array $values The new values, by key (editable settings only)
-     * @return array The configuration, as GET /system/config
+     * @param array<mixed> $values The new values, by key (editable settings only)
+     * @return array<string, mixed> The configuration, as GET /system/config
      * @throws Error If a setting cannot be changed or a value is not valid (400)
      * @throws Exception If the file cannot be written
      */
     #[ApiRoute('/system/config', method: 'PUT')]
-    public static function update($values)
+    public static function update(array $values): array
     {
         User::requireAdmin();
-        if (!is_array($values) || !$values) {
+        if (!$values) {
             throw new Error("No setting to change", 400);
         }
 
@@ -130,12 +130,12 @@ final class Settings {
     /**
      * The request that starts the bank synchronization, for a scheduler (administrators).
      *
-     * @param bool $reveal Return the token itself (masked by default)
-     * @return array url, token (null if there is none), masked, accounts (the bank
+     * @param string|bool|null $reveal Return the token itself (masked by default): "true"...
+     * @return array<string, mixed> url, token (null if there is none), masked, accounts (the bank
      *               accounts, for ?account=)
      */
     #[ApiRoute('/system/sync', method: 'GET')]
-    public static function sync($reveal = false)
+    public static function sync(string|bool|null $reveal = false): array
     {
         User::requireAdmin();
         // From the file: the token may have been renewed since the configuration was loaded
@@ -157,11 +157,11 @@ final class Settings {
      * Replace the synchronization token by a new random one (administrators): the
      * scheduler must use the new one.
      *
-     * @return array token (the new one)
+     * @return array<string, string> token (the new one)
      * @throws Exception If the file cannot be written
      */
     #[ApiRoute('/system/sync-token', method: 'POST')]
-    public static function renewSyncToken()
+    public static function renewSyncToken(): array
     {
         User::requireAdmin();
         $token = bin2hex(random_bytes(24));
@@ -175,11 +175,11 @@ final class Settings {
     /**
      * A setting as shown in the portal.
      *
-     * @param string            $key   The key
-     * @param string|array|null $value The raw value (null: not in the file)
-     * @return array
+     * @param string                     $key   The key
+     * @param string|array<string>|null $value The raw value (null: not in the file)
+     * @return array<string, mixed>
      */
-    private static function describe($key, $value)
+    private static function describe(string $key, string|array|null $value): array
     {
         $rule = self::EDITABLE[$key] ?? null;
         $secret = in_array($key, self::SECRETS, true);
@@ -213,7 +213,7 @@ final class Settings {
      * @return string The value to write
      * @throws Error If the setting cannot be changed or the value is not valid (400)
      */
-    private static function check($key, $value)
+    private static function check(string $key, mixed $value): string
     {
         $rule = self::EDITABLE[$key] ?? null;
         if ($rule === null) {
@@ -223,13 +223,15 @@ final class Settings {
             throw new Error("Invalid value for $key", 400);
         }
         $value = trim((string)$value);
+        // An empty value is accepted by some settings (unset)
+        $allowEmpty = !empty($rule['empty']);
         $valid = match ($rule['kind']) {
             'select' => in_array($value, $rule['options'], true),
             'bool' => in_array($value, ['1', '0', 'true', 'false', ''], true),
             'number' => ctype_digit($value) && (int)$value >= $rule['min'] && (int)$value <= $rule['max'],
-            'url' => ($value === '' && !empty($rule['empty']))
+            'url' => ($value === '' && $allowEmpty)
                 || (preg_match('#^https?://[A-Za-z0-9.\-]+(:\d{1,5})?(/[A-Za-z0-9._~/\-]*)?$#', $value) === 1),
-            default => ($value === '' && !empty($rule['empty'])) || preg_match($rule['pattern'], $value) === 1,
+            default => ($value === '' && $allowEmpty) || preg_match($rule['pattern'], $value) === 1,
         };
         if (!$valid) {
             throw new Error("Invalid value for $key", 400);
@@ -245,7 +247,7 @@ final class Settings {
      *
      * @return string
      */
-    private static function file()
+    private static function file(): string
     {
         return System::$configFile ?? Config::get('config_file');
     }
@@ -257,7 +259,7 @@ final class Settings {
      * @return string
      * @throws Exception If it cannot be read
      */
-    private static function read($file)
+    private static function read(string $file): string
     {
         $ini = @file_get_contents($file);
         if ($ini === false) {
@@ -274,7 +276,7 @@ final class Settings {
      * @return void
      * @throws Exception If it cannot be written, or the new content is not valid INI
      */
-    private static function write($file, $ini)
+    private static function write(string $file, string $ini): void
     {
         if (@parse_ini_string($ini, true, INI_SCANNER_RAW) === false) {
             throw new Exception("The new configuration would not be valid");

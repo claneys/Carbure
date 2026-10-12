@@ -13,10 +13,10 @@
 final class ApiResolver {
 
     /**
-     * Cache for registered API routes (in-memory)
-     * @var array|null
+     * Cache for registered API routes (in-memory), by "METHOD:path"
+     * @var array<string, array{class: string, method: string, apiRoute: ApiRoute}>|null
      */
-    private static $routeCache = null;
+    private static ?array $routeCache = null;
     
     /**
      * APCu cache key
@@ -27,7 +27,7 @@ final class ApiResolver {
      * Check if APCu is available
      * @return bool
      */
-    private static function isApcuAvailable()
+    private static function isApcuAvailable(): bool
     {
         return extension_loaded('apcu') && ini_get('apc.enabled');
     }
@@ -36,9 +36,9 @@ final class ApiResolver {
      * Find the route matching the request path and HTTP method
      * @param string $requestPath The request path without /api prefix (e.g., /user/login)
      * @param string $httpMethod The HTTP method (GET, POST, PUT, DELETE)
-     * @return array|null Array with 'class', 'method', 'apiRoute' or null if not found
+     * @return array{class: string, method: string, apiRoute: ApiRoute}|null The route or null if not found
      */
-    public static function findRoute($requestPath, $httpMethod)
+    public static function findRoute(string $requestPath, string $httpMethod): ?array
     {
         // Initialize route cache on first call
         if (self::$routeCache === null) {
@@ -60,7 +60,7 @@ final class ApiResolver {
      *
      * @return void
      */
-    private static function loadRouteCache()
+    private static function loadRouteCache(): void
     {
         // Try to load from APCu if available
         if (self::isApcuAvailable() && self::loadFromApcu()) {
@@ -77,14 +77,14 @@ final class ApiResolver {
      *
      * @return void
      */
-    private static function buildRouteCache()
+    private static function buildRouteCache(): void
     {
         Logger::info("Building route cache from resource files...");
         self::$routeCache = [];
         
         // Load all resource files
         $resourcesDir = Config::get('install_dir') . '/src/resources';
-        $resourceFiles = glob($resourcesDir . '/*.php');
+        $resourceFiles = glob($resourcesDir . '/*.php') ?: [];
         
         foreach ($resourceFiles as $file) {
             require_once $file;
@@ -132,10 +132,10 @@ final class ApiResolver {
      *
      * @return string The signature
      */
-    private static function getResourcesSignature()
+    private static function getResourcesSignature(): string
     {
         $signature = '';
-        foreach (glob(Config::get('install_dir') . '/src/resources/*.php') as $file) {
+        foreach (glob(Config::get('install_dir') . '/src/resources/*.php') ?: [] as $file) {
             $signature .= basename($file) . ':' . filemtime($file) . ';';
         }
         return md5($signature);
@@ -145,7 +145,7 @@ final class ApiResolver {
      * Load routes from APCu cache
      * @return bool True if cache was loaded successfully, false otherwise
      */
-    private static function loadFromApcu()
+    private static function loadFromApcu(): bool
     {
         $success = false;
         $cache = apcu_fetch(self::APCU_CACHE_KEY, $success);
@@ -163,7 +163,7 @@ final class ApiResolver {
      *
      * @return void
      */
-    private static function saveToApcu()
+    private static function saveToApcu(): void
     {
         $cache = [
             'signature' => self::getResourcesSignature(),
@@ -182,7 +182,7 @@ final class ApiResolver {
      *
      * @return void
      */
-    public static function clearRouteCache()
+    public static function clearRouteCache(): void
     {
         // Clear APCu cache
         if (self::isApcuAvailable()) {

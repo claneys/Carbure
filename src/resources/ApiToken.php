@@ -31,11 +31,11 @@ final class ApiToken {
     /**
      * Get the API tokens of the authenticated user (without the tokens themselves).
      *
-     * @return array The tokens: id, name, token_hint, created_at, last_used_at,
+     * @return list<array<string, mixed>> The tokens: id, name, token_hint, created_at, last_used_at,
      *               expires_at (null: never), expired
      */
     #[ApiRoute('/token', method: 'GET')]
-    public static function getMine()
+    public static function getMine(): array
     {
         $sql = "SELECT id, name, token_hint, created_at, last_used_at, expires_at,
                        (expires_at IS NOT NULL AND expires_at <= NOW()) AS expired
@@ -46,13 +46,13 @@ final class ApiToken {
     /**
      * Create an API token for the authenticated user.
      *
-     * @param string   $name A name to recognize it (e.g. "Claude Code on my laptop")
-     * @param int|null $days Lifetime in days: 30, 90 or 365 (null or 0: never expires)
-     * @return array The token: id, name, token (shown only this time), token_hint, expires_at
+     * @param string|null     $name A name to recognize it (e.g. "Claude Code on my laptop")
+     * @param int|string|null $days Lifetime in days: 30, 90 or 365 (null, "" or 0: never expires)
+     * @return array{id: int|string, name: string, token: string, token_hint: string, expires_at: string|null} The token: id, name, token (shown only this time), token_hint, expires_at
      * @throws Error If the name or the lifetime is invalid or the user has too many tokens
      */
     #[ApiRoute('/token', method: 'POST')]
-    public static function create($name, $days = null)
+    public static function create(?string $name, int|string|null $days = null): array
     {
         $days = $days === null || $days === '' || (int)$days === 0 ? null : (int)$days;
         if (!in_array($days, self::LIFETIMES, true)) {
@@ -86,7 +86,7 @@ final class ApiToken {
      * @throws Error If the token does not exist or belongs to another user
      */
     #[ApiRoute('/token', method: 'DELETE')]
-    public static function delete($id)
+    public static function delete(int $id): bool
     {
         $stmt = Db::execute("DELETE FROM api_tokens WHERE id = ? AND user_id = ?", "ii", $id, Jwt::getUserIdFromToken());
         if ($stmt->affected_rows === 0) {
@@ -101,9 +101,9 @@ final class ApiToken {
      * @param string $token The token
      * @return int|null The user id, or null if the token is unknown or expired
      */
-    public static function authenticate($token)
+    public static function authenticate(string $token): ?int
     {
-        if (!is_string($token) || !str_starts_with($token, self::PREFIX)) {
+        if (!str_starts_with($token, self::PREFIX)) {
             return null;
         }
         $hash = hash('sha256', $token);

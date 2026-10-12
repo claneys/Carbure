@@ -12,7 +12,7 @@
 final class Db {
     
     // Static connection to the database
-    private static $CONN;
+    private static ?mysqli $CONN = null;
 
     /**
      * Return a database connection.
@@ -20,7 +20,7 @@ final class Db {
      * @return mysqli The database connection
      * @throws Exception If the connection fails
      */
-    public static function getConnection()
+    public static function getConnection(): mysqli
     {
         // We reuse the connection if it exists
         if (self::$CONN != null) {
@@ -46,7 +46,7 @@ final class Db {
      * @return mysqli_result|bool The query result
      * @throws Exception If the query fails
      */
-    public static function query($sql)
+    public static function query(string $sql): mysqli_result|bool
     {
         $conn = self::getConnection();
         $result = $conn->query($sql);
@@ -70,7 +70,7 @@ final class Db {
      * @return mysqli_stmt The executed statement
      * @throws Exception If the prepare or execute fails
      */
-    public static function execute($sql, $types, ...$params)
+    public static function execute(string $sql, string $types, mixed ...$params): mysqli_stmt
     {
         $conn = self::getConnection();
         $stmt = $conn->prepare($sql);
@@ -103,17 +103,17 @@ final class Db {
      * @param string $sql    The SQL query with placeholders (?)
      * @param string $types  The types of the parameters (s=string, i=integer, d=double, b=blob)
      * @param mixed  ...$params The parameters to bind
-     * @return array|null The first row of the result or null if no result
+     * @return array<string, mixed>|null The first row of the result or null if no result
      */
-    public static function queryOne($sql,$types, ...$params)
+    public static function queryOne(string $sql, string $types, mixed ...$params): ?array
     {
         $stmt = self::execute($sql, $types, ...$params);
         $result = $stmt->get_result();
 
-        if ($result->num_rows == 0) {
+        if ($result === false || $result->num_rows == 0) {
             return null;
         }
 
-        return $result->fetch_assoc();
+        return $result->fetch_assoc() ?: null;
     }
 }

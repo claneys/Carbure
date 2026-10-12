@@ -19,7 +19,7 @@ final class Setting {
      * @param string $default Value when it is not set
      * @return string The value
      */
-    public static function get($name, $default = '')
+    public static function get(string $name, string $default = ''): string
     {
         $row = Db::queryOne("SELECT value FROM settings WHERE name = ?", "s", $name);
         return $row ? $row['value'] : $default;
@@ -32,8 +32,8 @@ final class Setting {
      * @param string $value The value
      * @return void
      */
-    public static function set($name, $value)
+    public static function set(string $name, string $value): void
     {
-        Db::execute("INSERT INTO settings (name, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = VALUES(value)", "ss", $name, (string)$value);
+        Db::execute("INSERT INTO settings (name, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = VALUES(value)", "ss", $name, $value);
     }
 }

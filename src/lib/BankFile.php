@@ -55,11 +55,12 @@ final class BankFile
      *
      * @param string      $content  The content of the file
      * @param string|null $filename Its name (helps to tell the format)
-     * @return array format (ofx, qif, camt, csv), account (number found in the file or
+     * @return array{format: string, account: string|null, transactions: list<array{date: string, rdate: string, amount: float, raw: string, type: int}>}
+     *               format (ofx, qif, camt, csv), account (number found in the file or
      *               null) and transactions [{date, rdate, amount, raw, type}]
      * @throws Error If the file is empty, too large or not understood
      */
-    public static function parse($content, $filename = null)
+    public static function parse(string $content, ?string $filename = null): array
     {
         if (strlen($content) > self::MAX_SIZE) {
             throw new Error("The file is too large (" . round(self::MAX_SIZE / 1000000, 1) . " MB at most)", 413);
@@ -93,7 +94,7 @@ final class BankFile
      * @param string|null $filename The name of the file
      * @return string ofx, camt, qif or csv
      */
-    public static function detect($content, $filename = null)
+    public static function detect(string $content, ?string $filename = null): string
     {
         $head = substr($content, 0, 4000);
         if (preg_match('/OFXHEADER|<OFX>/i', $head)) {
@@ -119,11 +120,12 @@ final class BankFile
      * OFX / QFX: the STMTTRN aggregates; the tags of the 1.x (SGML) version are not closed.
      *
      * @param string $content The content
-     * @return array account, transactions
+     * @return array{account: string|null, transactions: list<array{date: string, rdate: string, amount: float, raw: string, type: int}>}
+     *               account, transactions
      */
-    private static function parseOfx($content)
+    private static function parseOfx(string $content): array
     {
-        $field = function ($block, $tag) {
+        $field = function (string $block, string $tag): string {
             return preg_match('/<' . $tag . '>\s*([^<\r\n]*)/i', $block, $m)
                 ? trim(html_entity_decode($m[1], ENT_QUOTES | ENT_XML1, 'UTF-8')) : '';
         };
@@ -154,10 +156,11 @@ final class BankFile
      * CAMT.053 (ISO 20022): the Ntry entries of the statements.
      *
      * @param string $content The content
-     * @return array account, transactions
+     * @return array{account: string|null, transactions: list<array{date: string, rdate: string, amount: float, raw: string, type: int}>}
+     *               account, transactions
      * @throws Error If the XML is not valid
      */
-    private static function parseCamt($content)
+    private static function parseCamt(string $content): array
     {
         // The namespace changes with the version of the standard: it is ignored
         $content = preg_replace('/\sxmlns(:\w+)?="[^"]*"/', '', $content);
@@ -200,9 +203,10 @@ final class BankFile
      * QIF: records ended by "^", one field per line (D date, T amount, P payee, M memo).
      *
      * @param string $content The content
-     * @return array account, transactions
+     * @return array{account: null, transactions: list<array{date: string, rdate: string, amount: float, raw: string, type: int}>}
+     *               account, transactions
      */
-    private static function parseQif($content)
+    private static function parseQif(string $content): array
     {
         $rows = [];
         $record = [];
@@ -237,10 +241,11 @@ final class BankFile
      * CSV: the header row tells the columns (date, label, amount or debit and credit).
      *
      * @param string $content The content
-     * @return array account, transactions
+     * @return array{account: null, transactions: list<array{date: string, rdate: string, amount: float, raw: string, type: int}>}
+     *               account, transactions
      * @throws Error If the columns are not found
      */
-    private static function parseCsv($content)
+    private static function parseCsv(string $content): array
     {
         $lines = array_values(array_filter(preg_split('/\r\n|\r|\n/', $content), fn($l) => trim($l) !== ''));
         // The delimiter that splits the first lines the most
@@ -299,11 +304,11 @@ final class BankFile
     /**
      * Columns of a CSV header row, or null if it is not a header.
      *
-     * @param array $cells The cells of the row
-     * @return array|null Index of date, operation (date of the operation), label, detail,
-     *                    amount, debit, credit
+     * @param array<int, string|null> $cells The cells of the row
+     * @return array<string, int>|null Index of date, operation (date of the operation), label,
+     *                    detail, amount, debit, credit
      */
-    private static function csvColumns($cells)
+    private static function csvColumns(array $cells): ?array
     {
         $patterns = [
             // Date of the operation (the date the bank books it comes first)
@@ -317,7 +322,8 @@ final class BankFile
         ];
         $columns = [];
         foreach ($cells as $index => $cell) {
-            $name = self::normalizeHeader($cell);
+            // An empty line of the CSV gives a null cell
+            $name = self::normalizeHeader($cell ?? '');
             foreach ($patterns as $key => $pattern) {
                 if (!isset($columns[$key]) && preg_match($pattern, $name)) {
                     $columns[$key] = $index;
@@ -340,7 +346,7 @@ final class BankFile
      * @param string $name The header
      * @return string
      */
-    private static function normalizeHeader($name)
+    private static function normalizeHeader(string $name): string
     {
         $name = strtr(mb_strtolower(trim($name, " \t\"'\u{FEFF}")), [
             'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e', 'à' => 'a', 'â' => 'a', 'î' => 'i', 'ï' => 'i',
@@ -354,10 +360,12 @@ final class BankFile
      * Turn the rows read from a file into transactions: dates as Y-m-d (the order of the
      * day and the month is found from the whole file), amounts as numbers, types.
      *
-     * @param array $rows [{date, rdate, amount, raw, hint}]
-     * @return array [{date, rdate, amount, raw, type}]
+     * @param list<array{date: string, rdate: string, amount: string, raw: string, hint: int|null}> $rows
+     *              [{date, rdate, amount, raw, hint}]
+     * @return list<array{date: string, rdate: string, amount: float, raw: string, type: int}>
+     *              [{date, rdate, amount, raw, type}]
      */
-    private static function normalize($rows)
+    private static function normalize(array $rows): array
     {
         $dayFirst = self::dayFirst(array_merge(array_column($rows, 'date'), array_column($rows, 'rdate')));
         $transactions = [];
@@ -386,7 +394,7 @@ final class BankFile
      * @param int|null $hint  Type given by the file
      * @return int
      */
-    public static function type($label, $hint = null)
+    public static function type(string $label, ?int $hint = null): int
     {
         $label = strtoupper($label);
         foreach (self::LABEL_TYPES as $pattern => $type) {
@@ -404,9 +412,9 @@ final class BankFile
      * @param string $value The amount
      * @return float|null The amount, or null if it is not one
      */
-    public static function amount($value)
+    public static function amount(string $value): ?float
     {
-        $value = str_replace(["\u{00A0}", "\u{202F}", ' ', '€', 'EUR', '$', '+'], '', trim((string)$value));
+        $value = str_replace(["\u{00A0}", "\u{202F}", ' ', '€', 'EUR', '$', '+'], '', trim($value));
         if ($value === '') {
             return null;
         }
@@ -439,13 +447,13 @@ final class BankFile
      * Whether the dates of a file put the day before the month: the day is the number
      * above 12; French order when no date tells.
      *
-     * @param array $dates The dates as written in the file
+     * @param list<string> $dates The dates as written in the file
      * @return bool
      */
-    private static function dayFirst($dates)
+    private static function dayFirst(array $dates): bool
     {
         foreach ($dates as $date) {
-            if (preg_match('/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-\']/', trim((string)$date), $m)) {
+            if (preg_match('/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-\']/', trim($date), $m)) {
                 if ((int)$m[1] > 12) {
                     return true;
                 }
@@ -464,9 +472,9 @@ final class BankFile
      * @param bool   $dayFirst Whether the day comes before the month
      * @return string|null The date, or null if it is not one
      */
-    public static function date($value, $dayFirst = true)
+    public static function date(string $value, bool $dayFirst = true): ?string
     {
-        $value = trim((string)$value);
+        $value = trim($value);
         if (preg_match('/^(\d{4})-?(\d{2})-?(\d{2})/', $value, $m)) {
             [$year, $month, $day] = [(int)$m[1], (int)$m[2], (int)$m[3]];
         } elseif (preg_match('/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-\'](\d{2}|\d{4})$/', str_replace(' ', '', $value), $m)) {
@@ -484,7 +492,7 @@ final class BankFile
      * @param string $content The content
      * @return string
      */
-    private static function toUtf8($content)
+    private static function toUtf8(string $content): string
     {
         if (str_starts_with($content, "\xEF\xBB\xBF")) {
             $content = substr($content, 3);

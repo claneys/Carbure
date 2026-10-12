@@ -31,6 +31,15 @@ updates:
       prefix: "chore"
       include: "scope"
 
+  # Development tools (PHPStan)
+  - package-ecosystem: composer
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
   # End-to-end tests (portal)
   - package-ecosystem: npm
     directory: /tests/e2e

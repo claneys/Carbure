@@ -27,7 +27,7 @@ final class Migrator {
      * @param mysqli      $db        Connection to the Carbure database
      * @param string|null $directory Directory of the migrations (sql/migrations by default)
      */
-    public function __construct(mysqli $db, $directory = null)
+    public function __construct(mysqli $db, ?string $directory = null)
     {
         $this->db = $db;
         $this->directory = $directory ?? dirname(__DIR__, 2) . '/sql/migrations';
@@ -36,9 +36,9 @@ final class Migrator {
     /**
      * Names of all the migrations, in order.
      *
-     * @return array The versions (file names without .sql)
+     * @return list<string> The versions (file names without .sql)
      */
-    public function available()
+    public function available(): array
     {
         $versions = array_map(fn($file) => basename($file, '.sql'), glob($this->directory . '/*.sql') ?: []);
         sort($versions, SORT_STRING);
@@ -48,9 +48,9 @@ final class Migrator {
     /**
      * Migrations already applied.
      *
-     * @return array The versions, in order
+     * @return list<string> The versions, in order
      */
-    public function applied()
+    public function applied(): array
     {
         $this->ensureTable();
         $versions = array_column($this->db->query("SELECT version FROM schema_migrations")->fetch_all(MYSQLI_ASSOC), 'version');
@@ -61,9 +61,9 @@ final class Migrator {
     /**
      * Migrations still to apply.
      *
-     * @return array The versions, in order
+     * @return list<string> The versions, in order
      */
-    public function pending()
+    public function pending(): array
     {
         return array_values(array_diff($this->available(), $this->applied()));
     }
@@ -73,7 +73,7 @@ final class Migrator {
      *
      * @return string|null The version, or null if none
      */
-    public function version()
+    public function version(): ?string
     {
         $applied = $this->applied();
         return $applied ? end($applied) : null;
@@ -85,10 +85,10 @@ final class Migrator {
      *
      * @param callable|null $log    Called with a message for each migration
      * @param bool          $dryRun Only report what would be done
-     * @return array The versions applied or recorded
+     * @return list<string> The versions applied or recorded
      * @throws RuntimeException If a migration fails (the next ones are not run)
      */
-    public function migrate(?callable $log = null, $dryRun = false)
+    public function migrate(?callable $log = null, bool $dryRun = false): array
     {
         $log ??= fn($message) => null;
         $done = [];
@@ -128,7 +128,7 @@ final class Migrator {
      *
      * @return void
      */
-    public function baseline()
+    public function baseline(): void
     {
         foreach ($this->pending() as $version) {
             $this->record($version);
@@ -140,7 +140,7 @@ final class Migrator {
      *
      * @return void
      */
-    private function ensureTable()
+    private function ensureTable(): void
     {
         $this->db->query("CREATE TABLE IF NOT EXISTS `schema_migrations` (
             `version` varchar(100) NOT NULL,
@@ -155,7 +155,7 @@ final class Migrator {
      * @param string $version The migration
      * @return void
      */
-    private function record($version)
+    private function record(string $version): void
     {
         $stmt = $this->db->prepare("INSERT IGNORE INTO schema_migrations (version) VALUES (?)");
         $stmt->bind_param("s", $version);
@@ -168,7 +168,7 @@ final class Migrator {
      * @param string $sql The migration script
      * @return bool True if the migration declares a check and it is satisfied
      */
-    private function alreadyApplied($sql)
+    private function alreadyApplied(string $sql): bool
     {
         if (!preg_match('/^--\s*applied-if:\s*(.+)$/mi', $sql, $match)) {
             return false;
@@ -184,22 +184,25 @@ final class Migrator {
      * @return void
      * @throws RuntimeException If a statement fails
      */
-    private function run($sql)
+    private function run(string $sql): void
     {
         if (!$this->db->multi_query($sql)) {
             throw new RuntimeException($this->db->error);
         }
-        do {
+        while (true) {
             if ($result = $this->db->store_result()) {
                 $result->free();
             }
             if ($this->db->errno) {
                 throw new RuntimeException($this->db->error);
             }
-        } while ($this->db->more_results() && $this->db->next_result());
-
-        if ($this->db->errno) {
-            throw new RuntimeException($this->db->error);
+            if (!$this->db->more_results()) {
+                return;
+            }
+            // A statement after the first one failed
+            if (!$this->db->next_result()) {
+                throw new RuntimeException($this->db->error);
+            }
         }
     }
 }

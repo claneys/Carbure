@@ -24,7 +24,7 @@ final class Woob {
      * @return string The command (woob_path of the configuration)
      * @throws Exception If the file stays readable by other users (ACL of the folder)
      */
-    public static function path()
+    public static function path(): string
     {
         $woob_path = Config::get('woob_path');
         // HOME given in the command (Docker: "env HOME=/data/woob woob"), or the one of PHP
@@ -44,7 +44,8 @@ final class Woob {
                 }
             }
         }
-        return $woob_path;
+        // An unset woob_path gives an empty command, as before
+        return (string)$woob_path;
     }
 
     /**
@@ -54,7 +55,7 @@ final class Woob {
      * @param string|null $error The error message
      * @return bool
      */
-    public static function needsTwoFactor($error)
+    public static function needsTwoFactor(?string $error): bool
     {
         return (bool)preg_match('/interactive mode to perform a two-factor authentication/i', (string)$error);
     }
@@ -76,10 +77,10 @@ final class Woob {
      * @param bool          $interactive Allow woob to ask a two-factor authentication
      * @param callable|null $onMessage   Receives each message of woob (interactive mode)
      * @param callable|null $onDebug     Receives each line of the debug logs of woob (woob_debug)
-     * @return array|null The transaction data or null if no data
+     * @return list<mixed>|null The transaction data or null if no data
      * @throws Exception If woob fails, or reports an error without returning data
      */
-    public static function getBankData($type, $bankId, $interactive = false, $onMessage = null, $onDebug = null)
+    public static function getBankData(string $type, string $bankId, bool $interactive = false, ?callable $onMessage = null, ?callable $onDebug = null): ?array
     {
         $command = self::buildCommand($type, $bankId);
         if ($interactive) {
@@ -105,10 +106,10 @@ final class Woob {
     /**
      * List the bank accounts of every configured woob backend.
      *
-     * @return array The accounts: id ("<account>@<backend>"), label, balance, currency...
+     * @return list<array<mixed>> The accounts: id ("<account>@<backend>"), label, balance, currency...
      * @throws Exception If woob fails or returns nothing while reporting an error
      */
-    public static function listAccounts()
+    public static function listAccounts(): array
     {
         $woob_path = self::path();
         $woob_logging = Config::get('woob_logging');
@@ -132,9 +133,9 @@ final class Woob {
      * List the bank backends configured in woob (only their name and module:
      * the configuration, which contains the bank login, is never returned).
      *
-     * @return array The backends: [{name, module}]
+     * @return list<array{name: mixed, module: mixed}> The backends (names given by woob)
      */
-    public static function listBackends()
+    public static function listBackends(): array
     {
         $woob_path = self::path();
         $stderr = '';
@@ -155,9 +156,9 @@ final class Woob {
      * List the bank modules supported by woob (cached for a day: the list only
      * changes with woob updates).
      *
-     * @return array The modules: [{module, description}]
+     * @return list<array{module: mixed, description: mixed}> The modules (names given by woob)
      */
-    public static function listBankModules()
+    public static function listBankModules(): array
     {
         $cacheKey = 'carbure_woob_bank_modules';
         if (function_exists('apcu_fetch') && ini_get('apc.enabled')) {
@@ -191,10 +192,12 @@ final class Woob {
      * build the form of the portal. Nothing secret is returned.
      *
      * @param string $module The woob module (e.g. bnp)
-     * @return array The fields: [{key, label, description, default, required, masked, choices}]
+     * @return array{module: mixed, description: string, fields: list<array{key: string, label: string,
+     *               description: string, default: string, required: bool, masked: bool, regexp: string|null,
+     *               choices: list<array{value: string, label: string}>}>} The module and its fields
      * @throws Exception If woob does not know the module
      */
-    public static function moduleFields($module)
+    public static function moduleFields(string $module): array
     {
         $info = self::moduleInfo($module);
         // woob only describes the settings of an installed module: install it first
@@ -236,10 +239,10 @@ final class Woob {
      * Description of a woob module (with its settings once installed).
      *
      * @param string $module The woob module
-     * @return array The description given by "woob config info"
+     * @return array<mixed> The description given by "woob config info"
      * @throws Exception If woob does not know the module
      */
-    private static function moduleInfo($module)
+    private static function moduleInfo(string $module): array
     {
         $woob_path = self::path();
         $stderr = '';
@@ -260,7 +263,7 @@ final class Woob {
      * @param string $module The woob module
      * @return void
      */
-    private static function installModule($module)
+    private static function installModule(string $module): void
     {
         $woob_path = self::path();
         $probe = 'carbure_install_probe';
@@ -285,11 +288,11 @@ final class Woob {
      *
      * @param string $module  The woob module
      * @param string $backend The backend name
-     * @param array  $params  The settings: key => value
+     * @param array<string, string> $params The settings: key => value
      * @return void
      * @throws Exception If woob refuses the backend
      */
-    public static function addBackend($module, $backend, $params)
+    public static function addBackend(string $module, string $backend, array $params): void
     {
         // woob reads at most 2 arguments: the module, then the backend name and the
         // key=value settings together, quoted (it splits them on spaces)
@@ -325,7 +328,7 @@ final class Woob {
      * @param string $backend The backend name
      * @return void
      */
-    public static function removeBackend($backend)
+    public static function removeBackend(string $backend): void
     {
         $woob_path = self::path();
         shell_exec("$woob_path config remove " . escapeshellarg($backend) . ' < /dev/null 2>&1');
@@ -337,7 +340,7 @@ final class Woob {
      * @param string $output The command output
      * @return string The suffix to add to an error message
      */
-    private static function lastLine($output)
+    private static function lastLine(string $output): string
     {
         $lines = array_values(array_filter(array_map('trim', explode("\n", $output))));
         return $lines ? ': ' . mb_substr(end($lines), 0, 200) : '';
@@ -350,7 +353,7 @@ final class Woob {
      * @param string $bankId The bank account identifier
      * @return string The full command to execute
      */
-    private static function buildCommand($type, $bankId)
+    private static function buildCommand(string $type, string $bankId): string
     {
         $woob_path = self::path();
         $woob_transactions = Config::get('woob_transactions');
@@ -372,7 +375,7 @@ final class Woob {
      * @param string $command The woob command
      * @return string The command run through tools/woob-tty.py
      */
-    private static function interactiveCommand($command)
+    private static function interactiveCommand(string $command): string
     {
         return 'python3 ' . escapeshellarg(dirname(__DIR__, 2) . '/tools/woob-tty.py') . ' ' . escapeshellarg($command);
     }
@@ -387,7 +390,7 @@ final class Woob {
      * @param int      $maxLength Maximum length of a message
      * @return void
      */
-    private static function emitMessages(&$buffer, $onMessage, $data = true, $maxLength = 300)
+    private static function emitMessages(string &$buffer, callable $onMessage, bool $data = true, int $maxLength = 300): void
     {
         while (($end = strpos($buffer, "\n")) !== false) {
             $line = trim(preg_replace('/\e\[[0-9;?]*[A-Za-z]/', '', substr($buffer, 0, $end)));
@@ -409,7 +412,7 @@ final class Woob {
      * @return string The stdout output of the command
      * @throws Exception If the process fails to start or exits with a non-zero code
      */
-    private static function executeWithHeartbeat($command, &$stderr = '', $heartbeat = true, $onMessage = null, $onError = null)
+    private static function executeWithHeartbeat(string $command, string &$stderr = '', bool $heartbeat = true, ?callable $onMessage = null, ?callable $onError = null): string
     {
         $descriptors = [
             0 => ['pipe', 'r'],
@@ -486,9 +489,9 @@ final class Woob {
      *
      * @param string $type   The transaction type (for logging)
      * @param string $stdout The raw stdout from the woob process
-     * @return array|null The parsed transaction data or null if empty
+     * @return list<mixed>|null The parsed transaction data or null if empty
      */
-    private static function parseOutput($type, $stdout)
+    private static function parseOutput(string $type, string $stdout): ?array
     {
         $lines = array_filter(explode("\n", trim($stdout)));
 

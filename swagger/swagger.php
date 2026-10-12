@@ -14,10 +14,14 @@ require_once __DIR__ . '/../src/autoload.php';
 
 class SwaggerGenerator {
 
-    private $spec;
-    private $resourcesPath;
+    /** @var array<string, mixed> OpenAPI specification being built */
+    private array $spec;
+    private string $resourcesPath;
 
-    public function __construct($resourcesPath) {
+    /**
+     * @param string $resourcesPath Directory of the resource classes
+     */
+    public function __construct(string $resourcesPath) {
         $this->resourcesPath = $resourcesPath;
         $this->spec = [
             'openapi' => '3.0.0',
@@ -47,9 +51,11 @@ class SwaggerGenerator {
 
     /**
      * Scan all resources files and generate OpenAPI spec
+     *
+     * @return array<string, mixed> The OpenAPI specification
      */
-    public function generate() {
-        $files = glob($this->resourcesPath . '/*.php');
+    public function generate(): array {
+        $files = glob($this->resourcesPath . '/*.php') ?: [];
 
         foreach ($files as $file) {
             $this->processResourceFile($file);
@@ -60,8 +66,11 @@ class SwaggerGenerator {
 
     /**
      * Process a single resource file
+     *
+     * @param string $file Path of the resource file (named after its class)
+     * @return void
      */
-    private function processResourceFile($file) {
+    private function processResourceFile(string $file): void {
         require_once $file;
 
         $resourceName = basename($file, '.php');
@@ -77,8 +86,12 @@ class SwaggerGenerator {
 
     /**
      * Process a method and add it to the OpenAPI spec
+     *
+     * @param string           $resourceName Name of the resource class
+     * @param ReflectionMethod $method       The method
+     * @return void
      */
-    private function processMethod($resourceName, ReflectionMethod $method) {
+    private function processMethod(string $resourceName, ReflectionMethod $method): void {
         $methodName = $method->getName();
         
         // Skip private/protected methods
@@ -178,30 +191,40 @@ class SwaggerGenerator {
 
     /**
      * Extract parameters from method signature
+     *
+     * @param ReflectionMethod $method     The method
+     * @param string           $httpMethod HTTP method, lowercase
+     * @return array<int|string, array<string, mixed>> Query parameters (get, delete), or the
+     *         properties of the request body by name
      */
-    private function extractParameters(ReflectionMethod $method, $httpMethod) {
+    private function extractParameters(ReflectionMethod $method, string $httpMethod): array {
         $parameters = [];
         
         foreach ($method->getParameters() as $param) {
             $paramName = $param->getName();
             
-            // Try to detect type
+            // Type of the parameter (string by default); a union type (int|string...) is
+            // described by its string type if any, else its first type; mixed by no type
             $type = 'string';
-            if ($param->hasType()) {
-                $paramType = $param->getType();
-                if ($paramType instanceof ReflectionNamedType) {
-                    $typeName = $paramType->getName();
-                    if ($typeName === 'int') {
-                        $type = 'integer';
-                    } elseif ($typeName === 'float' || $typeName === 'double') {
-                        $type = 'number';
-                    } elseif ($typeName === 'bool') {
-                        $type = 'boolean';
-                    } elseif ($typeName === 'array') {
-                        $type = 'object';
-                    }
-                }
+            $paramType = $param->getType();
+            $named = $paramType;
+            if ($paramType instanceof ReflectionUnionType) {
+                // A string is what the query string gives: preferred when the union accepts it
+                $types = $paramType->getTypes();
+                $strings = array_filter($types, fn($t) => $t instanceof ReflectionNamedType && $t->getName() === 'string');
+                $named = $strings ? reset($strings) : $types[0];
             }
+            if ($named instanceof ReflectionNamedType) {
+                $type = match ($named->getName()) {
+                    'int' => 'integer',
+                    'float' => 'number',
+                    'bool', 'true', 'false' => 'boolean',
+                    'array' => 'object',
+                    'mixed' => null,
+                    default => 'string',
+                };
+            }
+            $schema = $type === null ? new stdClass() : ['type' => $type];
 
             // Check if parameter has default value
             $required = !$param->isOptional();
@@ -212,15 +235,12 @@ class SwaggerGenerator {
                     'name' => $paramName,
                     'in' => 'query',
                     'required' => $required,
-                    'schema' => [
-                        'type' => $type
-                    ],
+                    'schema' => $schema,
                     'description' => ucfirst($paramName) . ' parameter'
                 ];
             } else {
                 // POST/PUT/PATCH: parameters in request body
-                $parameters[$paramName] = [
-                    'type' => $type,
+                $parameters[$paramName] = ($type === null ? [] : ['type' => $type]) + [
                     'description' => ucfirst($paramName) . ' parameter',
                     'required' => $required
                 ];
@@ -232,8 +252,11 @@ class SwaggerGenerator {
 
     /**
      * Extract description from docblock
+     *
+     * @param string|false $docComment The docblock, false if none
+     * @return string The description
      */
-    private function extractDescription($docComment) {
+    private function extractDescription(string|false $docComment): string {
         if (!$docComment) {
             return '';
         }
@@ -262,8 +285,12 @@ class SwaggerGenerator {
 
     /**
      * Generate a human-readable summary
+     *
+     * @param string $methodName   Name of the method
+     * @param string $resourceName Name of the resource class
+     * @return string The summary
      */
-    private function generateSummary($methodName, $resourceName) {
+    private function generateSummary(string $methodName, string $resourceName): string {
         // Convert camelCase to readable text
         $summary = preg_replace('/([a-z])([A-Z])/', '$1 $2', $methodName);
         $summary = ucfirst($summary);
@@ -273,16 +300,20 @@ class SwaggerGenerator {
 
     /**
      * Output the OpenAPI spec as JSON
+     *
+     * @return void
      */
-    public function output() {
+    public function output(): void {
         header('Content-Type: application/json');
         echo json_encode($this->spec, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     }
 
     /**
      * Get the spec array
+     *
+     * @return array<string, mixed> The OpenAPI specification
      */
-    public function getSpec() {
+    public function getSpec(): array {
         return $this->spec;
     }
 }

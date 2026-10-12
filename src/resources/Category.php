@@ -12,10 +12,10 @@ final class Category {
     /**
      * Get all the categories available.
      *
-     * @return array The list of categories
+     * @return list<array<string, mixed>> The list of categories
      */
     #[ApiRoute('/category', method: 'GET')]
-    public static function get()
+    public static function get(): array
     {
         // Get the category
         $sql = "SELECT * FROM bank_transaction_category";
@@ -42,18 +42,18 @@ final class Category {
     /**
      * Validate the fields of a category and return them normalized.
      *
-     * @param int|null $id     The category being modified (null for a new one)
-     * @param string   $name   The name
-     * @param int      $parent The parent category (0 for a top-level category)
-     * @param string   $type   DEBIT, CREDIT or HORS-BUDGET
-     * @param string   $icon   The icon (SF Symbols name used by the iOS app)
-     * @param string   $color  The color (SwiftUI name or hex)
-     * @return array [name, parent, type, icon, color]
+     * @param int|null        $id     The category being modified (null for a new one)
+     * @param string          $name   The name
+     * @param int|string|null $parent The parent category (0, '' or null for a top-level category)
+     * @param string          $type   DEBIT, CREDIT or HORS-BUDGET
+     * @param string|null     $icon   The icon (SF Symbols name used by the iOS app)
+     * @param string|null     $color  The color (SwiftUI name or hex)
+     * @return array{string, int, string, string, string} [name, parent, type, icon, color]
      * @throws Error If a field is invalid
      */
-    private static function validate($id, $name, $parent, $type, $icon, $color)
+    private static function validate(?int $id, string $name, int|string|null $parent, string $type, ?string $icon, ?string $color): array
     {
-        $name = trim((string)$name);
+        $name = trim($name);
         $parent = (int)$parent;
         if ($name === '' || mb_strlen($name) > 50) {
             throw new Error("The name must contain 1 to 50 characters", 400);
@@ -87,16 +87,16 @@ final class Category {
     /**
      * Create a category.
      *
-     * @param string $name            The name
-     * @param string $type            DEBIT, CREDIT or HORS-BUDGET
-     * @param int    $parent_category The parent category (0 for a top-level category)
-     * @param string $icon            The icon (SF Symbols name)
-     * @param string $color           The color (SwiftUI name or hex)
-     * @return array The category
+     * @param string          $name            The name
+     * @param string          $type            DEBIT, CREDIT or HORS-BUDGET
+     * @param int|string|null $parent_category The parent category (0 for a top-level category)
+     * @param string|null     $icon            The icon (SF Symbols name)
+     * @param string|null     $color           The color (SwiftUI name or hex)
+     * @return array<string, mixed> The category
      * @throws Error If invalid or the name already exists
      */
     #[ApiRoute('/category', method: 'POST')]
-    public static function create($name, $type, $parent_category = 0, $icon = '', $color = '')
+    public static function create(string $name, string $type, int|string|null $parent_category = 0, ?string $icon = '', ?string $color = ''): array
     {
         User::requireAdmin();
 
@@ -111,21 +111,20 @@ final class Category {
     /**
      * Modify a category.
      *
-     * @param int    $id              The category
-     * @param string $name            The name
-     * @param string $type            DEBIT, CREDIT or HORS-BUDGET
-     * @param int    $parent_category The parent category (0 for a top-level category)
-     * @param string $icon            The icon (SF Symbols name)
-     * @param string $color           The color (SwiftUI name or hex)
-     * @return array The category
+     * @param int             $id              The category
+     * @param string          $name            The name
+     * @param string          $type            DEBIT, CREDIT or HORS-BUDGET
+     * @param int|string|null $parent_category The parent category (0 for a top-level category)
+     * @param string|null     $icon            The icon (SF Symbols name)
+     * @param string|null     $color           The color (SwiftUI name or hex)
+     * @return array<string, mixed> The category
      * @throws Error If not found, protected, invalid or the name already exists
      */
     #[ApiRoute('/category', method: 'PUT')]
-    public static function update($id, $name, $type, $parent_category = 0, $icon = '', $color = '')
+    public static function update(int $id, string $name, string $type, int|string|null $parent_category = 0, ?string $icon = '', ?string $color = ''): array
     {
         User::requireAdmin();
 
-        $id = (int)$id;
         self::existing($id);
         [$name, $parent, $type, $icon, $color] = self::validate($id, $name, $parent_category, $type, $icon, $color);
 
@@ -144,11 +143,10 @@ final class Category {
      * @throws Error If not found, protected or with sub-categories
      */
     #[ApiRoute('/category', method: 'DELETE')]
-    public static function delete($id)
+    public static function delete(int $id): bool
     {
         User::requireAdmin();
 
-        $id = (int)$id;
         self::existing($id);
         if (Db::queryOne("SELECT id FROM bank_transaction_category WHERE parent_category = ? AND id <> ? LIMIT 1", "ii", $id, $id)) {
             throw new Error("Delete or move its sub-categories first", 409);
@@ -168,7 +166,7 @@ final class Category {
      * @return void
      * @throws Error If not found or protected
      */
-    private static function existing($id)
+    private static function existing(int $id): void
     {
         if ($id === 0) {
             throw new Error("The default category cannot be modified", 400);
@@ -181,10 +179,10 @@ final class Category {
     /**
      * Get the automatic categorization rules (keywords found in the labels).
      *
-     * @return array The rules with their category name, sorted by category
+     * @return list<array<string, mixed>> The rules with their category name, sorted by category
      */
     #[ApiRoute('/category/keyword', method: 'GET')]
-    public static function getKeywords()
+    public static function getKeywords(): array
     {
         $sql = "SELECT k.id, k.keyword, k.category, c.name AS category_name, k.notify
                 FROM bank_transaction_category_keyword k
@@ -196,19 +194,19 @@ final class Category {
     /**
      * Add an automatic categorization rule.
      *
-     * @param string $keyword  The text to find in the transaction labels (stored in upper case)
-     * @param int    $category The category to set
-     * @param bool   $notify   Notify the household when a new transaction matches (optional)
-     * @return array The rule, with applied: the transactions of the history recategorized
+     * @param string               $keyword  The text to find in the transaction labels (stored in upper case)
+     * @param int                  $category The category to set
+     * @param bool|int|string|null $notify   Notify the household when a new transaction matches (optional, "true"/"false" accepted)
+     * @return array<string, mixed> The rule, with applied: the transactions of the history recategorized
      * @throws Error If the keyword is empty or already exists, or the category does not exist
      */
     #[ApiRoute('/category/keyword', method: 'POST')]
-    public static function createKeyword($keyword, $category, $notify = false)
+    public static function createKeyword(string $keyword, int $category, bool|int|string|null $notify = false): array
     {
         User::requireAdmin();
 
         // Labels are stored in upper case
-        $keyword = strtoupper(trim((string)$keyword));
+        $keyword = strtoupper(trim($keyword));
         if ($keyword === '' || strlen($keyword) > 60) {
             throw new Error("The keyword must contain 1 to 60 characters", 400);
         }
@@ -228,29 +226,29 @@ final class Category {
 
         $id = $stmt->insert_id;
         // The rule applies at once to the whole history
-        $applied = self::applyRule($keyword, (int)$category);
+        $applied = self::applyRule($keyword, $category);
 
-        return ['id' => $id, 'keyword' => $keyword, 'category' => (int)$category, 'notify' => $notify, 'applied' => $applied];
+        return ['id' => $id, 'keyword' => $keyword, 'category' => $category, 'notify' => $notify, 'applied' => $applied];
     }
 
     /**
      * Modify a categorization rule (administrators).
      *
-     * @param int    $id       The rule
-     * @param string $keyword  The keyword found in the labels
-     * @param int    $category The category given to the transactions
-     * @param bool   $notify   Notify the household when a new transaction matches
-     * @return array The rule, with applied: the transactions of the history recategorized
+     * @param int                  $id       The rule
+     * @param string               $keyword  The keyword found in the labels
+     * @param int                  $category The category given to the transactions
+     * @param bool|int|string|null $notify   Notify the household when a new transaction matches ("true"/"false" accepted)
+     * @return array<string, mixed> The rule, with applied: the transactions of the history recategorized
      * @throws Error If not found, invalid or the keyword already exists
      */
     #[ApiRoute('/category/keyword', method: 'PUT')]
-    public static function updateKeyword($id, $keyword, $category, $notify = false)
+    public static function updateKeyword(int $id, string $keyword, int $category, bool|int|string|null $notify = false): array
     {
         User::requireAdmin();
         if (!Db::queryOne("SELECT id FROM bank_transaction_category_keyword WHERE id=?", "i", $id)) {
             throw new Error("Rule not found", 404);
         }
-        $keyword = strtoupper(trim((string)$keyword));
+        $keyword = strtoupper(trim($keyword));
         if ($keyword === '' || strlen($keyword) > 60) {
             throw new Error("The keyword must contain 1 to 60 characters", 400);
         }
@@ -262,9 +260,9 @@ final class Category {
         }
         $notify = filter_var($notify, FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
         Db::execute("UPDATE bank_transaction_category_keyword SET keyword=?, category=?, notify=? WHERE id=?", "siii", $keyword, $category, $notify, $id);
-        $applied = self::applyRule($keyword, (int)$category);
+        $applied = self::applyRule($keyword, $category);
 
-        return ['id' => (int)$id, 'keyword' => $keyword, 'category' => (int)$category, 'notify' => $notify, 'applied' => $applied];
+        return ['id' => $id, 'keyword' => $keyword, 'category' => $category, 'notify' => $notify, 'applied' => $applied];
     }
 
     /**
@@ -272,11 +270,11 @@ final class Category {
      * (administrators).
      *
      * @param int $id The rule
-     * @return array matching (transactions), categorized (with the category of the rule)
+     * @return array{matching: int, categorized: int} matching (transactions), categorized (with the category of the rule)
      * @throws Error If not found
      */
     #[ApiRoute('/category/keyword/count', method: 'GET')]
-    public static function countKeyword($id)
+    public static function countKeyword(int $id): array
     {
         User::requireAdmin();
         $rule = Db::queryOne("SELECT keyword, category FROM bank_transaction_category_keyword WHERE id=?", "i", $id);
@@ -297,7 +295,7 @@ final class Category {
      * @throws Error If the rule does not exist
      */
     #[ApiRoute('/category/keyword', method: 'DELETE')]
-    public static function deleteKeyword($id)
+    public static function deleteKeyword(int $id): bool
     {
         User::requireAdmin();
 
@@ -314,10 +312,10 @@ final class Category {
      * Apply the rules to every transaction of the database (categorized ones
      * included): the first rule found in a label gives its category.
      *
-     * @return array The number of transactions whose category changed
+     * @return array{updated: int} The number of transactions whose category changed
      */
     #[ApiRoute('/category/keyword/apply', method: 'POST')]
-    public static function applyKeywords()
+    public static function applyKeywords(): array
     {
         User::requireAdmin();
 
@@ -341,7 +339,7 @@ final class Category {
      * @param int    $category The category of the rule
      * @return int The number of transactions whose category changed
      */
-    private static function applyRule($keyword, $category)
+    private static function applyRule(string $keyword, int $category): int
     {
         $pattern = '%' . addcslashes($keyword, '%_\\') . '%';
         return Db::execute("UPDATE bank_transaction SET category = ? WHERE label LIKE ? AND category <> ?",
@@ -351,18 +349,18 @@ final class Category {
     /**
      * Get the category of a transaction based on its label.
      *
-     * @param string     $label    The label of the transaction
-     * @param array|null $keywords The keywords already loaded (loaded when null)
+     * @param string                          $label    The label of the transaction
+     * @param list<array<string, mixed>>|null $keywords The keywords already loaded (loaded when null)
      * @return int|null The category id or null if not found
      */
-    public static function find($label, $keywords = null)
+    public static function find(string $label, ?array $keywords = null): ?int
     {
         $keywords ??= self::loadKeywords();
 
         // The first keyword found in the label gives the category
         foreach ($keywords as $row) {
             if (strpos($label, $row["keyword"]) !== false) {
-                return $row["category"];
+                return (int)$row["category"];
             }
         }
 
@@ -372,9 +370,9 @@ final class Category {
     /**
      * Load all the categorization keywords, in rule creation order.
      *
-     * @return array The rows (keyword, category)
+     * @return list<array<string, mixed>> The rows (keyword, category)
      */
-    public static function loadKeywords()
+    public static function loadKeywords(): array
     {
         $sql = "SELECT keyword, category FROM bank_transaction_category_keyword ORDER BY id";
         return Db::execute($sql, "")->get_result()->fetch_all(MYSQLI_ASSOC);

@@ -16,9 +16,9 @@ final class Month {
      *
      * @param int|string|null $month The month (1 to 12)
      * @param int|string|null $year  The year
-     * @return int[] [month, year]
+     * @return array{int, int} [month, year]
      */
-    public static function resolve($month = null, $year = null)
+    public static function resolve(int|string|null $month = null, int|string|null $year = null): array
     {
         return [(int)($month ?: date('m')), (int)($year ?: date('Y'))];
     }
@@ -30,7 +30,7 @@ final class Month {
      * @param int|string|null $year  The year (current year by default)
      * @return string The first day
      */
-    public static function first($month = null, $year = null)
+    public static function first(int|string|null $month = null, int|string|null $year = null): string
     {
         [$month, $year] = self::resolve($month, $year);
         return sprintf('%04d-%02d-01', $year, $month);
@@ -41,9 +41,9 @@ final class Month {
      *
      * @param int|string|null $month The month (current month by default)
      * @param int|string|null $year  The year (current year by default)
-     * @return string[] [from: first day of the month, to: first day of the next month]
+     * @return array{string, string} [from: first day of the month, to: first day of the next month]
      */
-    public static function range($month = null, $year = null)
+    public static function range(int|string|null $month = null, int|string|null $year = null): array
     {
         $from = self::first($month, $year);
         return [$from, date('Y-m-d', strtotime("$from +1 month"))];

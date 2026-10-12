@@ -26,14 +26,14 @@ final class Installer {
      * @throws mysqli_sql_exception If the connection fails
      * @throws InvalidArgumentException If the names are invalid
      */
-    public static function connect($host, $port, $name, $user, $password)
+    public static function connect(string $host, int $port, string $name, string $user, string $password): mysqli
     {
-        if (!preg_match('/^[A-Za-z0-9_]{1,64}$/', (string)$name) || !preg_match('/^[A-Za-z0-9_.-]{1,80}$/', (string)$user)
-            || !preg_match('/^[A-Za-z0-9_.:-]{1,255}$/', (string)$host)) {
+        if (!preg_match('/^[A-Za-z0-9_]{1,64}$/', $name) || !preg_match('/^[A-Za-z0-9_.-]{1,80}$/', $user)
+            || !preg_match('/^[A-Za-z0-9_.:-]{1,255}$/', $host)) {
             throw new InvalidArgumentException("Invalid host, database or user name");
         }
         mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
-        $db = new mysqli($host, $user, (string)$password, $name, (int)$port ?: 3306);
+        $db = new mysqli($host, $user, $password, $name, $port ?: 3306);
         $db->set_charset('utf8mb4');
         return $db;
     }
@@ -43,9 +43,10 @@ final class Installer {
      *
      * @param mysqli $db   The connection
      * @param string $root Root of the project
-     * @return array state (none|current|outdated), version, pending, hasAdmin
+     * @return array{state: string, version: string|null, pending: list<string>, hasAdmin: bool}
+     *         state (none|current|outdated), version, pending, hasAdmin
      */
-    public static function state(mysqli $db, $root)
+    public static function state(mysqli $db, string $root): array
     {
         if ($db->query("SHOW TABLES LIKE 'users'")->num_rows === 0) {
             return ['state' => 'none', 'version' => null, 'pending' => [], 'hasAdmin' => false];
@@ -68,9 +69,9 @@ final class Installer {
      *
      * @param mysqli $db   The connection
      * @param string $root Root of the project
-     * @return string The schema version
+     * @return string|null The schema version (null without any migration)
      */
-    public static function installSchema(mysqli $db, $root)
+    public static function installSchema(mysqli $db, string $root): ?string
     {
         self::runScript($db, file_get_contents("$root/sql/carbure.sql"));
         $migrator = new Migrator($db, "$root/sql/migrations");
@@ -85,10 +86,10 @@ final class Installer {
      *
      * @param mysqli $db   The connection
      * @param string $root Root of the project
-     * @return array The migrations applied or recorded
+     * @return list<string> The migrations applied or recorded
      * @throws RuntimeException If a migration fails
      */
-    public static function migrate(mysqli $db, $root)
+    public static function migrate(mysqli $db, string $root): array
     {
         $applied = (new Migrator($db, "$root/sql/migrations"))->migrate();
         self::defaultCategory($db);
@@ -101,7 +102,7 @@ final class Installer {
      * @param mysqli $db The connection
      * @return void
      */
-    public static function defaultCategory(mysqli $db)
+    public static function defaultCategory(mysqli $db): void
     {
         $db->query("SET SESSION sql_mode = CONCAT(@@sql_mode, ',NO_AUTO_VALUE_ON_ZERO')");
         $db->query("SET FOREIGN_KEY_CHECKS=0");
@@ -116,11 +117,11 @@ final class Installer {
      *
      * @param mysqli $db       The connection
      * @param string $root     Root of the project
-     * @param string $language Language of the names: fr or en
+     * @param mixed  $language Language of the names: fr or en (anything else gives fr)
      * @param bool   $insights Also add the insights
-     * @return array Numbers added: categories, rules, insights
+     * @return array{categories: int, rules: int, insights: int} Numbers added
      */
-    public static function starter(mysqli $db, $root, $language = 'fr', $insights = true)
+    public static function starter(mysqli $db, string $root, mixed $language = 'fr', bool $insights = true): array
     {
         $starter = json_decode(file_get_contents("$root/sql/starter.json"), true, 512, JSON_THROW_ON_ERROR);
         $language = self::language($language);
@@ -155,10 +156,10 @@ final class Installer {
     /**
      * A language of Carbure: fr or en (fr by default).
      *
-     * @param string|null $language The language asked
+     * @param mixed $language The language asked (any value of a JSON request)
      * @return string fr or en
      */
-    private static function language($language)
+    private static function language(mixed $language): string
     {
         return in_array($language, ['fr', 'en'], true) ? $language : 'fr';
     }
@@ -169,7 +170,7 @@ final class Installer {
      * @param mysqli $db The connection
      * @return bool True if there is an administrator
      */
-    public static function hasAdmin(mysqli $db)
+    public static function hasAdmin(mysqli $db): bool
     {
         return $db->query("SELECT id FROM users WHERE is_admin = 1 LIMIT 1")->num_rows > 0;
     }
@@ -181,17 +182,17 @@ final class Installer {
      * @param string      $username Login
      * @param string      $password Password (8 characters minimum)
      * @param string|null $email    Email
-     * @param string      $language fr or en
+     * @param mixed       $language fr or en (anything else gives fr)
      * @return void
      * @throws InvalidArgumentException If the login or the password is invalid
      */
-    public static function createAdmin(mysqli $db, $username, $password, $email = null, $language = 'fr')
+    public static function createAdmin(mysqli $db, string $username, string $password, ?string $email = null, mixed $language = 'fr'): void
     {
-        $username = trim((string)$username);
+        $username = trim($username);
         if (!preg_match('/^[A-Za-z0-9_.@-]{1,20}$/', $username)) {
             throw new InvalidArgumentException("The login must contain 1 to 20 letters, digits or _ . @ -");
         }
-        if (strlen((string)$password) < 8) {
+        if (strlen($password) < 8) {
             throw new InvalidArgumentException("The administrator password must contain at least 8 characters");
         }
         $hash = password_hash($password, PASSWORD_DEFAULT);
@@ -207,10 +208,10 @@ final class Installer {
      * settings, random secrets and the woob command.
      *
      * @param string $root     Root of the project
-     * @param array  $settings db_hostname, db_port, db_username, db_password, db_name, woob_path
-     * @return array [ini content, sync token]
+     * @param array<string, string> $settings db_hostname, db_port, db_username, db_password, db_name, woob_path
+     * @return array{0: string, 1: string} [ini content, sync token]
      */
-    public static function config($root, $settings)
+    public static function config(string $root, array $settings): array
     {
         $syncToken = bin2hex(random_bytes(24));
         $ini = file_get_contents("$root/conf/prod.sample.ini");
@@ -221,7 +222,7 @@ final class Installer {
             'password_salt' => bin2hex(random_bytes(16)),
             'sync_token' => $syncToken,
         ] + $settings as $key => $value) {
-            $ini = self::setIni($ini, $key, (string)$value);
+            $ini = self::setIni($ini, $key, $value);
         }
         return [$ini, $syncToken];
     }
@@ -234,7 +235,7 @@ final class Installer {
      * @param string $value The value
      * @return string The INI content
      */
-    public static function setIni($ini, $key, $value)
+    public static function setIni(string $ini, string $key, string $value): string
     {
         $quoted = preg_match('/^[A-Za-z0-9_.\/:@-]*$/', $value) ? $value : '"' . str_replace('"', '', $value) . '"';
         $count = 0;
@@ -252,7 +253,7 @@ final class Installer {
      * @param string $sql The script
      * @return void
      */
-    public static function runScript(mysqli $db, $sql)
+    public static function runScript(mysqli $db, string $sql): void
     {
         $db->multi_query($sql);
         do {

@@ -28,7 +28,7 @@ final class Apns {
      * Provider tokens already generated in this process, by key
      * @var array<string, array{token: string, iat: int}>
      */
-    private static $jwtCache = [];
+    private static array $jwtCache = [];
 
     /**
      * Send a push notification to an iOS device.
@@ -37,11 +37,11 @@ final class Apns {
      * @param string $title       Notification title
      * @param string $body        Notification body/message
      * @param int    $badge       Badge number to display on the app icon
-     * @param array  $data        Optional custom data payload
-     * @return array Response with success status and details
+     * @param array<string, mixed> $data Optional custom data payload
+     * @return array<string, mixed> Response with success status and details
      * @throws Error If notification fails
      */
-    public static function send($deviceToken, $title, $body, $badge = 0, $data = [])
+    public static function send(string $deviceToken, string $title, string $body, int $badge = 0, array $data = []): array
     {
         // Validate device token
         if (!preg_match('/^[a-f0-9]{64}$/i', $deviceToken)) {
@@ -86,10 +86,10 @@ final class Apns {
      * @param string $title Notification title
      * @param string $body  Notification body
      * @param int    $badge Badge number
-     * @param array  $data  Custom data
+     * @param array<string, mixed> $data Custom data
      * @return string JSON payload
      */
-    private static function buildPayload($title, $body, $badge = 0, $data = [])
+    private static function buildPayload(string $title, string $body, int $badge = 0, array $data = []): string
     {
         $payload = [
             'aps' => [
@@ -117,9 +117,9 @@ final class Apns {
      * @param string $url APNs URL
      * @param string $payload JSON payload
      * @param string $bundleId App bundle ID
-     * @return array Response
+     * @return array<string, mixed> Response
      */
-    private static function sendWithToken($url, $payload, $bundleId)
+    private static function sendWithToken(string $url, string $payload, string $bundleId): array
     {
         // Get token configuration
         $keyPath = Config::has('apns_key_path') ? Config::get('apns_key_path') : null;
@@ -155,9 +155,9 @@ final class Apns {
      * @param string $url APNs URL
      * @param string $payload JSON payload
      * @param string $bundleId App bundle ID
-     * @return array Response
+     * @return array<string, mixed> Response
      */
-    private static function sendWithCertificate($url, $payload, $bundleId)
+    private static function sendWithCertificate(string $url, string $payload, string $bundleId): array
     {
         $certPath = Config::has('apns_certificate_path') ? Config::get('apns_certificate_path') : null;
         $certPassword = Config::has('apns_certificate_password') ? Config::get('apns_certificate_password') : '';
@@ -189,12 +189,12 @@ final class Apns {
      * 
      * @param string $url APNs URL
      * @param string $payload JSON payload
-     * @param array $headers Request headers
+     * @param list<string> $headers Request headers
      * @param string|null $certPath Certificate path (for cert-based auth)
      * @param string|null $certPassword Certificate password
-     * @return array Response
+     * @return array<string, mixed> Response
      */
-    private static function sendRequest($url, $payload, $headers, $certPath = null, $certPassword = null)
+    private static function sendRequest(string $url, string $payload, array $headers, ?string $certPath = null, ?string $certPassword = null): array
     {
         $ch = curl_init();
         
@@ -254,7 +254,7 @@ final class Apns {
      * @param string $teamId Team ID from Apple Developer Portal
      * @return string JWT token
      */
-    private static function generateJwt($keyPath, $keyId, $teamId)
+    private static function generateJwt(string $keyPath, string $keyId, string $teamId): string
     {
         // Reuse the token while it is valid (memory, then APCu shared between requests)
         $cacheKey = 'carbure_apns_jwt_' . md5("$keyPath|$keyId|$teamId");
@@ -324,7 +324,7 @@ final class Apns {
      * @return string The raw signature
      * @throws Error If the signature is not a valid DER ECDSA signature
      */
-    public static function derToRaw($der, $partLength = 32)
+    public static function derToRaw(string $der, int $partLength = 32): string
     {
         $offset = 0;
         $readLength = function () use ($der, &$offset) {
@@ -362,14 +362,14 @@ final class Apns {
     /**
      * Send notification to multiple devices.
      *
-     * @param array  $deviceTokens Array of device tokens
-     * @param string $title        Notification title
-     * @param string $body         Notification body
-     * @param int    $badge        Badge number to display on the app icon
-     * @param array  $data         Optional custom data
-     * @return array Results for each device token
+     * @param list<string>         $deviceTokens Array of device tokens
+     * @param string               $title        Notification title
+     * @param string               $body         Notification body
+     * @param int                  $badge        Badge number to display on the app icon
+     * @param array<string, mixed> $data         Optional custom data
+     * @return array<string, array<string, mixed>> Results for each device token
      */
-    public static function sendToMultiple($deviceTokens, $title, $body, $badge = 0, $data = [])
+    public static function sendToMultiple(array $deviceTokens, string $title, string $body, int $badge = 0, array $data = []): array
     {
         $results = [];
         

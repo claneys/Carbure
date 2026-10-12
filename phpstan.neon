@@ -1,0 +1,19 @@
+# Static analysis of the PHP code (PHPStan installed by Composer, dev only):
+#   composer install && composer phpstan
+# The rule of Carbure (tools/phpstan/) is loaded by the Composer autoloader
+# (run by the pre-commit hook and the CI lint job)
+parameters:
+    # Level 6: every parameter, return value and property must have a type
+    level: 6
+    phpVersion: 80200
+    paths:
+        - src
+        - swagger
+        - tools
+    excludePaths:
+        - tools/*.phar
+        - vendor
+
+# Parameters, return values and properties typed in the code, not only in the PHPDoc
+rules:
+    - NativeTypesRule

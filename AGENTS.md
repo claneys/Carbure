@@ -5,7 +5,8 @@ Rules for coding agents and contributors on Carbure. Pending work: [TODO.md](TOD
 ## Project
 
 Household budget/bank-transaction tracker: **portal** `portal/` (Vue 3 global build, no
-bundler) + **PHP 8.2+ REST API** `src/` (no framework, no Composer), also used by the
+bundler) + **PHP 8.2+ REST API** `src/` (no framework, no runtime dependency; Composer only
+for dev tools: PHPStan), also used by the
 **iOS app**. Transactions synced via woob, categorized by keywords; APNs notifications;
 read-only MCP server at `/api/mcp`. Production = Docker image (nginx + PHP-FPM + woob)
 built by the GitHub release workflow; committing/pushing is not deploying.
@@ -35,6 +36,7 @@ built by the GitHub release workflow; committing/pushing is not deploying.
 ```bash
 ./start.sh   # dev stack http://localhost:8000/portal/ (admin/admin-password); --reset --build --stop --clean
 find src tests swagger -name '*.php' -not -path '*/node_modules/*' -print0 | xargs -0 -n1 php -l
+composer install && composer phpstan   # PHP types (PHPStan, dev dependency)
 for f in $(find portal -name '*.js' -not -path '*/vendor/*'); do cp "$f" /tmp/c.mjs && node --check /tmp/c.mjs; done
 php tools/phpunit.phar --testsuite unit
 DB_HOST=127.0.0.1 DB_USER=root DB_PASSWORD=root php tools/phpunit.phar   # + integration (recreates carbure_test)
@@ -71,6 +73,12 @@ git config core.hooksPath .githooks   # pre-commit lint, pre-push unit tests
 - Passwords: `password_hash()`; legacy salted SHA-256 migrated at login (`User::verifyPassword`).
 - `Logger` masks `password`/`token`; never log secrets otherwise.
 - PHPDoc on every method; match existing style.
+- **Types**: every parameter, return value and property has a native type (no
+  `declare(strict_types=1)`: request params are coerced), arrays typed in the PHPDoc
+  (`array<string, mixed>`, `list<…>`). PHPStan (Composer dev dependency, `phpstan.neon`,
+  level 6 + rule `tools/phpstan/NativeTypesRule.php`) checks it in pre-commit and CI; no
+  `@phpstan-ignore`, no baseline. Route params come as strings from the query string:
+  never a bare `bool` (`"false"` would be `true`), keep what the iOS app sends valid.
 
 ## Domain rules
 
@@ -124,7 +132,7 @@ git config core.hooksPath .githooks   # pre-commit lint, pre-push unit tests
 
 ## Definition of done
 
-- PHP/JS lint clean; unit tests green, new code tested.
+- PHP/JS lint clean, PHPStan clean; unit tests green, new code tested.
 - Portal change: e2e spec added, e2e suite green.
 - PHP coverage ≥ 90 % in CI (unit + integration).
 - SQL migration if schema changed, flagged as deployment action.

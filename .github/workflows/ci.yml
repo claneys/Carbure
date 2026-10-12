@@ -28,6 +28,12 @@ jobs:
       - name: PHP syntax
         run: find src tests swagger tools -name '*.php' -print0 | xargs -0 -n1 php -l
 
+      - name: Development tools (Composer)
+        run: composer install --no-interaction --no-progress
+
+      - name: PHP types (PHPStan)
+        run: vendor/bin/phpstan analyse --memory-limit=1G --no-progress --error-format=github
+
       - uses: actions/setup-node@v7
         with:
           node-version: 22

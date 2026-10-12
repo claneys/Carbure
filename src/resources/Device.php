@@ -14,10 +14,10 @@ final class Device {
     /**
      * Get all devices of the authenticated user.
      *
-     * @return array List of all devices for the user
+     * @return list<array<string, mixed>> List of all devices for the user
      */
     #[ApiRoute('/device', method: 'GET')]
-    public static function getMine()
+    public static function getMine(): array
     {
         return self::get(Jwt::getUserIdFromToken());
     }
@@ -30,7 +30,7 @@ final class Device {
      * @throws Error If the device does not exist or belongs to another user
      */
     #[ApiRoute('/device', method: 'DELETE')]
-    public static function delete($id)
+    public static function delete(int $id): bool
     {
         $stmt = Db::execute("DELETE FROM devices WHERE id=? AND user_id=?", "ii", $id, Jwt::getUserIdFromToken());
 
@@ -45,9 +45,9 @@ final class Device {
      * Get all devices for a user.
      *
      * @param int $userId The user ID
-     * @return array List of all devices for the user
+     * @return list<array<string, mixed>> List of all devices for the user
      */
-    public static function get($userId)
+    public static function get(int $userId): array
     {
         $sql = "SELECT id, user_id, name, token, lastLogin 
                 FROM devices 
@@ -70,9 +70,9 @@ final class Device {
      * Get a device by token.
      *
      * @param string $token The device token
-     * @return array|null The device data or null if not found
+     * @return array<string, mixed>|null The device data or null if not found
      */
-    private static function getByToken($token)
+    private static function getByToken(string $token): ?array
     {
         $sql = "SELECT id, user_id, name, token, lastLogin 
                 FROM devices 
@@ -93,9 +93,9 @@ final class Device {
      * @param int    $userId The user ID
      * @param string $name   The device name
      * @param string $token  The unique device token
-     * @return array The created or updated device data with id
+     * @return array<string, mixed> The created or updated device data with id
      */
-    public static function createOrUpdate($userId, $name, $token)
+    public static function createOrUpdate(int $userId, string $name, string $token): array
     {
         // Check if device with this token already exists
         $existingDevice = self::getByToken($token);
@@ -131,10 +131,10 @@ final class Device {
      * @param string $title Notification title
      * @param string $body Notification body
      * @param int $badge Badge number to display on the app icon (optional)
-     * @param array $data Optional custom data payload
-     * @return array Results for each device
+     * @param array<string, mixed> $data Optional custom data payload
+     * @return array<string, array<string, mixed>> Results for each device
      */
-    public static function sendNotification($userId, $title, $body, $badge = 0, $data = [])
+    public static function sendNotification(int $userId, string $title, string $body, int $badge = 0, array $data = []): array
     {
         // Get all devices for the user
         $devices = self::get($userId);
@@ -155,10 +155,10 @@ final class Device {
     /**
      * Test sending a notification to the user's devices.
      *
-     * @return array Results of the test notification
+     * @return array<string, array<string, mixed>> Results of the test notification
      */
     #[ApiRoute('/device/push', method: 'POST')]
-    public static function testNotification()
+    public static function testNotification(): array
     {
         $userId = Jwt::getUserIdFromToken();
         return self::sendNotification($userId, "Test Notification", "This is a test notification from Carbure.");
