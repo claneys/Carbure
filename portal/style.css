@@ -18,7 +18,8 @@
     --error-light: #ffebee;
     --info-color: #1976d2;
     --info-light: #e3f2fd;
-    --warning-color: #e65100;
+    /* Darkened for the contrast of a text on white or --warning-light (WCAG AA: 5.6:1) */
+    --warning-color: #bf360c;
     --warning-light: #fff3e0;
     --text-primary: #1e293b;
     --text-secondary: #64748b;
@@ -509,9 +510,15 @@ button {
 }
 
 button:hover {
-    background: var(--primary-dark);
     transform: translateY(-2px);
     box-shadow: var(--shadow-3);
+}
+
+/* Darker red on hover only for the buttons that keep the default red background:
+   :where() gives no specificity, so any class that sets its own background (light
+   button with a grey label...) keeps it, and its label stays readable */
+button:where(:hover:not(:disabled)) {
+    background: var(--primary-dark);
 }
 
 button:active {
@@ -939,7 +946,7 @@ button .material-icons {
 
 .transaction-check .material-icons {
     font-size: 26px;
-    color: var(--text-disabled);
+    color: var(--text-secondary);
 }
 
 .transaction-check:hover .material-icons {
@@ -1201,7 +1208,8 @@ button .material-icons {
     gap: 8px;
     flex-wrap: nowrap;
     font-size: 10px;
-    color: var(--text-secondary);
+    /* Darker than --text-secondary: the footer lies on the pink background of the page */
+    color: #475569;
     text-align: center;
 }
 
@@ -1222,7 +1230,7 @@ button .material-icons {
 
 .footer-copy,
 .footer-version {
-    color: var(--text-secondary);
+    color: inherit;
     font-size: 11px;
 }
 /* Modal (Popin) */
@@ -1316,6 +1324,11 @@ button .material-icons {
 .btn-secondary {
     background: var(--background);
     color: var(--text-secondary);
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: var(--divider);
+    color: var(--text-primary);
 }
 
 /* Footer is already compact across all sizes */
@@ -5737,7 +5750,7 @@ textarea:focus-visible,
 .config-lock {
     flex-shrink: 0;
     font-size: 18px;
-    color: var(--text-disabled);
+    color: var(--text-secondary);
     cursor: help;
 }
 

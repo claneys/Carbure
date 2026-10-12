@@ -101,6 +101,10 @@ git config core.hooksPath .githooks   # pre-commit lint, pre-push unit tests
 
 - Every string via `t('key')`; add each key in **both** `fr` and `en`.
 - Any added/changed feature gets a Playwright spec in `tests/e2e/specs/` (data: `seed.php`).
+- Accessibility (WCAG 2.2 AA) is mandatory: text contrast ≥ 4.5:1 (icons 3:1) at rest,
+  on hover and on focus — never lower it with `opacity` or a grey label on a colored
+  background; a button class that sets its own background keeps it on hover.
+  `specs/accessibility.spec.js` checks every tab: extend it when adding a screen or modal.
 
 ## Issues, branches, PRs and commits
 
