@@ -327,29 +327,17 @@ final class Apns {
     public static function derToRaw(string $der, int $partLength = 32): string
     {
         $offset = 0;
-        $readLength = function () use ($der, &$offset) {
-            $length = ord($der[$offset++]);
-            if ($length & 0x80) {
-                $bytes = $length & 0x7f;
-                $length = 0;
-                for ($i = 0; $i < $bytes; $i++) {
-                    $length = ($length << 8) | ord($der[$offset++]);
-                }
-            }
-            return $length;
-        };
-
         if (strlen($der) < 8 || ord($der[$offset++]) !== 0x30) {
             throw new Error("Invalid DER signature", 500);
         }
-        $readLength();
+        self::readDerLength($der, $offset);
 
         $raw = '';
         for ($i = 0; $i < 2; $i++) {
             if (ord($der[$offset++]) !== 0x02) {
                 throw new Error("Invalid DER signature", 500);
             }
-            $length = $readLength();
+            $length = self::readDerLength($der, $offset);
             // Remove the sign padding and left-pad to the fixed part length
             $integer = ltrim(substr($der, $offset, $length), "\x00");
             $offset += $length;
@@ -357,6 +345,26 @@ final class Apns {
         }
 
         return $raw;
+    }
+
+    /**
+     * Read a DER length (short or long form) and move the offset after it.
+     *
+     * @param string $der    The DER data
+     * @param int    $offset Position of the length, moved after it
+     * @return int The length
+     */
+    private static function readDerLength(string $der, int &$offset): int
+    {
+        $length = ord($der[$offset++]);
+        if ($length & 0x80) {
+            $bytes = $length & 0x7f;
+            $length = 0;
+            for ($i = 0; $i < $bytes; $i++) {
+                $length = ($length << 8) | ord($der[$offset++]);
+            }
+        }
+        return $length;
     }
 
     /**
