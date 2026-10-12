@@ -262,23 +262,8 @@ final class Bank {
         // required ones present, values on one line, checked against the module's rules
         $params = [];
         foreach (Woob::moduleFields($module)['fields'] as $field) {
-            $value = is_array($settings) ? trim((string)($settings[$field['key']] ?? '')) : '';
-            if ($value === '') {
-                $value = $field['default'];
-            }
-            if ($value === '' && $field['required']) {
-                throw new Error("Missing setting: " . $field['label'], 400);
-            }
-            if (preg_match('/[\x00-\x1f\x7f"\\\\]/', $value) || preg_match('/\s/', $value) || mb_strlen($value) > 200) {
-                throw new Error("Invalid value for " . $field['label'] . " (no spaces nor quotes)", 400);
-            }
-            if ($value !== '' && $field['choices'] && !in_array($value, array_column($field['choices'], 'value'), true)) {
-                throw new Error("Invalid choice for " . $field['label'], 400);
-            }
-            if ($value !== '' && $field['regexp'] && @preg_match('/' . str_replace('/', '\\/', $field['regexp']) . '/u', '') !== false
-                && !preg_match('/' . str_replace('/', '\\/', $field['regexp']) . '/u', $value)) {
-                throw new Error("Invalid format for " . $field['label'], 400);
-            }
+            $value = self::settingValue($field, $settings);
+            self::checkSetting($field, $value);
             $params[$field['key']] = $value;
         }
 
@@ -298,6 +283,66 @@ final class Bank {
             throw new Error("The bank refused the connection, check the credentials: " . $e->getMessage(), 400);
         }
         return ['backend' => $backend, 'accounts' => $accounts];
+    }
+
+    /**
+     * Value of a setting of a woob module, as sent by the portal (trimmed), else its
+     * default value.
+     *
+     * @param array{key: string, label: string, default: string, required: bool} $field The setting
+     * @param mixed $settings The settings sent: key => value (anything else: no setting)
+     * @return string The value
+     * @throws Error If a required setting is missing
+     */
+    private static function settingValue(array $field, mixed $settings): string
+    {
+        $value = is_array($settings) ? trim((string)($settings[$field['key']] ?? '')) : '';
+        if ($value === '') {
+            $value = $field['default'];
+        }
+        if ($value === '' && $field['required']) {
+            throw new Error("Missing setting: " . $field['label'], 400);
+        }
+        return $value;
+    }
+
+    /**
+     * Check the value of a setting: on one line, without quotes, among the choices of
+     * the module and matching its format.
+     *
+     * @param array{label: string, regexp: string|null, choices: list<array{value: string, label: string}>} $field The setting
+     * @param string $value The value
+     * @return void
+     * @throws Error If the value is not valid
+     */
+    private static function checkSetting(array $field, string $value): void
+    {
+        if (preg_match('/[\x00-\x1f\x7f"\\\\]/', $value) || preg_match('/\s/', $value) || mb_strlen($value) > 200) {
+            throw new Error("Invalid value for " . $field['label'] . " (no spaces nor quotes)", 400);
+        }
+        if ($value !== '' && $field['choices'] && !in_array($value, array_column($field['choices'], 'value'), true)) {
+            throw new Error("Invalid choice for " . $field['label'], 400);
+        }
+        if ($value !== '' && !self::matchesFormat($field['regexp'], $value)) {
+            throw new Error("Invalid format for " . $field['label'], 400);
+        }
+    }
+
+    /**
+     * Whether a value matches the format of a woob setting (a format that is not a
+     * valid regular expression is ignored).
+     *
+     * @param string|null $regexp The format of the setting (no delimiters)
+     * @param string      $value  The value
+     * @return bool
+     */
+    private static function matchesFormat(?string $regexp, string $value): bool
+    {
+        if (!$regexp) {
+            return true;
+        }
+        $pattern = '/' . str_replace('/', '\\/', $regexp) . '/u';
+        return @preg_match($pattern, '') === false || preg_match($pattern, $value) === 1;
     }
 
     /**
@@ -419,13 +464,7 @@ final class Bank {
             throw new Error("The interactive mode needs a user and one account", 400);
         }
 
-        $bankIds = self::getBankIds();
-        if ($account !== null && $account !== '') {
-            if (!in_array($account, $bankIds, true)) {
-                throw new Error("Account not found", 404);
-            }
-            $bankIds = [$account];
-        }
+        $bankIds = self::syncedBankIds($account);
 
         // Allow unlimited execution time for bank sync
         set_time_limit(0);
@@ -444,57 +483,102 @@ final class Bank {
             // At least one account synchronized: the transactions may need categories
             $synced = false;
 
-            // Synchronize each bank account
+            // Synchronize each bank account (every one, even after a failure)
             foreach ($bankIds as $bankId) {
-                
-                $status = true;
-                $created = [];
-                $error = null;
-
-                try {
-                    Webservice::sendProgress("Syncing $bankId (coming)...");
-                    $created = self::syncBankData('coming', $bankId, $interactive, $debug);
-
-                    Webservice::sendProgress("Syncing $bankId (history)...");
-                    $created = array_merge($created, self::syncBankData('history', $bankId, $interactive, $debug));
-
-                } catch (Exception $e) {
-                    Logger::error("Error syncing $bankId: " . $e->getMessage());
-                    Webservice::sendProgress("Error syncing $bankId: " . $e->getMessage());
-                    $status = false;
-                    $error = $e->getMessage();
-                }
-                self::recordSyncResult($bankId, $status, $status ? count($created) . " new" : $error);
-                $synced = $synced || $status;
-
-                // Send notification to all users who own this bank account
-                Webservice::sendProgress("Notifying users of $bankId...");
-                self::notifyBankUsers($bankId, $status, $error);
-                self::alertLargeExpenses($bankId, $created);
-                self::alertRuleMatches($created);
-            }
-            
-            // Update missing categories: useless when every account failed (no transaction)
-            if ($synced) {
-                Webservice::sendProgress("Updating missing categories...");
-                Transaction::updateMissingCategories();
+                $synced = self::syncAccount($bankId, $interactive, $debug) || $synced;
             }
 
-            // Delete the log files older than the retention: a cleanup must not fail the sync
-            try {
-                $deleted = Logger::purge();
-                if ($deleted) {
-                    Webservice::sendProgress(count($deleted) . " old log file(s) deleted");
-                }
-            } catch (Throwable $e) {
-                Logger::error("Cleanup of the logs failed: " . $e->getMessage());
-            }
-
-            // Send final completion event
-            Webservice::sendProgress("Synchronization complete");
+            self::finishSync($synced);
         } finally {
             Db::query("SELECT RELEASE_LOCK('bank_sync')");
         }
+    }
+
+    /**
+     * Accounts to synchronize: the given one (if followed), else every followed account.
+     *
+     * @param string|null $account Synchronize only this account (account_number@bank_name)
+     * @return list<string> The bank ids
+     * @throws Error If the account is not followed
+     */
+    private static function syncedBankIds(?string $account): array
+    {
+        $bankIds = self::getBankIds();
+        if ($account === null || $account === '') {
+            return $bankIds;
+        }
+        if (!in_array($account, $bankIds, true)) {
+            throw new Error("Account not found", 404);
+        }
+        return [$account];
+    }
+
+    /**
+     * Synchronize one account (coming then history), record the result and notify the
+     * household (result, large expenses, rules marked "notify").
+     *
+     * @param string $bankId      The bank id (account_number@bank_name)
+     * @param bool   $interactive Allow the bank to ask a two-factor authentication
+     * @param bool   $debug       Send the debug logs of woob in the progress
+     * @return bool True if the account was synchronized
+     */
+    private static function syncAccount(string $bankId, bool $interactive, bool $debug): bool
+    {
+        $status = true;
+        $created = [];
+        $error = null;
+
+        try {
+            Webservice::sendProgress("Syncing $bankId (coming)...");
+            $created = self::syncBankData('coming', $bankId, $interactive, $debug);
+
+            Webservice::sendProgress("Syncing $bankId (history)...");
+            $created = array_merge($created, self::syncBankData('history', $bankId, $interactive, $debug));
+
+        } catch (Exception $e) {
+            Logger::error("Error syncing $bankId: " . $e->getMessage());
+            Webservice::sendProgress("Error syncing $bankId: " . $e->getMessage());
+            $status = false;
+            $error = $e->getMessage();
+        }
+        self::recordSyncResult($bankId, $status, $status ? count($created) . " new" : $error);
+
+        // Send notification to all users who own this bank account
+        Webservice::sendProgress("Notifying users of $bankId...");
+        self::notifyBankUsers($bankId, $status, $error);
+        self::alertLargeExpenses($bankId, $created);
+        self::alertRuleMatches($created);
+
+        return $status;
+    }
+
+    /**
+     * End of a synchronization: categories of the new transactions, cleanup of the old
+     * logs, then the completion event.
+     *
+     * @param bool $synced At least one account was synchronized
+     * @return void
+     */
+    private static function finishSync(bool $synced): void
+    {
+        // Update missing categories: useless when every account failed (no transaction)
+        if ($synced) {
+            Webservice::sendProgress("Updating missing categories...");
+            Transaction::updateMissingCategories();
+        }
+
+        // Delete the log files older than the retention: a cleanup must not fail the sync
+        try {
+            $deleted = Logger::purge();
+            if ($deleted) {
+                Webservice::sendProgress(count($deleted) . " old log file(s) deleted");
+            }
+        } catch (Throwable $e) {
+            Logger::error("Cleanup of the logs failed: " . $e->getMessage());
+        }
+
+        // Send final completion event
+        Webservice::sendProgress("Synchronization complete");
     }
     
 
@@ -635,17 +719,7 @@ final class Bank {
                 if (strpos($label, $rule['keyword']) === false) {
                     continue;
                 }
-                foreach ($users as $user) {
-                    $french = $user['language'] === 'fr';
-                    $amount = number_format((float)$transaction['amount'], 2, $french ? ',' : '.', $french ? ' ' : ',');
-                    Device::sendNotification(
-                        $user['id'],
-                        ($french ? "Nouvelle transaction : " : "New transaction: ") . $rule['keyword'],
-                        trim($transaction['label']) . " : $amount €",
-                        Transaction::countUnpointed()
-                    );
-                    $sent++;
-                }
+                $sent += self::notifyRuleMatch($users, $transaction, $rule['keyword']);
                 // One notification per transaction, even if several rules match
                 break;
             }
@@ -654,6 +728,29 @@ final class Bank {
             Logger::info("$sent rule notification(s) sent");
         }
         return $sent;
+    }
+
+    /**
+     * Notify every user of a new transaction matching a rule, in the user's language.
+     *
+     * @param list<array<string, mixed>> $users       The users (id, language)
+     * @param array<string, mixed>       $transaction The transaction (label, amount)
+     * @param string                     $keyword     The keyword of the rule
+     * @return int The number of notifications sent
+     */
+    private static function notifyRuleMatch(array $users, array $transaction, string $keyword): int
+    {
+        foreach ($users as $user) {
+            $french = $user['language'] === 'fr';
+            $amount = number_format((float)$transaction['amount'], 2, $french ? ',' : '.', $french ? ' ' : ',');
+            Device::sendNotification(
+                $user['id'],
+                ($french ? "Nouvelle transaction : " : "New transaction: ") . $keyword,
+                trim($transaction['label']) . " : $amount €",
+                Transaction::countUnpointed()
+            );
+        }
+        return count($users);
     }
 
     /**

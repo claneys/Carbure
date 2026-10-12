@@ -345,98 +345,17 @@ final class User {
             self::requireAdmin();
         }
 
-        // Only an administrator changes a profile; the last administrator keeps his role
-        if ($is_admin !== null) {
-            self::requireAdmin();
-            $is_admin = filter_var($is_admin, FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
-            if ($is_admin === 0 && !Db::queryOne("SELECT id FROM users WHERE is_admin = 1 AND id <> ? LIMIT 1", "i", $id)) {
-                throw new Error("At least one administrator is required", 409);
-            }
-        }
+        $is_admin = self::adminFlag($id, $is_admin);
+        $currentUser = self::findForUpdate($id);
+        self::checkEmailFree($id, $email, $currentUser['email']);
 
-        // Check if user exists
-        $sql = "SELECT * FROM users WHERE id=?";
-        $stmt = Db::execute($sql, "i", $id);
-        $result = $stmt->get_result();
+        // Update only the provided fields
+        $fields = self::updateFields($email, $firstname, $lastname, $language, $is_admin, $alertThreshold, $password);
+        if (!empty($fields)) {
+            $types = implode('', array_column($fields, 1)) . "i";
+            $params = [...array_column($fields, 2), $id];
 
-        if ($result->num_rows == 0) {
-            throw new Error("User not found", 404);
-        }
-
-        $currentUser = $result->fetch_assoc();
-
-        // Check if email already exists (for another user)
-        if ($email && $email !== $currentUser['email']) {
-            $sql = "SELECT id FROM users WHERE email=? AND id!=?";
-            $stmt = Db::execute($sql, "si", $email, $id);
-            $result = $stmt->get_result();
-
-            if ($result->num_rows > 0) {
-                throw new Error("Email already exists", 409);
-            }
-        }
-
-        // Build update query dynamically based on provided parameters
-        $updateFields = array();
-        $types = "";
-        $params = array();
-
-        if ($email !== null) {
-            $updateFields[] = "email=?";
-            $types .= "s";
-            $params[] = $email;
-        }
-
-        if ($firstname !== null) {
-            $updateFields[] = "firstname=?";
-            $types .= "s";
-            $params[] = $firstname;
-        }
-
-        if ($lastname !== null) {
-            $updateFields[] = "lastname=?";
-            $types .= "s";
-            $params[] = $lastname;
-        }
-
-        if ($language !== null) {
-            if (!in_array($language, self::LANGUAGES, true)) {
-                throw new Error("Unsupported language: $language", 400);
-            }
-            $updateFields[] = "language=?";
-            $types .= "s";
-            $params[] = $language;
-        }
-
-        if ($is_admin !== null) {
-            $updateFields[] = "is_admin=?";
-            $types .= "i";
-            $params[] = $is_admin;
-        }
-
-        if ($alertThreshold !== null) {
-            if ($alertThreshold !== '' && (!is_numeric($alertThreshold) || $alertThreshold < 0)) {
-                throw new Error("The alert threshold must be a positive amount", 400);
-            }
-            $updateFields[] = "alert_threshold=?";
-            $types .= "d";
-            // "" or 0 disables the alerts
-            $params[] = ($alertThreshold === '' || (float)$alertThreshold == 0) ? null : round((float)$alertThreshold, 2);
-        }
-
-        if ($password !== null && $password !== '') {
-            $hashedPassword = self::hashPassword($password);
-            $updateFields[] = "password=?";
-            $types .= "s";
-            $params[] = $hashedPassword;
-        }
-
-        // Execute update if there is something to update
-        if (!empty($updateFields)) {
-            $types .= "i";
-            $params[] = $id;
-
-            $sql = "UPDATE users SET " . implode(", ", $updateFields) . " WHERE id=?";
+            $sql = "UPDATE users SET " . implode(", ", array_map(fn($field) => "$field[0]=?", $fields)) . " WHERE id=?";
             Db::execute($sql, $types, ...$params);
         }
 
@@ -447,5 +366,119 @@ final class User {
         }
 
         return $updatedUser;
+    }
+
+    /**
+     * Administrator flag of an update: only an administrator changes it, and the last
+     * administrator keeps his role.
+     *
+     * @param int                  $id       The user id to update
+     * @param bool|int|string|null $is_admin The flag sent (true, "true", 1...), null if not changed
+     * @return int|null 1 or 0, null if not changed
+     * @throws Error If the caller is not an administrator or no administrator would remain
+     */
+    private static function adminFlag(int $id, bool|int|string|null $is_admin): ?int
+    {
+        if ($is_admin === null) {
+            return null;
+        }
+        self::requireAdmin();
+        $flag = filter_var($is_admin, FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+        if ($flag === 0 && !Db::queryOne("SELECT id FROM users WHERE is_admin = 1 AND id <> ? LIMIT 1", "i", $id)) {
+            throw new Error("At least one administrator is required", 409);
+        }
+        return $flag;
+    }
+
+    /**
+     * Current row of the user to update.
+     *
+     * @param int $id The user id
+     * @return array<string, mixed> The user row
+     * @throws Error If the user is not found
+     */
+    private static function findForUpdate(int $id): array
+    {
+        $result = Db::execute("SELECT * FROM users WHERE id=?", "i", $id)->get_result();
+        $user = $result->num_rows == 0 ? null : $result->fetch_assoc();
+        if (!$user) {
+            throw new Error("User not found", 404);
+        }
+        return $user;
+    }
+
+    /**
+     * Check that a new email is not used by another user.
+     *
+     * @param int         $id      The user id to update
+     * @param string|null $email   The email sent (optional)
+     * @param mixed       $current The current email of the user
+     * @return void
+     * @throws Error If the email already exists
+     */
+    private static function checkEmailFree(int $id, ?string $email, mixed $current): void
+    {
+        if (!$email || $email === $current) {
+            return;
+        }
+        $result = Db::execute("SELECT id FROM users WHERE email=? AND id!=?", "si", $email, $id)->get_result();
+        if ($result->num_rows > 0) {
+            throw new Error("Email already exists", 409);
+        }
+    }
+
+    /**
+     * Columns to update with their bind type and value, for the provided fields only.
+     *
+     * @param string|null            $email          The email
+     * @param string|null            $firstname      The first name
+     * @param string|null            $lastname       The last name
+     * @param string|null            $language       The interface language (fr|en)
+     * @param int|null               $is_admin       Administrator flag (1 or 0)
+     * @param float|int|string|null  $alertThreshold Push alert threshold ("" or 0 disables)
+     * @param string|null            $password       The new password (hashed here)
+     * @return list<array{0: string, 1: string, 2: mixed}> [column, bind type, value]
+     * @throws Error If the language or the alert threshold is invalid
+     */
+    private static function updateFields(?string $email, ?string $firstname, ?string $lastname, ?string $language,
+        ?int $is_admin, float|int|string|null $alertThreshold, ?string $password): array
+    {
+        $fields = [];
+        foreach (['email' => $email, 'firstname' => $firstname, 'lastname' => $lastname] as $column => $value) {
+            if ($value !== null) {
+                $fields[] = [$column, "s", $value];
+            }
+        }
+        if ($language !== null) {
+            if (!in_array($language, self::LANGUAGES, true)) {
+                throw new Error("Unsupported language: $language", 400);
+            }
+            $fields[] = ["language", "s", $language];
+        }
+        if ($is_admin !== null) {
+            $fields[] = ["is_admin", "i", $is_admin];
+        }
+        if ($alertThreshold !== null) {
+            $fields[] = ["alert_threshold", "d", self::alertThresholdValue($alertThreshold)];
+        }
+        if ($password !== null && $password !== '') {
+            $fields[] = ["password", "s", self::hashPassword($password)];
+        }
+        return $fields;
+    }
+
+    /**
+     * Stored value of an alert threshold: "" or 0 disables the alerts (null).
+     *
+     * @param float|int|string $alertThreshold The threshold sent
+     * @return float|null The threshold rounded to cents, null when disabled
+     * @throws Error If the threshold is not a positive amount
+     */
+    private static function alertThresholdValue(float|int|string $alertThreshold): ?float
+    {
+        if ($alertThreshold !== '' && (!is_numeric($alertThreshold) || $alertThreshold < 0)) {
+            throw new Error("The alert threshold must be a positive amount", 400);
+        }
+        return ($alertThreshold === '' || (float)$alertThreshold == 0) ? null : round((float)$alertThreshold, 2);
     }
 }

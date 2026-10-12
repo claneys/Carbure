@@ -100,24 +100,7 @@ final class Setup {
     public function handle(string $method, string $path, array $data): array
     {
         try {
-            if ($path === '/setup' && $method === 'GET') {
-                return [200, $this->status()];
-            }
-            // Healthy while waiting for the installation (Docker HEALTHCHECK)
-            if ($path === '/health' && $method === 'GET') {
-                $file = "$this->root/VERSION";
-                $version = is_file($file) ? trim((string)file_get_contents($file)) : 'dev';
-                return [200, ['status' => 'setup', 'version' => preg_match('/^[0-9A-Za-z.+-]{1,40}$/', $version) ? $version : 'dev']];
-            }
-            if ($path === '/setup/database' && $method === 'POST') {
-                $this->checkCode($data);
-                return [200, $this->database($data)];
-            }
-            if ($path === '/setup/install' && $method === 'POST') {
-                $this->checkCode($data);
-                return [200, $this->install($data)];
-            }
-            return [503, ['error' => 'Carbure is not installed yet: open the portal to install it', 'code' => 503, 'setup' => true]];
+            return $this->route($method, $path, $data);
         } catch (SetupError $e) {
             return [$e->getCode(), ['error' => $e->getMessage(), 'code' => $e->getCode()]];
         } catch (mysqli_sql_exception $e) {
@@ -125,6 +108,46 @@ final class Setup {
         } catch (InvalidArgumentException | RuntimeException $e) {
             return [400, ['error' => $e->getMessage(), 'code' => 400]];
         }
+    }
+
+    /**
+     * Answer of a route of the wizard (the errors are turned into responses by handle()).
+     *
+     * @param string       $method HTTP method
+     * @param string       $path   Path without /api
+     * @param array<mixed> $data   JSON body
+     * @return array{0: int, 1: array<string, mixed>} [HTTP status, response]
+     */
+    private function route(string $method, string $path, array $data): array
+    {
+        if ($path === '/setup' && $method === 'GET') {
+            return [200, $this->status()];
+        }
+        // Healthy while waiting for the installation (Docker HEALTHCHECK)
+        if ($path === '/health' && $method === 'GET') {
+            return [200, $this->health()];
+        }
+        if ($path === '/setup/database' && $method === 'POST') {
+            $this->checkCode($data);
+            return [200, $this->database($data)];
+        }
+        if ($path === '/setup/install' && $method === 'POST') {
+            $this->checkCode($data);
+            return [200, $this->install($data)];
+        }
+        return [503, ['error' => 'Carbure is not installed yet: open the portal to install it', 'code' => 503, 'setup' => true]];
+    }
+
+    /**
+     * Health while waiting for the installation, with the version of Carbure.
+     *
+     * @return array{status: string, version: string} status (setup) and version
+     */
+    private function health(): array
+    {
+        $file = "$this->root/VERSION";
+        $version = is_file($file) ? trim((string)file_get_contents($file)) : 'dev';
+        return ['status' => 'setup', 'version' => preg_match('/^[0-9A-Za-z.+-]{1,40}$/', $version) ? $version : 'dev'];
     }
 
     /**
@@ -183,29 +206,10 @@ final class Setup {
     {
         $db = $this->connect($data);
         $state = Installer::state($db, $this->root);
-
-        if ($state['state'] === 'outdated' && empty($data['backup_confirmed'])) {
-            throw new SetupError("Confirm that the database is saved before applying the migrations", 409);
-        }
         $needsAdmin = !$state['hasAdmin'];
-        if ($needsAdmin && strlen((string)($data['admin_password'] ?? '')) < 8) {
-            throw new SetupError("The administrator password must contain at least 8 characters", 400);
-        }
-        @mkdir(dirname($this->configFile), 0750, true);
-        if (!is_writable(dirname($this->configFile)) && !is_writable($this->configFile)) {
-            throw new SetupError("The web server cannot write in data/conf/: give it the write permission on data/", 500);
-        }
+        $this->checkInstall($state['state'], $needsAdmin, $data);
 
-        if ($state['state'] === 'none') {
-            Installer::installSchema($db, $this->root);
-            if (!empty($data['starter_categories'])) {
-                Installer::starter($db, $this->root, $data['language'] ?? 'fr', !empty($data['starter_insights']));
-            }
-        } elseif ($state['state'] === 'outdated') {
-            Installer::migrate($db, $this->root);
-        } else {
-            Installer::defaultCategory($db);
-        }
+        $this->installSchema($db, $state['state'], $data);
 
         $username = null;
         if ($needsAdmin) {
@@ -213,6 +217,68 @@ final class Setup {
             Installer::createAdmin($db, $username, $data['admin_password'], $data['admin_email'] ?? null, $data['language'] ?? 'fr');
         }
 
+        $this->writeConfig($data);
+        @unlink($this->codeFile);
+
+        return ['done' => true, 'version' => (new Migrator($db, "$this->root/sql/migrations"))->version(), 'username' => $username];
+    }
+
+    /**
+     * Check that the installation can be done, before changing anything: migrations
+     * confirmed, administrator password long enough, configuration folder writable.
+     *
+     * @param string       $state      State of the database (none|current|outdated)
+     * @param bool         $needsAdmin No administrator yet: one is created
+     * @param array<mixed> $data       Fields of the request
+     * @return void
+     * @throws SetupError If the installation cannot be done
+     */
+    private function checkInstall(string $state, bool $needsAdmin, array $data): void
+    {
+        if ($state === 'outdated' && empty($data['backup_confirmed'])) {
+            throw new SetupError("Confirm that the database is saved before applying the migrations", 409);
+        }
+        if ($needsAdmin && strlen((string)($data['admin_password'] ?? '')) < 8) {
+            throw new SetupError("The administrator password must contain at least 8 characters", 400);
+        }
+        @mkdir(dirname($this->configFile), 0750, true);
+        if (!is_writable(dirname($this->configFile)) && !is_writable($this->configFile)) {
+            throw new SetupError("The web server cannot write in data/conf/: give it the write permission on data/", 500);
+        }
+    }
+
+    /**
+     * Schema of the database: created (with the starter data if asked), migrated, or
+     * only completed with the default category when it is current.
+     *
+     * @param mysqli       $db    The connection
+     * @param string       $state State of the database (none|current|outdated)
+     * @param array<mixed> $data  Fields of the request (starter_categories, starter_insights, language)
+     * @return void
+     */
+    private function installSchema(mysqli $db, string $state, array $data): void
+    {
+        if ($state === 'none') {
+            Installer::installSchema($db, $this->root);
+            if (!empty($data['starter_categories'])) {
+                Installer::starter($db, $this->root, $data['language'] ?? 'fr', !empty($data['starter_insights']));
+            }
+        } elseif ($state === 'outdated') {
+            Installer::migrate($db, $this->root);
+        } else {
+            Installer::defaultCategory($db);
+        }
+    }
+
+    /**
+     * Write the configuration file (database, woob command).
+     *
+     * @param array<mixed> $data Database fields of the request
+     * @return void
+     * @throws SetupError If the file cannot be written
+     */
+    private function writeConfig(array $data): void
+    {
         [$ini] = Installer::config($this->root, [
             'db_hostname' => $data['db_host'],
             'db_port' => (string)(int)($data['db_port'] ?? 3306),
@@ -226,9 +292,6 @@ final class Setup {
             throw new SetupError("Cannot write the configuration file: check the permissions of data/conf/", 500);
         }
         @chmod($this->configFile, 0640);
-        @unlink($this->codeFile);
-
-        return ['done' => true, 'version' => (new Migrator($db, "$this->root/sql/migrations"))->version(), 'username' => $username];
     }
 
     /**

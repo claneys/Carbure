@@ -127,6 +127,14 @@ Pas de `declare(strict_types=1)` : les paramètres des requêtes arrivent en cha
 (query string) et sont convertis. Un indicateur de route n'est jamais typé `bool` seul
 (`"false"` deviendrait vrai).
 
+## Complexité
+
+La complexité cyclomatique de chaque fonction ou méthode (1 + une par décision : `if`,
+`elseif`, boucle, `case`, `catch`, ternaire, `&&`/`||`, bras de `match`) est limitée à
+**10** (règle `tools/phpstan/CyclomaticComplexityRule.php`, seuil dans `phpstan.neon`),
+contrôlée avec les types par `composer phpstan`, en pre-commit et en CI. Une méthode qui
+grossit se découpe en petites méthodes privées.
+
 ## Tests
 
 ```bash

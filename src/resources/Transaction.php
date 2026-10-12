@@ -147,6 +147,26 @@ final class Transaction {
         $current = substr($first, 0, 7);
         $previous = date('Y-m', strtotime("$first -1 month"));
 
+        $series = [];
+        foreach (self::groupByLabel($rows) as $group) {
+            $found = self::recurringSeries($group, $current, $previous);
+            if ($found !== null) {
+                $series[] = $found;
+            }
+        }
+
+        usort($series, fn($a, $b) => $a['day'] <=> $b['day'] ?: strcmp($a['label'], $b['label']));
+        return $series;
+    }
+
+    /**
+     * Transactions grouped by direction and label without its numbers (see findRecurring()).
+     *
+     * @param list<array<string, mixed>> $rows The transactions, oldest first
+     * @return array<string, list<array<string, mixed>>> The groups, by "+label" or "-label"
+     */
+    private static function groupByLabel(array $rows): array
+    {
         $groups = [];
         foreach ($rows as $row) {
             $name = trim(preg_replace('/[^\p{L}]+/u', ' ', preg_replace('/\d+/', '', (string)$row['label'])));
@@ -154,52 +174,71 @@ final class Transaction {
                 $groups[((float)$row['amount'] < 0 ? '-' : '+') . $name][] = $row;
             }
         }
+        return $groups;
+    }
 
-        $series = [];
-        foreach ($groups as $group) {
-            $byMonth = [];
-            foreach ($group as $row) {
-                $byMonth[substr($row['date'], 0, 7)][] = $row;
-            }
-            $count = count($byMonth);
-            if ($count < 3 || count($group) > 1.5 * $count
-                || (!isset($byMonth[$current]) && !isset($byMonth[$previous]))) {
-                continue;
-            }
-
-            // Usual day: the median one; 3 transactions out of 4 within 5 days of it
-            $days = array_map(fn($row) => (int)substr($row['date'], 8, 2), $group);
-            sort($days);
-            $day = $days[intdiv(count($days), 2)];
-            $near = array_filter($days, fn($d) => min(abs($d - $day), 31 - abs($d - $day)) <= 5);
-            if (count($near) < 0.75 * count($days)) {
-                continue;
-            }
-
-            $amounts = array_map(fn($row) => (float)$row['amount'], $group);
-            $average = array_sum($amounts) / count($amounts);
-            $spread = max($amounts) - min($amounts);
-            $last = end($group);
-            if (in_array((int)$last['type'], [7, 12], true) && $spread > 0.2 * abs($average)) {
-                continue;
-            }
-            $ids = array_map(fn($row) => (int)$row['id'], $byMonth[$current] ?? []);
-            $series[] = [
-                'label' => stripslashes($last['label']),
-                'category' => (int)$last['category'],
-                'amount' => round((float)$last['amount'], 2),
-                'average' => round($average, 2),
-                'variable' => $spread > 0.1 * abs($average),
-                'day' => $day,
-                'months' => $count,
-                'last' => $last['date'],
-                'ids' => $ids,
-                'status' => $ids ? 'received' : 'expected',
-            ];
+    /**
+     * The recurring series of a group of transactions, or null if it is not recurring
+     * (see findRecurring()).
+     *
+     * @param list<array<string, mixed>> $group    Transactions of the same label and direction
+     * @param string                     $current  The month (Y-m)
+     * @param string                     $previous The month before (Y-m)
+     * @return array<string, mixed>|null The series
+     */
+    private static function recurringSeries(array $group, string $current, string $previous): ?array
+    {
+        $byMonth = [];
+        foreach ($group as $row) {
+            $byMonth[substr($row['date'], 0, 7)][] = $row;
+        }
+        $count = count($byMonth);
+        if ($count < 3 || count($group) > 1.5 * $count
+            || (!isset($byMonth[$current]) && !isset($byMonth[$previous]))) {
+            return null;
         }
 
-        usort($series, fn($a, $b) => $a['day'] <=> $b['day'] ?: strcmp($a['label'], $b['label']));
-        return $series;
+        $day = self::usualDay($group);
+        if ($day === null) {
+            return null;
+        }
+
+        $amounts = array_map(fn($row) => (float)$row['amount'], $group);
+        $average = array_sum($amounts) / count($amounts);
+        $spread = max($amounts) - min($amounts);
+        $last = end($group);
+        if (in_array((int)$last['type'], [7, 12], true) && $spread > 0.2 * abs($average)) {
+            return null;
+        }
+        $ids = array_map(fn($row) => (int)$row['id'], $byMonth[$current] ?? []);
+        return [
+            'label' => stripslashes($last['label']),
+            'category' => (int)$last['category'],
+            'amount' => round((float)$last['amount'], 2),
+            'average' => round($average, 2),
+            'variable' => $spread > 0.1 * abs($average),
+            'day' => $day,
+            'months' => $count,
+            'last' => $last['date'],
+            'ids' => $ids,
+            'status' => $ids ? 'received' : 'expected',
+        ];
+    }
+
+    /**
+     * Usual day of a series: the median one, if 3 transactions out of 4 are within 5 days
+     * of it (null otherwise).
+     *
+     * @param list<array<string, mixed>> $group The transactions of the series
+     * @return int|null The day of the month
+     */
+    private static function usualDay(array $group): ?int
+    {
+        $days = array_map(fn($row) => (int)substr($row['date'], 8, 2), $group);
+        sort($days);
+        $day = $days[intdiv(count($days), 2)];
+        $near = array_filter($days, fn($d) => min(abs($d - $day), 31 - abs($d - $day)) <= 5);
+        return count($near) < 0.75 * count($days) ? null : $day;
     }
 
     /**
@@ -448,42 +487,84 @@ final class Transaction {
         $to = date('Y-m-d', strtotime(max($dates) . ' +' . self::DUPLICATE_DAYS . ' days'));
         $existing = Db::execute("SELECT id, uuid, date, rdate, amount, label FROM bank_transaction WHERE date BETWEEN ? AND ? OR rdate BETWEEN ? AND ?",
             "ssss", $from, $to, $from, $to)->get_result()->fetch_all(MYSQLI_ASSOC);
-        $uuids = array_flip(array_column($existing, 'uuid'));
-
-        $matched = [];
-        foreach ($rows as &$row) {
-            // Same UUID in the database (identical rows of the file have their own UUID)
-            if (isset($uuids[$row['uuid']])) {
-                $row['status'] = 'known';
-                $matched[$existing[$uuids[$row['uuid']]]['id']] = true;
-            }
-        }
-        unset($row);
-        foreach ($rows as &$row) {
-            if ($row['status'] !== 'new') {
-                continue;
-            }
-            // Same amount, a few days apart: each transaction of the database matches one row at most
-            foreach ($existing as $transaction) {
-                if (isset($matched[$transaction['id']]) || abs((float)$transaction['amount'] - (float)$row['amount']) >= 0.005) {
-                    continue;
-                }
-                $gap = min(self::daysBetween($transaction['date'], $row['date']), self::daysBetween($transaction['rdate'], $row['rdate']));
-                if ($gap <= self::DUPLICATE_DAYS) {
-                    $row['status'] = 'duplicate';
-                    $row['match'] = ['id' => (int)$transaction['id'], 'date' => $transaction['date'], 'label' => $transaction['label']];
-                    $matched[$transaction['id']] = true;
-                    break;
-                }
-            }
-        }
-        unset($row);
+        $matched = self::markKnown($rows, $existing);
+        self::markDuplicates($rows, $existing, $matched);
 
         foreach ($rows as &$row) {
             unset($row['uuid']);
         }
         unset($row);
         return [$parsed, $rows, $prepared];
+    }
+
+    /**
+     * Mark the rows of a file whose UUID is in the database (identical rows of the file
+     * have their own UUID).
+     *
+     * @param list<array<string, mixed>>  $rows     The rows of the file (status updated)
+     * @param list<array<string, mixed>>  $existing The transactions of the database around the file
+     * @return array<int|string, true> The ids of the transactions of the database matched
+     */
+    private static function markKnown(array &$rows, array $existing): array
+    {
+        $uuids = array_flip(array_column($existing, 'uuid'));
+        $matched = [];
+        foreach ($rows as &$row) {
+            if (isset($uuids[$row['uuid']])) {
+                $row['status'] = 'known';
+                $matched[$existing[$uuids[$row['uuid']]]['id']] = true;
+            }
+        }
+        unset($row);
+        return $matched;
+    }
+
+    /**
+     * Mark the new rows of a file that a transaction of the database already has: same
+     * amount, a few days apart; each transaction of the database matches one row at most.
+     *
+     * @param list<array<string, mixed>>  $rows     The rows of the file (status and match updated)
+     * @param list<array<string, mixed>>  $existing The transactions of the database around the file
+     * @param array<int|string, true>     $matched  The ids of the transactions already matched (updated)
+     * @return void
+     */
+    private static function markDuplicates(array &$rows, array $existing, array &$matched): void
+    {
+        foreach ($rows as &$row) {
+            if ($row['status'] !== 'new') {
+                continue;
+            }
+            $transaction = self::findDuplicate($row, $existing, $matched);
+            if ($transaction !== null) {
+                $row['status'] = 'duplicate';
+                $row['match'] = ['id' => (int)$transaction['id'], 'date' => $transaction['date'], 'label' => $transaction['label']];
+                $matched[$transaction['id']] = true;
+            }
+        }
+        unset($row);
+    }
+
+    /**
+     * First transaction of the database not matched yet with the amount of a row and
+     * at most DUPLICATE_DAYS days apart from it.
+     *
+     * @param array<string, mixed>        $row      The row of the file
+     * @param list<array<string, mixed>>  $existing The transactions of the database around the file
+     * @param array<int|string, true>     $matched  The ids of the transactions already matched
+     * @return array<string, mixed>|null The transaction
+     */
+    private static function findDuplicate(array $row, array $existing, array $matched): ?array
+    {
+        foreach ($existing as $transaction) {
+            if (isset($matched[$transaction['id']]) || abs((float)$transaction['amount'] - (float)$row['amount']) >= 0.005) {
+                continue;
+            }
+            $gap = min(self::daysBetween($transaction['date'], $row['date']), self::daysBetween($transaction['rdate'], $row['rdate']));
+            if ($gap <= self::DUPLICATE_DAYS) {
+                return $transaction;
+            }
+        }
+        return null;
     }
 
     /**

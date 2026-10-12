@@ -1,6 +1,6 @@
 # Static analysis of the PHP code (PHPStan installed by Composer, dev only):
 #   composer install && composer phpstan
-# The rule of Carbure (tools/phpstan/) is loaded by the Composer autoloader
+# The rules of Carbure (tools/phpstan/) are loaded by the Composer autoloader
 # (run by the pre-commit hook and the CI lint job)
 parameters:
     # Level 6: every parameter, return value and property must have a type
@@ -17,3 +17,12 @@ parameters:
 # Parameters, return values and properties typed in the code, not only in the PHPDoc
 rules:
     - NativeTypesRule
+
+# Cyclomatic complexity of each function or method (1 + one per decision)
+services:
+    -
+        class: CyclomaticComplexityRule
+        arguments:
+            maxComplexity: 10
+        tags:
+            - phpstan.rules.rule

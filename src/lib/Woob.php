@@ -161,13 +161,39 @@ final class Woob {
     public static function listBankModules(): array
     {
         $cacheKey = 'carbure_woob_bank_modules';
-        if (function_exists('apcu_fetch') && ini_get('apc.enabled')) {
+        if (self::apcuEnabled()) {
             $cached = apcu_fetch($cacheKey, $found);
             if ($found) {
                 return $cached;
             }
         }
 
+        $modules = self::fetchBankModules();
+
+        if ($modules && self::apcuEnabled()) {
+            apcu_store($cacheKey, $modules, 86400);
+        }
+
+        return $modules;
+    }
+
+    /**
+     * Whether the APCu cache can be used.
+     *
+     * @return bool
+     */
+    private static function apcuEnabled(): bool
+    {
+        return function_exists('apcu_fetch') && ini_get('apc.enabled');
+    }
+
+    /**
+     * Ask woob for the bank modules it supports, sorted by name.
+     *
+     * @return list<array{module: mixed, description: mixed}> The modules (names given by woob)
+     */
+    private static function fetchBankModules(): array
+    {
         $woob_path = self::path();
         $stderr = '';
         $stdout = self::executeWithHeartbeat("$woob_path config modules CapBank -f json", $stderr, false);
@@ -179,10 +205,6 @@ final class Woob {
             }
         }
         usort($modules, fn($a, $b) => strcasecmp($a['description'] ?: $a['module'], $b['description'] ?: $b['module']));
-
-        if ($modules && function_exists('apcu_store') && ini_get('apc.enabled')) {
-            apcu_store($cacheKey, $modules, 86400);
-        }
 
         return $modules;
     }
@@ -428,13 +450,29 @@ final class Woob {
 
         fclose($pipes[0]);
 
-        $output = [1 => '', 2 => ''];
-        $open = [1 => $pipes[1], 2 => $pipes[2]];
-        $pending = [1 => '', 2 => ''];
-        $callbacks = [1 => $onMessage, 2 => $onError];
+        $output = self::readOutputs([1 => $pipes[1], 2 => $pipes[2]], $heartbeat, [1 => $onMessage, 2 => $onError]);
 
-        // Read stdout and stderr until both are closed, sending a heartbeat
-        // each time woob stays silent for HEARTBEAT_INTERVAL seconds
+        $stdout = $output[1];
+        $stderr = $output[2];
+        self::checkExitCode(proc_close($process), $stdout, $stderr);
+
+        return $stdout;
+    }
+
+    /**
+     * Read stdout and stderr of a process until both are closed, sending a heartbeat
+     * each time woob stays silent for HEARTBEAT_INTERVAL seconds.
+     *
+     * @param array<int, resource>       $open      The pipes to read: 1 (stdout), 2 (stderr)
+     * @param bool                       $heartbeat Send SSE heartbeats while waiting
+     * @param array<int, callable|null>  $callbacks Receive the lines of each pipe (or null)
+     * @return array<int, string> The output of each pipe: 1 (stdout), 2 (stderr)
+     */
+    private static function readOutputs(array $open, bool $heartbeat, array $callbacks): array
+    {
+        $output = [1 => '', 2 => ''];
+        $pending = [1 => '', 2 => ''];
+
         while (!empty($open)) {
             $read = array_values($open);
             $write = null;
@@ -447,28 +485,57 @@ final class Woob {
                 continue;
             }
 
-            foreach ($read as $pipe) {
-                $index = array_search($pipe, $open, true);
-                $chunk = fread($pipe, 8192);
-                if ($chunk === '' || $chunk === false) {
-                    fclose($pipe);
-                    unset($open[$index]);
-                    $chunk = "\n";
-                } else {
-                    $output[$index] .= $chunk;
-                }
-                // stdout: messages besides the data; stderr: logs, kept longer (requests, tracebacks)
-                if ($callbacks[$index] !== null) {
-                    $pending[$index] .= $chunk;
-                    self::emitMessages($pending[$index], $callbacks[$index], $index === 1, $index === 1 ? 300 : 2000);
+            // In the order of the pipes, as given back by stream_select()
+            foreach ($open as $index => $pipe) {
+                if (in_array($pipe, $read, true)) {
+                    self::readChunk($index, $open, $output, $pending, $callbacks[$index]);
                 }
             }
         }
 
-        $stdout = $output[1];
-        $stderr = $output[2];
-        $return_var = proc_close($process);
+        return $output;
+    }
 
+    /**
+     * Read the next chunk of a pipe (closed at its end) and give its complete lines
+     * to the callback of the pipe.
+     *
+     * @param int                       $index    The pipe: 1 (stdout), 2 (stderr)
+     * @param array<int, resource>      $open     The pipes still open (updated)
+     * @param array<int, string>        $output   The output read so far (updated)
+     * @param array<int, string>        $pending  The output not given to the callback yet (updated)
+     * @param callable|null             $callback Receives the lines of the pipe
+     * @return void
+     */
+    private static function readChunk(int $index, array &$open, array &$output, array &$pending, ?callable $callback): void
+    {
+        $pipe = $open[$index];
+        $chunk = fread($pipe, 8192);
+        if ($chunk === '' || $chunk === false) {
+            fclose($pipe);
+            unset($open[$index]);
+            $chunk = "\n";
+        } else {
+            $output[$index] .= $chunk;
+        }
+        // stdout: messages besides the data; stderr: logs, kept longer (requests, tracebacks)
+        if ($callback !== null) {
+            $pending[$index] .= $chunk;
+            self::emitMessages($pending[$index], $callback, $index === 1, $index === 1 ? 300 : 2000);
+        }
+    }
+
+    /**
+     * Log the output of woob (woob_debug) and fail on a non-zero exit code.
+     *
+     * @param int    $return_var The exit code of woob
+     * @param string $stdout     The standard output
+     * @param string $stderr     The error output
+     * @return void
+     * @throws Exception If woob exited with a non-zero code
+     */
+    private static function checkExitCode(int $return_var, string $stdout, string $stderr): void
+    {
         if (Config::get('woob_debug')) {
             Logger::debug("Woob stdout", ["stdout" => $stdout]);
             Logger::debug("Woob stderr", ["stderr" => $stderr]);
@@ -480,8 +547,6 @@ final class Woob {
             // The last line of the error output usually gives the cause (e.g. a Python exception)
             throw new Exception("Error while calling woob (exit code: $return_var)" . self::lastLine($stderr));
         }
-
-        return $stdout;
     }
 
     /**

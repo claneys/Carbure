@@ -103,8 +103,7 @@ final class BankFile
         if (str_contains($head, 'BkToCstmrStmt') || str_contains($head, 'camt.05')) {
             return 'camt';
         }
-        if (preg_match('/^\s*!(Type|Account|Option)/i', $head)
-            || (preg_match('/^\^\s*$/m', $head) && preg_match('/^D.+$/m', $head) && preg_match('/^[TU].+$/m', $head))) {
+        if (self::isQif($head)) {
             return 'qif';
         }
         $extension = strtolower(pathinfo((string)$filename, PATHINFO_EXTENSION));
@@ -114,6 +113,19 @@ final class BankFile
             'xml' => 'camt',
             default => 'csv',
         };
+    }
+
+    /**
+     * Whether the beginning of a file is QIF: a "!Type" header, or records ended by "^"
+     * with a date and an amount.
+     *
+     * @param string $head The beginning of the file
+     * @return bool
+     */
+    private static function isQif(string $head): bool
+    {
+        return preg_match('/^\s*!(Type|Account|Option)/i', $head)
+            || (preg_match('/^\^\s*$/m', $head) && preg_match('/^D.+$/m', $head) && preg_match('/^[TU].+$/m', $head));
     }
 
     /**
@@ -162,7 +174,24 @@ final class BankFile
      */
     private static function parseCamt(string $content): array
     {
-        // The namespace changes with the version of the standard: it is ignored
+        $xml = self::loadXml($content);
+        $rows = [];
+        foreach ($xml->xpath('//Ntry') as $entry) {
+            $rows[] = self::camtRow($entry);
+        }
+        $account = self::xmlText($xml->xpath('//Stmt/Acct/Id/IBAN')) ?: self::xmlText($xml->xpath('//Stmt/Acct/Id/Othr/Id'));
+        return ['account' => $account !== '' ? $account : null, 'transactions' => self::normalize($rows)];
+    }
+
+    /**
+     * Load a CAMT file, without its namespace (it changes with the version of the standard).
+     *
+     * @param string $content The content
+     * @return \SimpleXMLElement The document
+     * @throws Error If the XML is not valid
+     */
+    private static function loadXml(string $content): \SimpleXMLElement
+    {
         $content = preg_replace('/\sxmlns(:\w+)?="[^"]*"/', '', $content);
         $previous = libxml_use_internal_errors(true);
         // No network access, no entity substitution (XXE)
@@ -171,32 +200,59 @@ final class BankFile
         if ($xml === false) {
             throw new Error("The CAMT file is not valid XML", 422);
         }
+        return $xml;
+    }
 
-        $text = fn($nodes) => $nodes ? trim((string)$nodes[0]) : '';
-        $rows = [];
-        foreach ($xml->xpath('//Ntry') as $entry) {
-            $date = $text($entry->xpath('BookgDt/Dt')) ?: substr($text($entry->xpath('BookgDt/DtTm')), 0, 10);
-            $operation = substr($text($entry->xpath('.//RltdDts/TxDtTm')) ?: $text($entry->xpath('.//RltdDts/AccptncDtTm')), 0, 10);
-            $label = $text($entry->xpath('AddtlNtryInf'));
-            if ($label === '') {
-                $label = implode(' ', array_map('trim', array_map('strval', $entry->xpath('.//RmtInf/Ustrd'))));
-            }
-            if ($label === '') {
-                $label = $text($entry->xpath('.//RltdPties/Cdtr/Nm')) ?: $text($entry->xpath('.//RltdPties/Dbtr/Nm'));
-            }
-            $amount = $text($entry->xpath('Amt'));
-            $sign = strtoupper($text($entry->xpath('CdtDbtInd'))) === 'DBIT' ? '-' : '';
-            $family = strtoupper($text($entry->xpath('BkTxCd/Domn/Fmly/SubFmlyCd')));
-            $rows[] = [
-                'date' => $date,
-                'rdate' => $operation,
-                'amount' => $sign . ltrim($amount, '+-'),
-                'raw' => $label,
-                'hint' => $family === 'CWDL' ? 6 : (self::CAMT_TYPES[strtoupper($text($entry->xpath('BkTxCd/Domn/Fmly/Cd')))] ?? null),
-            ];
+    /**
+     * Text of the first node found by an XPath query ('' if none).
+     *
+     * @param array<\SimpleXMLElement>|false|null $nodes The nodes found
+     * @return string
+     */
+    private static function xmlText(array|false|null $nodes): string
+    {
+        return $nodes ? trim((string)$nodes[0]) : '';
+    }
+
+    /**
+     * Row of a CAMT entry (Ntry), before normalize().
+     *
+     * @param \SimpleXMLElement $entry The entry
+     * @return array{date: string, rdate: string, amount: string, raw: string, hint: int|null}
+     */
+    private static function camtRow(\SimpleXMLElement $entry): array
+    {
+        $date = self::xmlText($entry->xpath('BookgDt/Dt')) ?: substr(self::xmlText($entry->xpath('BookgDt/DtTm')), 0, 10);
+        $operation = substr(self::xmlText($entry->xpath('.//RltdDts/TxDtTm')) ?: self::xmlText($entry->xpath('.//RltdDts/AccptncDtTm')), 0, 10);
+        $amount = self::xmlText($entry->xpath('Amt'));
+        $sign = strtoupper(self::xmlText($entry->xpath('CdtDbtInd'))) === 'DBIT' ? '-' : '';
+        $family = strtoupper(self::xmlText($entry->xpath('BkTxCd/Domn/Fmly/SubFmlyCd')));
+        return [
+            'date' => $date,
+            'rdate' => $operation,
+            'amount' => $sign . ltrim($amount, '+-'),
+            'raw' => self::camtLabel($entry),
+            'hint' => $family === 'CWDL' ? 6 : (self::CAMT_TYPES[strtoupper(self::xmlText($entry->xpath('BkTxCd/Domn/Fmly/Cd')))] ?? null),
+        ];
+    }
+
+    /**
+     * Label of a CAMT entry: its additional information, else its remittance information,
+     * else the name of the creditor or the debtor.
+     *
+     * @param \SimpleXMLElement $entry The entry
+     * @return string
+     */
+    private static function camtLabel(\SimpleXMLElement $entry): string
+    {
+        $label = self::xmlText($entry->xpath('AddtlNtryInf'));
+        if ($label === '') {
+            $label = implode(' ', array_map('trim', array_map('strval', $entry->xpath('.//RmtInf/Ustrd'))));
         }
-        $account = $text($xml->xpath('//Stmt/Acct/Id/IBAN')) ?: $text($xml->xpath('//Stmt/Acct/Id/Othr/Id'));
-        return ['account' => $account !== '' ? $account : null, 'transactions' => self::normalize($rows)];
+        if ($label === '') {
+            $label = self::xmlText($entry->xpath('.//RltdPties/Cdtr/Nm')) ?: self::xmlText($entry->xpath('.//RltdPties/Dbtr/Nm'));
+        }
+        return $label;
     }
 
     /**
@@ -248,7 +304,27 @@ final class BankFile
     private static function parseCsv(string $content): array
     {
         $lines = array_values(array_filter(preg_split('/\r\n|\r|\n/', $content), fn($l) => trim($l) !== ''));
-        // The delimiter that splits the first lines the most
+        $delimiter = self::csvDelimiter($lines);
+        [$columns, $start] = self::csvHeader($lines, $delimiter);
+
+        $rows = [];
+        foreach (array_slice($lines, $start) as $line) {
+            $row = self::csvRow(str_getcsv($line, $delimiter, '"', ''), $columns);
+            if ($row !== null) {
+                $rows[] = $row;
+            }
+        }
+        return ['account' => null, 'transactions' => self::normalize($rows)];
+    }
+
+    /**
+     * Delimiter of a CSV file: the one that splits the first lines the most.
+     *
+     * @param list<string> $lines The lines of the file
+     * @return string
+     */
+    private static function csvDelimiter(array $lines): string
+    {
         $sample = implode("\n", array_slice($lines, 0, 10));
         $delimiter = ';';
         $best = 0;
@@ -258,47 +334,70 @@ final class BankFile
                 $delimiter = $candidate;
             }
         }
+        return $delimiter;
+    }
 
-        // The header may come after a few lines about the account
-        $columns = null;
-        $start = 0;
+    /**
+     * Header of a CSV file: it may come after a few lines about the account.
+     *
+     * @param list<string> $lines     The lines of the file
+     * @param string       $delimiter The delimiter
+     * @return array{0: array<string, int>, 1: int} The columns (see csvColumns()) and the
+     *               index of the first line after the header
+     * @throws Error If the columns are not found
+     */
+    private static function csvHeader(array $lines, string $delimiter): array
+    {
         foreach (array_slice($lines, 0, 15) as $i => $line) {
             $columns = self::csvColumns(str_getcsv($line, $delimiter, '"', ''));
             if ($columns) {
-                $start = $i + 1;
-                break;
+                return [$columns, $i + 1];
             }
         }
-        if (!$columns) {
-            throw new Error("Columns not found in the CSV file: a date, a label and an amount (or a debit and a credit) are expected", 422);
-        }
+        throw new Error("Columns not found in the CSV file: a date, a label and an amount (or a debit and a credit) are expected", 422);
+    }
 
-        $rows = [];
-        foreach (array_slice($lines, $start) as $line) {
-            $cells = str_getcsv($line, $delimiter, '"', '');
-            $cell = fn($key) => isset($columns[$key]) ? trim($cells[$columns[$key]] ?? '') : '';
-            $date = $cell('date') ?: $cell('operation');
-            if ($date === '') {
-                continue;
-            }
-            if (isset($columns['amount'])) {
-                $amount = $cell('amount');
-            } else {
-                $debit = self::amount($cell('debit'));
-                $credit = self::amount($cell('credit'));
-                if ($debit === null && $credit === null) {
-                    continue;
-                }
-                $amount = $debit !== null && $debit != 0 ? -abs($debit) : abs((float)$credit);
-            }
-            $label = $cell('label');
-            $detail = $cell('detail');
-            if ($detail !== '' && stripos($label, $detail) === false) {
-                $label = trim("$label $detail");
-            }
-            $rows[] = ['date' => $date, 'rdate' => $cell('operation'), 'amount' => (string)$amount, 'raw' => $label, 'hint' => null];
+    /**
+     * Row of a CSV line, before normalize(), or null if the line has no date or no amount.
+     *
+     * @param array<int, string|null> $cells   The cells of the line
+     * @param array<string, int>      $columns The columns (see csvColumns())
+     * @return array{date: string, rdate: string, amount: string, raw: string, hint: null}|null
+     */
+    private static function csvRow(array $cells, array $columns): ?array
+    {
+        $cell = fn($key) => isset($columns[$key]) ? trim($cells[$columns[$key]] ?? '') : '';
+        $date = $cell('date') ?: $cell('operation');
+        if ($date === '') {
+            return null;
         }
-        return ['account' => null, 'transactions' => self::normalize($rows)];
+        $amount = isset($columns['amount']) ? $cell('amount') : self::csvDebitCredit($cell('debit'), $cell('credit'));
+        if ($amount === null) {
+            return null;
+        }
+        $label = $cell('label');
+        $detail = $cell('detail');
+        if ($detail !== '' && stripos($label, $detail) === false) {
+            $label = trim("$label $detail");
+        }
+        return ['date' => $date, 'rdate' => $cell('operation'), 'amount' => (string)$amount, 'raw' => $label, 'hint' => null];
+    }
+
+    /**
+     * Amount of a CSV line with a debit and a credit column: negative for a debit.
+     *
+     * @param string $debit  The debit cell
+     * @param string $credit The credit cell
+     * @return float|null The amount, null if both are empty
+     */
+    private static function csvDebitCredit(string $debit, string $credit): ?float
+    {
+        $debit = self::amount($debit);
+        $credit = self::amount($credit);
+        if ($debit === null && $credit === null) {
+            return null;
+        }
+        return $debit !== null && $debit != 0 ? -abs($debit) : abs((float)$credit);
     }
 
     /**
@@ -323,14 +422,23 @@ final class BankFile
         $columns = [];
         foreach ($cells as $index => $cell) {
             // An empty line of the CSV gives a null cell
-            $name = self::normalizeHeader($cell ?? '');
-            foreach ($patterns as $key => $pattern) {
-                if (!isset($columns[$key]) && preg_match($pattern, $name)) {
-                    $columns[$key] = $index;
-                    break;
-                }
+            $key = self::csvColumnKey(self::normalizeHeader($cell ?? ''), $patterns, $columns);
+            if ($key !== null) {
+                $columns[$key] = $index;
             }
         }
+        return self::csvHeaderColumns($columns);
+    }
+
+    /**
+     * Columns of a header row if it has a date, a label (the detail stands for a missing
+     * label) and an amount (or a debit and a credit), else null.
+     *
+     * @param array<string, int> $columns The columns found in the row
+     * @return array<string, int>|null
+     */
+    private static function csvHeaderColumns(array $columns): ?array
+    {
         $hasDate = isset($columns['date']) || isset($columns['operation']);
         $hasAmount = isset($columns['amount']) || (isset($columns['debit']) && isset($columns['credit']));
         if (!isset($columns['label']) && isset($columns['detail'])) {
@@ -338,6 +446,25 @@ final class BankFile
             unset($columns['detail']);
         }
         return $hasDate && $hasAmount && isset($columns['label']) ? $columns : null;
+    }
+
+    /**
+     * Column a header name stands for: the first pattern it matches among the columns
+     * not found yet.
+     *
+     * @param string                $name     The normalized header name
+     * @param array<string, string> $patterns The patterns of the columns
+     * @param array<string, int>    $columns  The columns found yet
+     * @return string|null The column, null if none
+     */
+    private static function csvColumnKey(string $name, array $patterns, array $columns): ?string
+    {
+        foreach ($patterns as $key => $pattern) {
+            if (!isset($columns[$key]) && preg_match($pattern, $name)) {
+                return $key;
+            }
+        }
+        return null;
     }
 
     /**

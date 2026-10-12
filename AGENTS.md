@@ -79,6 +79,9 @@ git config core.hooksPath .githooks   # pre-commit lint, pre-push unit tests
   level 6 + rule `tools/phpstan/NativeTypesRule.php`) checks it in pre-commit and CI; no
   `@phpstan-ignore`, no baseline. Route params come as strings from the query string:
   never a bare `bool` (`"false"` would be `true`), keep what the iOS app sends valid.
+- **Complexity**: cyclomatic complexity ≤ 10 per function/method (rule
+  `tools/phpstan/CyclomaticComplexityRule.php`, threshold in `phpstan.neon`): split a
+  growing method into small private ones, use lookup tables instead of if/else chains.
 
 ## Domain rules
 

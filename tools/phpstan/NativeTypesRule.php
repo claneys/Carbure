@@ -43,33 +43,61 @@ final class NativeTypesRule implements Rule
     public function processNode(Node $node, Scope $scope): array
     {
         if ($node instanceof Node\Stmt\Property) {
-            if ($node->type !== null) {
-                return [];
-            }
-            $names = implode(', ', array_map(fn($p) => '$' . $p->name->toString(), $node->props));
-            return [RuleErrorBuilder::message("Property $names has no native type.")
-                ->identifier('carbure.nativeType')->line($node->getStartLine())->build()];
+            return self::propertyErrors($node);
         }
-
         if (!$node instanceof FunctionLike || $node instanceof Node\Expr\ArrowFunction || $node instanceof Node\Expr\Closure) {
             return [];
         }
+        return self::functionErrors($node);
+    }
 
-        $name = $node instanceof ClassMethod ? $node->name->toString() . '()'
-            : ($node instanceof Node\Stmt\Function_ ? $node->name->toString() . '()' : 'function');
+    /**
+     * Error of a property without native type.
+     *
+     * @param Node\Stmt\Property $node The property
+     * @return list<\PHPStan\Rules\IdentifierRuleError>
+     */
+    private static function propertyErrors(Node\Stmt\Property $node): array
+    {
+        if ($node->type !== null) {
+            return [];
+        }
+        $names = implode(', ', array_map(fn($p) => '$' . $p->name->toString(), $node->props));
+        return [self::error("Property $names has no native type.", $node->getStartLine())];
+    }
+
+    /**
+     * Errors of a function or method: parameters and return value without native type.
+     *
+     * @param FunctionLike $node The function or method
+     * @return list<\PHPStan\Rules\IdentifierRuleError>
+     */
+    private static function functionErrors(FunctionLike $node): array
+    {
+        $name = $node instanceof ClassMethod || $node instanceof Node\Stmt\Function_ ? $node->name->toString() . '()' : 'function';
         $errors = [];
         foreach ($node->getParams() as $param) {
             if ($param->type === null && $param->var instanceof Node\Expr\Variable && is_string($param->var->name)) {
-                $errors[] = RuleErrorBuilder::message("Parameter \${$param->var->name} of $name has no native type.")
-                    ->identifier('carbure.nativeType')->line($param->getStartLine())->build();
+                $errors[] = self::error("Parameter \${$param->var->name} of $name has no native type.", $param->getStartLine());
             }
         }
         // A constructor has no return type
         $constructor = $node instanceof ClassMethod && strtolower($node->name->toString()) === '__construct';
         if ($node->getReturnType() === null && !$constructor) {
-            $errors[] = RuleErrorBuilder::message("$name has no native return type.")
-                ->identifier('carbure.nativeType')->line($node->getStartLine())->build();
+            $errors[] = self::error("$name has no native return type.", $node->getStartLine());
         }
         return $errors;
+    }
+
+    /**
+     * Error of this rule.
+     *
+     * @param string $message The message
+     * @param int    $line    The line of the code
+     * @return \PHPStan\Rules\IdentifierRuleError
+     */
+    private static function error(string $message, int $line): \PHPStan\Rules\IdentifierRuleError
+    {
+        return RuleErrorBuilder::message($message)->identifier('carbure.nativeType')->line($line)->build();
     }
 }

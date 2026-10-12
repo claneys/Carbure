@@ -148,29 +148,7 @@ class SwaggerGenerator {
         ];
 
         // Add parameters or requestBody based on HTTP method
-        if ($httpMethod === 'get' || $httpMethod === 'delete') {
-            if (!empty($parameters)) {
-                $operation['parameters'] = $parameters;
-            }
-        } else {
-            // POST, PUT, PATCH: use requestBody
-            if (!empty($parameters)) {
-                $operation['requestBody'] = [
-                    'required' => true,
-                    'content' => [
-                        'application/json' => [
-                            'schema' => [
-                                'type' => 'object',
-                                'properties' => $parameters,
-                                'required' => array_keys(array_filter($parameters, function($p) {
-                                    return $p['required'] ?? false;
-                                }))
-                            ]
-                        ]
-                    ]
-                ];
-            }
-        }
+        $operation = $this->addParameters($operation, $httpMethod, $parameters);
 
         // Add security based on ApiRoute->public property (not public = requires auth)
         if (!$apiRoute->public) {
@@ -185,6 +163,41 @@ class SwaggerGenerator {
         }
 
         $this->spec['paths'][$path][$httpMethod] = $operation;
+    }
+
+    /**
+     * Add the parameters to an operation: in the query string (GET, DELETE) or as the
+     * properties of the JSON request body (POST, PUT, PATCH).
+     *
+     * @param array<string, mixed>                    $operation  The operation
+     * @param string                                  $httpMethod HTTP method, lowercase
+     * @param array<int|string, array<string, mixed>> $parameters The parameters (see extractParameters)
+     * @return array<string, mixed> The operation with its parameters
+     */
+    private function addParameters(array $operation, string $httpMethod, array $parameters): array {
+        if (empty($parameters)) {
+            return $operation;
+        }
+        if ($httpMethod === 'get' || $httpMethod === 'delete') {
+            $operation['parameters'] = $parameters;
+            return $operation;
+        }
+        // POST, PUT, PATCH: use requestBody
+        $operation['requestBody'] = [
+            'required' => true,
+            'content' => [
+                'application/json' => [
+                    'schema' => [
+                        'type' => 'object',
+                        'properties' => $parameters,
+                        'required' => array_keys(array_filter($parameters, function($p) {
+                            return $p['required'] ?? false;
+                        }))
+                    ]
+                ]
+            ]
+        ];
+        return $operation;
     }
 
 
@@ -203,27 +216,7 @@ class SwaggerGenerator {
         foreach ($method->getParameters() as $param) {
             $paramName = $param->getName();
             
-            // Type of the parameter (string by default); a union type (int|string...) is
-            // described by its string type if any, else its first type; mixed by no type
-            $type = 'string';
-            $paramType = $param->getType();
-            $named = $paramType;
-            if ($paramType instanceof ReflectionUnionType) {
-                // A string is what the query string gives: preferred when the union accepts it
-                $types = $paramType->getTypes();
-                $strings = array_filter($types, fn($t) => $t instanceof ReflectionNamedType && $t->getName() === 'string');
-                $named = $strings ? reset($strings) : $types[0];
-            }
-            if ($named instanceof ReflectionNamedType) {
-                $type = match ($named->getName()) {
-                    'int' => 'integer',
-                    'float' => 'number',
-                    'bool', 'true', 'false' => 'boolean',
-                    'array' => 'object',
-                    'mixed' => null,
-                    default => 'string',
-                };
-            }
+            $type = $this->parameterType($param);
             $schema = $type === null ? new stdClass() : ['type' => $type];
 
             // Check if parameter has default value
@@ -248,6 +241,34 @@ class SwaggerGenerator {
         }
 
         return $parameters;
+    }
+
+    /**
+     * OpenAPI type of a parameter (string by default); a union type (int|string...) is
+     * described by its string type if any, else its first type; mixed by no type.
+     *
+     * @param ReflectionParameter $param The parameter
+     * @return string|null The OpenAPI type, null for any value
+     */
+    private function parameterType(ReflectionParameter $param): ?string {
+        $named = $param->getType();
+        if ($named instanceof ReflectionUnionType) {
+            // A string is what the query string gives: preferred when the union accepts it
+            $types = $named->getTypes();
+            $strings = array_filter($types, fn($t) => $t instanceof ReflectionNamedType && $t->getName() === 'string');
+            $named = $strings ? reset($strings) : $types[0];
+        }
+        if (!$named instanceof ReflectionNamedType) {
+            return 'string';
+        }
+        return match ($named->getName()) {
+            'int' => 'integer',
+            'float' => 'number',
+            'bool', 'true', 'false' => 'boolean',
+            'array' => 'object',
+            'mixed' => null,
+            default => 'string',
+        };
     }
 
     /**

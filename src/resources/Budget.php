@@ -229,6 +229,25 @@ final class Budget {
             $trends[$month] = ['month' => $month, 'debit' => 0, 'credit' => 0, 'offBudget' => 0, 'planned' => 0, 'savings' => 0];
         }
 
+        $trends = self::addTrendTotals($trends, $from, $to);
+        foreach (self::plannedByMonth(array_keys($trends), $from, $to) as $month => $planned) {
+            $trends[$month]['planned'] = $planned;
+        }
+
+        return array_values($trends);
+    }
+
+    /**
+     * Add the debit, credit, off-budget and savings totals of the transactions to the
+     * months of the trends.
+     *
+     * @param array<string, array<string, mixed>> $trends The months (Y-m => values)
+     * @param string                              $from   First day of the period (Y-m-d)
+     * @param string                              $to     First day after the period (Y-m-d)
+     * @return array<string, array<string, mixed>> The months with their totals
+     */
+    private static function addTrendTotals(array $trends, string $from, string $to): array
+    {
         $sql = "SELECT DATE_FORMAT(t.date, '%Y-%m') AS month,
                 SUM(CASE WHEN IFNULL(c.type, '') <> 'HORS-BUDGET' AND t.amount < 0 THEN -t.amount ELSE 0 END) AS debit,
                 SUM(CASE WHEN IFNULL(c.type, '') <> 'HORS-BUDGET' AND t.amount > 0 THEN t.amount ELSE 0 END) AS credit,
@@ -244,13 +263,53 @@ final class Budget {
                 $trends[$row['month']][$key] = round((float)$row[$key], 2);
             }
         }
+        return $trends;
+    }
 
-        // Budget of the top-level categories: their own amount, or the sum of their sub-categories
+    /**
+     * Planned amount of each month: sum of the budgets of the top-level categories,
+     * their own amount, or the sum of their sub-categories.
+     *
+     * @param list<string> $months The months (Y-m)
+     * @param string       $from   First day of the period (Y-m-d)
+     * @param string       $to     First day after the period (Y-m-d)
+     * @return array<string, float> The planned amount of each month (Y-m => amount)
+     */
+    private static function plannedByMonth(array $months, string $from, string $to): array
+    {
+        // Parent of each category: 0 for a top-level one
         $top = [];
         foreach (Db::execute("SELECT id, parent_category FROM bank_transaction_category WHERE id <> 0", "")->get_result()->fetch_all(MYSQLI_ASSOC) as $c) {
             $parent = (int)$c['parent_category'];
             $top[(int)$c['id']] = ($parent === 0 || $parent === (int)$c['id']) ? 0 : $parent;
         }
+        [$own, $children] = self::budgetsByLevel($top, $from, $to);
+        $hasChildren = array_count_values(array_filter($top));
+
+        $planned = [];
+        foreach ($months as $month) {
+            $total = 0.0;
+            foreach (array_keys(array_filter($top, fn(int $parent): bool => $parent === 0)) as $id) {
+                $amount = $own[$month][$id] ?? 0.0;
+                $total += self::budgetMode($amount, $hasChildren[$id] ?? 0) === 'children' ? ($children[$month][$id] ?? 0) : $amount;
+            }
+            $planned[$month] = round($total, 2);
+        }
+        return $planned;
+    }
+
+    /**
+     * Budgets of the period by month: the own budget of the top-level categories, and
+     * the sum of the budgets of the sub-categories of each top-level category.
+     *
+     * @param array<int, int> $top  Parent of each category (0 for a top-level one)
+     * @param string          $from First day of the period (Y-m-d)
+     * @param string          $to   First day after the period (Y-m-d)
+     * @return array{0: array<string, array<int, float>>, 1: array<string, array<int, float>>}
+     *         [own budgets, sums of the sub-categories] (Y-m => category => amount)
+     */
+    private static function budgetsByLevel(array $top, string $from, string $to): array
+    {
         $own = [];
         $children = [];
         $sql = "SELECT DATE_FORMAT(date, '%Y-%m') AS month, category, amount FROM budget WHERE date >= ? AND date < ?";
@@ -265,20 +324,7 @@ final class Budget {
                 $children[$row['month']][$top[$id]] = ($children[$row['month']][$top[$id]] ?? 0) + (float)$row['amount'];
             }
         }
-        $hasChildren = array_count_values(array_filter($top));
-        foreach (array_keys($trends) as $month) {
-            $planned = 0.0;
-            foreach ($top as $id => $parent) {
-                if ($parent !== 0) {
-                    continue;
-                }
-                $amount = $own[$month][$id] ?? 0.0;
-                $planned += self::budgetMode($amount, $hasChildren[$id] ?? 0) === 'children' ? ($children[$month][$id] ?? 0) : $amount;
-            }
-            $trends[$month]['planned'] = round($planned, 2);
-        }
-
-        return array_values($trends);
+        return [$own, $children];
     }
 
     /**

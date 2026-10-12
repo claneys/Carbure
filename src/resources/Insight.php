@@ -190,6 +190,19 @@ final class Insight {
             throw new Error("Invalid color", 400);
         }
 
+        return [$name, $color, self::validateQuery($sql)];
+    }
+
+    /**
+     * Check the query of an insight: a single SELECT, without comment nor forbidden
+     * keyword or table, returning a column named amount.
+     *
+     * @param string $sql The query
+     * @return string The query without its final semicolon and spaces
+     * @throws Error If the query is invalid
+     */
+    private static function validateQuery(string $sql): string
+    {
         $sql = rtrim(trim($sql), "; \t\r\n");
         if ($sql === '' || mb_strlen($sql) > 500) {
             throw new Error("The query must contain 1 to 500 characters", 400);
@@ -211,7 +224,7 @@ final class Insight {
             throw new Error("The query must return a column named amount (… AS amount)", 400);
         }
 
-        return [$name, $color, $sql];
+        return $sql;
     }
 
     /**

@@ -183,12 +183,7 @@ final class Settings {
     {
         $rule = self::EDITABLE[$key] ?? null;
         $secret = in_array($key, self::SECRETS, true);
-        if (is_array($value)) {
-            // regex_label[...]: the pattern and its replacement
-            $value = array_map(fn($k, $v) => "$k => \"$v\"", array_keys($value), $value);
-        } elseif ($value !== null && $rule && $rule['kind'] === 'bool') {
-            $value = in_array(strtolower(trim($value)), ['1', 'true', 'on', 'yes'], true);
-        }
+        $value = self::displayValue($rule, $value);
         $setting = [
             'key' => $key,
             'value' => $secret ? ($value === null || $value === '' ? '' : str_repeat('•', 12)) : $value,
@@ -203,6 +198,26 @@ final class Settings {
             }
         }
         return $setting;
+    }
+
+    /**
+     * Value of a setting as shown in the portal: the lines of a list, a boolean for a
+     * boolean setting, else the raw value.
+     *
+     * @param array<string, mixed>|null  $rule  The rule of the setting (null: not editable)
+     * @param string|array<string>|null $value The raw value (null: not in the file)
+     * @return string|bool|list<string>|null
+     */
+    private static function displayValue(?array $rule, string|array|null $value): string|bool|array|null
+    {
+        if (is_array($value)) {
+            // regex_label[...]: the pattern and its replacement
+            return array_map(fn($k, $v) => "$k => \"$v\"", array_keys($value), $value);
+        }
+        if ($value !== null && $rule && $rule['kind'] === 'bool') {
+            return in_array(strtolower(trim($value)), ['1', 'true', 'on', 'yes'], true);
+        }
+        return $value;
     }
 
     /**
@@ -223,23 +238,59 @@ final class Settings {
             throw new Error("Invalid value for $key", 400);
         }
         $value = trim((string)$value);
-        // An empty value is accepted by some settings (unset)
-        $allowEmpty = !empty($rule['empty']);
-        $valid = match ($rule['kind']) {
-            'select' => in_array($value, $rule['options'], true),
-            'bool' => in_array($value, ['1', '0', 'true', 'false', ''], true),
-            'number' => ctype_digit($value) && (int)$value >= $rule['min'] && (int)$value <= $rule['max'],
-            'url' => ($value === '' && $allowEmpty)
-                || (preg_match('#^https?://[A-Za-z0-9.\-]+(:\d{1,5})?(/[A-Za-z0-9._~/\-]*)?$#', $value) === 1),
-            default => ($value === '' && $allowEmpty) || preg_match($rule['pattern'], $value) === 1,
-        };
-        if (!$valid) {
+        if (!self::isValid($rule, $value)) {
             throw new Error("Invalid value for $key", 400);
         }
         if ($rule['kind'] === 'bool') {
             return in_array($value, ['1', 'true'], true) ? 'true' : 'false';
         }
         return $rule['kind'] === 'url' ? rtrim($value, '/') : $value;
+    }
+
+    /**
+     * Whether a value (trimmed) follows the rule of its setting.
+     *
+     * @param array<string, mixed> $rule  The rule of the setting
+     * @param string               $value The value
+     * @return bool
+     */
+    private static function isValid(array $rule, string $value): bool
+    {
+        // An empty value is accepted by some settings (unset)
+        $allowEmpty = !empty($rule['empty']);
+        return match ($rule['kind']) {
+            'select' => in_array($value, $rule['options'], true),
+            'bool' => in_array($value, ['1', '0', 'true', 'false', ''], true),
+            'number' => self::inRange($value, $rule['min'], $rule['max']),
+            'url' => self::matches($value, '#^https?://[A-Za-z0-9.\-]+(:\d{1,5})?(/[A-Za-z0-9._~/\-]*)?$#', $allowEmpty),
+            default => self::matches($value, $rule['pattern'], $allowEmpty),
+        };
+    }
+
+    /**
+     * Whether a value is a whole number between two bounds.
+     *
+     * @param string $value The value
+     * @param int    $min   The lowest number allowed
+     * @param int    $max   The highest number allowed
+     * @return bool
+     */
+    private static function inRange(string $value, int $min, int $max): bool
+    {
+        return ctype_digit($value) && (int)$value >= $min && (int)$value <= $max;
+    }
+
+    /**
+     * Whether a value matches a pattern, or is empty when allowed.
+     *
+     * @param string $value      The value
+     * @param string $pattern    The regular expression
+     * @param bool   $allowEmpty An empty value is accepted
+     * @return bool
+     */
+    private static function matches(string $value, string $pattern, bool $allowEmpty): bool
+    {
+        return ($value === '' && $allowEmpty) || preg_match($pattern, $value) === 1;
     }
 
     /**

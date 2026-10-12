@@ -70,18 +70,31 @@ final class Category {
             throw new Error("A category with this name already exists", 409);
         }
 
-        // One level of sub-categories: the parent must be a top-level category
         if ($parent !== 0) {
-            $row = Db::queryOne("SELECT parent_category FROM bank_transaction_category WHERE id = ?", "i", $parent);
-            if (!$row || (int)$row['parent_category'] !== 0 || $parent === (int)$id) {
-                throw new Error("The parent must be a top-level category", 400);
-            }
-            if ($id !== null && Db::queryOne("SELECT id FROM bank_transaction_category WHERE parent_category = ? AND id <> ? LIMIT 1", "ii", $id, $id)) {
-                throw new Error("A category with sub-categories cannot become a sub-category", 400);
-            }
+            self::validateParent($id, $parent);
         }
 
         return [$name, $parent, $type, (string)$icon, (string)$color];
+    }
+
+    /**
+     * Check the parent of a sub-category: one level of sub-categories, so the parent
+     * must be a top-level category and the category must have no sub-category itself.
+     *
+     * @param int|null $id     The category (null for a new one)
+     * @param int      $parent The parent category (not 0)
+     * @return void
+     * @throws Error If the parent is not a top-level category, or the category has sub-categories
+     */
+    private static function validateParent(?int $id, int $parent): void
+    {
+        $row = Db::queryOne("SELECT parent_category FROM bank_transaction_category WHERE id = ?", "i", $parent);
+        if (!$row || (int)$row['parent_category'] !== 0 || $parent === (int)$id) {
+            throw new Error("The parent must be a top-level category", 400);
+        }
+        if ($id !== null && Db::queryOne("SELECT id FROM bank_transaction_category WHERE parent_category = ? AND id <> ? LIMIT 1", "ii", $id, $id)) {
+            throw new Error("A category with sub-categories cannot become a sub-category", 400);
+        }
     }
 
     /**

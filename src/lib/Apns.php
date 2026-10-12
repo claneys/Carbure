@@ -258,6 +258,43 @@ final class Apns {
     {
         // Reuse the token while it is valid (memory, then APCu shared between requests)
         $cacheKey = 'carbure_apns_jwt_' . md5("$keyPath|$keyId|$teamId");
+        $cachedToken = self::cachedJwt($cacheKey);
+        if ($cachedToken !== null) {
+            return $cachedToken;
+        }
+
+        $key = self::privateKey($keyPath);
+
+        // JWT header and payload
+        $header = [
+            'alg' => 'ES256',
+            'kid' => $keyId
+        ];
+        $payload = [
+            'iss' => $teamId,
+            'iat' => time()
+        ];
+        $dataToSign = self::base64Url(json_encode($header)) . '.' . self::base64Url(json_encode($payload));
+
+        // Sign with ES256 (ECDSA with SHA-256)
+        $signature = '';
+        openssl_sign($dataToSign, $signature, $key, OPENSSL_ALGO_SHA256);
+
+        // OpenSSL returns a DER signature, JWS ES256 expects R || S (2 x 32 bytes)
+        $token = $dataToSign . '.' . self::base64Url(self::derToRaw($signature));
+
+        self::storeJwt($cacheKey, ['token' => $token, 'iat' => $payload['iat']]);
+        return $token;
+    }
+
+    /**
+     * JWT still valid from the cache (memory, then APCu shared between requests).
+     *
+     * @param string $cacheKey The cache key of the JWT
+     * @return string|null The JWT, null if none or expired
+     */
+    private static function cachedJwt(string $cacheKey): ?string
+    {
         $cached = self::$jwtCache[$cacheKey] ?? null;
         if ($cached === null && function_exists('apcu_fetch') && ini_get('apc.enabled')) {
             $cached = apcu_fetch($cacheKey) ?: null;
@@ -265,54 +302,56 @@ final class Apns {
         if ($cached !== null && $cached['iat'] > time() - self::JWT_TTL) {
             return $cached['token'];
         }
+        return null;
+    }
 
-        if (!file_exists($keyPath)) {
-            throw new Error("APNs key file not found: $keyPath", 500);
-        }
-        
-        // Read the private key
-        $privateKey = file_get_contents($keyPath);
-        if ($privateKey === false) {
-            throw new Error("Failed to read APNs key file", 500);
-        }
-        
-        // JWT header
-        $header = [
-            'alg' => 'ES256',
-            'kid' => $keyId
-        ];
-        
-        // JWT payload
-        $payload = [
-            'iss' => $teamId,
-            'iat' => time()
-        ];
-        
-        $headerEncoded = rtrim(strtr(base64_encode(json_encode($header)), '+/', '-_'), '=');
-        $payloadEncoded = rtrim(strtr(base64_encode(json_encode($payload)), '+/', '-_'), '=');
-        
-        // Sign with ES256 (ECDSA with SHA-256)
-        $dataToSign = $headerEncoded . '.' . $payloadEncoded;
-        $signature = '';
-        
-        $key = openssl_pkey_get_private($privateKey);
-        if ($key === false) {
-            throw new Error("Invalid APNs private key", 500);
-        }
-        
-        openssl_sign($dataToSign, $signature, $key, OPENSSL_ALGO_SHA256);
-
-        // OpenSSL returns a DER signature, JWS ES256 expects R || S (2 x 32 bytes)
-        $signatureEncoded = rtrim(strtr(base64_encode(self::derToRaw($signature)), '+/', '-_'), '=');
-        $token = $dataToSign . '.' . $signatureEncoded;
-
-        $cached = ['token' => $token, 'iat' => $payload['iat']];
+    /**
+     * Keep a JWT in the caches (memory and APCu) for its lifetime.
+     *
+     * @param string                          $cacheKey The cache key of the JWT
+     * @param array{token: string, iat: int}  $cached   The JWT and its issue time
+     * @return void
+     */
+    private static function storeJwt(string $cacheKey, array $cached): void
+    {
         self::$jwtCache[$cacheKey] = $cached;
         if (function_exists('apcu_store') && ini_get('apc.enabled')) {
             apcu_store($cacheKey, $cached, self::JWT_TTL);
         }
+    }
 
-        return $token;
+    /**
+     * Private key of the token-based authentication (.p8 file).
+     *
+     * @param string $keyPath Path to .p8 key file
+     * @return OpenSSLAsymmetricKey The key
+     * @throws Error If the file is missing, unreadable or not a private key
+     */
+    private static function privateKey(string $keyPath): OpenSSLAsymmetricKey
+    {
+        if (!file_exists($keyPath)) {
+            throw new Error("APNs key file not found: $keyPath", 500);
+        }
+        $privateKey = file_get_contents($keyPath);
+        if ($privateKey === false) {
+            throw new Error("Failed to read APNs key file", 500);
+        }
+        $key = openssl_pkey_get_private($privateKey);
+        if ($key === false) {
+            throw new Error("Invalid APNs private key", 500);
+        }
+        return $key;
+    }
+
+    /**
+     * Base64url encoding without padding (JWS).
+     *
+     * @param string $data The data
+     * @return string
+     */
+    private static function base64Url(string $data): string
+    {
+        return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
     }
 
     /**

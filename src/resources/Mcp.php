@@ -68,18 +68,43 @@ final class Mcp {
 
         // Notifications and responses of the client: accepted, nothing to answer
         if ($method === null || $id === null) {
-            if ($method === null && $result === null && $error === null) {
-                return self::error(null, self::INVALID_REQUEST, "Invalid JSON-RPC message");
-            }
-            http_response_code(202);
-            return '';
+            return self::acknowledge($method, $result, $error);
         }
 
         if ($jsonrpc !== '2.0' || !is_string($method) || !(is_int($id) || is_string($id))) {
             return self::error($id, self::INVALID_REQUEST, "Invalid JSON-RPC request");
         }
-        $params = is_array($params) ? $params : [];
+        return self::dispatch($id, $method, is_array($params) ? $params : []);
+    }
 
+    /**
+     * Answer a message without request: a notification or a response of the client is
+     * accepted (HTTP 202, no body), a message with none of them is invalid.
+     *
+     * @param mixed $method The method of a notification
+     * @param mixed $result Response of the client to a server request
+     * @param mixed $error  Error of the client to a server request
+     * @return string The JSON-RPC error, or '' (HTTP 202)
+     */
+    private static function acknowledge(mixed $method, mixed $result, mixed $error): string
+    {
+        if ($method === null && $result === null && $error === null) {
+            return self::error(null, self::INVALID_REQUEST, "Invalid JSON-RPC message");
+        }
+        http_response_code(202);
+        return '';
+    }
+
+    /**
+     * Run a valid JSON-RPC request.
+     *
+     * @param int|string   $id     The request id
+     * @param string       $method The method (initialize, tools/list, tools/call...)
+     * @param array<mixed> $params The parameters of the method
+     * @return string The JSON-RPC response
+     */
+    private static function dispatch(int|string $id, string $method, array $params): string
+    {
         switch ($method) {
             case 'initialize':
                 return self::result($id, self::initialize($params));

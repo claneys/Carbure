@@ -109,24 +109,14 @@ final class OAuth {
         if (!Mcp::enabled()) {
             return self::error(403, 'access_denied', 'The MCP server is disabled');
         }
-        if (!is_array($redirect_uris) || !$redirect_uris || count($redirect_uris) > 10) {
-            return self::error(400, 'invalid_redirect_uri', 'redirect_uris must list 1 to 10 URIs');
+        $invalid = self::metadataError($redirect_uris, $token_endpoint_auth_method);
+        if ($invalid !== null) {
+            return $invalid;
         }
-        foreach ($redirect_uris as $uri) {
-            if (!self::validRedirectUri($uri)) {
-                return self::error(400, 'invalid_redirect_uri', 'Redirection URIs must use https, or http on the loopback, without fragment');
-            }
-        }
-        if (!in_array($token_endpoint_auth_method, self::AUTH_METHODS, true)) {
-            return self::error(400, 'invalid_client_metadata', 'Unsupported token_endpoint_auth_method');
-        }
-        $name = is_scalar($client_name) ? trim((string)$client_name) : '';
-        $name = $name === '' ? 'AI agent' : mb_substr($name, 0, 100);
+        $name = self::clientName($client_name);
 
         // Registration is open: the number of clients is bounded
-        Db::execute("DELETE FROM oauth_clients WHERE client_id NOT IN (SELECT client_id FROM api_tokens WHERE client_id IS NOT NULL)
-                     AND created_at < NOW() - INTERVAL 1 DAY", "");
-        if (Db::queryOne("SELECT COUNT(*) AS n FROM oauth_clients", "")['n'] >= self::MAX_CLIENTS) {
+        if (self::tooManyClients()) {
             return self::error(400, 'invalid_client_metadata', 'Too many registered clients, try again tomorrow');
         }
 
@@ -148,6 +138,53 @@ final class OAuth {
             $client += ['client_secret' => $secret, 'client_secret_expires_at' => 0];
         }
         return self::json($client, 201);
+    }
+
+    /**
+     * Check the metadata of a client to register (RFC 7591).
+     *
+     * @param mixed $redirectUris Redirection URIs (list): https, or http on the loopback
+     * @param mixed $authMethod   token_endpoint_auth_method
+     * @return string|null The JSON error (400), null if valid
+     */
+    private static function metadataError(mixed $redirectUris, mixed $authMethod): ?string
+    {
+        if (!is_array($redirectUris) || !$redirectUris || count($redirectUris) > 10) {
+            return self::error(400, 'invalid_redirect_uri', 'redirect_uris must list 1 to 10 URIs');
+        }
+        foreach ($redirectUris as $uri) {
+            if (!self::validRedirectUri($uri)) {
+                return self::error(400, 'invalid_redirect_uri', 'Redirection URIs must use https, or http on the loopback, without fragment');
+            }
+        }
+        if (!in_array($authMethod, self::AUTH_METHODS, true)) {
+            return self::error(400, 'invalid_client_metadata', 'Unsupported token_endpoint_auth_method');
+        }
+        return null;
+    }
+
+    /**
+     * Name of a client to register: the one it gives (100 characters), else "AI agent".
+     *
+     * @param mixed $clientName client_name of the metadata
+     * @return string
+     */
+    private static function clientName(mixed $clientName): string
+    {
+        $name = is_scalar($clientName) ? trim((string)$clientName) : '';
+        return $name === '' ? 'AI agent' : mb_substr($name, 0, 100);
+    }
+
+    /**
+     * Remove the clients never used after a day, then tell if the registrations are full.
+     *
+     * @return bool True if no client can be registered anymore
+     */
+    private static function tooManyClients(): bool
+    {
+        Db::execute("DELETE FROM oauth_clients WHERE client_id NOT IN (SELECT client_id FROM api_tokens WHERE client_id IS NOT NULL)
+                     AND created_at < NOW() - INTERVAL 1 DAY", "");
+        return Db::queryOne("SELECT COUNT(*) AS n FROM oauth_clients", "")['n'] >= self::MAX_CLIENTS;
     }
 
     /**
@@ -275,13 +312,8 @@ final class OAuth {
             return self::error(403, 'access_denied', 'The MCP server is disabled');
         }
 
-        // Client: client_id (+ secret in the form, or HTTP Basic)
-        $basic = self::basicCredentials();
-        $clientId = $basic[0] ?? $client_id;
-        $secret = $basic[1] ?? $client_secret;
-        $client = is_string($clientId) ? Db::queryOne("SELECT client_id, client_secret_hash, name FROM oauth_clients WHERE client_id = ?", "s", $clientId) : null;
-        if (!$client || ($client['client_secret_hash'] !== null && (!is_string($secret)
-            || !hash_equals($client['client_secret_hash'], hash('sha256', $secret))))) {
+        $client = self::authenticateClient($client_id, $client_secret);
+        if ($client === null) {
             if (!headers_sent()) {
                 header('WWW-Authenticate: Basic realm="Carbure"');
             }
@@ -289,13 +321,45 @@ final class OAuth {
         }
 
         if ($grant_type === 'authorization_code') {
-            return self::exchangeCode($client, is_string($code) ? $code : null, is_string($redirect_uri) ? $redirect_uri : null,
-                is_string($code_verifier) ? $code_verifier : null);
+            return self::exchangeCode($client, self::stringOrNull($code), self::stringOrNull($redirect_uri),
+                self::stringOrNull($code_verifier));
         }
         if ($grant_type === 'refresh_token') {
-            return self::refresh($client, is_string($refresh_token) ? $refresh_token : null);
+            return self::refresh($client, self::stringOrNull($refresh_token));
         }
         return self::error(400, 'unsupported_grant_type', 'grant_type must be authorization_code or refresh_token');
+    }
+
+    /**
+     * Client of a token request: client_id (+ secret in the form, or HTTP Basic), the
+     * secret checked for a confidential client.
+     *
+     * @param string|array<mixed>|null $clientId The client_id of the form
+     * @param string|array<mixed>|null $secret   The client_secret of the form
+     * @return array<string, mixed>|null The client (client_id, client_secret_hash, name), null if unknown or wrong secret
+     */
+    private static function authenticateClient(string|array|null $clientId, string|array|null $secret): ?array
+    {
+        $basic = self::basicCredentials();
+        $clientId = $basic[0] ?? $clientId;
+        $secret = $basic[1] ?? $secret;
+        $client = is_string($clientId) ? Db::queryOne("SELECT client_id, client_secret_hash, name FROM oauth_clients WHERE client_id = ?", "s", $clientId) : null;
+        if (!$client || ($client['client_secret_hash'] !== null && (!is_string($secret)
+            || !hash_equals($client['client_secret_hash'], hash('sha256', $secret))))) {
+            return null;
+        }
+        return $client;
+    }
+
+    /**
+     * A field of a request kept only when it is a string (an array is malformed).
+     *
+     * @param string|array<mixed>|null $value The field
+     * @return string|null
+     */
+    private static function stringOrNull(string|array|null $value): ?string
+    {
+        return is_string($value) ? $value : null;
     }
 
     /**
