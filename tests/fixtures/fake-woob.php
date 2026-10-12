@@ -120,10 +120,16 @@ if (($argv[1] ?? '') === 'bank' && $type === 'list') {
 if (($argv[1] ?? '') === 'bank' && in_array('--debug', $argv, true)) {
     fwrite(STDERR, "DEBUG:woob.browser:Request: GET https://bank.example/accounts\n");
     fwrite(STDERR, "DEBUG:woob.browser:Response: 200 OK\n");
+    // A debug line that mentions an error without being one
+    fwrite(STDERR, "2026-10-12 20:40:53,791:DEBUG:woob.backend.bnp.browser:3.7:browsers.py:1040:internal_callback Handle https://bank.example/error with ErrorPage\n");
 }
 
 if ($account === 'fail@bank') {
     fwrite(STDERR, "AttributeError: 'NoneType' object has no attribute 'iter_accounts'\n");
+    // Like woob: the session is stored after the error
+    if (in_array('--debug', $argv, true)) {
+        fwrite(STDERR, "2026-10-12 20:40:54,021:DEBUG:woob.backend.bnp.browser:3.7:browsers.py:1292:dump_state Stored cookies into storage\n");
+    }
     exit(1);
 }
 

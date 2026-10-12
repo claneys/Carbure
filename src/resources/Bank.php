@@ -798,7 +798,8 @@ final class Bank {
     }
 
     /**
-     * Call Woob to get the list of transactions from a bank.
+     * Call Woob to get the list of transactions from a bank. The system command run is
+     * sent in the progress as "Woob command <account>: <command>".
      *
      * @param string $type        The type of transactions to get (coming or history)
      * @param string $bankId      The bank id
@@ -810,6 +811,7 @@ final class Bank {
     {
         return Woob::getBankData($type, $bankId, $interactive,
             fn($message) => Webservice::sendProgress("Bank message $bankId: $message"),
-            $debug ? fn($line) => Webservice::sendProgress("Woob debug $bankId: $line") : null);
+            $debug ? fn($line) => Webservice::sendProgress("Woob debug $bankId: $line") : null,
+            fn($command) => Webservice::sendProgress("Woob command $bankId: $command"));
     }
 }

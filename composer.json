@@ -10,7 +10,7 @@
         "phpstan/phpstan": "^2.2.16"
     },
     "autoload-dev": {
-        "classmap": ["tools/phpstan/"]
+        "psr-0": {"": "tools/phpstan/"}
     },
     "scripts": {
         "phpstan": "phpstan analyse --memory-limit=1G"

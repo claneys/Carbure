@@ -1266,7 +1266,7 @@
                                 {{ showSyncLog ? t('syncHideLog') : t('syncShowLog') }}
                             </button>
                             <ol v-if="showSyncLog" class="sync-log" aria-live="polite">
-                                <li v-for="(line, i) in syncLog" :key="i" :class="{ 'sync-log-debug': line.startsWith('Woob debug ') }">{{ line }}</li>
+                                <li v-for="(line, i) in syncLog" :key="i" :class="{ 'sync-log-debug': line.startsWith('Woob debug '), 'sync-log-command': line.startsWith('Woob command ') }">{{ line }}</li>
                             </ol>
                         </section>
                     </div>

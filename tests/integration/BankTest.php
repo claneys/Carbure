@@ -293,6 +293,9 @@ class BankTest extends DatabaseTestCase
         }
         $this->assertStringContainsString('Syncing 111@bnp', $output);
         $this->assertStringNotContainsString('fail@bank', $output);
+        // The system command of each step, in the progress
+        $this->assertMatchesRegularExpression("/data: Woob command 111@bnp: .* bank coming '111@bnp' --count/", $output);
+        $this->assertMatchesRegularExpression("/data: Woob command 111@bnp: .* bank history '111@bnp' --count/", $output);
 
         $this->expectException(Error::class);
         $this->expectExceptionCode(404);

@@ -225,7 +225,8 @@ protégée.
   (opérations à venir, historique, notifications), nombre de transactions reçues et
   nouvelles, journal détaillé. Avec le réglage `woob_debug`, le journal affiche aussi, en
   direct, les logs de débogage de woob (requêtes vers la banque, trace de l'erreur Python),
-  à un administrateur uniquement. En cas d'échec woob, un lien ouvre la recherche des tickets
+  à un administrateur uniquement. La commande système lancée pour chaque étape (`Woob command …`)
+  y figure toujours. En cas d'échec woob, un lien ouvre la recherche des tickets
   woob sur le module concerné. Si aucun compte n'a pu être synchronisé, la catégorisation
   est sautée : seule l'erreur est notifiée. Pendant une synchronisation, l'icône de l'onglet tourne.
 

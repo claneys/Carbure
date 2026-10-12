@@ -3319,6 +3319,12 @@ button .material-icons {
     overflow-wrap: anywhere;
 }
 
+/* System command run for an account: stands out without lowering the contrast */
+.sync-log li.sync-log-command {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
 /* Debug logs of woob (woob_debug): set apart without lowering the contrast */
 .sync-log li.sync-log-debug {
     font-style: italic;

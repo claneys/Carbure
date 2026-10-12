@@ -17,6 +17,18 @@ final class Woob {
     private const HEARTBEAT_INTERVAL = 15;
 
     /**
+     * Options of woob for each level of woob_logging (woob 3.7: -d, -v, -q, warnings by
+     * default). Never "--logging <level>": woob expands it to --logging-file and writes
+     * its logs to a file named after the level in the working directory.
+     */
+    private const LOGGING_OPTIONS = [
+        'debug' => ' --debug', 'info' => ' --verbose', 'warning' => '', 'error' => ' --quiet', 'critical' => ' --quiet',
+    ];
+
+    /** Log line of woob below the warnings ("2026-10-12 20:40:53,390:DEBUG:woob.config:...") */
+    private const LOG_LINE = '/^(\S+ \S+:)?(DEBUG|INFO):/';
+
+    /**
      * Command that runs woob, after making sure that woob will accept to start: it
      * refuses a configuration file of the banks (logins and passwords) readable by
      * the group or the other users, as a file copied into a NAS shared folder often is.
@@ -77,16 +89,20 @@ final class Woob {
      * @param bool          $interactive Allow woob to ask a two-factor authentication
      * @param callable|null $onMessage   Receives each message of woob (interactive mode)
      * @param callable|null $onDebug     Receives each line of the debug logs of woob (woob_debug)
+     * @param callable|null $onCommand   Receives the system command run (shown in the sync log)
      * @return list<mixed>|null The transaction data or null if no data
      * @throws Exception If woob fails, or reports an error without returning data
      */
-    public static function getBankData(string $type, string $bankId, bool $interactive = false, ?callable $onMessage = null, ?callable $onDebug = null): ?array
+    public static function getBankData(string $type, string $bankId, bool $interactive = false, ?callable $onMessage = null, ?callable $onDebug = null, ?callable $onCommand = null): ?array
     {
         $command = self::buildCommand($type, $bankId);
         if ($interactive) {
             $command = self::interactiveCommand($command);
         }
         Logger::debug("Calling woob : $command");
+        if ($onCommand !== null) {
+            $onCommand($command);
+        }
 
         $stderr = '';
         $stdout = self::executeWithHeartbeat($command, $stderr, true, $interactive ? $onMessage : null,
@@ -95,7 +111,7 @@ final class Woob {
 
         // woob may exit with 0 when a backend cannot be loaded or logged in:
         // no data + an error on stderr is a failure, not an empty account
-        if ($data === null && preg_match('/error|exception|traceback|unable|no module/i', $stderr)) {
+        if ($data === null && preg_match('/error|exception|traceback|unable|no module/i', self::withoutLogs($stderr))) {
             Logger::error("woob returned no data", ["stderr" => $stderr]);
             throw new Exception("woob returned no data" . self::lastLine($stderr));
         }
@@ -112,8 +128,7 @@ final class Woob {
     public static function listAccounts(): array
     {
         $woob_path = self::path();
-        $woob_logging = Config::get('woob_logging');
-        $command = "$woob_path bank list -f json --logging $woob_logging";
+        $command = "$woob_path bank list -f json" . self::loggingOptions();
         Logger::debug("Calling woob : $command");
 
         // Plain JSON request: no Server-Sent Events heartbeat in the output
@@ -121,7 +136,7 @@ final class Woob {
         $stdout = self::executeWithHeartbeat($command, $stderr, false);
         $accounts = self::parseOutput('accounts', $stdout);
 
-        if ($accounts === null && preg_match('/error|exception|traceback|unable|no module/i', $stderr)) {
+        if ($accounts === null && preg_match('/error|exception|traceback|unable|no module/i', self::withoutLogs($stderr))) {
             Logger::error("woob returned no account", ["stderr" => $stderr]);
             throw new Exception("woob returned no account" . self::lastLine($stderr));
         }
@@ -357,14 +372,16 @@ final class Woob {
     }
 
     /**
-     * Last non empty line of an output, prefixed with ": " (empty string if none).
+     * Last non empty line of an output that is not a debug or info log of woob (the
+     * cause of an error comes before woob logs that it stored the session...), prefixed
+     * with ": " (empty string if none).
      *
      * @param string $output The command output
      * @return string The suffix to add to an error message
      */
     private static function lastLine(string $output): string
     {
-        $lines = array_values(array_filter(array_map('trim', explode("\n", $output))));
+        $lines = array_values(array_filter(array_map('trim', explode("\n", self::withoutLogs($output)))));
         return $lines ? ': ' . mb_substr(end($lines), 0, 200) : '';
     }
 
@@ -379,7 +396,6 @@ final class Woob {
     {
         $woob_path = self::path();
         $woob_transactions = Config::get('woob_transactions');
-        $woob_logging = Config::get('woob_logging');
         $woob_auto_update = Config::get('woob_auto_update');
         $woob_debug = Config::get('woob_debug');
 
@@ -388,7 +404,30 @@ final class Woob {
 
         $bankId = escapeshellarg($bankId);
 
-        return "$woob_path bank $type $bankId --count $woob_transactions$auto_update_flag$debug_flag --logging $woob_logging -f json -s date,rdate,amount,raw,type,category,card";
+        return "$woob_path bank $type $bankId --count $woob_transactions$auto_update_flag$debug_flag" . self::loggingOptions()
+            . " -f json -s date,rdate,amount,raw,type,category,card";
+    }
+
+    /**
+     * Options of woob for the level of woob_logging (nothing for an unknown level).
+     *
+     * @return string The options, with a leading space
+     */
+    private static function loggingOptions(): string
+    {
+        return self::LOGGING_OPTIONS[(string)Config::get('woob_logging')] ?? '';
+    }
+
+    /**
+     * An output of woob without its debug and info log lines (they may mention
+     * "error" without being one: a page named error, a retry...).
+     *
+     * @param string $output The error output of woob
+     * @return string
+     */
+    private static function withoutLogs(string $output): string
+    {
+        return implode("\n", array_filter(explode("\n", $output), fn(string $line): bool => !preg_match(self::LOG_LINE, $line)));
     }
 
     /**

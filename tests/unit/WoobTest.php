@@ -87,7 +87,8 @@ class WoobTest extends TestCase
         }
 
         $this->assertCount(3, $data);
-        $this->assertSame(['DEBUG:woob.browser:Request: GET https://bank.example/accounts', 'DEBUG:woob.browser:Response: 200 OK'], $lines);
+        $this->assertSame(['DEBUG:woob.browser:Request: GET https://bank.example/accounts', 'DEBUG:woob.browser:Response: 200 OK',
+            '2026-10-12 20:40:53,791:DEBUG:woob.backend.bnp.browser:3.7:browsers.py:1040:internal_callback Handle https://bank.example/error with ErrorPage'], $lines);
     }
 
     public function testDebugLogsKeepTheErrorOfAFailure()
@@ -100,12 +101,64 @@ class WoobTest extends TestCase
             });
             $this->fail('woob failed');
         } catch (Exception $e) {
-            $this->assertStringContainsString('exit code: 1', $e->getMessage());
+            // The cause, not the debug line written after it
+            $this->assertStringEndsWith("exit code: 1): AttributeError: 'NoneType' object has no attribute 'iter_accounts'", $e->getMessage());
         } finally {
             Config::set('woob_debug', false);
         }
 
-        $this->assertSame("AttributeError: 'NoneType' object has no attribute 'iter_accounts'", end($lines));
+        $this->assertContains("AttributeError: 'NoneType' object has no attribute 'iter_accounts'", $lines);
+        $this->assertStringContainsString('Stored cookies into storage', end($lines));
+    }
+
+    public function testDebugLinesMentioningAnErrorAreNotOne()
+    {
+        // An empty account with woob debug logs on stderr ("…/error with ErrorPage")
+        Config::set('woob_debug', true);
+        try {
+            $this->assertNull(Woob::getBankData('history', 'empty@bank'));
+        } finally {
+            Config::set('woob_debug', false);
+        }
+    }
+
+    public function testCommandRunIsGiven()
+    {
+        $commands = [];
+        Woob::getBankData('history', '123@bnp', false, null, null, function ($command) use (&$commands) {
+            $commands[] = $command;
+        });
+
+        $this->assertCount(1, $commands);
+        $this->assertStringContainsString("bank history '123@bnp' --count", $commands[0]);
+    }
+
+    /**
+     * @return array<string, array{string, string}>
+     */
+    public static function loggingLevels(): array
+    {
+        return [
+            'debug' => ['debug', ' --debug -f json'], 'info' => ['info', ' --verbose -f json'],
+            'warning' => ['warning', ' -f json'], 'error' => ['error', ' --quiet -f json'],
+            'critical' => ['critical', ' --quiet -f json'], 'unknown' => ['loud', ' -f json'],
+        ];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('loggingLevels')]
+    public function testLoggingLevelGivesAWoobOptionNotALogFile(string $level, string $expected)
+    {
+        $previous = Config::get('woob_logging');
+        Config::set('woob_logging', $level);
+        try {
+            $command = (new ReflectionMethod(Woob::class, 'buildCommand'))->invoke(null, 'history', '1@bnp');
+        } finally {
+            Config::set('woob_logging', $previous);
+        }
+
+        // "--logging <level>" would be read by woob as --logging-file: a file named after the level
+        $this->assertStringNotContainsString('--logging', $command);
+        $this->assertStringContainsString($expected, $command);
     }
 
     public function testBankIdIsEscaped()

@@ -28,6 +28,12 @@ test('synchronizes one account', async ({ adminPage: page }) => {
 
     await page.getByRole('button', { name: tr('syncShowLog') }).click();
     await expect(page.locator('.sync-log')).toContainText('Synchronization complete');
+    // The system command run for each step, without a log file for woob
+    const commands = page.locator('.sync-log li.sync-log-command');
+    await expect(commands).toHaveCount(2);
+    await expect(commands.first()).toContainText("Woob command 00012345678@bnp:");
+    await expect(commands.first()).toContainText("bank coming '00012345678@bnp' --count");
+    await expect(commands.first()).not.toContainText('--logging');
 
     // The new transactions are in the month
     await openTab(page, tr('tabTransactions'));
@@ -47,7 +53,7 @@ test('shows the debug logs of woob in the synchronization log', async ({ adminPa
     await page.getByRole('button', { name: tr('syncShowLog') }).click();
     const debug = page.locator('.sync-log li.sync-log-debug');
     await expect(debug.filter({ hasText: 'Woob debug fail@bank: DEBUG:woob.browser:Request: GET https://bank.example/accounts' })).toHaveCount(1);
-    await expect(debug.last()).toHaveText("Woob debug fail@bank: AttributeError: 'NoneType' object has no attribute 'iter_accounts'");
+    await expect(debug.filter({ hasText: "Woob debug fail@bank: AttributeError: 'NoneType' object has no attribute 'iter_accounts'" })).toHaveCount(1);
 
     // Nothing synchronized: no categorization, only the notification of the error
     await expect(page.locator('.sync-log')).not.toContainText('Updating missing categories');
