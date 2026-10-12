@@ -61,7 +61,11 @@ export function createBudgetModule(getBudgetStore, getApiService) {
                 // Edit modal: amount, and for a parent category the sum of its sub-categories
                 budgetNewValue: '',
                 budgetUseChildren: false,
-                savingBudget: false
+                savingBudget: false,
+                // Copy of the previous month: modal, missing (default) or all, ongoing request
+                showCopyModal: false,
+                copyMode: 'missing',
+                copyingBudget: false
             };
         },
 
@@ -125,6 +129,34 @@ export function createBudgetModule(getBudgetStore, getApiService) {
                     remaining: budget - consumed,
                     progress: budget > 0 ? Math.round(consumed / budget * 100) : 0
                 };
+            },
+
+            /**
+             * Month and year the copy button copies from (month before the selected one)
+             * @returns {{month: number, year: number}}
+             */
+            copySource() {
+                const month = Number(this.selectedMonth) || new Date().getMonth() + 1;
+                const year = Number(this.selectedYear) || new Date().getFullYear();
+                const date = new Date(year, month - 2, 1);
+                return { month: date.getMonth() + 1, year: date.getFullYear() };
+            },
+
+            /**
+             * Localized name of the month the copy button copies from (lowercase in French)
+             * @returns {string}
+             */
+            copySourceName() {
+                const name = String(this.t(`months.${this.copySource.month}`));
+                return (this.locale || 'fr') === 'fr' ? name.toLowerCase() : name;
+            },
+
+            /**
+             * Label of the copy button, with the name of the source month
+             * @returns {string}
+             */
+            copyButtonLabel() {
+                return this.t('budgetCopyButton', { month: this.copySourceName });
             },
 
             /**
@@ -345,6 +377,50 @@ export function createBudgetModule(getBudgetStore, getApiService) {
             closeBudgetModal() {
                 this.showBudgetModal = false;
                 this.budgetToEdit = null;
+            },
+
+            /**
+             * Opens the modal copying the budgets of the previous month
+             */
+            openCopyModal() {
+                this.copyMode = 'missing';
+                this.showCopyModal = true;
+            },
+
+            /**
+             * Closes the modal copying the budgets of the previous month
+             */
+            closeCopyModal() {
+                this.showCopyModal = false;
+            },
+
+            /**
+             * Copies the budgets of the previous month, then reloads the list
+             * @param {number} month - Target month (1-12)
+             * @param {number} year - Target year
+             * @returns {Promise<void>}
+             */
+            async submitBudgetCopy(month, year) {
+                const store = getBudgetStore();
+                if (!store) {
+                    console.error('Budget store not initialized');
+                    return;
+                }
+
+                this.copyingBudget = true;
+                try {
+                    const result = await store.copyBudgets(month, year, this.copyMode === 'all');
+                    const count = Number(result?.copied) || 0;
+                    this.showToast(count > 0
+                        ? this.t('budgetCopiedToast', { count })
+                        : this.t('budgetCopyEmpty', { month: this.copySourceName }));
+                    this.closeCopyModal();
+                } catch (err) {
+                    console.error('Copy budgets error:', err);
+                    this.showToast(err.message);
+                } finally {
+                    this.copyingBudget = false;
+                }
             },
 
             /**

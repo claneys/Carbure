@@ -55,6 +55,16 @@ test('the menus, modals and the synchronization log are readable', async ({ admi
     await page.keyboard.press('Escape');
     await expect(detail).toHaveCount(0);
 
+    // Copy of the budgets of the previous month (Budgets view)
+    await openTab(page, tr('tabBudget'));
+    await page.getByRole('tab', { name: tr('budgetConfigTab') }).click();
+    await page.locator('.budget-copy-button').click();
+    const copy = page.getByRole('dialog', { name: tr('budgetCopyTitle') });
+    await expect(copy).toBeVisible();
+    problems.push(...await contrastProblems(page, tr('budgetCopyTitle')));
+    await page.keyboard.press('Escape');
+    await expect(copy).toHaveCount(0);
+
     await openTab(page, tr('tabCategories'));
     await page.getByRole('button', { name: tr('addCategory') }).click();
     const category = page.getByRole('dialog', { name: tr('addCategory') });

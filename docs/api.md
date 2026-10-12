@@ -382,6 +382,14 @@ Renvoie les colonnes de `bank_transaction` et `top` (catégorie de premier nivea
 jour le budget de la catégorie pour le mois. Pour une catégorie avec sous-catégories, le
 montant remplace la somme de leurs budgets ; `0` revient à cette somme.
 
+### `POST /budget/copy`
+
+`month`, `year` (mois cible, mois courant par défaut), `overwrite` (`false` par défaut) :
+recopie les budgets du mois précédent vers le mois cible. Sans `overwrite`, seules les
+catégories sans budget dans le mois cible sont recopiées ; avec `overwrite`, tous les
+budgets du mois précédent remplacent ceux du mois cible. Renvoie `month`, `source` (mois
+précédent, `AAAA-MM`), `copied` (budgets écrits) et `overwrite`.
+
 ### `GET /budget/trends`
 
 | Paramètre | Requis | Description |

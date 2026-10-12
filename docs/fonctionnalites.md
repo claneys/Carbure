@@ -220,6 +220,9 @@ Un budget est un **montant par catégorie et par mois**.
   ses sous-catégories avec leur propre budget.
 - Les montants se règlent mois par mois depuis la carte (bouton de réglage), par tous les
   utilisateurs.
+- **Recopie du mois précédent** : le bouton au-dessus de la synthèse reprend les budgets
+  du mois précédent, en complétant seulement les catégories sans budget ou en écrasant
+  le mois affiché.
 
 ## Flux du mois
 

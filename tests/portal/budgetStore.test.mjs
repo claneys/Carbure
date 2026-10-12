@@ -15,6 +15,10 @@ function fakeApi(levels) {
         async updateBudget(id, month, year, amount) {
             api.calls.push(['updateBudget', id, month, year, amount]);
         },
+        async copyBudgets(month, year, overwrite) {
+            api.calls.push(['copyBudgets', month, year, overwrite]);
+            return { month: '2026-11', source: '2026-10', copied: 2, overwrite };
+        },
         abortAllExcept() {},
     };
     return api;
@@ -66,6 +70,20 @@ test('after a change of budget, reloads and stays on the displayed level', async
 
     await store.updateBudget(2, 10, 2026, 350);
     assert.deepEqual(api.calls.find(c => c[0] === 'updateBudget'), ['updateBudget', 2, 10, 2026, 350]);
+    assert.deepEqual(store.state.breadcrumbStack, [{ id: 1, name: 'Alimentation' }]);
+    // The parent depends on its sub-categories: fetched again, not taken from the cache
+    assert.equal(api.calls.filter(c => c[0] === 'fetchBudget' && c[3] === 1).length, 2);
+});
+
+test('after a copy of the previous month, reloads and stays on the displayed level', async () => {
+    const api = fakeApi(LEVELS);
+    const store = createBudgetStore(api);
+    await store.loadRootBudgets(11, 2026);
+    await store.navigateToChildren(LEVELS[0][0], 11, 2026);
+
+    const result = await store.copyBudgets(11, 2026, true);
+    assert.deepEqual(api.calls.find(c => c[0] === 'copyBudgets'), ['copyBudgets', 11, 2026, true]);
+    assert.deepEqual(result, { month: '2026-11', source: '2026-10', copied: 2, overwrite: true });
     assert.deepEqual(store.state.breadcrumbStack, [{ id: 1, name: 'Alimentation' }]);
     // The parent depends on its sub-categories: fetched again, not taken from the cache
     assert.equal(api.calls.filter(c => c[0] === 'fetchBudget' && c[3] === 1).length, 2);

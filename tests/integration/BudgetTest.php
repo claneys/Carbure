@@ -52,6 +52,93 @@ class BudgetTest extends DatabaseTestCase
         $this->assertSame(0, $budget['Énergie']['children']);
     }
 
+    public function testCopyPreviousMonth()
+    {
+        // Next month is empty: the budgets of the current month are copied to it
+        $next = date('Y-m-d', strtotime(date('Y-m-01') . ' +1 month'));
+        $result = Budget::copy(date('n', strtotime($next)), date('Y', strtotime($next)));
+
+        $this->assertSame(date('Y-m', strtotime($next)), $result['month']);
+        $this->assertSame(date('Y-m'), $result['source']);
+        $this->assertSame(2, $result['copied']);
+        $this->assertFalse($result['overwrite']);
+
+        $budget = $this->byName(Budget::get(date('n', strtotime($next)), date('Y', strtotime($next))));
+        $this->assertEquals(200, $budget['Alimentation']['budget']);
+        $this->assertEquals(100, $budget['Énergie']['budget']);
+    }
+
+    public function testCopyOnlyMissingByDefault()
+    {
+        // Next month already has its own budget for Alimentation: it is kept
+        $next = date('Y-m-d', strtotime(date('Y-m-01') . ' +1 month'));
+        [$month, $year] = [(int)date('n', strtotime($next)), (int)date('Y', strtotime($next))];
+        Budget::create(1, 500, $month, $year);
+
+        $result = Budget::copy($month, $year);
+        $this->assertSame(1, $result['copied']);
+
+        $budget = $this->byName(Budget::get($month, $year));
+        $this->assertEquals(500, $budget['Alimentation']['budget']);
+        $this->assertEquals(100, $budget['Énergie']['budget']);
+    }
+
+    public function testCopyOverwrite()
+    {
+        // With overwrite, the budgets already set are replaced
+        $next = date('Y-m-d', strtotime(date('Y-m-01') . ' +1 month'));
+        [$month, $year] = [(int)date('n', strtotime($next)), (int)date('Y', strtotime($next))];
+        Budget::create(1, 500, $month, $year);
+
+        $result = Budget::copy($month, $year, true);
+        $this->assertSame(2, $result['copied']);
+        $this->assertTrue($result['overwrite']);
+
+        $budget = $this->byName(Budget::get($month, $year));
+        $this->assertEquals(200, $budget['Alimentation']['budget']);
+        $this->assertEquals(100, $budget['Énergie']['budget']);
+    }
+
+    public function testCopyEmptySource()
+    {
+        // The month before next month is empty: nothing is copied
+        $next = date('Y-m-d', strtotime(date('Y-m-01') . ' +2 months'));
+        [$month, $year] = [(int)date('n', strtotime($next)), (int)date('Y', strtotime($next))];
+        $result = Budget::copy($month, $year);
+
+        $this->assertSame(0, $result['copied']);
+        $this->assertSame(date('Y-m', strtotime(date('Y-m-01') . ' +1 month')), $result['source']);
+    }
+
+    public function testCopyAcrossYearBoundary()
+    {
+        // January 2020 is copied from December 2019
+        Budget::create(1, 77, 12, 2019);
+
+        $result = Budget::copy(1, 2020);
+        $this->assertSame('2020-01', $result['month']);
+        $this->assertSame('2019-12', $result['source']);
+        $this->assertSame(1, $result['copied']);
+
+        $budget = $this->byName(Budget::get(1, 2020));
+        $this->assertEquals(77, $budget['Alimentation']['budget']);
+    }
+
+    public function testCopyKeepsTheSumOfChildren()
+    {
+        // A 0 budget means "sum of the sub-categories": copied as is
+        Budget::create(1, 0, 2, 2020);
+        Budget::create(2, 160, 2, 2020);
+
+        $result = Budget::copy(3, 2020);
+        $this->assertSame('2020-02', $result['source']);
+        $this->assertSame(2, $result['copied']);
+
+        $budget = $this->byName(Budget::get(3, 2020));
+        $this->assertSame('children', $budget['Alimentation']['budget_mode']);
+        $this->assertEquals(160, $budget['Alimentation']['budget']);
+    }
+
     public function testParentBudgetIsTheSumOfItsChildren()
     {
         // 0 removes the override of Alimentation: the budget of Supermarché is used

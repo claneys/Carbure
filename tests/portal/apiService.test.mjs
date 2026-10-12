@@ -95,6 +95,16 @@ test('updateBudget sets the budget of a category with POST /budget', async () =>
     assert.deepEqual(JSON.parse(calls[0].options.body), { category: 4, amount: 350, month: 10, year: 2026 });
 });
 
+test('copyBudgets copies the previous month with POST /budget/copy', async () => {
+    const calls = mockFetch(() => json({ month: '2026-11', source: '2026-10', copied: 3, overwrite: true }));
+    const api = createApiService(BASE, 't');
+
+    assert.deepEqual(await api.copyBudgets(11, 2026, true), { month: '2026-11', source: '2026-10', copied: 3, overwrite: true });
+    assert.equal(calls[0].url, `${BASE}/budget/copy`);
+    assert.equal(calls[0].options.method, 'POST');
+    assert.deepEqual(JSON.parse(calls[0].options.body), { month: 11, year: 2026, overwrite: true });
+});
+
 test('saveInsight sends the chosen icon, null for the default one', async () => {
     const calls = mockFetch(() => json({ id: 3 }));
     const api = createApiService(BASE, 't');

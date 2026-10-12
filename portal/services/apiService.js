@@ -777,6 +777,21 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
             body: JSON.stringify({ category: categoryId, amount, month, year })
         }, 'Failed to update budget');
     }
+
+    /**
+     * Copies the budgets of the previous month to the given month
+     * @param {number} month - Target month (1-12)
+     * @param {number} year - Target year
+     * @param {boolean} overwrite - True to replace the budgets already set in the target month
+     * @returns {Promise<Object>} {month, source, copied, overwrite}
+     * @throws {Error} If request fails
+     */
+    async function copyBudgets(month, year, overwrite = false) {
+        return request(`${baseUrl}/budget/copy`, {
+            method: 'POST',
+            body: JSON.stringify({ month, year, overwrite })
+        }, 'Failed to copy the budgets');
+    }
     
     /**
      * Fetches insights data for a given month and year
@@ -879,6 +894,7 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
         fetchOAuthClient,
         approveOAuth,
         updateBudget,
+        copyBudgets,
         fetchInsights,
         fetchUsers,
         fetchMe,

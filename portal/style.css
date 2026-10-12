@@ -2393,6 +2393,29 @@ button .material-icons {
     color: var(--text-secondary);
 }
 
+/* Sub-tabs of the Budget tab with the copy button on the same row */
+.budget-subtabs {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.budget-subtabs .sub-tabs {
+    margin-bottom: 0;
+}
+
+.budget-subtabs .budget-copy-button {
+    margin-left: auto;
+}
+
+.budget-copy-mode {
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
 .budget-summary {
     background: var(--surface);
     border-radius: var(--border-radius-xl);
@@ -2477,7 +2500,12 @@ button .material-icons {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.6px;
-    color: rgba(255, 255, 255, 0.92);
+    /* On a light chip: white text was unreadable on the light end of the pink background */
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--text-primary);
 }
 
 .budget-grid {
@@ -2551,13 +2579,13 @@ button .material-icons {
     border-radius: 50%;
     background: transparent;
     box-shadow: none;
+    /* No opacity: the icon of a control keeps a 3:1 contrast (WCAG 1.4.11) */
     color: var(--text-secondary);
-    opacity: 0.6;
     cursor: pointer;
 }
 
 .budget-card-edit:hover {
-    opacity: 1;
+    color: var(--text-primary);
     background: var(--background);
     transform: none;
     box-shadow: none;

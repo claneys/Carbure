@@ -141,6 +141,57 @@ final class Budget {
         Db::execute($sql, "sdid", $date, $amount, $category, $amount);
 
         return true;
+    }
+
+    /**
+     * Copy the budgets of the previous month to the given month.
+     *
+     * Rows at 0 are copied as is (they mean "sum of the sub-categories").
+     * Without overwrite, only the categories without a budget in the target
+     * month are copied; with overwrite, every budget of the source month
+     * replaces the one of the target month.
+     *
+     * @param int|string|null      $month     The target month (current month by default)
+     * @param int|string|null      $year      The target year (current year by default)
+     * @param bool|int|string|null $overwrite True to replace the budgets already set in the
+     *                                        target month ("true"/"false" from a query string)
+     * @return array{month: string, source: string, copied: int, overwrite: bool} month,
+     *               source (previous month, Y-m), copied (budgets written) and overwrite
+     */
+    #[ApiRoute('/budget/copy', method: 'POST')]
+    public static function copy(int|string|null $month = null, int|string|null $year = null, bool|int|string|null $overwrite = false): array
+    {
+        [$targetMonth, $targetYear] = Month::resolve($month, $year);
+        $target = sprintf('%04d-%02d-01', $targetYear, $targetMonth);
+        $source = date('Y-m-d', strtotime("$target -1 month"));
+        [$from, $to] = Month::range(date('n', strtotime($source)), date('Y', strtotime($source)));
+
+        $rows = Db::execute("SELECT category, amount FROM budget WHERE date >= ? AND date < ?",
+            "ss", $from, $to)->get_result()->fetch_all(MYSQLI_ASSOC);
+
+        $key = sprintf('%04d-%02d', $targetYear, $targetMonth);
+        $sourceKey = date('Y-m', strtotime($source));
+        $overwrite = filter_var($overwrite, FILTER_VALIDATE_BOOLEAN);
+        if (empty($rows)) {
+            return ['month' => $key, 'source' => $sourceKey, 'copied' => 0, 'overwrite' => $overwrite];
+        }
+
+        $copied = 0;
+        foreach ($rows as $row) {
+            $amount = (float)$row['amount'];
+            $category = (int)$row['category'];
+            if ($overwrite) {
+                Db::execute("INSERT INTO budget (date, amount, category) VALUES (?, ?, ?)
+                    ON DUPLICATE KEY UPDATE amount=?", "sdid", $target, $amount, $category, $amount);
+                $copied++;
+            } else {
+                $stmt = Db::execute("INSERT IGNORE INTO budget (date, amount, category) VALUES (?, ?, ?)",
+                    "sdi", $target, $amount, $category);
+                $copied += $stmt->affected_rows > 0 ? 1 : 0;
+            }
+        }
+
+        return ['month' => $key, 'source' => $sourceKey, 'copied' => $copied, 'overwrite' => $overwrite];
     }   
 
 

@@ -200,6 +200,25 @@ export function createBudgetStore(apiService) {
             await navigateToChildren(crumb, month, year);
         }
     }
+
+    /**
+     * Copies the budgets of the previous month to the given month
+     * @param {number} month - Target month (1-12)
+     * @param {number} year - Target year
+     * @param {boolean} overwrite - True to replace the budgets already set
+     * @returns {Promise<Object>} {month, source, copied, overwrite}
+     */
+    async function copyBudgets(month, year, overwrite = false) {
+        const result = await apiService.copyBudgets(month, year, overwrite);
+        // Reload the budgets (a parent depends on its sub-categories), staying on the displayed level
+        const stack = state.breadcrumbStack.slice();
+        state.childrenCache = {};
+        await loadRootBudgets(month, year);
+        for (const crumb of stack) {
+            await navigateToChildren(crumb, month, year);
+        }
+        return result;
+    }
     
     /**
      * Aborts all pending requests
@@ -214,6 +233,7 @@ export function createBudgetStore(apiService) {
         navigateToChildren,
         navigateToBreadcrumb,
         updateBudget,
+        copyBudgets,
         filterBudgets,
         abortAll
     };

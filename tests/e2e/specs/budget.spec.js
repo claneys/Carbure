@@ -190,3 +190,39 @@ test('refuses an invalid amount', async ({ adminPage: page }) => {
     await modal.getByRole('button', { name: tr('cancel') }).click();
     await expect(modal).toHaveCount(0);
 });
+
+test('copies the budgets of the previous month, completing or overwriting', async ({ adminPage: page, api }) => {
+    const prev = currentMonth(1);
+    const prevName = tr(`months.${prev.month}`).toLowerCase();
+    const copyButton = () => page.getByRole('button', { name: tr('budgetCopyButton', { month: prevName }), exact: true });
+
+    // The previous month differs from the current one (Supermarché 300, Restaurant 100),
+    // and Salaire has no budget yet
+    for (const [category, amount] of [[2, 321], [3, 123], [5, 2000]]) {
+        const response = await api.post('/api/budget', { data: { category, amount, month: prev.month, year: prev.year } });
+        expect(response.ok()).toBeTruthy();
+    }
+
+    await openBudgets(page);
+    await copyButton().click();
+    let modal = page.getByRole('dialog', { name: tr('budgetCopyTitle') });
+    await expect(modal).toContainText(tr('budgetCopyHelp', { month: prevName }));
+    // Completing only, by default: only Salaire is copied
+    await expect(modal.getByRole('radio', { name: tr('budgetCopyMissing') })).toBeChecked();
+    await modal.getByRole('button', { name: tr('budgetCopyConfirm') }).click();
+
+    await expect(page.locator('.toast')).toHaveText(tr('budgetCopiedToast', { count: 1 }));
+    await expect(page.locator('.budget-section-incomes')).toContainText('Salaire');
+    expect(Number((await apiBudget(api, 'Supermarché', 1)).budget)).toBe(300);
+
+    // Overwriting: the budgets of the previous month replace the current ones
+    await copyButton().click();
+    modal = page.getByRole('dialog', { name: tr('budgetCopyTitle') });
+    await modal.getByRole('radio', { name: tr('budgetCopyOverwrite') }).check();
+    await modal.getByRole('button', { name: tr('budgetCopyConfirm') }).click();
+
+    await expect(page.locator('.toast')).toHaveText(tr('budgetCopiedToast', { count: 3 }));
+    await card(page, 'Alimentation').click();
+    await expectAmounts(card(page, 'Supermarché'), 82.4, `/ ${euros(321)}`);
+    expect(Number((await apiBudget(api, 'Supermarché', 1)).budget)).toBe(321);
+});

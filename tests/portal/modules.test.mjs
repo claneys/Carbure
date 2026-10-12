@@ -66,6 +66,25 @@ test('budgetSummary: totals of the budgeted expenses', () => {
     assert.equal(summary.progress, 77);
 });
 
+test('copySource: the month before the selected one, named in the button', () => {
+    const t = (key, params = {}) => {
+        const months = { 10: 'Octobre', 12: 'Décembre' };
+        const text = key.startsWith('months.') ? months[key.slice(7)] : 'Recopier les budgets du mois précédent ({month})';
+        return text.replace(/\{(\w+)\}/g, (match, name) => String(params[name]));
+    };
+    const context = { selectedMonth: 11, selectedYear: 2026, locale: 'fr', t };
+
+    assert.deepEqual(budget.computed.copySource.call(context), { month: 10, year: 2026 });
+    assert.equal(budget.computed.copySourceName.call({ ...context, copySource: { month: 10, year: 2026 } }), 'octobre');
+    assert.equal(budget.computed.copyButtonLabel.call({ ...context, copySourceName: 'octobre' }),
+        'Recopier les budgets du mois précédent (octobre)');
+
+    // January is copied from December of the previous year
+    const january = { ...context, selectedMonth: 1, selectedYear: 2026 };
+    assert.deepEqual(budget.computed.copySource.call(january), { month: 12, year: 2025 });
+    assert.equal(budget.computed.copySourceName.call({ ...january, copySource: { month: 12, year: 2025 } }), 'décembre');
+});
+
 test('categoryColor: color of the category, the primary color by default', () => {
     assert.equal(budget.methods.categoryColor({ color: 'teal' }), '#30b0c7');
     assert.equal(budget.methods.categoryColor({ color: '' }), 'var(--primary-color)');

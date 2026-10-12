@@ -136,6 +136,9 @@ Deux sous-onglets : **Flux** (affiché par défaut) et **Budgets**.
 - Bouton de réglage d'une carte : modification du montant budgété pour le mois. Pour une
   catégorie parente, la case **Somme des sous-catégories** utilise leur somme ; décochée,
   le montant saisi la remplace.
+- **Recopier les budgets du mois précédent** : le bouton au-dessus de la synthèse reprend
+  les budgets du mois précédent (`POST /budget/copy`), en complétant seulement les
+  catégories sans budget ou en écrasant le mois affiché.
 
 ## Insights
 

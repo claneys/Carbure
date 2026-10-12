@@ -553,14 +553,21 @@
 
                 <!-- Budget Tab -->
                 <div v-else-if="activeTab === 'budget'" key="budget" class="tab-panel">
-                    <div class="sub-tabs" role="tablist" :aria-label="t('tabBudget')">
-                        <button type="button" role="tab" class="sub-tab" :class="{ active: budgetView === 'flow' }"
-                                :aria-selected="budgetView === 'flow' ? 'true' : 'false'" @click="budgetView = 'flow'">
-                            <span class="material-icons" aria-hidden="true">account_tree</span>{{ t('budgetFlowTab') }}
-                        </button>
-                        <button type="button" role="tab" class="sub-tab" :class="{ active: budgetView === 'budgets' }"
-                                :aria-selected="budgetView === 'budgets' ? 'true' : 'false'" @click="budgetView = 'budgets'">
-                            <span class="material-icons" aria-hidden="true">tune</span>{{ t('budgetConfigTab') }}
+                    <div class="budget-subtabs">
+                        <div class="sub-tabs" role="tablist" :aria-label="t('tabBudget')">
+                            <button type="button" role="tab" class="sub-tab" :class="{ active: budgetView === 'flow' }"
+                                    :aria-selected="budgetView === 'flow' ? 'true' : 'false'" @click="budgetView = 'flow'">
+                                <span class="material-icons" aria-hidden="true">account_tree</span>{{ t('budgetFlowTab') }}
+                            </button>
+                            <button type="button" role="tab" class="sub-tab" :class="{ active: budgetView === 'budgets' }"
+                                    :aria-selected="budgetView === 'budgets' ? 'true' : 'false'" @click="budgetView = 'budgets'">
+                                <span class="material-icons" aria-hidden="true">tune</span>{{ t('budgetConfigTab') }}
+                            </button>
+                        </div>
+                        <!-- Copy the budgets of the previous month -->
+                        <button v-if="budgetView === 'budgets'" class="btn-secondary budget-copy-button" @click="openCopyModal">
+                            <span class="material-icons" aria-hidden="true">content_copy</span>
+                            {{ copyButtonLabel }}
                         </button>
                     </div>
 
@@ -2296,6 +2303,44 @@
                     <button @click="submitBudgetEdit" :disabled="savingBudget">
                         <span class="material-icons" aria-hidden="true">check_circle</span>
                         {{ t('save') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Copy previous month budgets modal -->
+        <div v-if="showCopyModal" class="modal-overlay" @click.self="closeCopyModal">
+            <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title-8">
+                <div class="modal-header">
+                    <span class="material-icons" aria-hidden="true">content_copy</span>
+                    <h3 id="modal-title-8">{{ t('budgetCopyTitle') }}</h3>
+                    <button class="modal-close" @click="closeCopyModal" :aria-label="t('close')">
+                        <span class="material-icons" aria-hidden="true">close</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>{{ t('budgetCopyHelp', { month: copySourceName }) }}</p>
+                    <!-- One choice, announced as a group by the screen readers -->
+                    <fieldset class="budget-copy-mode">
+                        <legend class="visually-hidden">{{ t('budgetCopyTitle') }}</legend>
+                        <label class="setup-checkbox">
+                            <input type="radio" name="budget-copy-mode" value="missing" v-model="copyMode" />
+                            {{ t('budgetCopyMissing') }}
+                        </label>
+                        <label class="setup-checkbox">
+                            <input type="radio" name="budget-copy-mode" value="all" v-model="copyMode" />
+                            {{ t('budgetCopyOverwrite') }}
+                        </label>
+                    </fieldset>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" @click="closeCopyModal">
+                        <span class="material-icons" aria-hidden="true">cancel</span>
+                        {{ t('cancel') }}
+                    </button>
+                    <button @click="submitBudgetCopy(selectedMonth, selectedYear)" :disabled="copyingBudget">
+                        <span class="material-icons" aria-hidden="true">check_circle</span>
+                        {{ t('budgetCopyConfirm') }}
                     </button>
                 </div>
             </div>
