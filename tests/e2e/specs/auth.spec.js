@@ -33,6 +33,25 @@ test('refuses a wrong password', async ({ page }) => {
     await expect(page.locator('.user-menu-name')).toHaveCount(0);
 });
 
+test('tells at once that the account is locked after 5 failed logins', async ({ page }) => {
+    await page.goto('/portal/');
+    await page.getByLabel(tr('username')).fill('marie');
+    await page.getByLabel(tr('password')).fill('wrong-password');
+    for (let i = 1; i < 5; i++) {
+        await page.getByRole('button', { name: tr('loginButton') }).click();
+        await expect(page.getByRole('alert')).toContainText(tr('invalidCredentials'));
+    }
+    // The fifth failure locks the account: the login screen says so, not "wrong password"
+    await page.getByRole('button', { name: tr('loginButton') }).click();
+    await expect(page.getByRole('alert')).toContainText(tr('accountLocked'));
+
+    // Even the right password is refused, with the same message
+    await page.getByLabel(tr('password')).fill('marie-password');
+    await page.getByRole('button', { name: tr('loginButton') }).click();
+    await expect(page.getByRole('alert')).toContainText(tr('accountLocked'));
+    await expect(page.locator('.user-menu-name')).toHaveCount(0);
+});
+
 test('goes back to the login screen when the session has expired', async ({ page }) => {
     await page.addInitScript(() => {
         localStorage.setItem('authToken', 'expired.token.value');

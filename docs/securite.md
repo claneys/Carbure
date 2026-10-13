@@ -23,7 +23,8 @@ icon: material/shield-lock-outline
 Les routes réservées renvoient `403` ; le portail masque les onglets correspondants.
 
 Après **5 tentatives de connexion échouées** d'affilée, le compte est **bloqué 24 heures**
-(`423`), même avec le bon mot de passe ; une connexion réussie remet le compteur à zéro. Un
+(`423`, dès le 5e échec : la mire de connexion l'indique aussitôt), même avec le bon mot
+de passe ; une connexion réussie remet le compteur à zéro. Un
 administrateur le débloque depuis l'onglet **Utilisateurs** (`POST /user/unlock`).
 
 Un administrateur ne peut pas supprimer son propre compte ; un utilisateur propriétaire

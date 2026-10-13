@@ -24,7 +24,8 @@ class UserTest extends DatabaseTestCase
                 User::login('user', 'wrong');
                 $this->fail('Accepted a wrong password');
             } catch (Error $e) {
-                $this->assertSame(401, $e->getCode());
+                // The fifth failure locks the account and says so
+                $this->assertSame($i < 5 ? 401 : 423, $e->getCode());
             }
         }
 

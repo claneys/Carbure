@@ -46,10 +46,7 @@ final class User {
         }
 
         if (!$user || !self::verifyPassword($user, $password)) {
-            if ($user) {
-                self::recordFailedLogin($user);
-            }
-            throw new Error("Invalid username or password", 401);
+            self::rejectLogin($user);
         }
 
         if (((int)$user['failed_logins'] > 0 || $user['locked_until'] !== null)) {
@@ -126,20 +123,37 @@ final class User {
     public const LOCK_HOURS = 24;
 
     /**
+     * Refuse a login with wrong credentials: the failure is counted, and the one that
+     * locks the account says so at once (423), so that the login screen tells the user.
+     *
+     * @param array<string, mixed>|null $user The user (null if unknown)
+     * @return never
+     * @throws Error Always: 401, or 423 if this failure locked the account
+     */
+    private static function rejectLogin(?array $user): never
+    {
+        if ($user && self::recordFailedLogin($user)) {
+            throw new Error("Account locked after too many failed logins: ask an administrator to unlock it", 423);
+        }
+        throw new Error("Invalid username or password", 401);
+    }
+
+    /**
      * Count a failed login and lock the account at the limit.
      *
      * @param array<string, mixed> $user The user
-     * @return void
+     * @return bool True if this failure locked the account
      */
-    private static function recordFailedLogin(array $user): void
+    private static function recordFailedLogin(array $user): bool
     {
         $failures = (int)$user['failed_logins'] + 1;
         if ($failures >= self::MAX_FAILED_LOGINS) {
             Db::execute("UPDATE users SET failed_logins = 0, locked_until = NOW() + INTERVAL " . self::LOCK_HOURS . " HOUR WHERE id = ?", "i", $user['id']);
             Logger::warn("Account {$user['username']} locked after " . self::MAX_FAILED_LOGINS . " failed logins");
-        } else {
-            Db::execute("UPDATE users SET failed_logins = ? WHERE id = ?", "ii", $failures, $user['id']);
+            return true;
         }
+        Db::execute("UPDATE users SET failed_logins = ? WHERE id = ?", "ii", $failures, $user['id']);
+        return false;
     }
 
     /**

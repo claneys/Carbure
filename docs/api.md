@@ -63,7 +63,8 @@ curl -X POST https://exemple.fr/api/user/login \
 Le jeton est valable 30 jours. La date de connexion est enregistrée (`last_login`).
 
 `401` si les identifiants sont faux ; `423` si le compte est bloqué : après 5 échecs
-d'affilée, le compte est bloqué 24 heures, même avec le bon mot de passe. Une connexion
+d'affilée, le compte est bloqué 24 heures, même avec le bon mot de passe (le 5e échec
+répond déjà `423`). Une connexion
 réussie remet le compteur à zéro.
 
 ### `POST /user/unlock` — administrateur
