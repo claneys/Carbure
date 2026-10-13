@@ -98,7 +98,8 @@ class BankTest extends DatabaseTestCase
 
         foreach ([fn() => Bank::accounts(), fn() => Bank::create('222', 'bnp'), fn() => Bank::update($own, '222', 'bnp'),
                   fn() => Bank::delete($own), fn() => Bank::backends(), fn() => Bank::modules(), fn() => Bank::discover(),
-                  fn() => Bank::module('bnp'), fn() => Bank::createBackend('bnp', 'x', [])] as $i => $call) {
+                  fn() => Bank::module('bnp'), fn() => Bank::createBackend('bnp', 'x', []),
+                  fn() => Bank::renameBackend('bnp', 'x')] as $i => $call) {
             try {
                 $call();
                 $this->fail("Case $i accepted");
@@ -131,7 +132,31 @@ class BankTest extends DatabaseTestCase
         $this->loginAs(self::ADMIN);
 
         // Name and module only: the woob configuration (bank login) never leaves the server
-        $this->assertSame([['name' => 'bnp', 'module' => 'bnp'], ['name' => 'cic_pro', 'module' => 'cic']], Bank::backends());
+        $this->assertSame([['name' => 'bnp', 'module' => 'bnp', 'label' => null], ['name' => 'cic_pro', 'module' => 'cic', 'label' => null]], Bank::backends());
+    }
+
+    public function testRenameBackend()
+    {
+        $this->loginAs(self::ADMIN);
+
+        $this->assertSame(['name' => 'cic_pro', 'label' => 'CIC pro'], Bank::renameBackend('cic_pro', "  CIC\npro "));
+        $this->assertSame(['name' => 'bnp', 'label' => 'Compte joint'], Bank::renameBackend('bnp', 'Compte joint'));
+        $this->assertSame(['name' => 'bnp', 'label' => 'Compte joint ✨'], Bank::renameBackend('bnp', 'Compte joint ✨'));
+        $this->assertSame(['Compte joint ✨', 'CIC pro'], array_column(Bank::backends(), 'label'));
+
+        // An empty name removes it: the bank name is shown again
+        $this->assertSame(['name' => 'cic_pro', 'label' => null], Bank::renameBackend('cic_pro', ' '));
+        $this->assertSame(['Compte joint ✨', null], array_column(Bank::backends(), 'label'));
+        $this->assertSame(1, (int)Db::queryOne("SELECT COUNT(*) AS n FROM bank_backend", "")['n']);
+
+        foreach ([['Bad Name', 'x', 400], ['bnp', str_repeat('a', 101), 400], ['unknown', 'x', 404]] as [$backend, $label, $code]) {
+            try {
+                Bank::renameBackend($backend, $label);
+                $this->fail("Accepted $backend");
+            } catch (Error $e) {
+                $this->assertSame($code, $e->getCode(), $e->getMessage());
+            }
+        }
     }
 
     public function testModules()
@@ -193,6 +218,7 @@ class BankTest extends DatabaseTestCase
         try {
             $result = Bank::createBackend('bnp', 'mybnp', ['login' => '12345678', 'password' => '123456', 'unknown' => 'x']);
             $this->assertSame('mybnp', $result['backend']);
+            $this->assertNull($result['label']);
             $this->assertSame(['00012345678@mybnp', '00087654321@mybnp'], array_column($result['accounts'], 'bankId'));
             // Every setting of the module is given (defaults included), in the format woob reads
             $this->assertSame(['module' => 'bnp', 'backend' => 'mybnp', 'params' => [
@@ -201,6 +227,30 @@ class BankTest extends DatabaseTestCase
         } finally {
             @unlink($added);
         }
+    }
+
+    public function testCreateBackendWithName()
+    {
+        $this->loginAs(self::ADMIN);
+        // The name of a former connection of the same woob name is replaced
+        Db::execute("INSERT INTO bank_backend (name, label) VALUES ('mybnp', 'Ancien')", "");
+        try {
+            $result = Bank::createBackend('bnp', 'mybnp', ['login' => '12345678', 'password' => '123456'], ' Compte joint ');
+            $this->assertSame('Compte joint', $result['label']);
+            $this->assertSame('Compte joint', Db::queryOne("SELECT label FROM bank_backend WHERE name = ?", "s", 'mybnp')['label']);
+
+            // Without a name, the former one is removed
+            Db::execute("INSERT INTO bank_backend (name, label) VALUES ('mybnp3', 'Ancien')", "");
+            Bank::createBackend('bnp', 'mybnp3', ['login' => '12345678', 'password' => '123456']);
+            $this->assertNull(Db::queryOne("SELECT label FROM bank_backend WHERE name = ?", "s", 'mybnp3'));
+        } finally {
+            @unlink(sys_get_temp_dir() . '/carbure-fake-woob-add.json');
+        }
+
+        // A name too long is refused before woob is called
+        $this->expectException(Error::class);
+        $this->expectExceptionCode(400);
+        Bank::createBackend('bnp', 'mybnp4', ['login' => '12345678', 'password' => '123456'], str_repeat('a', 101));
     }
 
     public function testCreateBackendWrongCredentials()

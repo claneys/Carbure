@@ -1187,6 +1187,9 @@
                                     <button type="button" class="btn-secondary" @click="openAddAccounts(b.name)" :aria-label="t('addAccountsTo', { bank: backendName(b) })">
                                         <span class="material-icons" aria-hidden="true">playlist_add</span>{{ t('addAccountsButton') }}
                                     </button>
+                                    <button type="button" class="btn-icon" @click="openBackendModal(b)" :title="t('renameBankConnection')" :aria-label="t('renameBankConnectionOf', { bank: backendName(b) })">
+                                        <span class="material-icons" aria-hidden="true">edit</span>
+                                    </button>
                                 </li>
                             </ul>
 
@@ -2178,9 +2181,9 @@
                                 <small v-if="f.description" :id="'bank-setting-help-' + f.key">{{ f.description }}</small>
                             </div>
                             <div class="form-group">
-                                <label for="bank-backend-name">{{ t('bankBackendName') }}</label>
-                                <input id="bank-backend-name" v-model="bankSetup.backend" maxlength="50" pattern="[a-z0-9_-]+" aria-describedby="bank-backend-help" />
-                                <small id="bank-backend-help">{{ t('bankBackendHelp') }}</small>
+                                <label for="bank-connection-label">{{ t('bankConnectionLabel') }}</label>
+                                <input id="bank-connection-label" v-model="bankSetup.label" maxlength="100" autocomplete="off" :placeholder="bankSetup.description || bankSetup.module" aria-describedby="bank-connection-label-help" />
+                                <small id="bank-connection-label-help">{{ t('bankConnectionLabelHelp') }}</small>
                             </div>
                             <div v-if="bankSetup.error" class="sync-step-error" role="alert">{{ bankSetup.error }}</div>
                         </template>
@@ -2204,7 +2207,7 @@
             <div class="modal modal-account" role="dialog" aria-modal="true" aria-labelledby="modal-title-add-accounts">
                 <div class="modal-header">
                     <span class="material-icons" aria-hidden="true">playlist_add</span>
-                    <h3 id="modal-title-add-accounts">{{ t('addAccountsTitle', { bank: backendName({ name: addAccountsBackend, module: backendModule(addAccountsBackend) }) }) }}</h3>
+                    <h3 id="modal-title-add-accounts">{{ t('addAccountsTitle', { bank: backendName(findBackend(addAccountsBackend)) }) }}</h3>
                     <button class="modal-close" @click="closeAddAccounts" :aria-label="t('close')">
                         <span class="material-icons" aria-hidden="true">close</span>
                     </button>
@@ -2242,6 +2245,37 @@
                     <button type="button" @click="followSelectedAccounts" :disabled="followingAccounts || accountsToFollow().length === 0">
                         <span class="material-icons" aria-hidden="true">check_circle</span>
                         {{ t('followSelected', { count: accountsToFollow().length }) }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bank connection modal: name of a connected bank (its woob name stays) -->
+        <div v-if="showBackendModal" class="modal-overlay" @click.self="closeBackendModal">
+            <div class="modal modal-account" role="dialog" aria-modal="true" aria-labelledby="modal-title-backend">
+                <div class="modal-header">
+                    <span class="material-icons" aria-hidden="true">edit</span>
+                    <h3 id="modal-title-backend">{{ t('renameBankConnection') }}</h3>
+                    <button class="modal-close" @click="closeBackendModal" :aria-label="t('close')">
+                        <span class="material-icons" aria-hidden="true">close</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p class="account-woob-id">{{ t('bankConnectionInWoob') }} <code>{{ backendForm.name }}</code></p>
+                    <div class="form-group">
+                        <label for="field-backend-label">{{ t('bankConnectionLabel') }}</label>
+                        <input id="field-backend-label" v-model="backendForm.label" maxlength="100" autocomplete="off" :placeholder="bankDescription({ name: backendForm.name, module: backendForm.module, label: null })" aria-describedby="backend-label-help" @keyup.enter="submitBackendForm" />
+                        <small id="backend-label-help">{{ t('bankConnectionLabelHelp') }}</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" @click="closeBackendModal">
+                        <span class="material-icons" aria-hidden="true">cancel</span>
+                        {{ t('cancel') }}
+                    </button>
+                    <button @click="submitBackendForm" :disabled="savingBackend">
+                        <span class="material-icons" aria-hidden="true">check_circle</span>
+                        {{ t('save') }}
                     </button>
                 </div>
             </div>

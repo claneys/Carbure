@@ -62,10 +62,10 @@ final class Bank {
     }
 
     /**
-     * Normalize the name given to an account: trimmed, without control characters,
-     * null when empty.
+     * Normalize the name given to an account or a bank connection: trimmed, without
+     * control characters, null when empty.
      *
-     * @param string|null $label The name given to the account
+     * @param string|null $label The name given to the account or bank connection
      * @return string|null The name to store
      * @throws Error If it is too long
      */
@@ -76,7 +76,7 @@ final class Bank {
             return null;
         }
         if (mb_strlen($label) > 100) {
-            throw new Error("Account name too long (100 characters max)", 400);
+            throw new Error("Name too long (100 characters max)", 400);
         }
         return $label;
     }
@@ -192,15 +192,61 @@ final class Bank {
     }
 
     /**
-     * Bank backends configured in woob (name and module), to choose the bank of an account.
+     * Bank backends configured in woob (name and module), to choose the bank of an account,
+     * with the name given to each bank connection in Carbure.
      *
-     * @return list<array{name: mixed, module: mixed}> The backends
+     * @return list<array{name: mixed, module: mixed, label: string|null}> The backends (label:
+     *               name given to the bank connection, null if none)
      */
     #[ApiRoute('/bank/backends', method: 'GET')]
     public static function backends(): array
     {
         User::requireAdmin();
-        return Woob::listBackends();
+        $labels = [];
+        foreach (Db::execute("SELECT name, label FROM bank_backend", "")->get_result()->fetch_all(MYSQLI_ASSOC) as $row) {
+            $labels[$row['name']] = $row['label'];
+        }
+        return array_map(fn(array $backend) => $backend + ['label' => $labels[$backend['name']] ?? null], Woob::listBackends());
+    }
+
+    /**
+     * Give a name to a bank connection (woob backend), e.g. "Compte joint", shown in the
+     * portal instead of its woob name (administrators).
+     *
+     * @param string      $backend Name of the woob backend (e.g. bnp_2)
+     * @param string|null $label   Name given to the bank connection: empty removes it
+     * @return array{name: string, label: string|null} The woob backend and its name
+     * @throws Error If the backend name is invalid, the name too long, or the backend unknown
+     */
+    #[ApiRoute('/bank/backend', method: 'PUT')]
+    public static function renameBackend(string $backend, ?string $label = null): array
+    {
+        User::requireAdmin();
+        if (!preg_match('/^[a-z0-9_-]{1,50}$/', $backend)) {
+            throw new Error("Invalid bank name (lowercase letters, digits, - and _)", 400);
+        }
+        $label = self::normalizeLabel($label);
+        if (!in_array($backend, array_column(Woob::listBackends(), 'name'), true)) {
+            throw new Error("Bank not configured in woob", 404);
+        }
+        self::saveBackendLabel($backend, $label);
+        return ['name' => $backend, 'label' => $label];
+    }
+
+    /**
+     * Store the name given to a bank connection (none: the name is removed).
+     *
+     * @param string      $backend Name of the woob backend
+     * @param string|null $label   Name given to the bank connection, already normalized
+     * @return void
+     */
+    private static function saveBackendLabel(string $backend, ?string $label): void
+    {
+        if ($label === null) {
+            Db::execute("DELETE FROM bank_backend WHERE name = ?", "s", $backend);
+            return;
+        }
+        Db::execute("INSERT INTO bank_backend (name, label) VALUES (?, ?) ON DUPLICATE KEY UPDATE label = VALUES(label)", "ss", $backend, $label);
     }
 
     /**
@@ -239,21 +285,25 @@ final class Bank {
      * are given to woob, which keeps them; Carbure stores and logs nothing of them.
      * The accounts woob then finds are returned, to follow them.
      *
-     * @param string $module   The woob module (e.g. bnp)
-     * @param string $backend  Name of the woob backend (e.g. bnp, bnp_pro)
-     * @param mixed  $settings The settings of the module (login, password...): key => value
-     *                         (anything else is taken as no setting, as sent by the client)
-     * @return array{backend: string, accounts: list<array<string, mixed>>} backend, accounts
+     * @param string      $module   The woob module (e.g. bnp)
+     * @param string      $backend  Name of the woob backend (e.g. bnp, bnp_pro)
+     * @param mixed       $settings The settings of the module (login, password...): key => value
+     *                              (anything else is taken as no setting, as sent by the client)
+     * @param string|null $label    Name given to the bank connection, e.g. "Compte joint"
+     *                              (optional)
+     * @return array{backend: string, label: string|null, accounts: list<array<string, mixed>>}
+     *               backend, label, accounts
      *               [{bankId, account_number, bank_name, label, balance, currency, followed}]
      * @throws Error If a setting is missing or invalid, or woob refuses the bank
      */
     #[ApiRoute('/bank/backend', method: 'POST')]
-    public static function createBackend(string $module, string $backend, mixed $settings = []): array
+    public static function createBackend(string $module, string $backend, mixed $settings = [], ?string $label = null): array
     {
         User::requireAdmin();
         if (!preg_match('/^[a-z0-9_]{1,50}$/', $module) || !preg_match('/^[a-z0-9_-]{1,50}$/', $backend)) {
             throw new Error("Invalid woob module or bank name (lowercase letters, digits, - and _)", 400);
         }
+        $label = self::normalizeLabel($label);
         if (in_array($backend, array_column(Woob::listBackends(), 'name'), true)) {
             throw new Error("A bank named $backend is already configured in woob", 409);
         }
@@ -282,7 +332,9 @@ final class Bank {
             Woob::removeBackend($backend);
             throw new Error("The bank refused the connection, check the credentials: " . $e->getMessage(), 400);
         }
-        return ['backend' => $backend, 'accounts' => $accounts];
+        // Replaces the name of a former connection of the same woob name, if any
+        self::saveBackendLabel($backend, $label);
+        return ['backend' => $backend, 'label' => $label, 'accounts' => $accounts];
     }
 
     /**

@@ -547,10 +547,21 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
      * @param {string} module - woob module
      * @param {string} backend - Name of the bank in woob
      * @param {Object} settings - Settings of the module
-     * @returns {Promise<Object>} {backend, accounts}
+     * @param {string} label - Name given to the bank connection (empty: none)
+     * @returns {Promise<Object>} {backend, label, accounts}
      */
-    async function createBankBackend(module, backend, settings) {
-        return request(`${baseUrl}/bank/backend`, { method: 'POST', body: JSON.stringify({ module, backend, settings }) }, 'Failed to configure the bank');
+    async function createBankBackend(module, backend, settings, label = '') {
+        return request(`${baseUrl}/bank/backend`, { method: 'POST', body: JSON.stringify({ module, backend, settings, label }) }, 'Failed to configure the bank');
+    }
+
+    /**
+     * Names a bank connection (woob backend)
+     * @param {string} backend - Name of the bank in woob
+     * @param {string} label - Name given to the bank connection (empty: removed)
+     * @returns {Promise<Object>} {name, label}
+     */
+    async function renameBankBackend(backend, label) {
+        return request(`${baseUrl}/bank/backend`, { method: 'PUT', body: JSON.stringify({ backend, label }) }, 'Failed to rename the bank connection');
     }
 
     /**
@@ -933,6 +944,7 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
         fetchBankModules,
         fetchBankModuleFields,
         createBankBackend,
+        renameBankBackend,
         syncBanks,
         fetchCategories,
         createCategory,

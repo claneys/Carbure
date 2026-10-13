@@ -236,11 +236,50 @@ test('accounts: a bank already configured stays offered, with a free backend nam
         bankBackends: [{ name: 'bnp', module: 'bnp' }, { name: 'bnp_2', module: 'bnp' }, { name: 'cic_pro', module: 'cic' }],
         bankModules: [{ module: 'bnp', description: 'BNP Paribas' }, { module: 'boursorama', description: 'Boursorama' }],
     };
+    context.findBackend = methods.findBackend.bind(context);
     assert.deepEqual(methods.otherBankModules.call(context).map(m => [m.module, m.configured]), [['bnp', true], ['boursorama', false]]);
     assert.equal(methods.freeBackendName.call(context, 'bnp'), 'bnp_3');
     assert.equal(methods.freeBackendName.call(context, 'boursorama'), 'boursorama');
     assert.equal(methods.backendModule.call(context, 'cic_pro'), 'cic');
     assert.equal(methods.backendModule.call(context, 'unknown'), 'unknown');
+    assert.deepEqual(context.findBackend('unknown'), { name: 'unknown', module: 'unknown', label: null });
+});
+
+test('accounts: a connected bank shown by the name given to it, else by its bank', async () => {
+    const { createAccountsModule } = await import('../../portal/modules/accountsModule.js');
+    const { methods } = createAccountsModule(() => null);
+    const context = { bankModules: [{ module: 'bnp', description: 'BNP Paribas' }] };
+
+    assert.equal(methods.bankDescription.call(context, { name: 'bnp_2', module: 'bnp', label: 'Compte joint' }), 'Compte joint');
+    assert.equal(methods.bankDescription.call(context, { name: 'bnp_2', module: 'bnp', label: null }), 'BNP Paribas');
+    assert.equal(methods.bankDescription.call(context, { name: 'cic_pro', module: 'cic' }), 'cic_pro');
+    assert.equal(methods.backendName.call(context, { name: 'bnp_2', module: 'bnp', label: 'Compte joint' }), 'Compte joint (bnp_2)');
+});
+
+test('accounts: renaming a connected bank updates it in the list', async () => {
+    const { createAccountsModule } = await import('../../portal/modules/accountsModule.js');
+    const calls = [];
+    const api = { renameBankBackend: async (backend, label) => { calls.push([backend, label]); return { name: backend, label: label || null }; } };
+    const { methods } = createAccountsModule(() => api);
+    const toasts = [];
+    const context = {
+        bankBackends: [{ name: 'bnp', module: 'bnp', label: null }, { name: 'cic_pro', module: 'cic', label: 'Pro' }],
+        showToast: message => toasts.push(message),
+        t: key => key,
+    };
+    for (const name of ['openBackendModal', 'submitBackendForm']) {
+        context[name] = methods[name].bind(context);
+    }
+
+    context.openBackendModal(context.bankBackends[1]);
+    assert.deepEqual(context.backendForm, { name: 'cic_pro', module: 'cic', label: 'Pro' });
+    assert.equal(context.showBackendModal, true);
+    context.backendForm.label = '  CIC pro  ';
+    await context.submitBackendForm();
+    assert.deepEqual(calls, [['cic_pro', 'CIC pro']]);
+    assert.deepEqual(context.bankBackends.map(b => b.label), [null, 'CIC pro']);
+    assert.equal(context.showBackendModal, false);
+    assert.deepEqual(toasts, ['bankConnectionRenamed']);
 });
 
 test('accounts: the accounts found by woob, the followed ones ticked and not followed again', async () => {

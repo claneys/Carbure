@@ -219,10 +219,14 @@ protégée.
        (numéro client, code, type de compte…), que **Connecter la banque** confie à woob
        (Carbure ne les enregistre ni ne les journalise). Une banque déjà connectée reste
        proposée (« autre identifiant ») pour un second accès avec d'autres identifiants
-       (compte joint, professionnel…) : un nom libre lui est proposé (`bnp_2`…). Si la
-       banque refuse les identifiants, son message s'affiche et le formulaire reste ouvert.
-    2. **Banques connectées** : chaque connexion (backend woob) a un bouton **Ajouter des
-       comptes**, qui ouvre la liste des comptes que woob trouve pour elle
+       (compte joint, professionnel…). Le champ facultatif **Nom de la connexion** lui donne
+       un nom lisible (« Compte joint », « BNP pro »…), affiché à la place du nom de la
+       banque ; son nom technique dans woob (`bnp`, `bnp_2`…) est généré automatiquement.
+       Si la banque refuse les identifiants, son message s'affiche et le formulaire reste
+       ouvert.
+    2. **Banques connectées** : chaque connexion (backend woob) affiche son nom (à défaut
+       celui de la banque) et son nom dans woob ; le bouton crayon la **renomme** (un nom
+       vide rétablit celui de la banque). Son bouton **Ajouter des comptes** ouvre la liste des comptes que woob trouve pour elle
        (`woob bank list -b <banque>` : libellé, solde) ; on coche ceux à suivre et
        **Suivre les comptes sélectionnés** les ajoute d'un coup, nommés d'après leur libellé
        woob. Les comptes déjà suivis sont cochés et grisés. Après une connexion, cette liste

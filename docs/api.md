@@ -154,8 +154,8 @@ Ne suit plus le compte ; ses transactions déjà importées sont conservées.
 
 ### `GET /bank/backends`, `GET /bank/modules` — administrateur
 
-Banques configurées dans woob (`name`, `module`) et banques supportées par woob (`module`,
-`description`). Une banque doit être configurée dans woob (identifiants bancaires) avant
+Banques configurées dans woob (`name`, `module`, `label` : nom donné à la connexion, `null`
+si aucun) et banques supportées par woob (`module`, `description`). Une banque doit être configurée dans woob (identifiants bancaires) avant
 que ses comptes puissent être synchronisés : depuis le portail (routes ci-dessous).
 
 ### `GET /bank/module?module=` — administrateur
@@ -167,10 +167,18 @@ Paramètres demandés par un module woob : `module`, `description`, `fields` (`k
 
 Configure une banque dans woob : `module`, `backend` (nom, `[a-z0-9_-]`), `settings`
 (objet des paramètres du module ; seules ses clés sont transmises, valeurs sur une ligne
-sans espace, choix vérifiés). Les identifiants sont confiés à woob, ni stockés ni
-journalisés par Carbure (`settings` est masqué dans les logs). Renvoie `backend` et les
-`accounts` trouvés (même format que `/bank/discover`). `409` si une banque de ce nom existe
-déjà dans woob, `400` si un paramètre manque ou si woob refuse.
+sans espace, choix vérifiés), `label` (facultatif : nom donné à la connexion, 100
+caractères max, par exemple « Compte joint »). Les identifiants sont confiés à woob, ni
+stockés ni journalisés par Carbure (`settings` est masqué dans les logs). Renvoie
+`backend`, `label` et les `accounts` trouvés (même format que `/bank/discover`). `409` si
+une banque de ce nom existe déjà dans woob, `400` si un paramètre manque ou si woob refuse.
+
+### `PUT /bank/backend` — administrateur
+
+Renomme une connexion bancaire : `backend` (nom dans woob), `label` (nom donné à la
+connexion ; vide le supprime). Le nom dans woob, qui identifie les comptes et les
+transactions, ne change pas. Renvoie `name` et `label`. `404` si la banque n'est pas
+configurée dans woob, `400` si le nom est invalide ou trop long.
 
 ### `GET /bank/discover` — administrateur
 

@@ -3,7 +3,8 @@
  *
  * Bank accounts of the household (administrators), added in two steps:
  * 1. connect a bank (a woob backend): its credentials are given to woob, never
- *    stored by Carbure; several connections of the same bank are allowed;
+ *    stored by Carbure; several connections of the same bank are allowed, each
+ *    with a name given in Carbure (its woob name, bnp_2..., is generated);
  * 2. add accounts to a connected bank: only the accounts woob lists for it
  *    (bank list -b <backend>) can be followed.
  * Followed accounts: list with the result of the last synchronization, label
@@ -13,7 +14,7 @@
  */
 
 /** Configuration in woob of a bank being connected, empty */
-const EMPTY_SETUP = { module: '', backend: '', description: '', fields: [], values: {}, loading: false, busy: false, error: null };
+const EMPTY_SETUP = { module: '', backend: '', label: '', description: '', fields: [], values: {}, loading: false, busy: false, error: null };
 
 /**
  * Creates an accounts module mixin for Vue components
@@ -29,8 +30,12 @@ export function createAccountsModule(getApiService) {
                 savingAccount: false,
                 // Account of the modal: {id, account_number, bank_name, label}
                 accountForm: { id: null, account_number: '', bank_name: '', label: '' },
-                // Banks connected in woob (backends): [{name, module}]
+                // Banks connected in woob (backends): [{name, module, label}]
                 bankBackends: [],
+                // Name of a bank connection, modified in a modal: {name, module, label}
+                showBackendModal: false,
+                savingBackend: false,
+                backendForm: { name: '', module: '', label: '' },
                 // Banks supported by woob: [{module, description}]
                 bankModules: [],
                 // Step 1: connect a bank (woob module chosen in the modal)
@@ -126,13 +131,13 @@ export function createAccountsModule(getApiService) {
                 }
                 this.bankSetup = { ...setup, busy: true, error: null };
                 try {
-                    const result = await getApiService().createBankBackend(setup.module, setup.backend, setup.values);
+                    const result = await getApiService().createBankBackend(setup.module, setup.backend, setup.values, String(setup.label || '').trim());
                     // The credentials leave the page as soon as woob has them
                     this.closeConnectModal();
                     await this.loadBankBackends();
                     // Configured now, even if woob lists it a bit later
                     if (!this.bankBackends.some(b => b.name === result.backend)) {
-                        this.bankBackends = [...this.bankBackends, { name: result.backend, module: setup.module }];
+                        this.bankBackends = [...this.bankBackends, { name: result.backend, module: setup.module, label: result.label || null }];
                     }
                     this.showToast(this.t(result.accounts.length ? 'bankConnected' : 'bankConnectedNoAccount'));
                     this.openAddAccounts(result.backend, result.accounts);
@@ -179,13 +184,56 @@ export function createAccountsModule(getApiService) {
             },
 
             /**
+             * Connected bank of a woob backend name (unknown: named after its module)
+             * @param {string} backend - Backend name
+             * @returns {{name: string, module: string, label: (string|null)}}
+             */
+            findBackend(backend) {
+                return (this.bankBackends || []).find(b => b.name === backend) || { name: backend, module: backend, label: null };
+            },
+
+            /**
              * Module of a woob backend (the backend is named after it unless renamed)
              * @param {string} backend - Backend name
              * @returns {string}
              */
             backendModule(backend) {
-                const found = (this.bankBackends || []).find(b => b.name === backend);
-                return found ? found.module : backend;
+                return this.findBackend(backend).module;
+            },
+
+            /**
+             * Opens the modal naming a connected bank
+             * @param {{name: string, module: string, label: (string|null)}} backend - Backend of woob
+             */
+            openBackendModal(backend) {
+                this.backendForm = { name: backend.name, module: backend.module, label: backend.label || '' };
+                this.showBackendModal = true;
+            },
+
+            /**
+             * Closes the modal naming a connected bank
+             */
+            closeBackendModal() {
+                this.showBackendModal = false;
+            },
+
+            /**
+             * Saves the name of the bank connection of the modal (empty: removed)
+             * @returns {Promise<void>}
+             */
+            async submitBackendForm() {
+                const form = this.backendForm;
+                this.savingBackend = true;
+                try {
+                    const result = await getApiService().renameBankBackend(form.name, String(form.label || '').trim());
+                    this.bankBackends = this.bankBackends.map(b => b.name === form.name ? { ...b, label: result.label } : b);
+                    this.showToast(this.t('bankConnectionRenamed'));
+                    this.showBackendModal = false;
+                } catch (error) {
+                    this.showToast(error.message);
+                } finally {
+                    this.savingBackend = false;
+                }
             },
 
             /**
@@ -198,22 +246,29 @@ export function createAccountsModule(getApiService) {
             },
 
             /**
-             * Name of the bank of a connection, without its woob name (shown next to it)
-             * @param {{name: string, module: string}} backend - Backend of woob
+             * Name of a connection: the name given to it, else the name of its bank,
+             * without its woob name (shown next to it)
+             * @param {{name: string, module: string, label: (string|null)}} backend - Backend of woob
              * @returns {string}
              */
             bankDescription(backend) {
+                if (backend.label) {
+                    return backend.label;
+                }
                 const module = this.bankModules.find(m => m.module === backend.module);
                 return module && module.description ? module.description : backend.name;
             },
 
             /**
              * Name of a connected bank with its woob name, to tell two logins apart
-             * ("BNP Paribas (bnp_2)")
-             * @param {{name: string, module: string}} backend - Backend of woob
+             * ("Compte joint (bnp_2)", "BNP Paribas (bnp_2)" if not named)
+             * @param {{name: string, module: string, label: (string|null)}} backend - Backend of woob
              * @returns {string}
              */
             backendName(backend) {
+                if (backend.label) {
+                    return `${backend.label} (${backend.name})`;
+                }
                 const module = this.bankModules.find(m => m.module === backend.module);
                 return module && module.description ? `${module.description} (${backend.name})` : backend.name;
             },

@@ -92,6 +92,13 @@ test('the menus, modals and the synchronization log are readable', async ({ admi
     await page.keyboard.press('Escape');
     await expect(add).toHaveCount(0);
 
+    await page.getByRole('button', { name: tr('renameBankConnectionOf', { bank: 'BNP Paribas (bnp)' }) }).click();
+    const rename = page.getByRole('dialog', { name: tr('renameBankConnection') });
+    await expect(rename).toBeVisible();
+    problems.push(...await contrastProblems(page, tr('renameBankConnection')));
+    await page.keyboard.press('Escape');
+    await expect(rename).toHaveCount(0);
+
     // A synchronization in error, with its log open
     await page.locator('.account-item').filter({ hasText: 'fail@bank' }).getByRole('button', { name: tr('syncAccount') }).click();
     await expect(page.locator('.sync-status')).toContainText(tr('syncStatus_error'));

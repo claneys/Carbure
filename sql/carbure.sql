@@ -52,6 +52,15 @@ CREATE TABLE `bank_account` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
+-- Table `bank_backend`
+
+CREATE TABLE `bank_backend` (
+  `name` varchar(50) NOT NULL COMMENT 'Name of the woob backend',
+  `label` varchar(100) NOT NULL COMMENT 'Name given to the bank connection',
+  PRIMARY KEY (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
 -- Table `bank_transaction`
 
 CREATE TABLE `bank_transaction` (
@@ -218,7 +227,8 @@ INSERT IGNORE INTO `schema_migrations` (`version`) VALUES
 ('2026-10-13_base'),
 ('2026-10-14_oauth'),
 ('2026-10-15_transaction_bank'),
-('2026-10-16_bank_account_label');
+('2026-10-16_bank_account_label'),
+('2026-10-17_bank_backend_label');
 
 SET FOREIGN_KEY_CHECKS = 1;
 COMMIT;

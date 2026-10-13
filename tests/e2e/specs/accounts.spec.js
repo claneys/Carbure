@@ -181,7 +181,8 @@ test('connects a new bank, then follows two of its accounts at once', async ({ a
     const setup = modal.locator('fieldset.bank-setup');
     await expect(setup.getByLabel('Numéro client *')).toBeVisible();
     await expect(setup.getByLabel('Code secret *')).toHaveAttribute('type', 'password');
-    await expect(setup.getByLabel(tr('bankBackendName'))).toHaveValue('boursorama');
+    // Its name is optional: the bank name is shown when none is given
+    await expect(setup.getByLabel(tr('bankConnectionLabel'))).toHaveValue('');
     await setup.getByLabel('Numéro client *').fill('12345678');
     await setup.getByLabel('Code secret *').fill('123456');
     await modal.getByRole('button', { name: tr('bankConnect') }).click();
@@ -210,24 +211,51 @@ test('connects a second login of a bank already connected', async ({ adminPage: 
     await page.getByRole('button', { name: tr('connectBankTitle') }).click();
     const modal = page.getByRole('dialog', { name: tr('connectBankTitle') });
 
-    // BNP is connected (backend bnp): it stays offered for another login, with a free name
+    // BNP is connected (backend bnp): it stays offered for another login, given a readable
+    // name (its woob name, bnp_2, is generated)
     const bank = modal.getByLabel(new RegExp(tr('connectBankModule')));
     await expect(bank.locator('option[value="bnp"]')).toContainText(tr('bankAnotherLogin'));
     await bank.selectOption('bnp');
     const setup = modal.locator('fieldset.bank-setup');
-    await expect(setup.getByLabel(tr('bankBackendName'))).toHaveValue('bnp_2');
     await setup.getByLabel('Numéro client *').fill('87654321');
     await setup.getByLabel('Code secret *').fill('123456');
+    await setup.getByLabel(tr('bankConnectionLabel')).fill('Compte joint');
     await modal.getByRole('button', { name: tr('bankConnect') }).click();
 
     // The accounts of this login, under its own name
-    const add = page.getByRole('dialog', { name: tr('addAccountsTitle', { bank: 'BNP Paribas (bnp_2)' }) });
+    const add = page.getByRole('dialog', { name: tr('addAccountsTitle', { bank: 'Compte joint (bnp_2)' }) });
     await add.getByRole('checkbox', { name: /Livret A/ }).check();
     await add.getByRole('button', { name: tr('followSelected', { count: 1 }) }).click();
 
     await expect(page.locator('.toast')).toHaveText(tr('accountsFollowedToast', { count: 1 }));
     await expect(account(page, '00087654321@bnp_2')).toBeVisible();
     await expect(account(page, '00012345678@bnp')).toBeVisible();
+});
+
+test('renames a connected bank', async ({ adminPage: page }) => {
+    await openTab(page, tr('tabAccounts'));
+    const connection = page.locator('.bank-connection').filter({ has: page.locator('code', { hasText: /^bnp$/ }) });
+    await expect(connection.locator('.account-name')).toHaveText('BNP Paribas');
+
+    await connection.getByRole('button', { name: tr('renameBankConnectionOf', { bank: 'BNP Paribas (bnp)' }) }).click();
+    const modal = page.getByRole('dialog', { name: tr('renameBankConnection') });
+    await expect(modal.locator('code')).toHaveText('bnp');
+    await modal.getByLabel(tr('bankConnectionLabel')).fill('Comptes perso');
+    await modal.getByRole('button', { name: tr('save') }).click();
+
+    await expect(page.locator('.toast')).toHaveText(tr('bankConnectionRenamed'));
+    await expect(modal).toHaveCount(0);
+    await expect(connection.locator('.account-name')).toHaveText('Comptes perso');
+    await expect(connection.getByRole('button', { name: tr('addAccountsTo', { bank: 'Comptes perso (bnp)' }) })).toBeVisible();
+
+    // Kept by the server; an empty name shows the bank name again
+    await page.reload();
+    await openTab(page, tr('tabAccounts'));
+    await expect(connection.locator('.account-name')).toHaveText('Comptes perso');
+    await connection.getByRole('button', { name: tr('renameBankConnectionOf', { bank: 'Comptes perso (bnp)' }) }).click();
+    await modal.getByLabel(tr('bankConnectionLabel')).fill('');
+    await modal.getByRole('button', { name: tr('save') }).click();
+    await expect(connection.locator('.account-name')).toHaveText('BNP Paribas');
 });
 
 test('a bank refusing the credentials can be connected again', async ({ adminPage: page }) => {
