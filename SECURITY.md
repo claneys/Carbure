@@ -48,13 +48,13 @@ Out of scope:
 - vulnerabilities of woob or of the bank websites (report them to
   [woob](https://gitlab.com/woob/woob));
 - an instance exposed without HTTPS, or a configuration that ignores the
-  [security documentation](https://ltoinel.github.io/Carbure/securite/);
+  [security documentation](https://carbure.org/securite/);
 - attacks that need an administrator account or access to the server (`data/`);
 - denial of service by volume, and reports of scanners without a demonstrated impact.
 
 ## Security measures
 
 The security model (JWT, roles, account lockout, security headers, secrets) is described
-in the [documentation](https://ltoinel.github.io/Carbure/securite/). Each pull request is
+in the [documentation](https://carbure.org/securite/). Each pull request is
 checked for committed secrets (gitleaks) and vulnerable dependencies (Trivy), and the
 published Docker image is scanned every week.

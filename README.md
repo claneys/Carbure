@@ -26,12 +26,12 @@
   <a href="https://github.com/ltoinel/Carbure/actions/workflows/ci.yml"><img src="https://img.shields.io/badge/coverage-%E2%89%A5%2090%25-brightgreen" alt="Coverage"></a>
   <a href="https://www.php.net/"><img src="https://img.shields.io/badge/PHP-%3E%3D%208.2-777BB4?logo=php&logoColor=white" alt="PHP"></a>
   <a href="https://mariadb.org/"><img src="https://img.shields.io/badge/MariaDB%20%2F%20MySQL-003545?logo=mariadb&logoColor=white" alt="MariaDB"></a>
-  <a href="https://ltoinel.github.io/Carbure/"><img src="https://img.shields.io/badge/docs-GitHub%20Pages-EF4860" alt="Docs"></a>
+  <a href="https://carbure.org/"><img src="https://img.shields.io/badge/docs-carbure.org-EF4860" alt="Docs"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License: MIT"></a>
 </p>
 
 <p align="center">
-  <a href="https://ltoinel.github.io/Carbure/assets/videos/carbure-teaser.mp4"><img src="docs/assets/en/teaser-poster.jpg" alt="Watch the Carbure teaser (1 min, in French)" width="100%"></a>
+  <a href="https://carbure.org/assets/videos/carbure-teaser.mp4"><img src="docs/assets/en/teaser-poster.jpg" alt="Watch the Carbure teaser (1 min, in French)" width="100%"></a>
 </p>
 
 <p align="center">
@@ -51,7 +51,7 @@
   </tr>
 </table>
 
-<p align="center">👉 <a href="https://ltoinel.github.io/Carbure/fonctionnalites/"><b>All the features</b></a>, with every screen (in French)</p>
+<p align="center">👉 <a href="https://carbure.org/fonctionnalites/"><b>All the features</b></a>, with every screen (in French)</p>
 
 ## Why Carbure?
 
@@ -102,7 +102,7 @@
 | File import (OFX, QIF, CSV, CAMT.053) | ✅ | ✅ | ✅ | ⚠️ |
 | Several currencies | ➖ | ✅ | ➖ | ⚠️ |
 
-✅ yes · ⚠️ partly · ➖ no — 👉 **[Full comparison](https://ltoinel.github.io/Carbure/comparatif/)** (in French):
+✅ yes · ⚠️ partly · ➖ no — 👉 **[Full comparison](https://carbure.org/comparatif/)** (in French):
 23 criteria (hosting, bank data, budget, household and devices, API), with the strengths of
 each tool.
 
@@ -134,10 +134,10 @@ Open `http://localhost:8080/`: **the setup wizard** handles everything (database
 administrator account, and optional starter categories, rules and insights) in three
 clicks, with no command to run. Database upgrades are
 automatic too. On a Synology NAS, follow the
-[tutorial](https://ltoinel.github.io/Carbure/synology/).
+[tutorial](https://carbure.org/synology/).
 
 👉 **Detailed installation, configuration, API reference, data model and security:
-[the documentation](https://ltoinel.github.io/Carbure/)** (in French).
+[the documentation](https://carbure.org/)** (in French).
 
 ## Contributing
 
@@ -150,7 +150,7 @@ To develop, `./start.sh` starts the development environment with Docker: the pro
 image and MariaDB, the code of the repository mounted live and a sample household
 (`http://localhost:8000/portal/`, `admin` / `admin-password`). The tests (PHPUnit, portal
 unit tests, Playwright end-to-end tests) are described in the
-[developer documentation](https://ltoinel.github.io/Carbure/developpement/) (in French).
+[developer documentation](https://carbure.org/developpement/) (in French).
 
 ## License
 
@@ -170,6 +170,6 @@ The Docker image bundles third-party software, unmodified, under its own license
 Carbure calls woob as a separate program; it can be replaced by another woob version
 (virtual environment `/opt/woob`).
 
-The music of the [teaser](https://ltoinel.github.io/Carbure/assets/videos/carbure-teaser.mp4) is
+The music of the [teaser](https://carbure.org/assets/videos/carbure-teaser.mp4) is
 "Nowhere Land" by Kevin MacLeod ([incompetech.com](https://incompetech.com)), licensed
 under [Creative Commons: By Attribution 4.0](https://creativecommons.org/licenses/by/4.0/).

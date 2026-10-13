@@ -7,5 +7,5 @@ contact_links:
     url: https://github.com/ltoinel/Carbure/discussions/categories/q-a
     about: Installation, configuration or usage questions.
   - name: Documentation
-    url: https://ltoinel.github.io/Carbure/
+    url: https://carbure.org/
     about: Installation, configuration, portal and API guides.
