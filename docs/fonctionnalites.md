@@ -65,7 +65,9 @@ bancaire tiers, pas de cloud. Les modules woob couvrent surtout les **banques fr
 Pour chaque compte suivi :
 
 1. **Opérations à venir**, puis **historique** : woob renvoie les dernières opérations
-   (100 par défaut, réglage `woob_transactions`).
+   (100 par défaut, réglage `woob_transactions`). Un échec des opérations à venir
+   n'empêche pas l'historique : le compte reste synchronisé, avec l'échec noté dans son
+   résultat et dans le journal.
 2. **Nettoyage du libellé** : passage en majuscules, suppression des préfixes et suffixes
    techniques de la banque (« FACTURE CARTE DU 040126 » devient « CB », numéro de carte retiré,
    références de mandat des prélèvements…), selon les expressions `regex_label` de la

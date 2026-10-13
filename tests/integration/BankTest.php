@@ -384,6 +384,8 @@ class BankTest extends DatabaseTestCase
             $output = ob_get_clean();
         }
         $this->assertStringContainsString('data: Error syncing 2fa@bank: Error while calling woob (exit code: 1): Error(bank): You have to run bank in interactive mode', $output);
+        // The history would ask the same validation: not tried
+        $this->assertStringNotContainsString('Syncing 2fa@bank (history)', $output);
 
         // The household is asked to approve the authentication in the portal
         $alerts = array_map(fn($r) => $r['payload']['aps']['alert'], FakeApnsServer::requests());
@@ -399,6 +401,158 @@ class BankTest extends DatabaseTestCase
         $this->assertStringContainsString('data: Bank message 2fa@bank: Veuillez valider la connexion dans votre application bancaire.', $output);
         $this->assertStringContainsString('data: Done 2fa@bank (history): 3 received', $output);
         $this->assertStringNotContainsString('Error syncing', $output);
+    }
+
+    /**
+     * Run the synchronization of one account for the scheduler (sync token), with the
+     * waits replaced: returns the SSE output and the number of seconds waited.
+     */
+    private function scheduledSync(string $account, int $retries, ?callable $onWait = null): array
+    {
+        Config::set('sync_token', 'scheduler-secret');
+        Config::set('woob_2fa_wait', 2);
+        Config::set('woob_2fa_retries', $retries);
+        $waited = 0;
+        Bank::$sleep = function (int $seconds) use (&$waited, $onWait) {
+            $waited += $seconds;
+            if ($onWait) {
+                $onWait();
+            }
+        };
+        ob_start();
+        try {
+            Bank::getSync('scheduler-secret', $account);
+        } finally {
+            $output = ob_get_clean();
+            Bank::$sleep = null;
+            Config::set('sync_token', '');
+            Config::set('woob_2fa_wait', 0);
+            Config::set('woob_2fa_retries', 1);
+        }
+        // The results are then read by an administrator
+        $this->loginAs(self::ADMIN);
+        return [$output, $waited];
+    }
+
+    public function testComingFailureKeepsTheHistory()
+    {
+        Db::query("DELETE FROM bank_transaction");
+        Db::query("INSERT INTO bank_account (bank_name, account_number, user_id) VALUES ('bank', 'nocoming', " . self::ADMIN . ")");
+        $this->loginAs(self::ADMIN);
+        ob_start();
+        try {
+            Bank::getSync(null, 'nocoming@bank');
+        } finally {
+            $output = ob_get_clean();
+        }
+
+        // The failure of the coming transactions is shown, the history still synchronized
+        $this->assertStringContainsString('data: Coming failed nocoming@bank: Error while calling woob (exit code: 1): Error(bank): NotImplementedError: coming transactions are not available', $output);
+        $this->assertStringContainsString('data: Done nocoming@bank (history): 3 received, 3 new', $output);
+        $this->assertStringNotContainsString('Error syncing', $output);
+        $this->assertStringContainsString('data: Updating missing categories...', $output);
+
+        // The account is synchronized, with a note
+        $account = array_column(Bank::accounts(), null, 'bankId')['nocoming@bank'];
+        $this->assertSame('OK', $account['last_sync_status']);
+        $this->assertStringStartsWith('3 new (coming failed: Error while calling woob', $account['last_sync_message']);
+        $titles = array_map(fn($r) => $r['payload']['aps']['alert']['title'], FakeApnsServer::requests());
+        $this->assertContains('Bank synchronization successful', $titles);
+        $this->assertNotContains('Bank synchronization failed !', $titles);
+
+        // The history fails too: the account fails
+        $this->loginAs(self::ADMIN);
+        ob_start();
+        try {
+            Bank::getSync(null, 'fail@bank');
+        } finally {
+            $output = ob_get_clean();
+        }
+        $this->assertStringContainsString('data: Coming failed fail@bank', $output);
+        $this->assertStringContainsString('data: Syncing fail@bank (history)...', $output);
+        $this->assertStringContainsString('data: Error syncing fail@bank', $output);
+        $this->assertSame('ERROR', array_column(Bank::accounts(), null, 'bankId')['fail@bank']['last_sync_status']);
+    }
+
+    public function testScheduledSyncRetriesAfterAValidation()
+    {
+        Db::query("DELETE FROM bank_transaction");
+        Db::query("INSERT INTO bank_account (bank_name, account_number, user_id) VALUES ('bank', 'validate', " . self::ADMIN . ")");
+        $validated = sys_get_temp_dir() . '/carbure-fake-woob-validated';
+        @unlink($validated);
+        try {
+            // The validation is done in the bank app during the wait
+            [$output, $waited] = $this->scheduledSync('validate@bank', 1, fn() => touch($validated));
+        } finally {
+            @unlink($validated);
+        }
+
+        $this->assertStringContainsString('data: Error syncing validate@bank: Error while calling woob (exit code: 1): Error(bank): You have to run bank in interactive mode', $output);
+        $this->assertStringContainsString('data: Waiting for a validation validate@bank: new attempt in 2 s (1/1)', $output);
+        $this->assertStringContainsString(': heartbeat', $output);
+        $this->assertStringContainsString('data: Done validate@bank (history): 3 received, 3 new', $output);
+        $this->assertSame(2, $waited);
+
+        $account = array_column(Bank::accounts(), null, 'bankId')['validate@bank'];
+        $this->assertSame('OK', $account['last_sync_status']);
+        $this->assertSame('4 new', $account['last_sync_message']);
+        // Only the result of the last attempt is notified
+        $titles = array_map(fn($r) => $r['payload']['aps']['alert']['title'], FakeApnsServer::requests());
+        $this->assertContains('Bank synchronization successful', $titles);
+        $this->assertNotContains('Strong authentication needed', $titles);
+    }
+
+    public function testScheduledSyncRecordsTheValidationWhenTheRetriesRunOut()
+    {
+        Db::query("INSERT INTO bank_account (bank_name, account_number, user_id) VALUES ('bank', 'validate', " . self::ADMIN . ")");
+        @unlink(sys_get_temp_dir() . '/carbure-fake-woob-validated');
+
+        [$output, $waited] = $this->scheduledSync('validate@bank', 2);
+        $this->assertStringContainsString('data: Waiting for a validation validate@bank: new attempt in 2 s (1/2)', $output);
+        $this->assertStringContainsString('data: Waiting for a validation validate@bank: new attempt in 2 s (2/2)', $output);
+        $this->assertSame(3, substr_count($output, 'data: Error syncing validate@bank'));
+        $this->assertSame(4, $waited);
+
+        // The household is asked to approve the connection in the portal, once
+        $account = array_column(Bank::accounts(), null, 'bankId')['validate@bank'];
+        $this->assertSame('ERROR', $account['last_sync_status']);
+        $this->assertTrue(Woob::needsTwoFactor($account['last_sync_message']));
+        $titles = array_map(fn($r) => $r['payload']['aps']['alert']['title'], FakeApnsServer::requests());
+        $this->assertSame(1, count(array_filter($titles, fn($t) => $t === 'Strong authentication needed')));
+
+        // No retry: woob_2fa_retries=0
+        [$output, $waited] = $this->scheduledSync('validate@bank', 0);
+        $this->assertStringNotContainsString('Waiting for a validation', $output);
+        $this->assertSame(0, $waited);
+    }
+
+    public function testSyncOfAUserDoesNotRetryAfterAValidation()
+    {
+        Db::query("INSERT INTO bank_account (bank_name, account_number, user_id) VALUES ('bank', 'validate', " . self::ADMIN . ")");
+        @unlink(sys_get_temp_dir() . '/carbure-fake-woob-validated');
+        $waits = 0;
+        Bank::$sleep = function () use (&$waits) {
+            $waits++;
+        };
+        Config::set('woob_2fa_wait', 2);
+        try {
+            // A user in the portal, interactive or not: never waits
+            foreach ([null, 'true'] as $interactive) {
+                $this->loginAs(self::ADMIN);
+                ob_start();
+                try {
+                    Bank::getSync(null, 'validate@bank', $interactive);
+                } finally {
+                    $output = ob_get_clean();
+                }
+                $this->assertStringContainsString('data: Error syncing validate@bank', $output);
+                $this->assertStringNotContainsString('Waiting for a validation', $output);
+            }
+        } finally {
+            Bank::$sleep = null;
+            Config::set('woob_2fa_wait', 0);
+        }
+        $this->assertSame(0, $waits);
     }
 
     public function testSyncSendsTheDebugLogsOfWoobToAnAdministrator()

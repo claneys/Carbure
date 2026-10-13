@@ -22,7 +22,8 @@ relu à chaque requête), sauf le conteneur Docker pour `SYNC_INTERVAL`.
 
     Les clés marquées ✏️ dans les tableaux ci-dessous s'y modifient directement : `log_level`,
     `log_retention_days`, `savings_category`, `public_url`, `woob_transactions`,
-    `woob_logging`, `woob_debug`, `woob_auto_update`, `apns_environment`,
+    `woob_logging`, `woob_debug`, `woob_auto_update`, `woob_2fa_wait`, `woob_2fa_retries`,
+    `apns_environment`,
     `apns_auth_method`, `apns_bundle_id`, `apns_key_id` et `apns_team_id`. Chaque valeur est
     vérifiée (liste de valeurs, nombre borné, format) avant l'écriture, et le fichier
     précédent est gardé en `prod.ini.bak`. Le serveur web doit pouvoir écrire le fichier ;
@@ -86,6 +87,8 @@ transaction importée.
 | `woob_logging` ✏️ | Niveau de log de woob, sur sa sortie d'erreur (jamais dans un fichier) : `debug` (`--debug`), `info` (`--verbose`), `warning` (par défaut), `error`/`critical` (`--quiet`) |
 | `woob_debug` ✏️ | `true` pour lancer woob en `--debug` (prioritaire sur `woob_logging`), journaliser sa sortie complète et l'afficher dans le journal de synchronisation du portail (administrateurs) |
 | `woob_auto_update` ✏️ | `true` pour laisser woob mettre à jour ses modules |
+| `woob_2fa_wait` ✏️ | Synchronisation planifiée : secondes d'attente (0 à 300, 15 par défaut) avant de resynchroniser un compte dont la banque demande une validation dans son application |
+| `woob_2fa_retries` ✏️ | Synchronisation planifiée : nombre de nouvelles tentatives après cette demande (0 à 5, 1 par défaut ; 0 pour ne pas réessayer) |
 
 ## `[apns]`
 

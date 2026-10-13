@@ -13,6 +13,9 @@
  * - account "empty@bank" : no output
  * - account "broken@bank": no output, error on stderr, exit code 0 (module not loaded)
  * - account "slow@bank"  : waits 2 seconds before answering
+ * - account "nocoming@bank": the coming transactions fail (code 1), the history works
+ * - account "validate@bank": asks a validation in the bank app (even on a terminal) until
+ *                          the file carbure-fake-woob-validated exists in the temp dir
  * - account "2fa@bank"   : asks a two-factor authentication, only possible when the output
  *                          is a terminal (like woob); otherwise fails with code 1
  * - other accounts       : one JSON array of transactions per line, like woob -f json
@@ -149,6 +152,16 @@ if ($account === '2fa@bank') {
     }
     // Message of a DecoupledValidation, then the data once validated
     echo "\e[1mVeuillez valider la connexion dans votre application bancaire.\e[0m\n";
+}
+
+if ($account === 'nocoming@bank' && $type === 'coming') {
+    fwrite(STDERR, "Error(bank): NotImplementedError: coming transactions are not available\n");
+    exit(1);
+}
+
+if ($account === 'validate@bank' && !is_file(sys_get_temp_dir() . '/carbure-fake-woob-validated')) {
+    fwrite(STDERR, "Error(bank): You have to run bank in interactive mode to perform a two-factor authentication\n");
+    exit(1);
 }
 
 if ($account === 'slow@bank') {

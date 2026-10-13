@@ -208,6 +208,18 @@ pseudo-terminal (`tools/woob-tty.py`) et ses messages sont relayés en
 l'application de la banque. Sans ce paramètre, une banque qui exige une authentification
 forte échoue avec `…interactive mode to perform a two-factor authentication`.
 
+Les opérations à venir sont facultatives : si leur appel à woob échoue (hors
+authentification forte), l'historique est quand même synchronisé, l'échec est envoyé en
+`data: Coming failed <compte>: <erreur>` et le compte reste `OK`, avec le résultat
+`<n> new (coming failed: <erreur>)`.
+
+Pour le planificateur (`sync_token`, jamais en mode interactif), un compte dont la banque
+demande une validation dans son application est resynchronisé après `woob_2fa_wait`
+secondes (15 par défaut), jusqu'à `woob_2fa_retries` fois (1 par défaut) : la validation a
+pu être faite entre-temps. Seul ce compte attend (`data: Waiting for a validation <compte>:
+new attempt in 15 s (1/1)`, puis des `: heartbeat`) ; seul le résultat de la dernière
+tentative est enregistré et notifié.
+
 La réponse est un flux `text/event-stream` : messages `data: …` (progression,
 résultat de chaque étape) et commentaires `: heartbeat` toutes les 15 s pendant
 l'exécution de woob. Une seule synchronisation peut tourner à la fois (sinon :
@@ -634,7 +646,7 @@ Le fichier de configuration, par section : `file` (chemin dans l'instance), `wri
 
 `values` : les nouvelles valeurs par clé, uniquement parmi les réglages modifiables
 (`log_level`, `log_retention_days`, `savings_category`, `public_url`, `woob_transactions`, `woob_logging`,
-`woob_debug`, `woob_auto_update`, `apns_environment`, `apns_auth_method`, `apns_bundle_id`,
+`woob_debug`, `woob_auto_update`, `woob_2fa_wait`, `woob_2fa_retries`, `apns_environment`, `apns_auth_method`, `apns_bundle_id`,
 `apns_key_id`, `apns_team_id`). Toutes les valeurs sont vérifiées avant d'écrire quoi que
 ce soit (`400` sinon, fichier inchangé) ; l'ancien fichier est gardé en `.bak`. Renvoie la
 configuration comme `GET`.

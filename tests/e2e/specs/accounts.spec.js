@@ -52,8 +52,9 @@ test('shows the debug logs of woob in the synchronization log', async ({ adminPa
     // The error output of woob, line by line, besides the steps
     await page.getByRole('button', { name: tr('syncShowLog') }).click();
     const debug = page.locator('.sync-log li.sync-log-debug');
-    await expect(debug.filter({ hasText: 'Woob debug fail@bank: DEBUG:woob.browser:Request: GET https://bank.example/accounts' })).toHaveCount(1);
-    await expect(debug.filter({ hasText: "Woob debug fail@bank: AttributeError: 'NoneType' object has no attribute 'iter_accounts'" })).toHaveCount(1);
+    // Twice: the coming transactions fail, then the history
+    await expect(debug.filter({ hasText: 'Woob debug fail@bank: DEBUG:woob.browser:Request: GET https://bank.example/accounts' })).toHaveCount(2);
+    await expect(debug.filter({ hasText: "Woob debug fail@bank: AttributeError: 'NoneType' object has no attribute 'iter_accounts'" })).toHaveCount(2);
 
     // Nothing synchronized: no categorization, only the notification of the error
     await expect(page.locator('.sync-log')).not.toContainText('Updating missing categories');
@@ -133,6 +134,26 @@ test('names an account, shown instead of the bank and the end of its number', as
     await modal.getByRole('button', { name: tr('save') }).click();
     await expect(page.locator('.toast')).toHaveText(tr('accountUpdated'));
     await expect(bnp.locator('.account-name')).toContainText('BNP ···5678');
+});
+
+test('keeps the history when the coming transactions fail', async ({ adminPage: page, api }) => {
+    // Account of the fake woob whose coming transactions fail
+    const created = await api.post('/api/bank', { data: { account_number: 'nocoming', bank_name: 'bank' } });
+    expect(created.ok(), await created.text()).toBeTruthy();
+    await openTab(page, tr('tabAccounts'));
+    await account(page, 'nocoming@bank').getByRole('button', { name: tr('syncAccount') }).click();
+
+    // The synchronization succeeds: only the coming step is in error
+    await expect(page.locator('.sync-status')).toContainText(tr('syncStatus_success'));
+    const steps = page.locator('.sync-account .sync-step');
+    await expect(steps.filter({ hasText: tr('syncStep_coming') })).toHaveClass(/step-error/);
+    await expect(steps.filter({ hasText: tr('syncStep_coming') }).locator('.sync-step-error')).toContainText('coming transactions are not available');
+    await expect(steps.filter({ hasText: tr('syncStep_history') })).toHaveClass(/step-ok/);
+    await expect(account(page, 'nocoming@bank').locator('.account-sync-state')).toHaveText(tr('lastSync_OK'));
+
+    await page.getByRole('button', { name: tr('syncShowLog') }).click();
+    await expect(page.locator('.sync-log')).toContainText('Coming failed nocoming@bank:');
+    await expect(page.locator('.sync-log')).toContainText('Done nocoming@bank (history): 3 received');
 });
 
 test('approves the strong authentication asked by a bank', async ({ adminPage: page, api }) => {

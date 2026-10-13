@@ -12,7 +12,10 @@
 require_once "Transaction.php";
 
 final class Bank {
-    
+
+    /** Pause of the waits between two attempts, in seconds (null: sleep(); replaced by the tests) */
+    public static ?Closure $sleep = null;
+
     /**
      * Get the bank accounts of the household (every user sees all of them).
      * Each bank account is returned with bankId = account_number@bank_name
@@ -502,6 +505,12 @@ final class Bank {
      * With woob_debug enabled, an administrator also receives the debug logs of woob
      * (error output) as "Woob debug <account>: <line>", to diagnose a failing bank.
      *
+     * A failure of the coming transactions does not prevent the history: it is sent as
+     * "Coming failed <account>: <error>" and noted in the result of the account. For the
+     * scheduler, an account whose bank asks a validation in its app is synchronized again
+     * after woob_2fa_wait seconds (woob_2fa_retries times), sent as "Waiting for a
+     * validation <account>: ...".
+     *
      * The missing categories are only updated when at least one account was synchronized:
      * after a failure, only the users are notified of the error.
      *
@@ -545,7 +554,7 @@ final class Bank {
 
             // Synchronize each bank account (every one, even after a failure)
             foreach ($bankIds as $bankId) {
-                $synced = self::syncAccount($bankId, $interactive, $debug) || $synced;
+                $synced = self::syncAccount($bankId, $interactive, $debug, !$user) || $synced;
             }
 
             self::finishSync($synced);
@@ -577,31 +586,32 @@ final class Bank {
      * Synchronize one account (coming then history), record the result and notify the
      * household (result, large expenses, rules marked "notify").
      *
+     * For the scheduler (no user, never interactive), when the bank asks a validation
+     * in its app, the account is synchronized again after woob_2fa_wait seconds, up to
+     * woob_2fa_retries times: the validation may have been done in the meantime. Only
+     * this account waits; the result of the last attempt is recorded and notified.
+     *
      * @param string $bankId      The bank id (account_number@bank_name)
      * @param bool   $interactive Allow the bank to ask a two-factor authentication
      * @param bool   $debug       Send the debug logs of woob in the progress
+     * @param bool   $scheduled   Started by the scheduler (sync token): retry after a validation
      * @return bool True if the account was synchronized
      */
-    private static function syncAccount(string $bankId, bool $interactive, bool $debug): bool
+    private static function syncAccount(string $bankId, bool $interactive, bool $debug, bool $scheduled = false): bool
     {
-        $status = true;
         $created = [];
-        $error = null;
-
-        try {
-            Webservice::sendProgress("Syncing $bankId (coming)...");
-            $created = self::syncBankData('coming', $bankId, $interactive, $debug);
-
-            Webservice::sendProgress("Syncing $bankId (history)...");
-            $created = array_merge($created, self::syncBankData('history', $bankId, $interactive, $debug));
-
-        } catch (Exception $e) {
-            Logger::error("Error syncing $bankId: " . $e->getMessage());
-            Webservice::sendProgress("Error syncing $bankId: " . $e->getMessage());
-            $status = false;
-            $error = $e->getMessage();
+        $retries = $scheduled && !$interactive ? self::intSetting('woob_2fa_retries', 1, 0, 5) : 0;
+        for ($attempt = 0; ; $attempt++) {
+            [$attemptCreated, $error, $note] = self::syncAttempt($bankId, $interactive, $debug);
+            $created = array_merge($created, $attemptCreated);
+            if ($attempt >= $retries || !Woob::needsTwoFactor($error)) {
+                break;
+            }
+            self::waitForValidation($bankId, $attempt + 1, $retries);
         }
-        self::recordSyncResult($bankId, $status, $status ? count($created) . " new" : $error);
+
+        $status = $error === null;
+        self::recordSyncResult($bankId, $status, $status ? count($created) . " new" . $note : $error);
 
         // Send notification to all users who own this bank account
         Webservice::sendProgress("Notifying users of $bankId...");
@@ -610,6 +620,99 @@ final class Bank {
         self::alertRuleMatches($created);
 
         return $status;
+    }
+
+    /**
+     * One synchronization of an account: coming then history. The coming transactions
+     * are best effort: their failure does not prevent the history, it is only noted
+     * (unless the bank asks a validation, which the history would ask too).
+     *
+     * @param string $bankId      The bank id (account_number@bank_name)
+     * @param bool   $interactive Allow the bank to ask a two-factor authentication
+     * @param bool   $debug       Send the debug logs of woob in the progress
+     * @return array{0: list<array<string, mixed>>, 1: string|null, 2: string} The new
+     *               transactions, the error (null on success) and the note of the result
+     */
+    private static function syncAttempt(string $bankId, bool $interactive, bool $debug): array
+    {
+        [$created, $comingError] = self::syncComing($bankId, $interactive, $debug);
+        try {
+            if (Woob::needsTwoFactor($comingError)) {
+                throw new Exception((string)$comingError);
+            }
+            Webservice::sendProgress("Syncing $bankId (history)...");
+            $created = array_merge($created, self::syncBankData('history', $bankId, $interactive, $debug));
+        } catch (Exception $e) {
+            Logger::error("Error syncing $bankId: " . $e->getMessage());
+            Webservice::sendProgress("Error syncing $bankId: " . $e->getMessage());
+            return [$created, $e->getMessage(), ''];
+        }
+        return [$created, null, $comingError === null ? '' : " (coming failed: $comingError)"];
+    }
+
+    /**
+     * Save the coming transactions of an account; a failure is returned, not thrown, and
+     * reported as "Coming failed <account>: <error>" (unless the bank asks a validation).
+     *
+     * @param string $bankId      The bank id (account_number@bank_name)
+     * @param bool   $interactive Allow the bank to ask a two-factor authentication
+     * @param bool   $debug       Send the debug logs of woob in the progress
+     * @return array{0: list<array<string, mixed>>, 1: string|null} The new transactions and
+     *               the error (null on success)
+     */
+    private static function syncComing(string $bankId, bool $interactive, bool $debug): array
+    {
+        try {
+            Webservice::sendProgress("Syncing $bankId (coming)...");
+            return [self::syncBankData('coming', $bankId, $interactive, $debug), null];
+        } catch (Exception $e) {
+            // A validation asked by the bank is the error of the account (sent by the caller)
+            if (!Woob::needsTwoFactor($e->getMessage())) {
+                Logger::warn("Coming transactions of $bankId failed: " . $e->getMessage());
+                Webservice::sendProgress("Coming failed $bankId: " . $e->getMessage());
+            }
+            return [[], $e->getMessage()];
+        }
+    }
+
+    /**
+     * Wait woob_2fa_wait seconds before synchronizing an account again (the bank asked a
+     * validation in its app), sending heartbeats to keep the connection open.
+     *
+     * @param string $bankId  The bank id (account_number@bank_name)
+     * @param int    $attempt Number of the next attempt (1 for the first retry)
+     * @param int    $retries Number of retries allowed
+     * @return void
+     */
+    private static function waitForValidation(string $bankId, int $attempt, int $retries): void
+    {
+        $seconds = self::intSetting('woob_2fa_wait', 15, 0, 300);
+        Logger::info("Validation asked by the bank of $bankId: new attempt in $seconds s ($attempt/$retries)");
+        Webservice::sendProgress("Waiting for a validation $bankId: new attempt in $seconds s ($attempt/$retries)");
+        $sleep = self::$sleep ?? fn(int $s) => sleep($s);
+        for ($i = 0; $i < $seconds; $i++) {
+            $sleep(1);
+            Webservice::sendHeartbeat();
+        }
+    }
+
+    /**
+     * An integer setting, bounded; its default when it is not set or not a number.
+     *
+     * @param string $key     The setting key
+     * @param int    $default The value when the setting is not set
+     * @param int    $min     The lowest value
+     * @param int    $max     The highest value
+     * @return int
+     */
+    private static function intSetting(string $key, int $default, int $min, int $max): int
+    {
+        try {
+            $value = Config::get($key);
+        } catch (Exception $e) {
+            return $default;
+        }
+        return is_numeric($value) ? max($min, min($max, (int)$value)) : $default;
     }
 
     /**

@@ -229,6 +229,30 @@ test('sync: the debug logs of woob are not steps nor transactions', async () => 
     assert.deepEqual(steps.accounts[0].steps.map(s => [s.kind, s.status, s.count]), [['coming', 'error', 0], ['notify', 'ok', 0]]);
 });
 
+test('sync: a failure of the coming transactions does not fail the account', async () => {
+    const { createSyncModule } = await import('../../portal/modules/syncModule.js');
+    const { syncSteps, syncErrors } = createSyncModule(() => null).computed;
+    const context = {
+        syncStatus: 'success',
+        syncLog: [
+            'Syncing 1@bnp (coming)...',
+            'Coming failed 1@bnp: Error while calling woob (exit code: 1): NotImplementedError',
+            'Syncing 1@bnp (history)...',
+            'Done 1@bnp (history): 3 received, 2 new',
+            'Waiting for a validation 1@bnp: new attempt in 15 s (1/1)',
+            'Notifying users of 1@bnp...',
+            'Synchronization complete',
+        ],
+    };
+    const steps = syncSteps.call(context);
+    assert.deepEqual(steps.accounts[0].steps.map(s => [s.kind, s.status, s.count]),
+        [['coming', 'error', 0], ['history', 'ok', 3], ['notify', 'ok', 0]]);
+    assert.equal(steps.accounts[0].steps[0].error, 'Error while calling woob (exit code: 1): NotImplementedError');
+    assert.equal(steps.accounts[0].steps[1].message, 'new attempt in 15 s (1/1)');
+    // Not an error of the synchronization
+    assert.deepEqual(syncErrors.call(context), []);
+});
+
 test('accounts: a bank already configured stays offered, with a free backend name', async () => {
     const { createAccountsModule } = await import('../../portal/modules/accountsModule.js');
     const { methods } = createAccountsModule(() => null);

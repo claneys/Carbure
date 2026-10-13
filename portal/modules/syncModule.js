@@ -78,6 +78,17 @@ export function createSyncModule(getApiService) {
                         if (current && current.status === 'running') {
                             current.message = match[2];
                         }
+                    } else if ((match = line.match(/^Coming failed (.+?): (.*)$/))) {
+                        // The coming transactions failed: the history is still synchronized
+                        if (current && current.kind === 'coming' && current.status === 'running') {
+                            current.status = 'error';
+                            current.error = match[2];
+                        }
+                    } else if ((match = line.match(/^Waiting for a validation (.+?): (.*)$/))) {
+                        // Scheduled synchronization: new attempt after a validation in the bank app
+                        if (current) {
+                            current.message = match[2];
+                        }
                     } else if ((match = line.match(/^Error syncing (.+?): (.*)$/))) {
                         if (current && current.status === 'running') {
                             current.status = 'error';
