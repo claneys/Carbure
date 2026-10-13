@@ -13,6 +13,8 @@
  * - account "fail@bank"  : writes on stderr and exits with code 1
  * - account "empty@bank" : no output
  * - account "broken@bank": no output, error on stderr, exit code 0 (module not loaded)
+ * - account "forbidden@bank" (and bank list -b forbidden): "[]", the bank refuses woob
+ *                          ("Bug(...): 403 Client Error: Forbidden" on stderr), exit code 0
  * - account "slow@bank"  : waits 2 seconds before answering
  * - account "nocoming@bank": the coming transactions fail (code 1), the history works
  * - account "validate@bank": asks a validation in the bank app (even on a terminal) until
@@ -119,6 +121,11 @@ if (($argv[1] ?? '') === 'bank' && $type === 'list') {
         fwrite(STDERR, "Error(" . $added['backend'] . "): BrowserIncorrectPassword: Identifiant ou mot de passe incorrect\n");
         exit(1);
     }
+    if ($backend === 'forbidden') {
+        echo "[]\n";
+        fwrite(STDERR, "Bug(forbidden): 403 Client Error: Forbidden\nUse --debug option to print backtraces\n");
+        exit(0);
+    }
     if ($backend === 'none') {
         fwrite(STDERR, "Error(none): Unable to load module \"none\"\n");
         exit(0);
@@ -152,6 +159,13 @@ if ($account === 'empty@bank') {
 
 if ($account === 'broken@bank') {
     fwrite(STDERR, "Error(bnp): Unable to load module \"bnp\": No module named 'curl_cffi'\n");
+    exit(0);
+}
+
+if ($account === 'forbidden@bank') {
+    // Like woob 3.7 when the website of the bank refuses it: an empty list, exit code 0
+    echo "[]\n";
+    fwrite(STDERR, "Bug(bank): 403 Client Error: Forbidden\nUse --debug option to print backtraces\n");
     exit(0);
 }
 

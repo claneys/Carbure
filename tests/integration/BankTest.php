@@ -634,6 +634,32 @@ class BankTest extends DatabaseTestCase
         $this->assertStringNotContainsString('Woob debug', $this->sync());
     }
 
+    public function testDiscoverReportsTheRefusalOfTheBank()
+    {
+        $this->loginAs(self::ADMIN);
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('woob returned no account: Bug(forbidden): 403 Client Error: Forbidden');
+        Bank::discover('forbidden');
+    }
+
+    public function testSyncRecordsTheRefusalOfTheBank()
+    {
+        $this->loginAs(self::ADMIN);
+        Db::execute("INSERT INTO bank_account (bank_name, account_number, user_id) VALUES ('bank', 'forbidden', ?)", "i", self::ADMIN);
+        ob_start();
+        try {
+            Bank::getSync(null, 'forbidden@bank');
+        } finally {
+            $output = ob_get_clean();
+        }
+
+        // Not "0 new": the error of the bank
+        $this->assertStringContainsString('data: Error syncing forbidden@bank: woob returned no data: Bug(bank): 403 Client Error: Forbidden', $output);
+        $account = array_column(Bank::accounts(), null, 'bankId')['forbidden@bank'];
+        $this->assertSame('ERROR', $account['last_sync_status']);
+        $this->assertStringContainsString('403 Client Error: Forbidden', $account['last_sync_message']);
+    }
+
     public function testFailedSyncDoesNotUpdateTheCategories()
     {
         $this->loginAs(self::ADMIN);

@@ -233,7 +233,10 @@ Après un déploiement qui modifie les routes, le cache APCu est invalidé autom
 
 ## En cas d'échec de la synchronisation
 
-Dans l'onglet **Comptes**, chaque étape en échec affiche la cause renvoyée par woob. Les sites
+Dans l'onglet **Comptes**, chaque étape en échec affiche la cause renvoyée par woob, y compris
+quand woob ne renvoie aucun compte ni opération mais signale une erreur (par exemple
+`Bug(bnp): 403 Client Error: Forbidden` : le site de la banque refuse woob) : le compte est
+alors en erreur, pas « 0 nouvelle opération ». Les sites
 des banques changent régulièrement : un module woob peut cesser de fonctionner du jour au
 lendemain. Avant toute chose, vérifiez si le problème est connu ou en cours de correction dans
 les tickets woob, en cherchant le nom du module de votre banque (le portail propose

@@ -34,6 +34,25 @@ class WoobTest extends TestCase
         Woob::getBankData('history', 'broken@bank');
     }
 
+    public function testEmptyListWithAnErrorThrows()
+    {
+        // The bank refuses woob: "[]" on stdout, the error on stderr, exit code 0
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('woob returned no data: Bug(bank): 403 Client Error: Forbidden');
+        Woob::getBankData('history', 'forbidden@bank');
+    }
+
+    public function testNoAccountWithAnErrorThrows()
+    {
+        try {
+            Woob::listAccounts('forbidden');
+            $this->fail('No account taken as an empty bank');
+        } catch (Exception $e) {
+            // The hint woob adds after the error is not its cause
+            $this->assertSame('woob returned no account: Bug(forbidden): 403 Client Error: Forbidden', $e->getMessage());
+        }
+    }
+
     public function testFailureThrows()
     {
         $this->expectException(Exception::class);

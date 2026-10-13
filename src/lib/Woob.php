@@ -28,6 +28,12 @@ final class Woob {
     /** Log line of woob below the warnings ("2026-10-12 20:40:53,390:DEBUG:woob.config:...") */
     private const LOG_LINE = '/^(\S+ \S+:)?(DEBUG|INFO):/';
 
+    /** An error reported by woob on stderr (a "Bug(<backend>): ..." of a module included) */
+    private const ERROR_LINE = '/error|exception|traceback|unable|no module|^Bug\(/im';
+
+    /** Hint woob adds after an error: not its cause */
+    private const DEBUG_HINT = '/^Use --debug option to print backtraces/';
+
     /**
      * Command that runs woob, after making sure that woob will accept to start: it
      * refuses a configuration file of the banks (logins and passwords) readable by
@@ -108,13 +114,7 @@ final class Woob {
         $stdout = self::executeWithHeartbeat($command, $stderr, true, $interactive ? $onMessage : null,
             Config::get('woob_debug') ? $onDebug : null);
         $data = self::parseOutput($type, $stdout);
-
-        // woob may exit with 0 when a backend cannot be loaded or logged in:
-        // no data + an error on stderr is a failure, not an empty account
-        if ($data === null && preg_match('/error|exception|traceback|unable|no module/i', self::withoutLogs($stderr))) {
-            Logger::error("woob returned no data", ["stderr" => $stderr]);
-            throw new Exception("woob returned no data" . self::lastLine($stderr));
-        }
+        self::failOnEmptyWithError($data, $stderr, "woob returned no data");
 
         return $data;
     }
@@ -137,11 +137,7 @@ final class Woob {
         $stderr = '';
         $stdout = self::executeWithHeartbeat($command, $stderr, false);
         $accounts = self::parseOutput('accounts', $stdout);
-
-        if ($accounts === null && preg_match('/error|exception|traceback|unable|no module/i', self::withoutLogs($stderr))) {
-            Logger::error("woob returned no account", ["stderr" => $stderr]);
-            throw new Exception("woob returned no account" . self::lastLine($stderr));
-        }
+        self::failOnEmptyWithError($accounts, $stderr, "woob returned no account");
 
         return array_values(array_filter($accounts ?? [], fn($a) => is_array($a) && !empty($a['id'])));
     }
@@ -374,16 +370,36 @@ final class Woob {
     }
 
     /**
+     * woob may exit with 0 when a backend cannot be loaded or the bank refuses it, with
+     * no data or an empty list ("[]") on stdout: nothing + an error on stderr is a
+     * failure (e.g. "Bug(bnp): 403 Client Error: Forbidden"), not an empty result.
+     *
+     * @param array<mixed>|null $data    The data read from stdout
+     * @param string            $stderr  The error output of woob
+     * @param string            $message The message of the failure, followed by the woob error
+     * @return void
+     * @throws Exception If there is no data and woob reported an error
+     */
+    private static function failOnEmptyWithError(?array $data, string $stderr, string $message): void
+    {
+        if (!$data && preg_match(self::ERROR_LINE, self::withoutLogs($stderr))) {
+            Logger::error($message, ["stderr" => $stderr]);
+            throw new Exception($message . self::lastLine($stderr));
+        }
+    }
+
+    /**
      * Last non empty line of an output that is not a debug or info log of woob (the
-     * cause of an error comes before woob logs that it stored the session...), prefixed
-     * with ": " (empty string if none).
+     * cause of an error comes before woob logs that it stored the session...), nor the
+     * hint woob adds after an error, prefixed with ": " (empty string if none).
      *
      * @param string $output The command output
      * @return string The suffix to add to an error message
      */
     private static function lastLine(string $output): string
     {
-        $lines = array_values(array_filter(array_map('trim', explode("\n", self::withoutLogs($output)))));
+        $lines = array_values(array_filter(array_map('trim', explode("\n", self::withoutLogs($output))),
+            fn(string $line): bool => $line !== '' && !preg_match(self::DEBUG_HINT, $line)));
         return $lines ? ': ' . mb_substr(end($lines), 0, 200) : '';
     }
 
@@ -612,7 +628,8 @@ final class Woob {
         $data = [];
         foreach ($lines as $line) {
             $decoded = json_decode($line, true);
-            if ($decoded === null) {
+            // Not JSON, or an empty list ("[]": nothing, not one empty row)
+            if ($decoded === null || $decoded === []) {
                 continue;
             }
             if (isset($decoded[0]) && is_array($decoded[0])) {
