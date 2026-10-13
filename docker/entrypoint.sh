@@ -13,13 +13,12 @@ chown -R www-data:www-data /data
 # copied into a NAS shared folder; a copied folder may also have lost its owner rights.
 chmod -R u+rwX,go-rwx /data/woob 2>/dev/null || true
 
-# Keyring of the woob repository, to check the signature of the bank modules: fetched
-# once (an instance created without gpgv has none: installing a module would fail with
-# "No keyring found"), in the background, as www-data (the owner of /data/woob)
-if [ -z "$(ls -A /data/woob/.local/share/woob/keyrings 2>/dev/null)" ]; then
-    su -s /bin/sh www-data -c "env HOME=/data/woob woob config update" > /dev/null 2>&1 \
-        || echo "Carbure: woob keyring not fetched yet (network?), it will be at the next update" >&2 &
-fi
+# Update of woob at each start: repositories, keyring of the woob repository (to check
+# the signature of the bank modules; without it, installing a module fails with "No
+# keyring found") and installed bank modules. In the background (the portal starts
+# without waiting for the network), as www-data (the owner of /data/woob)
+su -s /bin/sh www-data -c "env HOME=/data/woob woob config update" > /dev/null 2>&1 \
+    || echo "Carbure: woob update failed (network?), it will be retried at the next start" >&2 &
 
 if [ -f /data/conf/prod.ini ]; then
     # Wait for the database, then apply the migrations of the new version (if any);

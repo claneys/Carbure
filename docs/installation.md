@@ -245,5 +245,6 @@ https://gitlab.com/search?group_id=11540390&project_id=25520182&scope=work_items
 
 Remplacez `<module>` par le nom du module woob (par exemple `bnp`, `creditmutuel`,
 `boursorama`). Une fois le correctif publié, woob met à jour ses modules automatiquement
-(`woob_auto_update=true`).
+(`woob_auto_update=true`) ; redémarrer le conteneur Docker force aussi cette mise à jour
+(`woob config update` est lancé à chaque démarrage).
 

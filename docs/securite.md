@@ -184,8 +184,9 @@ du dépôt.
 Les modules bancaires de woob (code Python qui lit les identifiants) sont téléchargés
 depuis le dépôt de woob : l'image contient `gpgv`, avec lequel woob vérifie la signature
 de chaque module installé ou mis à jour et refuse un module dont la signature est
-invalide. La clé du dépôt est récupérée au premier démarrage du conteneur
-(`/data/woob/.local/share/woob/keyrings/`). Une commande woob lancée à la main dans le
+invalide. À chaque démarrage, le conteneur lance `woob config update` : il met à jour les dépôts,
+la clé du dépôt (`/data/woob/.local/share/woob/keyrings/`) et les modules bancaires
+installés. Une commande woob lancée à la main dans le
 conteneur doit l'être en `www-data` (`docker exec -u www-data …`) : lancée en root, elle
 créerait dans `/data/woob` des fichiers que Carbure ne pourrait plus modifier (le
 redémarrage du conteneur les lui rend).
