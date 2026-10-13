@@ -172,6 +172,10 @@ async function textReport(page, where) {
  * @returns {Promise<string[]>} One line per problem (empty: all readable)
  */
 async function contrastProblems(page, where) {
+    // No transition while measuring: even with reduced motion, a transition starts at the
+    // next frame, and a color read before it is the previous one (a button just enabled
+    // would still have the colors of a disabled one)
+    await page.addStyleTag({ content: '*, *::before, *::after { transition: none !important; animation: none !important; }' });
     const problems = [...await textReport(page, where), ...await contrastReport(page, where)];
     const lines = problems.map(p => `${p.where} [${p.state}] ${p.selector} "${p.text}": ${p.ratio.toFixed(2)}:1 (${p.fg} on ${p.bg})`);
     return [...new Set(lines)];
