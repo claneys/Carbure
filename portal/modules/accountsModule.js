@@ -237,6 +237,26 @@ export function createAccountsModule(getApiService) {
             },
 
             /**
+             * Removes a connected bank after confirmation: woob forgets its credentials, its
+             * followed accounts are no longer followed (their transactions are kept)
+             * @param {{name: string, module: string, label: (string|null)}} backend - Backend of woob
+             * @returns {Promise<void>}
+             */
+            async removeBackend(backend) {
+                const count = this.bankAccounts.filter(a => a.bank_name === backend.name).length;
+                if (!confirm(this.t('confirmDeleteBankConnection', { bank: this.backendName(backend), count }))) {
+                    return;
+                }
+                try {
+                    await getApiService().deleteBankBackend(backend.name);
+                    this.showToast(this.t('bankConnectionDeleted'));
+                    await Promise.all([this.loadBankBackends(), this.loadBankAccounts()]);
+                } catch (error) {
+                    this.showToast(error.message);
+                }
+            },
+
+            /**
              * Checks if an account found by woob is followed (from the current list)
              * @param {Object} discovered - Account found by woob
              * @returns {boolean}

@@ -181,6 +181,14 @@ connexion ; vide le supprime). Le nom dans woob, qui identifie les comptes et le
 transactions, ne change pas. Renvoie `name` et `label`. `404` si la banque n'est pas
 configurée dans woob, `400` si le nom est invalide ou trop long.
 
+### `DELETE /bank/backend` — administrateur
+
+Supprime une connexion bancaire : `backend` (nom dans woob, dans la query string). woob
+l'oublie avec ses identifiants (`woob config remove`), son nom donné et ses comptes suivis
+sont supprimés ; les transactions déjà importées sont conservées. Renvoie `true`. `404` si
+la banque n'est pas configurée dans woob, `400` si le nom est invalide, `500` si woob ne
+l'a pas supprimée.
+
 ### `GET /bank/discover` — administrateur
 
 Interroge woob (`woob bank list`) et renvoie les comptes des banques configurées :

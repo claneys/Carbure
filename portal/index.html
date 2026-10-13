@@ -1190,6 +1190,9 @@
                                     <button type="button" class="btn-icon" @click="openBackendModal(b)" :title="t('renameBankConnection')" :aria-label="t('renameBankConnectionOf', { bank: backendName(b) })">
                                         <span class="material-icons" aria-hidden="true">edit</span>
                                     </button>
+                                    <button type="button" class="btn-icon btn-icon-delete" @click="removeBackend(b)" :title="t('deleteBankConnection')" :aria-label="t('deleteBankConnectionOf', { bank: backendName(b) })">
+                                        <span class="material-icons" aria-hidden="true">delete</span>
+                                    </button>
                                 </li>
                             </ul>
 

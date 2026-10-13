@@ -565,6 +565,15 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
     }
 
     /**
+     * Removes a bank connection (woob backend) with its followed accounts (transactions kept)
+     * @param {string} backend - Name of the bank in woob
+     * @returns {Promise<void>}
+     */
+    async function deleteBankBackend(backend) {
+        await request(`${baseUrl}/bank/backend?backend=${encodeURIComponent(backend)}`, { method: 'DELETE' }, 'Failed to remove the bank connection');
+    }
+
+    /**
      * Accounts available in the banks configured in woob (can take a while)
      * @param {string|null} backend - Only the accounts of this bank connection (woob backend)
      * @returns {Promise<Array>} Array of {bankId, account_number, bank_name, label, balance, currency, followed}
@@ -945,6 +954,7 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
         fetchBankModuleFields,
         createBankBackend,
         renameBankBackend,
+        deleteBankBackend,
         syncBanks,
         fetchCategories,
         createCategory,

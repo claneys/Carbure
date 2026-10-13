@@ -279,6 +279,27 @@ test('renames a connected bank', async ({ adminPage: page }) => {
     await expect(connection.locator('.account-name')).toHaveText('BNP Paribas');
 });
 
+test('removes a connected bank, with its followed accounts', async ({ adminPage: page }) => {
+    await openTab(page, tr('tabAccounts'));
+    await expect(page.locator('.bank-connection')).toHaveCount(2);
+    await expect(account(page, '00012345678@bnp')).toBeVisible();
+
+    // The confirmation is accepted (fixtures)
+    await page.getByRole('button', { name: tr('deleteBankConnectionOf', { bank: 'BNP Paribas (bnp)' }) }).click();
+
+    await expect(page.locator('.toast')).toHaveText(tr('bankConnectionDeleted'));
+    await expect(page.locator('.bank-connection')).toHaveCount(1);
+    await expect(page.locator('.bank-connection code')).toHaveText('cic_pro');
+    // Its followed account is no longer followed, the other one stays
+    await expect(account(page, '00012345678@bnp')).toHaveCount(0);
+    await expect(account(page, 'fail@bank')).toBeVisible();
+
+    // Kept by the server
+    await page.reload();
+    await openTab(page, tr('tabAccounts'));
+    await expect(page.locator('.bank-connection')).toHaveCount(1);
+});
+
 test('a bank refusing the credentials can be connected again', async ({ adminPage: page }) => {
     const modal = await connectModal(page, 'cic');
     const setup = modal.locator('fieldset.bank-setup');

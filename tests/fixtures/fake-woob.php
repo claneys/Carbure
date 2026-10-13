@@ -8,6 +8,7 @@
  *        fake-woob.php bank list [-b <backend>] -f json (two accounts, "none": no account)
  *        fake-woob.php config info <module> -f json       (settings once installed, like woob 3.7)
  *        fake-woob.php config add <module> '"<backend> key=value ..."' (installs with the probe name)
+ *        fake-woob.php config remove <backend>           (no longer listed by config list)
  *
  * - account "fail@bank"  : writes on stderr and exits with code 1
  * - account "empty@bank" : no output
@@ -33,9 +34,14 @@ if (($argv[1] ?? '') === 'config' && $type === 'modules') {
 }
 
 if (($argv[1] ?? '') === 'config' && $type === 'list') {
-    // One JSON object per line, with the (secret) configuration that must not leak
-    echo json_encode(['Name' => 'bnp', 'Module' => 'bnp', 'Configuration' => 'login=12345678, password=*****']) . "\n";
-    echo json_encode(['Name' => 'cic_pro', 'Module' => 'cic', 'Configuration' => 'login=jdoe, password=*****']) . "\n";
+    // One JSON object per line, with the (secret) configuration that must not leak;
+    // the backends removed by "config remove" are no longer listed
+    $removed = file(sys_get_temp_dir() . '/carbure-fake-woob-removed', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
+    foreach ([['bnp', 'bnp', 'login=12345678, password=*****'], ['cic_pro', 'cic', 'login=jdoe, password=*****']] as [$name, $module, $configuration]) {
+        if (!in_array($name, $removed, true)) {
+            echo json_encode(['Name' => $name, 'Module' => $module, 'Configuration' => $configuration]) . "\n";
+        }
+    }
     exit(0);
 }
 
@@ -62,7 +68,11 @@ if (($argv[1] ?? '') === 'config' && $type === 'info') {
 }
 
 if (($argv[1] ?? '') === 'config' && $type === 'remove') {
-    file_put_contents(sys_get_temp_dir() . '/carbure-fake-woob-removed', $argv[3] ?? '');
+    // Records the backends removed (one per line), to check it; with the file
+    // carbure-fake-woob-stuck, woob silently removes nothing
+    if (!is_file(sys_get_temp_dir() . '/carbure-fake-woob-stuck')) {
+        file_put_contents(sys_get_temp_dir() . '/carbure-fake-woob-removed', ($argv[3] ?? '') . "\n", FILE_APPEND);
+    }
     exit(0);
 }
 

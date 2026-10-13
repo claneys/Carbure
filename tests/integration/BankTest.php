@@ -253,6 +253,64 @@ class BankTest extends DatabaseTestCase
         Bank::createBackend('bnp', 'mybnp4', ['login' => '12345678', 'password' => '123456'], str_repeat('a', 101));
     }
 
+    public function testDeleteBackend()
+    {
+        $removed = sys_get_temp_dir() . '/carbure-fake-woob-removed';
+        @unlink($removed);
+        $this->loginAs(self::ADMIN);
+        Bank::renameBackend('bnp', 'Compte joint');
+        $transactions = (int)Db::queryOne("SELECT COUNT(*) AS n FROM bank_transaction", "")['n'];
+
+        try {
+            $this->assertTrue(Bank::deleteBackend('bnp'));
+
+            // Forgotten by woob, with its name and its followed accounts (of every owner)
+            $this->assertSame("bnp\n", file_get_contents($removed));
+            $this->assertSame([['name' => 'cic_pro', 'module' => 'cic', 'label' => null]], Bank::backends());
+            $this->assertNull(Db::queryOne("SELECT name FROM bank_backend WHERE name = ?", "s", 'bnp'));
+            $this->assertSame(['fail@bank'], array_column(Bank::accounts(), 'bankId'));
+            // The transactions already imported are kept
+            $this->assertSame($transactions, (int)Db::queryOne("SELECT COUNT(*) AS n FROM bank_transaction", "")['n']);
+
+            // Already removed: unknown
+            foreach ([['bnp', 404], ['Bad Name', 400]] as [$backend, $code]) {
+                try {
+                    Bank::deleteBackend($backend);
+                    $this->fail("Removed $backend");
+                } catch (Error $e) {
+                    $this->assertSame($code, $e->getCode(), $e->getMessage());
+                }
+            }
+        } finally {
+            @unlink($removed);
+        }
+    }
+
+    public function testDeleteBackendKeptByWoob()
+    {
+        $stuck = sys_get_temp_dir() . '/carbure-fake-woob-stuck';
+        touch($stuck);
+        $this->loginAs(self::ADMIN);
+        try {
+            Bank::deleteBackend('cic_pro');
+            $this->fail('Removed while woob kept it');
+        } catch (Error $e) {
+            $this->fail('Unexpected client error: ' . $e->getMessage());
+        } catch (Exception $e) {
+            $this->assertStringContainsString('woob could not remove the bank cic_pro', $e->getMessage());
+        } finally {
+            @unlink($stuck);
+        }
+    }
+
+    public function testDeleteBackendRequiresAnAdministrator()
+    {
+        $this->loginAs(self::USER);
+        $this->expectException(Error::class);
+        $this->expectExceptionCode(403);
+        Bank::deleteBackend('bnp');
+    }
+
     public function testCreateBackendWrongCredentials()
     {
         $this->loginAs(self::ADMIN);
@@ -265,7 +323,7 @@ class BankTest extends DatabaseTestCase
             $this->assertSame(400, $e->getCode());
             $this->assertStringContainsString('Identifiant ou mot de passe incorrect', $e->getMessage());
             // Removed from woob, to try again
-            $this->assertSame('mybnp', file_get_contents($removed));
+            $this->assertSame('mybnp', trim(file_get_contents($removed)));
         } finally {
             @unlink($removed);
             @unlink(sys_get_temp_dir() . '/carbure-fake-woob-add.json');

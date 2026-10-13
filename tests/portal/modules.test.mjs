@@ -306,6 +306,44 @@ test('accounts: renaming a connected bank updates it in the list', async () => {
     assert.deepEqual(toasts, ['bankConnectionRenamed']);
 });
 
+test('accounts: removing a connected bank asks first, with the number of its followed accounts', async () => {
+    const { createAccountsModule } = await import('../../portal/modules/accountsModule.js');
+    const removed = [];
+    const api = { deleteBankBackend: async backend => { removed.push(backend); } };
+    const { methods } = createAccountsModule(() => api);
+    const toasts = [];
+    const asked = [];
+    let reloaded = 0;
+    const context = {
+        bankAccounts: [{ bank_name: 'bnp' }, { bank_name: 'bnp' }, { bank_name: 'cic_pro' }],
+        bankModules: [{ module: 'bnp', description: 'BNP Paribas' }],
+        showToast: message => toasts.push(message),
+        t: (key, params) => `${key} ${JSON.stringify(params || {})}`,
+        loadBankBackends: async () => { reloaded++; },
+        loadBankAccounts: async () => { reloaded++; },
+    };
+    for (const name of ['removeBackend', 'backendName']) {
+        context[name] = methods[name].bind(context);
+    }
+    const backend = { name: 'bnp', module: 'bnp', label: null };
+    const confirm = globalThis.confirm;
+    try {
+        // Cancelled: nothing removed
+        globalThis.confirm = message => { asked.push(message); return false; };
+        await context.removeBackend(backend);
+        assert.deepEqual(removed, []);
+        assert.deepEqual(asked, ['confirmDeleteBankConnection {"bank":"BNP Paribas (bnp)","count":2}']);
+
+        globalThis.confirm = () => true;
+        await context.removeBackend(backend);
+        assert.deepEqual(removed, ['bnp']);
+        assert.equal(reloaded, 2);
+        assert.deepEqual(toasts, ['bankConnectionDeleted {}']);
+    } finally {
+        globalThis.confirm = confirm;
+    }
+});
+
 test('accounts: the accounts found by woob, the followed ones ticked and not followed again', async () => {
     const { createAccountsModule } = await import('../../portal/modules/accountsModule.js');
     const { methods } = createAccountsModule(() => null);

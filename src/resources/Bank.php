@@ -237,6 +237,38 @@ final class Bank {
     }
 
     /**
+     * Remove a bank connection (woob backend) from the portal (administrators): woob
+     * forgets it with its credentials, its name and its followed accounts are removed;
+     * the transactions already imported are kept.
+     *
+     * @param string $backend Name of the woob backend (e.g. bnp_2)
+     * @return bool True if removed
+     * @throws Error If the backend name is invalid or the backend unknown
+     * @throws Exception If woob did not remove it
+     */
+    #[ApiRoute('/bank/backend', method: 'DELETE')]
+    public static function deleteBackend(string $backend): bool
+    {
+        User::requireAdmin();
+        if (!preg_match('/^[a-z0-9_-]{1,50}$/', $backend)) {
+            throw new Error("Invalid bank name (lowercase letters, digits, - and _)", 400);
+        }
+        if (!in_array($backend, array_column(Woob::listBackends(), 'name'), true)) {
+            throw new Error("Bank not configured in woob", 404);
+        }
+
+        // woob says nothing when it fails: the backend must be gone from its list
+        Woob::removeBackend($backend);
+        if (in_array($backend, array_column(Woob::listBackends(), 'name'), true)) {
+            throw new Exception("woob could not remove the bank $backend");
+        }
+        Db::execute("DELETE FROM bank_backend WHERE name = ?", "s", $backend);
+        Db::execute("DELETE FROM bank_account WHERE bank_name = ?", "s", $backend);
+        Logger::info("Bank $backend removed from woob, with its followed accounts");
+        return true;
+    }
+
+    /**
      * Store the name given to a bank connection (none: the name is removed).
      *
      * @param string      $backend Name of the woob backend
