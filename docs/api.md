@@ -178,6 +178,10 @@ Interroge woob (`woob bank list`) et renvoie les comptes des banques configurée
 `bankId`, `account_number`, `bank_name`, `label`, `balance`, `currency`, `followed`. Peut
 prendre plusieurs secondes (connexion aux banques).
 
+| Paramètre | Description |
+|---|---|
+| `backend` (facultatif) | Seulement les comptes de cette connexion (backend woob, `woob bank list -b <backend>`) ; `400` si le nom est invalide |
+
 ### `GET /bank/sync` — flux SSE
 
 Lance la synchronisation de **tous** les comptes, ou d'un seul avec

@@ -277,7 +277,7 @@ final class Bank {
         // If the bank refuses it (wrong credentials...), the backend is removed from
         // woob so that the form can be sent again
         try {
-            $accounts = array_values(array_filter(self::discover(), fn($account) => $account['bank_name'] === $backend));
+            $accounts = self::discover($backend);
         } catch (Exception $e) {
             Woob::removeBackend($backend);
             throw new Error("The bank refused the connection, check the credentials: " . $e->getMessage(), 400);
@@ -346,20 +346,28 @@ final class Bank {
     }
 
     /**
-     * Accounts available in the configured woob backends, to follow them in one click.
+     * Accounts available in the configured woob backends (or in one of them), to follow
+     * them in one click.
      *
+     * @param string|null $backend Only the accounts of this woob backend (bank connection),
+     *                             else of every configured one
      * @return list<array<string, mixed>> The accounts (bankId, account_number, bank_name, label,
      *               balance, currency, followed)
+     * @throws Error If the backend name is invalid
      * @throws Exception If woob fails
      */
     #[ApiRoute('/bank/discover', method: 'GET')]
-    public static function discover(): array
+    public static function discover(?string $backend = null): array
     {
         User::requireAdmin();
+        $backend = $backend === '' ? null : $backend;
+        if ($backend !== null && !preg_match('/^[a-z0-9_-]{1,50}$/', $backend)) {
+            throw new Error("Invalid bank name (lowercase letters, digits, - and _)", 400);
+        }
         $followed = array_column(self::accounts(), 'bankId');
 
         $accounts = [];
-        foreach (Woob::listAccounts() as $account) {
+        foreach (Woob::listAccounts($backend) as $account) {
             $at = strrpos($account['id'], '@');
             if ($at === false) {
                 continue;

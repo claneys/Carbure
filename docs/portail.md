@@ -207,20 +207,29 @@ protégée.
 - **Comptes du foyer** (partagés par tous les utilisateurs) : chaque compte suivi avec
   « Ajouté par » (l'utilisateur qui l'a ajouté), la date et le statut de sa dernière
   synchronisation (Synchronisé, Échec ou Jamais synchronisé ; le détail au survol), et
-  trois actions : **synchroniser ce compte**, modifier, ne plus suivre (les transactions
+  trois actions : **synchroniser ce compte**, renommer, ne plus suivre (les transactions
   déjà importées sont conservées). Un compte s'affiche « BANQUE ···1234 » (banque et fin
   de l'identifiant), ou sous le **nom** qui lui a été donné (facultatif, ex. « Compte
   joint »), aussi dans la synchronisation et le détail d'une transaction.
-- **+** (fenêtre modale) : « Rechercher mes comptes dans woob » liste les comptes des
-  banques configurées dans woob (libellé, solde) et les suit en un clic (le libellé woob
-  pré-remplit le nom du compte) ; sinon choisir la
-  banque (configurée dans woob, ou parmi toutes celles que woob supporte) et saisir
-  l'identifiant du compte. Pour une banque pas encore configurée, le formulaire demande les
-  identifiants attendus par son module woob (numéro client, code, type de compte…) :
-  **Connecter la banque** les confie à woob (Carbure ne les enregistre ni ne les journalise)
-  et affiche les comptes trouvés, à suivre en un clic. Une banque déjà configurée reste
-  proposée (« autre identifiant ») pour connecter un second accès avec d'autres
-  identifiants (compte joint, professionnel…) : un nom libre lui est proposé (`bnp_2`…).
+- **Synchroniser tous les comptes** (en haut de la page) : lance la synchronisation de
+  tous les comptes suivis, avec le même suivi en direct qu'un compte seul.
+- **Ajout en deux étapes** :
+    1. **Connecter une banque** (fenêtre modale) : choisir la banque parmi celles que
+       woob supporte ; le formulaire demande les identifiants attendus par son module woob
+       (numéro client, code, type de compte…), que **Connecter la banque** confie à woob
+       (Carbure ne les enregistre ni ne les journalise). Une banque déjà connectée reste
+       proposée (« autre identifiant ») pour un second accès avec d'autres identifiants
+       (compte joint, professionnel…) : un nom libre lui est proposé (`bnp_2`…). Si la
+       banque refuse les identifiants, son message s'affiche et le formulaire reste ouvert.
+    2. **Banques connectées** : chaque connexion (backend woob) a un bouton **Ajouter des
+       comptes**, qui ouvre la liste des comptes que woob trouve pour elle
+       (`woob bank list -b <banque>` : libellé, solde) ; on coche ceux à suivre et
+       **Suivre les comptes sélectionnés** les ajoute d'un coup, nommés d'après leur libellé
+       woob. Les comptes déjà suivis sont cochés et grisés. Après une connexion, cette liste
+       s'ouvre directement.
+
+  Seul un compte listé par woob peut être suivi : il n'y a plus de saisie manuelle de
+  l'identifiant. La modification d'un compte ne change que son nom.
 - **Synchronisation** : progression en direct, statut OK/KO de chaque étape par compte
   (opérations à venir, historique, notifications), nombre de transactions reçues et
   nouvelles, journal détaillé. Avec le réglage `woob_debug`, le journal affiche aussi, en

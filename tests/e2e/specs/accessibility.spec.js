@@ -73,8 +73,26 @@ test('the menus, modals and the synchronization log are readable', async ({ admi
     await page.keyboard.press('Escape');
     await expect(category).toHaveCount(0);
 
-    // A synchronization in error, with its log open
+    // Accounts: connecting a bank (its settings asked), then the accounts woob lists for one
     await openTab(page, tr('tabAccounts'));
+    await page.getByRole('button', { name: tr('connectBankTitle') }).click();
+    const connect = page.getByRole('dialog', { name: tr('connectBankTitle') });
+    await connect.getByLabel(new RegExp(tr('connectBankModule'))).selectOption('boursorama');
+    await expect(connect.locator('fieldset.bank-setup input').first()).toBeVisible();
+    // Measured once the settings are loaded: the connect button is enabled (not mid-change)
+    await expect(connect.getByRole('button', { name: tr('bankConnect') })).toBeEnabled();
+    problems.push(...await contrastProblems(page, tr('connectBankTitle')));
+    await page.keyboard.press('Escape');
+    await expect(connect).toHaveCount(0);
+
+    await page.getByRole('button', { name: tr('addAccountsTo', { bank: 'BNP Paribas (bnp)' }) }).click();
+    const add = page.getByRole('dialog', { name: tr('addAccountsTitle', { bank: 'BNP Paribas (bnp)' }) });
+    await expect(add.getByRole('checkbox')).toHaveCount(2);
+    problems.push(...await contrastProblems(page, tr('addAccountsTitle', { bank: 'BNP Paribas (bnp)' })));
+    await page.keyboard.press('Escape');
+    await expect(add).toHaveCount(0);
+
+    // A synchronization in error, with its log open
     await page.locator('.account-item').filter({ hasText: 'fail@bank' }).getByRole('button', { name: tr('syncAccount') }).click();
     await expect(page.locator('.sync-status')).toContainText(tr('syncStatus_error'));
     await page.getByRole('button', { name: tr('syncShowLog') }).click();

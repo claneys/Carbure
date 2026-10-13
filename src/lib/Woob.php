@@ -120,15 +120,17 @@ final class Woob {
     }
 
     /**
-     * List the bank accounts of every configured woob backend.
+     * List the bank accounts of every configured woob backend, or of one of them.
      *
+     * @param string|null $backend Only the accounts of this woob backend (-b), else of every one
      * @return list<array<mixed>> The accounts: id ("<account>@<backend>"), label, balance, currency...
      * @throws Exception If woob fails or returns nothing while reporting an error
      */
-    public static function listAccounts(): array
+    public static function listAccounts(?string $backend = null): array
     {
         $woob_path = self::path();
-        $command = "$woob_path bank list -f json" . self::loggingOptions();
+        $only = $backend === null ? '' : ' -b ' . escapeshellarg($backend);
+        $command = "$woob_path bank list$only -f json" . self::loggingOptions();
         Logger::debug("Calling woob : $command");
 
         // Plain JSON request: no Server-Sent Events heartbeat in the output

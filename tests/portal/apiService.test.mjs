@@ -157,3 +157,13 @@ test('syncBanks reports a refused synchronization', async () => {
     mockFetch(() => json({ error: 'Account not found' }, 404));
     await assert.rejects(createApiService(BASE, 't').syncBanks(() => {}, 'x@y'), { message: 'Account not found' });
 });
+
+test('the accounts of one bank connection are asked to woob with its name', async () => {
+    const calls = mockFetch(() => json([{ bankId: '1@bnp_2' }]));
+    const api = createApiService(BASE, 't');
+
+    assert.deepEqual(await api.discoverBankAccounts('bnp_2'), [{ bankId: '1@bnp_2' }]);
+    assert.equal(calls[0].url, `${BASE}/bank/discover?backend=bnp_2`);
+    await api.discoverBankAccounts();
+    assert.equal(calls[1].url, `${BASE}/bank/discover`);
+});

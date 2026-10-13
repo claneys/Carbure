@@ -270,6 +270,25 @@ class BankTest extends DatabaseTestCase
         $this->assertTrue(Bank::discover()[0]['followed']);
     }
 
+    public function testDiscoverTheAccountsOfOneBank()
+    {
+        $this->loginAs(self::ADMIN);
+        Bank::create('00012345678', 'cic_pro');
+
+        // woob bank list -b cic_pro: only the accounts of this bank connection
+        $accounts = Bank::discover('cic_pro');
+        $this->assertSame(['00012345678@cic_pro', '00087654321@cic_pro'], array_column($accounts, 'bankId'));
+        $this->assertSame(['cic_pro'], array_values(array_unique(array_column($accounts, 'bank_name'))));
+        $this->assertSame([true, false], array_column($accounts, 'followed'));
+
+        // Empty: every bank, as before
+        $this->assertSame('bnp', Bank::discover('')[0]['bank_name']);
+
+        $this->expectException(Error::class);
+        $this->expectExceptionCode(400);
+        Bank::discover('cic pro; id');
+    }
+
     public function testSyncRecordsTheLastResultOfEachAccount()
     {
         $this->loginAs(self::ADMIN);

@@ -52,9 +52,10 @@ bancaire tiers, pas de cloud. Les modules woob couvrent surtout les **banques fr
   secret, type de compte…). Ces identifiants sont confiés à woob, qui les garde dans son
   propre fichier, lisible par lui seul ; **Carbure ne les enregistre pas en base et ne les
   écrit pas dans les logs**.
-- **Suivre un compte** : « Rechercher mes comptes dans woob » liste les comptes des banques
-  configurées, avec leur libellé et leur solde ; un clic suit un compte. Un compte peut aussi
-  être saisi à la main (identifiant et banque).
+- **Suivre des comptes** : d'abord **connecter la banque**, puis, pour cette connexion,
+  **ajouter des comptes** parmi ceux que woob liste (`woob bank list -b <banque>`, avec leur
+  libellé et leur solde) : on coche ceux à suivre et ils sont ajoutés d'un coup. Seul un
+  compte trouvé par woob peut être suivi.
 - Les **comptes suivis** sont communs au foyer : chacun indique qui l'a ajouté, la date et le
   résultat de sa dernière synchronisation (Synchronisé, Échec avec le message, ou Jamais
   synchronisé). Ne plus suivre un compte conserve ses transactions déjà importées.

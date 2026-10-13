@@ -555,10 +555,12 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
 
     /**
      * Accounts available in the banks configured in woob (can take a while)
+     * @param {string|null} backend - Only the accounts of this bank connection (woob backend)
      * @returns {Promise<Array>} Array of {bankId, account_number, bank_name, label, balance, currency, followed}
      */
-    async function discoverBankAccounts() {
-        const data = await request(`${baseUrl}/bank/discover`, {}, 'Failed to query woob');
+    async function discoverBankAccounts(backend = null) {
+        const query = backend ? `?backend=${encodeURIComponent(backend)}` : '';
+        const data = await request(`${baseUrl}/bank/discover${query}`, {}, 'Failed to query woob');
         return Array.isArray(data) ? data : [];
     }
 

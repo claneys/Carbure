@@ -242,3 +242,31 @@ test('accounts: a bank already configured stays offered, with a free backend nam
     assert.equal(methods.backendModule.call(context, 'cic_pro'), 'cic');
     assert.equal(methods.backendModule.call(context, 'unknown'), 'unknown');
 });
+
+test('accounts: the accounts found by woob, the followed ones ticked and not followed again', async () => {
+    const { createAccountsModule } = await import('../../portal/modules/accountsModule.js');
+    const { methods } = createAccountsModule(() => null);
+    const context = {
+        bankAccounts: [{ bankId: '111@bnp_2' }],
+        bankModules: [{ module: 'bnp', description: 'BNP Paribas' }],
+        discoveredAccounts: [],
+        selectedAccounts: [],
+    };
+    for (const name of ['isFollowed', 'showDiscovered', 'accountsToFollow', 'backendName']) {
+        context[name] = methods[name].bind(context);
+    }
+
+    context.showDiscovered([
+        { bankId: '111@bnp_2', followed: false },
+        { bankId: '222@bnp_2', followed: true },
+        { bankId: '333@bnp_2', followed: false },
+    ]);
+    // Followed (in Carbure, or according to the API): ticked
+    assert.deepEqual(context.selectedAccounts, ['111@bnp_2', '222@bnp_2']);
+    assert.deepEqual(context.accountsToFollow(), []);
+    context.selectedAccounts.push('333@bnp_2');
+    assert.deepEqual(context.accountsToFollow().map(d => d.bankId), ['333@bnp_2']);
+
+    assert.equal(context.backendName({ name: 'bnp_2', module: 'bnp' }), 'BNP Paribas (bnp_2)');
+    assert.equal(context.backendName({ name: 'cic_pro', module: 'cic' }), 'cic_pro');
+});

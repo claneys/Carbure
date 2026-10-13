@@ -178,6 +178,21 @@ class WoobTest extends TestCase
         $this->assertStringContainsString($expected, $command);
     }
 
+    public function testAccountsOfOneBackend()
+    {
+        // bank list -b <backend>: the fake woob answers the accounts of the backend asked
+        $this->assertSame(['00012345678@cic_pro', '00087654321@cic_pro'], array_column(Woob::listAccounts('cic_pro'), 'id'));
+    }
+
+    public function testBackendIsEscaped()
+    {
+        // Without escaping, the shell would run the injected command
+        $marker = sys_get_temp_dir() . '/carbure-injection-' . uniqid();
+        Woob::listAccounts("x; touch $marker");
+
+        $this->assertFileDoesNotExist($marker);
+    }
+
     public function testBankIdIsEscaped()
     {
         // Without escaping, the shell would run the injected command

@@ -81,24 +81,26 @@ test('reports a synchronization error', async ({ adminPage: page }) => {
     await expect(account(page, 'fail@bank').locator('.account-sync-state')).toHaveText(tr('lastSync_ERROR'));
 });
 
-test('finds the accounts of a bank in woob and follows one', async ({ adminPage: page }) => {
+test('adds accounts of a connected bank, from the accounts woob lists for it', async ({ adminPage: page }) => {
     await openTab(page, tr('tabAccounts'));
-    await page.getByRole('button', { name: tr('addAccountTitle') }).click();
+    // The banks connected in woob (one per login)
+    await expect(page.locator('.bank-connection')).toHaveCount(2);
+    await page.getByRole('button', { name: tr('addAccountsTo', { bank: 'BNP Paribas (bnp)' }) }).click();
 
-    const modal = page.getByRole('dialog', { name: tr('addAccountTitle') });
-    await modal.getByRole('button', { name: tr('discoverAccounts') }).click();
-    const discovered = modal.locator('.discovered .account-item');
-    await expect(discovered).toHaveCount(2);
-    await expect(discovered.filter({ hasText: 'Compte chèques' })).toContainText(tr('accountFollowed'));
+    // woob bank list -b bnp: the account already followed is ticked and cannot be followed again
+    const modal = page.getByRole('dialog', { name: tr('addAccountsTitle', { bank: 'BNP Paribas (bnp)' }) });
+    const followed = modal.getByRole('checkbox', { name: /Compte chèques/ });
+    await expect(followed).toBeChecked();
+    await expect(followed).toBeDisabled();
+    await expect(modal.locator('.account-item').filter({ hasText: 'Compte chèques' })).toContainText(tr('accountFollowed'));
+    await expect(modal.getByRole('button', { name: tr('followSelected', { count: 0 }) })).toBeDisabled();
 
-    await discovered.filter({ hasText: 'Livret A' }).getByRole('button', { name: tr('followAccount') }).click();
-    await expect(modal.getByLabel(new RegExp(tr('accountNumber')))).toHaveValue('00087654321');
-    await expect(modal.getByLabel(new RegExp(escapeRegExp(tr('accountBank'))))).toHaveValue('bnp');
+    await modal.getByRole('checkbox', { name: /Livret A/ }).check();
+    await modal.getByRole('button', { name: tr('followSelected', { count: 1 }) }).click();
+
     // Named after its label in woob
-    await expect(modal.getByLabel(tr('accountLabel'))).toHaveValue('Livret A');
-    await modal.getByRole('button', { name: tr('save') }).click();
-
-    await expect(page.locator('.toast')).toHaveText(tr('accountAdded'));
+    await expect(page.locator('.toast')).toHaveText(tr('accountsFollowedToast', { count: 1 }));
+    await expect(modal).toHaveCount(0);
     await expect(account(page, '00087654321@bnp').locator('.account-name')).toContainText('Livret A');
 });
 
@@ -108,6 +110,9 @@ test('names an account, shown instead of the bank and the end of its number', as
     await bnp.getByRole('button', { name: tr('editAccount') }).click();
 
     let modal = page.getByRole('dialog', { name: tr('editAccount') });
+    // Only its name changes: the account comes from woob
+    await expect(modal.locator('.account-woob-id')).toContainText('00012345678@bnp');
+    await expect(modal.getByRole('textbox')).toHaveCount(1);
     await expect(modal.getByLabel(tr('accountLabel'))).toHaveValue('');
     await modal.getByLabel(tr('accountLabel')).fill('Compte joint');
     await modal.getByRole('button', { name: tr('save') }).click();
@@ -130,16 +135,11 @@ test('names an account, shown instead of the bank and the end of its number', as
     await expect(bnp.locator('.account-name')).toContainText('BNP ···5678');
 });
 
-test('approves the strong authentication asked by a bank', async ({ adminPage: page }) => {
+test('approves the strong authentication asked by a bank', async ({ adminPage: page, api }) => {
     // Account of the fake woob that only answers in interactive mode (on a terminal)
+    const created = await api.post('/api/bank', { data: { account_number: '2fa', bank_name: 'bank' } });
+    expect(created.ok(), await created.text()).toBeTruthy();
     await openTab(page, tr('tabAccounts'));
-    await page.getByRole('button', { name: tr('addAccountTitle') }).click();
-    const modal = page.getByRole('dialog', { name: tr('addAccountTitle') });
-    await modal.locator('#field-2').selectOption('__other');
-    await modal.getByPlaceholder(tr('accountBankPlaceholder')).fill('bank');
-    await modal.getByLabel(new RegExp(tr('accountNumber'))).fill('2fa');
-    await modal.getByRole('button', { name: tr('save') }).click();
-    await expect(page.locator('.toast')).toHaveText(tr('accountAdded'));
 
     // A normal synchronization fails: woob needs the interactive mode
     await account(page, '2fa@bank').getByRole('button', { name: tr('syncAccount') }).click();
@@ -158,68 +158,88 @@ test('approves the strong authentication asked by a bank', async ({ adminPage: p
     await expect(account(page, '2fa@bank').locator('.account-sync-state')).toHaveText(tr('lastSync_OK'));
 });
 
-test('adds an account of a bank typed by hand, modifies then deletes it', async ({ adminPage: page }) => {
+test('stops following an account', async ({ adminPage: page }) => {
     await openTab(page, tr('tabAccounts'));
-    await page.getByRole('button', { name: tr('addAccountTitle') }).click();
-
-    let modal = page.getByRole('dialog', { name: tr('addAccountTitle') });
-    await modal.locator('#field-2').selectOption('__other');
-    await modal.getByPlaceholder(tr('accountBankPlaceholder')).fill('mabanque');
-    await modal.getByLabel(new RegExp(tr('accountNumber'))).fill('FR7600001111');
-    await modal.getByRole('button', { name: tr('save') }).click();
-    await expect(page.locator('.toast')).toHaveText(tr('accountAdded'));
-    await expect(account(page, 'FR7600001111@mabanque')).toBeVisible();
-
-    await account(page, 'FR7600001111@mabanque').getByRole('button', { name: tr('editAccount') }).click();
-    modal = page.getByRole('dialog', { name: tr('editAccount') });
-    await modal.getByLabel(new RegExp(tr('accountNumber'))).fill('FR7600002222');
-    await modal.getByRole('button', { name: tr('save') }).click();
-    await expect(page.locator('.toast')).toHaveText(tr('accountUpdated'));
-    await expect(account(page, 'FR7600002222@mabanque')).toBeVisible();
-
-    await account(page, 'FR7600002222@mabanque').getByRole('button', { name: tr('deleteAccount') }).click();
+    await account(page, 'fail@bank').getByRole('button', { name: tr('deleteAccount') }).click();
     await expect(page.locator('.toast')).toHaveText(tr('accountDeleted'));
-    await expect(account(page, 'FR7600002222@mabanque')).toHaveCount(0);
+    await expect(account(page, 'fail@bank')).toHaveCount(0);
+    await expect(page.locator('.accounts-list .account-item')).toHaveCount(1);
 });
 
-test('asks the settings of a bank not configured in woob yet', async ({ adminPage: page }) => {
+/** Opens the modal connecting a bank and chooses its woob module */
+async function connectModal(page, module) {
     await openTab(page, tr('tabAccounts'));
-    await page.getByRole('button', { name: tr('addAccountTitle') }).click();
+    await page.getByRole('button', { name: tr('connectBankTitle') }).click();
+    const modal = page.getByRole('dialog', { name: tr('connectBankTitle') });
+    await modal.getByLabel(new RegExp(tr('connectBankModule'))).selectOption(module);
+    return modal;
+}
 
-    const modal = page.getByRole('dialog', { name: tr('addAccountTitle') });
-    await modal.locator('#field-2').selectOption('__new:boursorama');
+test('connects a new bank, then follows two of its accounts at once', async ({ adminPage: page }) => {
+    // Boursorama: woob installs its module to describe its settings
+    const modal = await connectModal(page, 'boursorama');
     const setup = modal.locator('fieldset.bank-setup');
-    await expect(setup).toBeVisible();
     await expect(setup.getByLabel('Numéro client *')).toBeVisible();
     await expect(setup.getByLabel('Code secret *')).toHaveAttribute('type', 'password');
+    await expect(setup.getByLabel(tr('bankBackendName'))).toHaveValue('boursorama');
+    await setup.getByLabel('Numéro client *').fill('12345678');
+    await setup.getByLabel('Code secret *').fill('123456');
+    await modal.getByRole('button', { name: tr('bankConnect') }).click();
+
+    // Straight to its accounts, listed by woob
+    await expect(page.locator('.toast')).toHaveText(tr('bankConnected'));
+    await expect(modal).toHaveCount(0);
+    const add = page.getByRole('dialog', { name: tr('addAccountsTitle', { bank: 'Boursorama (boursorama)' }) });
+    await expect(add.getByRole('checkbox')).toHaveCount(2);
+    await add.getByRole('checkbox', { name: /Compte chèques/ }).check();
+    await add.getByRole('checkbox', { name: /Livret A/ }).check();
+    await add.getByRole('button', { name: tr('followSelected', { count: 2 }) }).click();
+
+    await expect(page.locator('.toast')).toHaveText(tr('accountsFollowedToast', { count: 2 }));
+    await expect(account(page, '00012345678@boursorama').locator('.account-name')).toContainText('Compte chèques');
+    await expect(account(page, '00087654321@boursorama').locator('.account-name')).toContainText('Livret A');
+    // The bank by its name, its woob name next to it (not repeated)
+    const connection = page.locator('.bank-connection').filter({ hasText: 'Boursorama' });
+    await expect(connection).toHaveCount(1);
+    await expect(connection.locator('.account-name')).toHaveText('Boursorama');
+    await expect(connection.locator('code')).toHaveText('boursorama');
 });
 
-test('connects a second login of a bank already configured', async ({ adminPage: page }) => {
+test('connects a second login of a bank already connected', async ({ adminPage: page }) => {
     await openTab(page, tr('tabAccounts'));
-    await page.getByRole('button', { name: tr('addAccountTitle') }).click();
+    await page.getByRole('button', { name: tr('connectBankTitle') }).click();
+    const modal = page.getByRole('dialog', { name: tr('connectBankTitle') });
 
-    // BNP is configured (backend bnp): it stays offered for another login
-    const modal = page.getByRole('dialog', { name: tr('addAccountTitle') });
-    const bank = modal.locator('#field-2');
-    await expect(bank.locator('option[value="__new:bnp"]')).toContainText(tr('bankAnotherLogin'));
-    await bank.selectOption('__new:bnp');
-
-    // A free name is proposed for this access
+    // BNP is connected (backend bnp): it stays offered for another login, with a free name
+    const bank = modal.getByLabel(new RegExp(tr('connectBankModule')));
+    await expect(bank.locator('option[value="bnp"]')).toContainText(tr('bankAnotherLogin'));
+    await bank.selectOption('bnp');
     const setup = modal.locator('fieldset.bank-setup');
     await expect(setup.getByLabel(tr('bankBackendName'))).toHaveValue('bnp_2');
     await setup.getByLabel('Numéro client *').fill('87654321');
     await setup.getByLabel('Code secret *').fill('123456');
-    await setup.getByRole('button', { name: tr('bankConnect') }).click();
+    await modal.getByRole('button', { name: tr('bankConnect') }).click();
 
     // The accounts of this login, under its own name
-    await expect(page.locator('.toast')).toHaveText(tr('bankConnected'));
-    await expect(bank).toHaveValue('bnp_2');
-    const discovered = modal.locator('.discovered .account-item');
-    await expect(discovered).toHaveCount(2);
-    await discovered.filter({ hasText: 'Livret A' }).getByRole('button', { name: tr('followAccount') }).click();
-    await modal.getByRole('button', { name: tr('save') }).click();
+    const add = page.getByRole('dialog', { name: tr('addAccountsTitle', { bank: 'BNP Paribas (bnp_2)' }) });
+    await add.getByRole('checkbox', { name: /Livret A/ }).check();
+    await add.getByRole('button', { name: tr('followSelected', { count: 1 }) }).click();
 
-    await expect(page.locator('.toast')).toHaveText(tr('accountAdded'));
+    await expect(page.locator('.toast')).toHaveText(tr('accountsFollowedToast', { count: 1 }));
     await expect(account(page, '00087654321@bnp_2')).toBeVisible();
     await expect(account(page, '00012345678@bnp')).toBeVisible();
+});
+
+test('a bank refusing the credentials can be connected again', async ({ adminPage: page }) => {
+    const modal = await connectModal(page, 'cic');
+    const setup = modal.locator('fieldset.bank-setup');
+    await setup.getByLabel('Numéro client *').fill('wrong');
+    await setup.getByLabel('Code secret *').fill('123456');
+    await modal.getByRole('button', { name: tr('bankConnect') }).click();
+
+    // The error of the bank, the modal kept to correct the credentials
+    await expect(setup.getByRole('alert')).toContainText('Identifiant ou mot de passe incorrect');
+    await setup.getByLabel('Numéro client *').fill('12345678');
+    await modal.getByRole('button', { name: tr('bankConnect') }).click();
+    await expect(page.getByRole('dialog', { name: tr('addAccountsTitle', { bank: 'CIC (cic)' }) })).toBeVisible();
 });

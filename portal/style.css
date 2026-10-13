@@ -1248,6 +1248,10 @@ button .material-icons {
 .modal {
     width: 100%;
     max-width: 460px;
+    /* A tall modal fits the window: its body scrolls, header and footer stay visible */
+    max-height: calc(100vh - 32px);
+    display: flex;
+    flex-direction: column;
     background: var(--surface);
     border-radius: var(--border-radius-xl);
     box-shadow: var(--shadow-4);
@@ -1291,6 +1295,8 @@ button .material-icons {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 .modal-body label {
@@ -1298,6 +1304,14 @@ button .material-icons {
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
+}
+
+/* An account found by woob: its label and woob id as they are (not a field label) */
+.modal-body .accounts-list.discovered label.account-details {
+    text-transform: none;
+    letter-spacing: normal;
+    font-size: 14px;
+    color: var(--text-primary);
 }
 
 .modal-body input[type="number"] {
@@ -3498,6 +3512,63 @@ button .material-icons {
 
 .accounts-list.discovered {
     margin-bottom: 16px;
+}
+
+/* Accounts found by woob: a checkbox per account, its whole line clickable */
+.accounts-list.discovered input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--primary-color);
+    cursor: pointer;
+}
+
+.accounts-list.discovered label.account-details {
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+}
+
+.accounts-list.discovered input[type="checkbox"]:disabled,
+.accounts-list.discovered input[type="checkbox"]:disabled + label.account-details {
+    cursor: default;
+}
+
+/* Sections of the Accounts page: connected banks, then followed accounts */
+.accounts-section-title {
+    margin: 20px 0 4px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.bank-connections {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+}
+
+.bank-connection {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--divider);
+}
+
+.bank-connection:last-child {
+    border-bottom: none;
+}
+
+.bank-connection button {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.account-woob-id {
+    margin-bottom: 12px;
+    color: var(--text-secondary);
 }
 
 .account-form {

@@ -5,7 +5,7 @@
  *
  * Test double of the woob CLI used by the tests (woob_path = "php tests/fixtures/fake-woob.php").
  * Usage: fake-woob.php bank <coming|history> <account@bank> [options...]
- *        fake-woob.php bank list -b <backend> -f json   (two accounts, "none": no account)
+ *        fake-woob.php bank list [-b <backend>] -f json (two accounts, "none": no account)
  *        fake-woob.php config info <module> -f json       (settings once installed, like woob 3.7)
  *        fake-woob.php config add <module> '"<backend> key=value ..."' (installs with the probe name)
  *
@@ -102,7 +102,7 @@ if (($argv[1] ?? '') === 'bank' && $type === 'list') {
     $added = @json_decode((string)@file_get_contents(sys_get_temp_dir() . '/carbure-fake-woob-add.json'), true);
     $backend = $index === false ? ($added['backend'] ?? 'bnp') : $argv[$index + 1];
     // A bank added with the login "wrong": the bank refuses the connection
-    if ($index === false && ($added['params']['login'] ?? '') === 'wrong') {
+    if ($backend === ($added['backend'] ?? null) && ($added['params']['login'] ?? '') === 'wrong') {
         fwrite(STDERR, "Error(" . $added['backend'] . "): BrowserIncorrectPassword: Identifiant ou mot de passe incorrect\n");
         exit(1);
     }

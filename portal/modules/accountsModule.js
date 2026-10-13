@@ -1,13 +1,19 @@
 /**
  * Accounts Module
  *
- * Bank accounts of the household (administrators): list with the result of the
- * last synchronization, add (from the accounts woob finds, or manually) and
- * modify in a modal, delete. A bank not configured in woob yet is connected
- * from the modal: its credentials are given to woob, never stored by Carbure.
+ * Bank accounts of the household (administrators), added in two steps:
+ * 1. connect a bank (a woob backend): its credentials are given to woob, never
+ *    stored by Carbure; several connections of the same bank are allowed;
+ * 2. add accounts to a connected bank: only the accounts woob lists for it
+ *    (bank list -b <backend>) can be followed.
+ * Followed accounts: list with the result of the last synchronization, label
+ * modified in a modal, delete.
  *
  * @module accountsModule
  */
+
+/** Configuration in woob of a bank being connected, empty */
+const EMPTY_SETUP = { module: '', backend: '', description: '', fields: [], values: {}, loading: false, busy: false, error: null };
 
 /**
  * Creates an accounts module mixin for Vue components
@@ -18,34 +24,39 @@ export function createAccountsModule(getApiService) {
     return {
         data() {
             return {
+                // Label of a followed account, modified in a modal
                 showAccountModal: false,
                 savingAccount: false,
-                // Account of the modal: {id (null for a new one), account_number, bank_name, label}
+                // Account of the modal: {id, account_number, bank_name, label}
                 accountForm: { id: null, account_number: '', bank_name: '', label: '' },
-                discoveredAccounts: [],
-                // Banks configured in woob: [{name, module}]
+                // Banks connected in woob (backends): [{name, module}]
                 bankBackends: [],
                 // Banks supported by woob: [{module, description}]
                 bankModules: [],
-                // Bank of the manual form: a backend name, '__new:<module>' to connect a
-                // (new) login of a supported bank, or '__other' to type it
-                newAccountBank: '',
+                // Step 1: connect a bank (woob module chosen in the modal)
+                showConnectModal: false,
+                connectModule: '',
+                bankSetup: { ...EMPTY_SETUP },
+                // Step 2: accounts woob lists for one connected bank, to follow
+                showAddAccountsModal: false,
+                addAccountsBackend: '',
+                discoveredAccounts: [],
+                selectedAccounts: [],
                 discovering: false,
                 discoverError: null,
-                // Configuration in woob of a bank not configured yet
-                bankSetup: { module: '', backend: '', description: '', fields: [], values: {}, loading: false, busy: false, error: null }
+                followingAccounts: false
             };
         },
 
         watch: {
             /**
-             * A supported bank not configured yet: load the settings it asks for
+             * A bank chosen in the connection modal: load the settings it asks for
              */
-            newAccountBank() {
-                if (this.showAccountModal && this.chosenBankNotConfigured()) {
-                    this.loadBankSetup(this.newAccountBank.slice('__new:'.length));
+            connectModule() {
+                if (this.showConnectModal && this.connectModule) {
+                    this.loadBankSetup(this.connectModule);
                 } else {
-                    this.bankSetup = { ...this.bankSetup, module: '', fields: [], error: null };
+                    this.bankSetup = { ...EMPTY_SETUP };
                 }
             }
         },
@@ -72,7 +83,25 @@ export function createAccountsModule(getApiService) {
             },
 
             /**
-             * Configures the bank in woob, then shows its accounts to follow
+             * Opens the modal connecting a bank (step 1)
+             */
+            openConnectModal() {
+                this.connectModule = '';
+                this.bankSetup = { ...EMPTY_SETUP };
+                this.showConnectModal = true;
+            },
+
+            /**
+             * Closes the modal connecting a bank (the credentials typed are forgotten)
+             */
+            closeConnectModal() {
+                this.showConnectModal = false;
+                this.connectModule = '';
+                this.bankSetup = { ...EMPTY_SETUP };
+            },
+
+            /**
+             * Configures the bank in woob, then shows its accounts to follow (step 2)
              * @returns {Promise<void>}
              */
             async connectBank() {
@@ -99,15 +128,14 @@ export function createAccountsModule(getApiService) {
                 try {
                     const result = await getApiService().createBankBackend(setup.module, setup.backend, setup.values);
                     // The credentials leave the page as soon as woob has them
-                    this.bankSetup = { module: '', backend: '', description: '', fields: [], values: {}, loading: false, busy: false, error: null };
+                    this.closeConnectModal();
                     await this.loadBankBackends();
                     // Configured now, even if woob lists it a bit later
                     if (!this.bankBackends.some(b => b.name === result.backend)) {
                         this.bankBackends = [...this.bankBackends, { name: result.backend, module: setup.module }];
                     }
-                    this.newAccountBank = result.backend;
-                    this.discoveredAccounts = result.accounts;
                     this.showToast(this.t(result.accounts.length ? 'bankConnected' : 'bankConnectedNoAccount'));
+                    this.openAddAccounts(result.backend, result.accounts);
                 } catch (error) {
                     this.bankSetup = { ...this.bankSetup, busy: false, error: error.message };
                 }
@@ -119,7 +147,7 @@ export function createAccountsModule(getApiService) {
              */
             async loadBankBackends() {
                 const api = getApiService();
-                // The selector still offers "Other" (typed name) if woob does not answer
+                // Each list stays empty if woob does not answer
                 const [backends, modules] = await Promise.allSettled([api.fetchBankBackends(), api.fetchBankModules()]);
                 this.bankBackends = backends.status === 'fulfilled' ? backends.value : [];
                 this.bankModules = modules.status === 'fulfilled' ? modules.value : [];
@@ -161,21 +189,33 @@ export function createAccountsModule(getApiService) {
             },
 
             /**
-             * Checks if the bank chosen in the form still has to be configured in woob
-             * (a login to connect)
-             * @returns {boolean}
-             */
-            chosenBankNotConfigured() {
-                return this.newAccountBank.startsWith('__new:');
-            },
-
-            /**
              * Checks if an account found by woob is followed (from the current list)
              * @param {Object} discovered - Account found by woob
              * @returns {boolean}
              */
             isFollowed(discovered) {
-                return this.bankAccounts.some(a => a.bankId === discovered.bankId);
+                return Boolean(discovered.followed) || this.bankAccounts.some(a => a.bankId === discovered.bankId);
+            },
+
+            /**
+             * Name of the bank of a connection, without its woob name (shown next to it)
+             * @param {{name: string, module: string}} backend - Backend of woob
+             * @returns {string}
+             */
+            bankDescription(backend) {
+                const module = this.bankModules.find(m => m.module === backend.module);
+                return module && module.description ? module.description : backend.name;
+            },
+
+            /**
+             * Name of a connected bank with its woob name, to tell two logins apart
+             * ("BNP Paribas (bnp_2)")
+             * @param {{name: string, module: string}} backend - Backend of woob
+             * @returns {string}
+             */
+            backendName(backend) {
+                const module = this.bankModules.find(m => m.module === backend.module);
+                return module && module.description ? `${module.description} (${backend.name})` : backend.name;
             },
 
             /**
@@ -209,14 +249,25 @@ export function createAccountsModule(getApiService) {
             },
 
             /**
-             * Asks woob for the accounts of the configured banks
+             * Opens the modal adding accounts to a connected bank (step 2), with the
+             * accounts woob lists for it
+             * @param {string} backend - woob backend (bank connection)
+             * @param {Array|null} accounts - Accounts already listed (just connected), else asked to woob
              * @returns {Promise<void>}
              */
-            async discoverAccounts() {
-                this.discovering = true;
+            async openAddAccounts(backend, accounts = null) {
+                this.addAccountsBackend = backend;
+                this.selectedAccounts = [];
                 this.discoverError = null;
+                this.showAddAccountsModal = true;
+                if (accounts) {
+                    this.showDiscovered(accounts);
+                    return;
+                }
+                this.discoveredAccounts = [];
+                this.discovering = true;
                 try {
-                    this.discoveredAccounts = await getApiService().discoverBankAccounts();
+                    this.showDiscovered(await getApiService().discoverBankAccounts(backend));
                 } catch (error) {
                     this.discoverError = error.message;
                 } finally {
@@ -225,21 +276,61 @@ export function createAccountsModule(getApiService) {
             },
 
             /**
-             * Opens the account modal to add an account, or to modify the given one
-             * @param {Object|null} account - Account to modify
+             * Shows the accounts found by woob, the followed ones ticked (and disabled)
+             * @param {Array} accounts - Accounts found by woob
              */
-            openAccountModal(account = null) {
-                this.accountForm = account
-                    ? { id: account.id, account_number: account.account_number, bank_name: account.bank_name, label: account.label || '' }
-                    : { id: null, account_number: '', bank_name: '', label: '' };
-                const bank = account ? account.bank_name : '';
-                if (!bank || this.bankBackends.some(b => b.name === bank)) {
-                    this.newAccountBank = bank;
-                } else {
-                    this.newAccountBank = this.bankModules.some(m => m.module === bank) ? `__new:${bank}` : '__other';
-                }
+            showDiscovered(accounts) {
+                this.discoveredAccounts = accounts;
+                this.selectedAccounts = accounts.filter(d => this.isFollowed(d)).map(d => d.bankId);
+            },
+
+            /**
+             * Closes the modal adding accounts
+             */
+            closeAddAccounts() {
+                this.showAddAccountsModal = false;
                 this.discoveredAccounts = [];
-                this.discoverError = null;
+                this.selectedAccounts = [];
+            },
+
+            /**
+             * Accounts ticked in the modal that are not followed yet
+             * @returns {Array} Accounts found by woob
+             */
+            accountsToFollow() {
+                return this.discoveredAccounts.filter(d => this.selectedAccounts.includes(d.bankId) && !this.isFollowed(d));
+            },
+
+            /**
+             * Follows the accounts ticked in the modal, named after their label in woob
+             * @returns {Promise<void>}
+             */
+            async followSelectedAccounts() {
+                const chosen = this.accountsToFollow();
+                if (!chosen.length) {
+                    return;
+                }
+                this.followingAccounts = true;
+                try {
+                    for (const d of chosen) {
+                        await getApiService().createBankAccount(String(d.account_number), d.bank_name, d.label ? String(d.label).slice(0, 100) : '');
+                    }
+                    this.showToast(this.t('accountsFollowedToast', { count: chosen.length }));
+                    this.closeAddAccounts();
+                } catch (error) {
+                    this.showToast(error.message);
+                } finally {
+                    this.followingAccounts = false;
+                    await this.loadBankAccounts();
+                }
+            },
+
+            /**
+             * Opens the modal naming a followed account (its number and bank come from woob)
+             * @param {Object} account - Account to modify
+             */
+            openAccountModal(account) {
+                this.accountForm = { id: account.id, account_number: account.account_number, bank_name: account.bank_name, label: account.label || '' };
                 this.showAccountModal = true;
             },
 
@@ -248,49 +339,18 @@ export function createAccountsModule(getApiService) {
              */
             closeAccountModal() {
                 this.showAccountModal = false;
-                this.bankSetup = { module: '', backend: '', description: '', fields: [], values: {}, loading: false, busy: false, error: null };
             },
 
             /**
-             * Fills the modal with an account found by woob (named after its label in woob)
-             * @param {Object} discovered - Account found by woob
-             */
-            pickDiscovered(discovered) {
-                this.accountForm.account_number = String(discovered.account_number);
-                this.accountForm.label = discovered.label ? String(discovered.label).slice(0, 100) : '';
-                const known = this.bankBackends.some(b => b.name === discovered.bank_name);
-                this.newAccountBank = known ? discovered.bank_name : '__other';
-                this.accountForm.bank_name = discovered.bank_name;
-            },
-
-            /**
-             * Adds or modifies the account of the modal
+             * Saves the name of the account of the modal
              * @returns {Promise<void>}
              */
             async submitAccountForm() {
                 const form = this.accountForm;
-                if (this.chosenBankNotConfigured()) {
-                    // Login not connected: the account is followed under the backend name
-                    form.bank_name = this.bankSetup.backend || this.newAccountBank.slice('__new:'.length);
-                } else if (this.newAccountBank !== '__other') {
-                    form.bank_name = this.newAccountBank;
-                }
-                const number = String(form.account_number).trim();
-                const bank = String(form.bank_name).trim();
-                const label = String(form.label || '').trim();
-                if (!number || !bank) {
-                    this.showToast(this.t('accountRequired'));
-                    return;
-                }
                 this.savingAccount = true;
                 try {
-                    if (form.id) {
-                        await getApiService().updateBankAccount(form.id, number, bank, label);
-                        this.showToast(this.t('accountUpdated'));
-                    } else {
-                        await getApiService().createBankAccount(number, bank, label);
-                        this.showToast(this.t('accountAdded'));
-                    }
+                    await getApiService().updateBankAccount(form.id, String(form.account_number), form.bank_name, String(form.label || '').trim());
+                    this.showToast(this.t('accountUpdated'));
                     this.showAccountModal = false;
                     await this.loadBankAccounts();
                 } catch (error) {
