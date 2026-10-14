@@ -1,4 +1,6 @@
 ---
+title: "Sécurité : authentification, données bancaires et image Docker"
+description: "Comment Carbure protège les données du foyer : mots de passe, JWT, blocage des connexions, identifiants bancaires gardés par woob et analyse de l'image Docker."
 icon: material/shield-lock-outline
 ---
 

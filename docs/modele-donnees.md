@@ -1,4 +1,6 @@
 ---
+title: "Modèle de données : tables MariaDB et migrations"
+description: "Le schéma de la base de données de Carbure (MariaDB ou MySQL) : utilisateurs, comptes, transactions, catégories, règles, budgets, insights et migrations."
 icon: material/database-outline
 ---
 

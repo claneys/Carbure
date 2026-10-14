@@ -1,4 +1,6 @@
 ---
+title: "Référence de l'API REST"
+description: "Référence de l'API REST de Carbure : authentification JWT, transactions, comptes, synchronisation bancaire, budgets, catégories, règles et administration."
 icon: material/api
 ---
 

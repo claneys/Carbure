@@ -1,0 +1,20 @@
+{#-
+  Page not found: in French, with the ways back into the documentation.
+-#}
+{% extends "main.html" %}
+{% block htmltitle %}
+  <title>Page introuvable - {{ config.site_name }}</title>
+{% endblock %}
+{% block content %}
+  <h1>Page introuvable</h1>
+  <p>Cette page n'existe pas ou a été déplacée. Ces pages de la documentation de Carbure
+  peuvent vous aider :</p>
+  <ul>
+    <li><a href="{{ config.site_url }}">Accueil</a> : Carbure, le budget du foyer auto-hébergé</li>
+    <li><a href="{{ config.site_url }}fonctionnalites/">Fonctionnalités</a></li>
+    <li><a href="{{ config.site_url }}installation/">Installation</a> et
+      <a href="{{ config.site_url }}synology/">tutoriel NAS Synology</a></li>
+    <li><a href="{{ config.site_url }}comparatif/">Comparatif</a> avec Firefly III, Actual Budget et Kresus</li>
+  </ul>
+  <p>La recherche, en haut de la page, parcourt toute la documentation.</p>
+{% endblock %}

@@ -1,4 +1,6 @@
 ---
+title: "Comparatif : Carbure, Firefly III, Actual Budget et Kresus"
+description: "Carbure comparé aux gestionnaires de budget open source à héberger soi-même : Firefly III, Actual Budget et Kresus. Connexion bancaire, budgets, mobile et agent IA."
 icon: material/scale-balance
 ---
 
@@ -67,3 +69,6 @@ seul utilisateur (Kresus).
 !!! note "Sources"
     D'après la documentation de chaque projet, en octobre 2026. Une erreur ou un oubli ?
     Signalez-le dans une [issue](https://github.com/ltoinel/Carbure/issues).
+
+Pour aller plus loin : le détail des [fonctionnalités](fonctionnalites.md) de Carbure, puis
+son [installation avec Docker](installation.md) ou sur un [NAS Synology](synology.md).

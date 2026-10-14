@@ -1,4 +1,6 @@
 ---
+title: "Portail web : transactions, budgets et administration"
+description: "Les écrans du portail web de Carbure : transactions du mois, recherche, import de relevés, budgets, flux, tendances, insights, comptes, règles et utilisateurs."
 icon: material/monitor-dashboard
 ---
 
@@ -70,7 +72,7 @@ modification.
 
 ## Transactions
 
-![Transactions](assets/screenshot-transactions.png)
+![Écran Transactions du portail web Carbure](assets/screenshot-transactions.png)
 
 - Statistiques du mois : revenus, dépenses, solde.
 - Liste compacte des transactions avec l'icône et la couleur de leur catégorie (celles du
@@ -113,7 +115,7 @@ modification.
 
 ## Budget
 
-![Flux du mois](assets/screenshot-flow.png)
+![Écran Budgets : flux du mois en diagramme de Sankey](assets/screenshot-flow.png)
 
 Deux sous-onglets : **Flux** (affiché par défaut) et **Budgets**.
 
@@ -158,7 +160,7 @@ tables `users`, `api_tokens` et `devices` (voir [Sécurité](securite.md#insight
 
 ## Tendances
 
-![Tendances](assets/screenshot-trends.png)
+![Écran Tendances du portail web Carbure](assets/screenshot-trends.png)
 
 - Période de **3, 6 ou 12 mois** se terminant au mois courant.
 - **Comparer à** : sans comparaison, la période précédente ou la même période l'an

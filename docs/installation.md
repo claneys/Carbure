@@ -1,4 +1,6 @@
 ---
+title: "Installation avec Docker : budget familial auto-hébergé"
+description: "Installer Carbure avec Docker : image nginx, PHP-FPM et woob, base MariaDB, assistant d'installation dans le navigateur et mises à jour automatiques de la base."
 icon: material/download-outline
 ---
 
@@ -12,6 +14,9 @@ compte administrateur. Aucune commande n'est nécessaire.
   préparée par `docker/docker-compose.yml`.
 - **NAS Synology** : voir le [tutoriel pas à pas](synology.md).
 - **Serveur web existant** (PHP + MariaDB/MySQL), sans Docker.
+
+Avant d'installer, découvrez les [fonctionnalités](fonctionnalites.md) de Carbure et son
+[comparatif](comparatif.md) avec les autres gestionnaires de budget à héberger soi-même.
 
 ## Avec Docker (recommandé)
 

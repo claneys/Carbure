@@ -1,4 +1,6 @@
 ---
+title: "Tutoriel : installer Carbure sur un NAS Synology"
+description: "Installer Carbure sur un NAS Synology (DSM 7.2) avec Container Manager et MariaDB 10, sans ligne de commande, puis synchroniser ses comptes bancaires chaque jour."
 icon: material/nas
 ---
 

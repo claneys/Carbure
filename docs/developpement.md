@@ -1,4 +1,6 @@
 ---
+title: "Développement : contribuer à Carbure"
+description: "Contribuer à Carbure : organisation du dépôt, environnement Docker, tests PHPUnit et Playwright, analyse PHPStan, conventions et intégration continue."
 icon: material/code-braces
 ---
 

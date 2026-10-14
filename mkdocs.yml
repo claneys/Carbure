@@ -1,5 +1,8 @@
 site_name: Carbure
-site_description: Portail web de suivi du budget et des transactions bancaires du foyer
+site_description: >-
+  Gestionnaire de budget du foyer gratuit, open source et auto-hébergé : synchronisation
+  bancaire automatique, catégories, budgets et tendances
+site_author: Ludovic Toinel
 site_url: https://carbure.org/
 repo_url: https://github.com/ltoinel/Carbure
 repo_name: ltoinel/Carbure
@@ -11,6 +14,8 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
+  # Page titles, Open Graph / Twitter metadata, structured data, French 404 page
+  custom_dir: overrides
   language: fr
   # Icon of the application in the header and the browser tab
   logo: assets/logo.png

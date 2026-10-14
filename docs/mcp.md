@@ -1,4 +1,6 @@
 ---
+title: "Agents IA (MCP) : interroger son budget avec Claude ou ChatGPT"
+description: "Connecter un agent IA (Claude, ChatGPT, Cursor, Copilot, Gemini) au budget du foyer grâce au serveur MCP de Carbure, en lecture seule, par OAuth ou jeton."
 icon: material/robot-outline
 ---
 

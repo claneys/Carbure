@@ -1,13 +1,16 @@
 ---
+title: "Carbure : budget familial auto-hébergé avec synchronisation bancaire"
+description: "Carbure, gestionnaire de budget du foyer gratuit et open source à héberger soi-même : synchronisation des banques françaises, catégories, budgets, tendances."
 icon: material/home-outline
 ---
 
-# Carbure
+# Carbure, le budget du foyer auto-hébergé
 
 **Carbure** est un portail web de suivi du budget et des transactions bancaires du foyer,
-gratuit et auto-hébergé. Les opérations sont récupérées automatiquement auprès de la
-banque grâce à [woob](https://woob.tech/), nettoyées et catégorisées par mots-clés, puis
-consultées :
+gratuit, [open source](https://github.com/ltoinel/Carbure) et auto-hébergé : sur un
+serveur, un NAS Synology ou n'importe quelle machine avec Docker, les données restent chez
+vous. Les opérations sont récupérées automatiquement auprès des banques françaises grâce à
+[woob](https://woob.tech/), nettoyées et catégorisées par mots-clés, puis consultées :
 
 - dans le **portail web** (`portal/`, Vue 3) : transactions, pointage, recherche,
   transactions récurrentes, import de relevés, budgets, insights, tendances, et pour les administrateurs règles, catégories, comptes
