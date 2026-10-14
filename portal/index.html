@@ -1162,9 +1162,9 @@
                                 </div>
                                 <div class="panel-actions">
                                     <!-- Every followed account, with the progress panel below -->
-                                    <button type="button" class="btn-secondary accounts-sync-all" @click="startSync()" :disabled="syncStatus === 'running' || bankAccounts.length === 0">
+                                    <button type="button" class="btn-icon btn-icon-sync accounts-sync-all" @click="startSync()" :disabled="syncStatus === 'running' || bankAccounts.length === 0"
+                                            :title="t('syncAllAccounts')" :aria-label="t('syncAllAccounts')">
                                         <span class="material-icons" :class="{ spin: syncStatus === 'running' && syncTarget === null }" aria-hidden="true">sync</span>
-                                        {{ t('syncAllAccounts') }}
                                     </button>
                                     <!-- Step 1 of the addition of accounts: a labeled entry point -->
                                     <button type="button" class="btn-add" @click="openConnectModal()">

@@ -2030,6 +2030,18 @@ button .material-icons {
     color: var(--info-color);
 }
 
+.btn-icon-sync:hover {
+    background: var(--info-light);
+    color: var(--info-color);
+}
+
+/* An icon button stays an icon when disabled (a synchronization running) */
+.btn-icon:disabled {
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: not-allowed;
+}
+
 .btn-icon-delete:hover {
     background: var(--error-light);
     color: var(--error-color);

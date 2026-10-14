@@ -63,7 +63,11 @@ test('shows the debug logs of woob in the synchronization log', async ({ adminPa
 
 test('synchronizes every account at once', async ({ adminPage: page }) => {
     await openTab(page, tr('tabAccounts'));
-    await page.getByRole('button', { name: tr('syncAllAccounts') }).click();
+    // An icon button: its name is in its label and its tooltip, no visible text
+    const syncAll = page.getByRole('button', { name: tr('syncAllAccounts') });
+    await expect(syncAll).toHaveAttribute('title', tr('syncAllAccounts'));
+    await expect(syncAll).not.toContainText(tr('syncAllAccounts'));
+    await syncAll.click();
 
     // Both followed accounts: fail@bank ends in error, the BNP account is synchronized
     await expect(page.locator('.sync-status')).toContainText(tr('syncStatus_error'));
