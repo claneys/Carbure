@@ -3,7 +3,7 @@ import './setup.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createBudgetModule } from '../../portal/modules/budgetModule.js';
-import { createTransactionModule } from '../../portal/modules/transactionModule.js';
+import { createTransactionModule, similarLabelQuery } from '../../portal/modules/transactionModule.js';
 import { createRulesModule } from '../../portal/modules/rulesModule.js';
 import { agentConfigurations } from '../../portal/modules/agentsModule.js';
 
@@ -148,6 +148,38 @@ test('recurring transactions: ids, filter and expected series', () => {
     assert.deepEqual(transactions.computed.displayedTransactions.call({ ...context, transactionFilter: 'unchecked' }).map(t => t.id), [3]);
     // Not applied to the search results (other months)
     assert.equal(transactions.computed.displayedTransactions.call({ ...context, isSearching: true }).length, 3);
+});
+
+test('similarLabelQuery: the merchant, without the kind of operation nor the references', () => {
+    // Labels of the data set (tests/e2e/server/seed.php) and as woob gives them
+    assert.equal(similarLabelQuery('CB BOULANGERIE PAUL'), 'BOULANGERIE PAUL');
+    assert.equal(similarLabelQuery('CB BOULANGERIE DU MARCHE'), 'BOULANGERIE DU MARCHE');
+    assert.equal(similarLabelQuery('CB NETFLIX.COM'), 'NETFLIX.COM');
+    assert.equal(similarLabelQuery('PRLV EDF CLIENTS PARTICULIERS'), 'EDF CLIENTS PARTICULIERS');
+    assert.equal(similarLabelQuery('VIR SALAIRE ACME'), 'SALAIRE ACME');
+    assert.equal(similarLabelQuery('VIR LIVRET A'), 'LIVRET A');
+    assert.equal(similarLabelQuery('FACTURE CARTE DU 040126 BOULANGERIE CARTE 4974'), 'BOULANGERIE');
+    assert.equal(similarLabelQuery('PRLV SEPA EDF MDT/123'), 'EDF');
+    assert.equal(similarLabelQuery('VIR SEPA INST LOYER 12/01 REF 998877'), 'LOYER');
+    assert.equal(similarLabelQuery('  cb   sushi shop  '), 'SUSHI SHOP');
+    // Nothing meaningful left: the label itself
+    assert.equal(similarLabelQuery('CB 123456'), 'CB 123456');
+    assert.equal(similarLabelQuery('LOYER'), 'LOYER');
+    assert.equal(similarLabelQuery(''), '');
+});
+
+test('searchSimilarTransactions: closes the detail and searches like a typed search', async () => {
+    const searched = [];
+    const context = {
+        transactionDetail: { id: 1, label: 'CB BOULANGERIE PAUL' },
+        searchQuery: '',
+        searchTimer: null,
+        runSearch() { searched.push(this.searchQuery); },
+    };
+    await transactions.methods.searchSimilarTransactions.call(context);
+    assert.equal(context.transactionDetail, null);
+    assert.equal(context.searchQuery, 'BOULANGERIE PAUL');
+    assert.deepEqual(searched, ['BOULANGERIE PAUL']);
 });
 
 test('isSearching: from 2 characters', () => {

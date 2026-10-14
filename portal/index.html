@@ -1808,7 +1808,13 @@
                     <div class="transaction-detail-amount" :class="transactionDetail.amount >= 0 ? 'positive' : 'negative'">
                         {{ formatAmount(transactionDetail.amount) }} {{ t('currencySymbol') }}
                     </div>
-                    <p class="transaction-detail-label">{{ transactionDetail.label }}</p>
+                    <div class="transaction-detail-label-row">
+                        <p class="transaction-detail-label">{{ transactionDetail.label }}</p>
+                        <button type="button" class="btn-secondary transaction-detail-similar" @click="searchSimilarTransactions">
+                            <span class="material-icons" aria-hidden="true">search</span>
+                            {{ t('searchSimilarTransactions') }}
+                        </button>
+                    </div>
                     <dl class="transaction-detail-list">
                         <dt>{{ t('transactionDate') }}</dt><dd>{{ formatDate(transactionDetail.date) }}</dd>
                         <template v-if="transactionDetail.rdate && transactionDetail.rdate !== transactionDetail.date">

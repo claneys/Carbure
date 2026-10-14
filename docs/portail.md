@@ -100,6 +100,10 @@ modification.
   catégorie s'y change avec le sélecteur visuel et la transaction s'y pointe. Le bouton
   corbeille supprime la transaction, après confirmation : elle n'est plus réimportée, ni par
   la synchronisation ni par l'import d'un relevé (marquée « Supprimée » dans l'aperçu).
+  Le bouton **Transactions similaires** ferme la fenêtre et lance la recherche avec le
+  libellé débarrassé du type d'opération (CB, PRLV SEPA, VIR…) et de ce qui suit le
+  commerçant (numéro de carte, date, référence de mandat) : « PRLV SEPA EDF MDT/123 »
+  cherche « EDF ». La recherche s'efface ensuite avec la croix, comme une recherche saisie.
 - **Importer un relevé** : le bouton « Importer » ouvre une fenêtre où déposer le fichier
   téléchargé depuis l'espace client de la banque (OFX/QFX, QIF, CSV ou CAMT.053, 1 Mo au
   plus). Un aperçu classe chaque transaction : **nouvelle** (cochée), **doublon probable**

@@ -5192,6 +5192,24 @@ a.footer-brand:hover {
     color: var(--error-color);
 }
 
+/* The label, with the search of the similar transactions next to it */
+.transaction-detail-label-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 4px 0 16px;
+}
+
+.transaction-detail-label-row .transaction-detail-label {
+    margin: 0;
+}
+
+.transaction-detail-similar {
+    flex-shrink: 0;
+}
+
 .transaction-detail-label {
     margin: 4px 0 16px;
     font-size: 15px;

@@ -171,6 +171,24 @@ test('deletes a transaction from its detail', async ({ adminPage: page, api }) =
     expect(labels).not.toContain('CB RESTAURANT LE PETIT ZINC');
 });
 
+test('searches the transactions similar to the one of the detail', async ({ adminPage: page }) => {
+    await row(page, 'PRLV LOYER AGENCE').getByRole('button', { name: new RegExp(tr('transactionDetail')) }).click();
+    const modal = page.getByRole('dialog', { name: tr('transactionDetail') });
+    await modal.getByRole('button', { name: tr('searchSimilarTransactions') }).click();
+
+    // The detail closes, the label search runs with the label without "PRLV"
+    await expect(modal).toHaveCount(0);
+    const search = page.getByRole('searchbox', { name: tr('searchPlaceholder') });
+    await expect(search).toHaveValue('LOYER AGENCE');
+    await expect(search).toBeFocused();
+    await expect(page.locator('.transaction-item')).toHaveCount(3);
+    await expect(page.locator('.search-total')).toContainText(tr('searchTotal', { count: 3 }));
+
+    // Cleared like a typed search
+    await page.getByRole('button', { name: tr('clearSearch') }).click();
+    await expect(page.locator('.transaction-item')).toHaveCount(6);
+});
+
 test('closes the detail modal with Escape', async ({ adminPage: page }) => {
     await row(page, 'PRLV LOYER AGENCE').getByRole('button', { name: new RegExp(tr('transactionDetail')) }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
