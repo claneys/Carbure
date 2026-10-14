@@ -236,9 +236,11 @@ protégée.
        ouvert.
     2. **Banques connectées** : chaque connexion (backend woob) affiche son nom (à défaut
        celui de la banque) et son nom dans woob ; le bouton crayon la **renomme** (un nom
-       vide rétablit celui de la banque) ; la corbeille la **supprime**, après confirmation :
-       woob oublie ses identifiants et ses comptes suivis ne le sont plus (leurs transactions
-       sont conservées). Son bouton **Ajouter des comptes** ouvre la liste des comptes que woob trouve pour elle
+       vide rétablit celui de la banque) ; la corbeille la **supprime**, après confirmation
+       dans une fenêtre du portail : woob oublie ses identifiants et ses comptes suivis ne le
+       sont plus (leurs transactions sont conservées). La fenêtre reste ouverte, son bouton
+       indiquant « Suppression en cours… », jusqu'à ce que woob ait supprimé la connexion ;
+       une erreur s'y affiche, la suppression peut alors être relancée ou annulée. Son bouton **Ajouter des comptes** ouvre la liste des comptes que woob trouve pour elle
        (`woob bank list -b <banque>` : libellé, solde) ; on coche ceux à suivre et
        **Suivre les comptes sélectionnés** les ajoute d'un coup, nommés d'après leur libellé
        woob. Les comptes déjà suivis sont cochés et grisés. Après une connexion, cette liste

@@ -28,6 +28,7 @@ import { createLogsModule } from './modules/logsModule.js';
 import { createOAuthModule } from './modules/oauthModule.js';
 import { createImportModule } from './modules/importModule.js';
 import { createConfigModule } from './modules/configModule.js';
+import { createConfirmModule } from './modules/confirmModule.js';
 
 /**
  * Base URL of the API: the portal is served at <server>/portal/ and the API at
@@ -89,7 +90,8 @@ createApp({
         createLogsModule(() => apiService),
         createOAuthModule(() => apiService),
         createImportModule(() => apiService),
-        createConfigModule(() => apiService)
+        createConfigModule(() => apiService),
+        createConfirmModule()
     ],
 
     data() {

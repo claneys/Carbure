@@ -6037,3 +6037,40 @@ textarea:focus-visible,
 .logs-retention {
     margin-top: 6px;
 }
+
+/* ===== Confirmation modal (askConfirm) ===== */
+.modal-confirm .confirm-error {
+    margin: 0;
+}
+
+/* Destructive confirmation: red, darker on hover (white label readable on both) */
+.btn-confirm-danger {
+    background: var(--error-color);
+    color: #fff;
+}
+
+.btn-confirm-danger:hover {
+    background: #a51f1f;
+}
+
+/* Action running: the button keeps its colors (its label "…in progress" stays
+   readable, it is not :disabled but aria-disabled), without the hover effect */
+button.is-busy,
+button.is-busy:hover {
+    cursor: progress;
+    transform: none;
+    box-shadow: none;
+}
+
+button.is-busy:not(.btn-confirm-danger):hover {
+    background: var(--primary-color);
+}
+
+.btn-confirm-danger.is-busy:hover {
+    background: var(--error-color);
+}
+
+/* Close button of a modal whose action runs: no grey square */
+.modal-close:disabled {
+    background: transparent;
+}

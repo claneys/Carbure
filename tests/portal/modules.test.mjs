@@ -338,13 +338,14 @@ test('accounts: renaming a connected bank updates it in the list', async () => {
     assert.deepEqual(toasts, ['bankConnectionRenamed']);
 });
 
-test('accounts: removing a connected bank asks first, with the number of its followed accounts', async () => {
+test('accounts: removing a connected bank asks first in a modal, with the number of its followed accounts', async () => {
     const { createAccountsModule } = await import('../../portal/modules/accountsModule.js');
     const removed = [];
     const api = { deleteBankBackend: async backend => { removed.push(backend); } };
     const { methods } = createAccountsModule(() => api);
     const toasts = [];
     const asked = [];
+    let answer = false;
     let reloaded = 0;
     const context = {
         bankAccounts: [{ bank_name: 'bnp' }, { bank_name: 'bnp' }, { bank_name: 'cic_pro' }],
@@ -353,27 +354,78 @@ test('accounts: removing a connected bank asks first, with the number of its fol
         t: (key, params) => `${key} ${JSON.stringify(params || {})}`,
         loadBankBackends: async () => { reloaded++; },
         loadBankAccounts: async () => { reloaded++; },
+        // The confirmation modal: the action (removal) runs only when confirmed
+        askConfirm: async options => {
+            asked.push(options);
+            if (answer) {
+                await options.action();
+            }
+            return answer;
+        },
     };
     for (const name of ['removeBackend', 'backendName']) {
         context[name] = methods[name].bind(context);
     }
     const backend = { name: 'bnp', module: 'bnp', label: null };
-    const confirm = globalThis.confirm;
-    try {
-        // Cancelled: nothing removed
-        globalThis.confirm = message => { asked.push(message); return false; };
-        await context.removeBackend(backend);
-        assert.deepEqual(removed, []);
-        assert.deepEqual(asked, ['confirmDeleteBankConnection {"bank":"BNP Paribas (bnp)","count":2}']);
 
-        globalThis.confirm = () => true;
-        await context.removeBackend(backend);
-        assert.deepEqual(removed, ['bnp']);
-        assert.equal(reloaded, 2);
-        assert.deepEqual(toasts, ['bankConnectionDeleted {}']);
-    } finally {
-        globalThis.confirm = confirm;
+    // Cancelled: nothing removed
+    await context.removeBackend(backend);
+    assert.deepEqual(removed, []);
+    assert.equal(asked[0].message, 'confirmDeleteBankConnection {"bank":"BNP Paribas (bnp)","count":2}');
+    assert.equal(asked[0].busyLabel, 'bankConnectionDeleting {}');
+    assert.equal(asked[0].danger, true);
+    assert.equal(reloaded, 0);
+
+    // Confirmed: removed by the action of the modal, then the lists reloaded
+    answer = true;
+    await context.removeBackend(backend);
+    assert.deepEqual(removed, ['bnp']);
+    assert.equal(reloaded, 2);
+    assert.deepEqual(toasts, ['bankConnectionDeleted {}']);
+});
+
+test('confirm: answered by the buttons, the action kept running and its error shown in the modal', async () => {
+    const { createConfirmModule } = await import('../../portal/modules/confirmModule.js');
+    const { data, methods } = createConfirmModule();
+    const context = { ...data() };
+    for (const [name, method] of Object.entries(methods)) {
+        context[name] = method.bind(context);
     }
+
+    // Cancelled
+    let asked = context.askConfirm({ title: 'T', message: 'M', confirmLabel: 'OK' });
+    assert.equal(context.confirmDialog.message, 'M');
+    context.cancelConfirm();
+    assert.equal(await asked, false);
+    assert.equal(context.confirmDialog, null);
+
+    // Without action: confirmed at once
+    asked = context.askConfirm({ title: 'T', message: 'M', confirmLabel: 'OK' });
+    await context.acceptConfirm();
+    assert.equal(await asked, true);
+
+    // With an action: busy while it runs (no cancel, no second run), then closed
+    let finish;
+    let runs = 0;
+    asked = context.askConfirm({ title: 'T', message: 'M', confirmLabel: 'OK', action: () => { runs++; return new Promise(resolve => { finish = resolve; }); } });
+    const accepting = context.acceptConfirm();
+    assert.equal(context.confirmDialog.busy, true);
+    context.cancelConfirm();
+    await context.acceptConfirm();
+    assert.equal(runs, 1);
+    assert.equal(context.confirmDialog.busy, true);
+    finish();
+    await accepting;
+    assert.equal(await asked, true);
+    assert.equal(context.confirmDialog, null);
+
+    // A failed action: its error in the modal, which stays open and can be cancelled
+    asked = context.askConfirm({ title: 'T', message: 'M', confirmLabel: 'OK', action: async () => { throw new Error('woob could not remove the bank'); } });
+    await context.acceptConfirm();
+    assert.equal(context.confirmDialog.busy, false);
+    assert.equal(context.confirmDialog.error, 'woob could not remove the bank');
+    context.cancelConfirm();
+    assert.equal(await asked, false);
 });
 
 test('accounts: the accounts found by woob, the followed ones ticked and not followed again', async () => {

@@ -2452,6 +2452,39 @@
             </div>
         </div>
 
+        <!-- Confirmation modal (askConfirm): last of the modals, on top of the others. While
+             its action runs, it stays open with a loader: no closing, Escape included -->
+        <div v-if="confirmDialog" class="modal-overlay" @click.self="cancelConfirm">
+            <div class="modal modal-confirm" role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title"
+                 aria-describedby="confirm-dialog-message" :aria-busy="confirmDialog.busy ? 'true' : 'false'">
+                <div class="modal-header">
+                    <span class="material-icons" aria-hidden="true">{{ confirmDialog.icon }}</span>
+                    <h3 id="confirm-dialog-title">{{ confirmDialog.title }}</h3>
+                    <button class="modal-close" @click="cancelConfirm" :disabled="confirmDialog.busy" :aria-label="t('close')">
+                        <span class="material-icons" aria-hidden="true">close</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p id="confirm-dialog-message">{{ confirmDialog.message }}</p>
+                    <div v-if="confirmDialog.error" class="sync-step-error confirm-error" role="alert">{{ confirmDialog.error }}</div>
+                </div>
+                <div class="modal-footer">
+                    <button id="confirm-dialog-cancel" class="btn-secondary" @click="cancelConfirm" :disabled="confirmDialog.busy">
+                        <span class="material-icons" aria-hidden="true">cancel</span>
+                        {{ t('cancel') }}
+                    </button>
+                    <!-- Busy: not disabled (its label stays readable), aria-disabled, clicks ignored -->
+                    <button type="button" :class="{ 'btn-confirm-danger': confirmDialog.danger, 'is-busy': confirmDialog.busy }"
+                            :aria-disabled="confirmDialog.busy ? 'true' : null" @click="acceptConfirm">
+                        <span class="material-icons" :class="{ spin: confirmDialog.busy }" aria-hidden="true">{{ confirmDialog.busy ? 'sync' : confirmDialog.icon }}</span>
+                        {{ confirmDialog.busy ? (confirmDialog.busyLabel || confirmDialog.confirmLabel) : confirmDialog.confirmLabel }}
+                    </button>
+                    <!-- Announced to the screen readers when the action starts -->
+                    <span class="visually-hidden" role="status">{{ confirmDialog.busy ? (confirmDialog.busyLabel || '') : '' }}</span>
+                </div>
+            </div>
+        </div>
+
         <!-- Debug panel (DEV only) -->
         <div v-if="isDebugMode" class="debug-panel">
             <h3>Debug</h3>

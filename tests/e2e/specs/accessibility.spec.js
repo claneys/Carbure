@@ -99,6 +99,28 @@ test('the menus, modals and the synchronization log are readable', async ({ admi
     await page.keyboard.press('Escape');
     await expect(rename).toHaveCount(0);
 
+    // Confirmation of the removal of a bank: at rest, then its action running (the
+    // request held, its button with a loader), then failed (the error in the modal)
+    let release;
+    const held = new Promise(resolve => { release = resolve; });
+    await page.route('**/api/bank/backend?backend=bnp', async route => {
+        await held;
+        await route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ error: 'woob could not remove the bank bnp', code: 500 }) });
+    });
+    await page.getByRole('button', { name: tr('deleteBankConnectionOf', { bank: 'BNP Paribas (bnp)' }) }).click();
+    const confirmRemoval = page.getByRole('dialog', { name: tr('deleteBankConnection') });
+    await expect(confirmRemoval).toBeVisible();
+    problems.push(...await contrastProblems(page, tr('deleteBankConnection')));
+    await confirmRemoval.getByRole('button', { name: tr('bankConnectionDeleteButton') }).click();
+    await expect(confirmRemoval.getByRole('button', { name: tr('bankConnectionDeleting') })).toBeVisible();
+    problems.push(...await contrastProblems(page, `${tr('deleteBankConnection')} (busy)`));
+    release();
+    await expect(confirmRemoval.getByRole('alert')).toBeVisible();
+    problems.push(...await contrastProblems(page, `${tr('deleteBankConnection')} (error)`));
+    await page.keyboard.press('Escape');
+    await expect(confirmRemoval).toHaveCount(0);
+    await page.unroute('**/api/bank/backend?backend=bnp');
+
     // A synchronization in error, with its log open
     await page.locator('.account-item').filter({ hasText: 'fail@bank' }).getByRole('button', { name: tr('syncAccount') }).click();
     await expect(page.locator('.sync-status')).toContainText(tr('syncStatus_error'));
