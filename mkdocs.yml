@@ -43,6 +43,10 @@ plugins:
   - search:
       lang: fr
 
+# No "Made with Material for MkDocs" in the footer
+extra:
+  generator: false
+
 extra_css:
   - stylesheets/extra.css
 
