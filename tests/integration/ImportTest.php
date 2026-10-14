@@ -62,6 +62,24 @@ class ImportTest extends DatabaseTestCase
         $this->assertSame(0, Transaction::import($this->statement(), 'releve.csv')['imported']);
     }
 
+    public function testDeletedTransactionNotImportedAgain()
+    {
+        $this->loginAs(self::USER);
+        Transaction::import($this->statement(), 'releve.csv');
+        $salary = Db::queryOne("SELECT id FROM bank_transaction WHERE label = 'VIR SALAIRE MAI'", "");
+        Transaction::delete($salary['id']);
+
+        // Shown as deleted in the preview, not imported again even when selected
+        $preview = Transaction::previewImport($this->statement(), 'releve.csv');
+        $row = $preview['rows'][2];
+        $this->assertSame('VIR SALAIRE MAI', $row['label']);
+        $this->assertSame('known', $row['status']);
+        $this->assertTrue($row['deleted']);
+        $this->assertSame(['new' => 0, 'known' => 3, 'duplicate' => 1], $preview['counts']);
+        $this->assertSame(0, Transaction::import($this->statement(), 'releve.csv', [2])['imported']);
+        $this->assertNull(Db::queryOne("SELECT id FROM bank_transaction WHERE label = 'VIR SALAIRE MAI'", ""));
+    }
+
     public function testImportASelectedDuplicate()
     {
         $this->loginAs(self::USER);

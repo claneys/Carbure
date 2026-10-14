@@ -50,6 +50,27 @@ class TransactionIntegrationTest extends DatabaseTestCase
         Transaction::search(' a ');
     }
 
+    public function testDelete()
+    {
+        $this->loginAs(self::USER);
+        $id = $this->transaction('u2')['id'];
+
+        $this->assertTrue(Transaction::delete($id));
+        $this->assertNull($this->transaction('u2'));
+        // Remembered, with the user who deleted it
+        $deleted = Db::queryOne("SELECT user_id FROM bank_transaction_deleted WHERE uuid = ?", "s", 'u2');
+        $this->assertEquals(self::USER, $deleted['user_id']);
+        $this->assertNotContains('PRLV SEPA EDF ', array_column(Transaction::get(), 'label'));
+
+        // Already deleted: unknown
+        try {
+            Transaction::delete($id);
+            $this->fail('Deleted twice');
+        } catch (Error $e) {
+            $this->assertSame(404, $e->getCode());
+        }
+    }
+
     public function testPointAndUnpoint()
     {
         $id = $this->transaction('u1')['id'];

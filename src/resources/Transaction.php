@@ -272,16 +272,18 @@ final class Transaction {
      * @param int                         $userId The user owning the transactions
      * @param array<string, string|null>  $origin bank_name and account_number of the account they come from
      * @return list<array{label: string, amount: float, uuid: string}> The transactions that were not
-     *              known yet (label cleaned, amount, uuid)
+     *              known yet (label cleaned, amount, uuid); the deleted ones are skipped
      */
     private static function store(array $rows, int $userId, array $origin = []): array
     {
         $created = [];
+        // Deleted by a user: never saved again
+        $deleted = self::deletedUuids(array_column($rows, 'uuid'));
         foreach ($rows as $row) {
             if (isset($row['raw'])) {
                 Webservice::sendProgress($row['raw']);
             }
-            if (self::create($row, $userId, $origin)) {
+            if (!isset($deleted[$row['uuid']]) && self::create($row, $userId, $origin)) {
                 $created[] = ['label' => $row['label'], 'amount' => (float)$row['amount'], 'uuid' => $row['uuid']];
             }
         }
@@ -488,6 +490,7 @@ final class Transaction {
         $existing = Db::execute("SELECT id, uuid, date, rdate, amount, label FROM bank_transaction WHERE date BETWEEN ? AND ? OR rdate BETWEEN ? AND ?",
             "ssss", $from, $to, $from, $to)->get_result()->fetch_all(MYSQLI_ASSOC);
         $matched = self::markKnown($rows, $existing);
+        self::markDeleted($rows);
         self::markDuplicates($rows, $existing, $matched);
 
         foreach ($rows as &$row) {
@@ -517,6 +520,43 @@ final class Transaction {
         }
         unset($row);
         return $matched;
+    }
+
+    /**
+     * Mark the rows of a file deleted by a user: "known" (not imported again), with
+     * deleted = true.
+     *
+     * @param list<array<string, mixed>> $rows The rows of the file (status updated)
+     * @return void
+     */
+    private static function markDeleted(array &$rows): void
+    {
+        $deleted = self::deletedUuids(array_column($rows, 'uuid'));
+        foreach ($rows as &$row) {
+            if (isset($deleted[$row['uuid']])) {
+                $row['status'] = 'known';
+                $row['deleted'] = true;
+            }
+        }
+        unset($row);
+    }
+
+    /**
+     * UUIDs among the given ones of the transactions deleted by a user.
+     *
+     * @param list<mixed> $uuids The UUIDs to check
+     * @return array<string, true> The deleted UUIDs (as keys)
+     */
+    private static function deletedUuids(array $uuids): array
+    {
+        $uuids = array_values(array_unique(array_map('strval', $uuids)));
+        if (!$uuids) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($uuids), '?'));
+        $rows = Db::execute("SELECT uuid FROM bank_transaction_deleted WHERE uuid IN ($placeholders)",
+            str_repeat('s', count($uuids)), ...$uuids)->get_result()->fetch_all(MYSQLI_ASSOC);
+        return array_fill_keys(array_column($rows, 'uuid'), true);
     }
 
     /**
@@ -740,5 +780,28 @@ final class Transaction {
         // Update the pointed field on a transaction
         $sql = "UPDATE bank_transaction SET pointed=? WHERE id=?";
         Db::execute($sql, "ii", filter_var($pointed, FILTER_VALIDATE_BOOLEAN) ? 1 : 0, $id);
+    }
+
+    /**
+     * Delete a transaction. Its UUID is remembered: the synchronization of its account
+     * and the import of a file skip it, so that it does not come back.
+     *
+     * @param int|string $id The id of the transaction
+     * @return bool True once deleted
+     * @throws Error If the transaction does not exist
+     */
+    #[ApiRoute('/transaction', method: 'DELETE')]
+    public static function delete(int|string $id): bool
+    {
+        $transaction = Db::queryOne("SELECT uuid, label, amount FROM bank_transaction WHERE id = ?", "i", $id);
+        if (!$transaction) {
+            throw new Error("Transaction not found", 404);
+        }
+
+        $userId = Jwt::getUserIdFromToken();
+        Db::execute("INSERT IGNORE INTO bank_transaction_deleted (uuid, user_id) VALUES (?, ?)", "si", $transaction['uuid'], $userId);
+        Db::execute("DELETE FROM bank_transaction WHERE id = ?", "i", $id);
+        Logger::info("Transaction $id deleted by the user $userId");
+        return true;
     }
 }

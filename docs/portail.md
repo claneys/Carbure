@@ -95,7 +95,9 @@ modification.
 - **Détail d'une transaction** : un clic (ou Entrée) sur le libellé ouvre une fenêtre avec
   le montant, le libellé complet, les dates, le type, la carte, la banque (compte synchronisé
   ou relevé importé) et la date d'import ; la
-  catégorie s'y change avec le sélecteur visuel et la transaction s'y pointe.
+  catégorie s'y change avec le sélecteur visuel et la transaction s'y pointe. Le bouton
+  corbeille supprime la transaction, après confirmation : elle n'est plus réimportée, ni par
+  la synchronisation ni par l'import d'un relevé (marquée « Supprimée » dans l'aperçu).
 - **Importer un relevé** : le bouton « Importer » ouvre une fenêtre où déposer le fichier
   téléchargé depuis l'espace client de la banque (OFX/QFX, QIF, CSV ou CAMT.053, 1 Mo au
   plus). Un aperçu classe chaque transaction : **nouvelle** (cochée), **doublon probable**

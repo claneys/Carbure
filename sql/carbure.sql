@@ -88,6 +88,19 @@ CREATE TABLE `bank_transaction` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
+-- Table `bank_transaction_deleted`: transactions deleted by a user, skipped by the
+-- synchronization and the import of a file (same UUID)
+
+CREATE TABLE `bank_transaction_deleted` (
+  `uuid` varchar(32) NOT NULL COMMENT 'UUID of the deleted transaction',
+  `deleted_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'Date of the deletion',
+  `user_id` int(10) unsigned DEFAULT NULL COMMENT 'User who deleted it',
+  PRIMARY KEY (`uuid`),
+  KEY `fk_transaction_deleted_user` (`user_id`),
+  CONSTRAINT `fk_transaction_deleted_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
 -- Table `bank_transaction_category`
 
 CREATE TABLE `bank_transaction_category` (
@@ -228,7 +241,8 @@ INSERT IGNORE INTO `schema_migrations` (`version`) VALUES
 ('2026-10-14_oauth'),
 ('2026-10-15_transaction_bank'),
 ('2026-10-16_bank_account_label'),
-('2026-10-17_bank_backend_label');
+('2026-10-17_bank_backend_label'),
+('2026-10-18_transaction_deleted');
 
 SET FOREIGN_KEY_CHECKS = 1;
 COMMIT;

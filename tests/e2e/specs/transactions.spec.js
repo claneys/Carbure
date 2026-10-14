@@ -153,6 +153,24 @@ test('changes the category and the checked state in the detail modal', async ({ 
     expect(Number(saved.pointed)).toBe(1);
 });
 
+test('deletes a transaction from its detail', async ({ adminPage: page, api }) => {
+    await row(page, 'CB RESTAURANT LE PETIT ZINC').getByRole('button', { name: new RegExp(tr('transactionDetail')) }).click();
+    const modal = page.getByRole('dialog', { name: tr('transactionDetail') });
+
+    // The confirmation is accepted (fixtures)
+    await modal.getByRole('button', { name: tr('deleteTransaction') }).click();
+
+    await expect(modal).toHaveCount(0);
+    await expect(page.locator('.toast')).toHaveText(tr('transactionDeleted'));
+    await expect(row(page, 'CB RESTAURANT LE PETIT ZINC')).toHaveCount(0);
+    await expect(page.locator('.transaction-item')).toHaveCount(5);
+
+    // Deleted on the server
+    const { month, year } = currentMonth();
+    const labels = (await (await api.get(`/api/transaction?month=${month}&year=${year}`)).json()).map(t => t.label);
+    expect(labels).not.toContain('CB RESTAURANT LE PETIT ZINC');
+});
+
 test('closes the detail modal with Escape', async ({ adminPage: page }) => {
     await row(page, 'PRLV LOYER AGENCE').getByRole('button', { name: new RegExp(tr('transactionDetail')) }).click();
     await expect(page.getByRole('dialog')).toBeVisible();

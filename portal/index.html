@@ -1772,7 +1772,7 @@
                                         <span class="import-row-label">{{ row.label }}</span>
                                         <span class="import-row-meta">
                                             {{ formatDate(row.date) }}
-                                            <span v-if="row.status !== 'new'" class="import-badge" :class="'status-' + row.status">{{ t('importBadge_' + row.status) }}</span>
+                                            <span v-if="row.status !== 'new'" class="import-badge" :class="'status-' + row.status">{{ t(row.deleted ? 'importBadge_deleted' : 'importBadge_' + row.status) }}</span>
                                             <span v-if="row.match" class="import-match">{{ t('importMatch', { label: row.match.label, date: formatDate(row.match.date) }) }}</span>
                                         </span>
                                     </span>
@@ -1834,6 +1834,10 @@
                     </label>
                 </div>
                 <div class="modal-footer">
+                    <button type="button" class="btn-danger btn-danger-icon modal-footer-start" @click="deleteTransactionDetail" :disabled="savingTransaction"
+                            :title="t('deleteTransaction')" :aria-label="t('deleteTransaction')">
+                        <span class="material-icons" aria-hidden="true">delete</span>
+                    </button>
                     <button class="btn-secondary" @click="closeTransactionModal">
                         <span class="material-icons" aria-hidden="true">cancel</span>
                         {{ t('cancel') }}

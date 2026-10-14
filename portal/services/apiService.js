@@ -466,6 +466,15 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
      * @param {number} category - Category ID
      * @returns {Promise<void>}
      */
+    /**
+     * Deletes a transaction (not brought back by the synchronization nor an import)
+     * @param {number} id - Transaction id
+     * @returns {Promise<void>}
+     */
+    async function deleteTransaction(id) {
+        await request(`${baseUrl}/transaction?id=${encodeURIComponent(id)}`, { method: 'DELETE' }, 'Failed to delete the transaction');
+    }
+
     async function setTransactionCategory(id, category) {
         await request(`${baseUrl}/transaction/category`, {
             method: 'PUT',
@@ -961,6 +970,7 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
         updateCategory,
         deleteCategory,
         setTransactionCategory,
+        deleteTransaction,
         fetchRules,
         createRule,
         updateRule,

@@ -355,6 +355,31 @@ export function createTransactionModule(getApiService) {
             },
 
             /**
+             * Deletes the transaction of the detail modal, after a confirmation; the list,
+             * the totals and the periods are then reloaded
+             * @returns {Promise<void>}
+             */
+            async deleteTransactionDetail() {
+                const transaction = this.transactionDetail;
+                if (!transaction || !confirm(this.t('confirmDeleteTransaction', { label: transaction.label }))) {
+                    return;
+                }
+                this.savingTransaction = true;
+                try {
+                    await getApiService().deleteTransaction(transaction.id);
+                    this.transactionDetail = null;
+                    this.searchResults = this.searchResults.filter(t => Number(t.id) !== Number(transaction.id));
+                    this.showToast(this.t('transactionDeleted'));
+                    this.loadPeriods();
+                    this.loadTransactions(this.selectedMonth, this.selectedYear);
+                } catch (error) {
+                    this.showToast(error.message);
+                } finally {
+                    this.savingTransaction = false;
+                }
+            },
+
+            /**
              * Opens the rules tab and the rule modal with the suggested rule pre-filled
              */
             createSuggestedRule() {

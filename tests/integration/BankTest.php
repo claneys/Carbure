@@ -492,6 +492,30 @@ class BankTest extends DatabaseTestCase
         return [$output, $waited];
     }
 
+    public function testDeletedTransactionNotSynchronizedAgain()
+    {
+        Db::query("DELETE FROM bank_transaction");
+        $this->loginAs(self::ADMIN);
+        $sync = function () {
+            ob_start();
+            try {
+                Bank::getSync(null, '111@bnp');
+            } finally {
+                ob_end_clean();
+            }
+        };
+        $sync();
+        $count = (int)Db::queryOne("SELECT COUNT(*) AS n FROM bank_transaction", "")['n'];
+        $this->assertGreaterThan(1, $count);
+
+        // A transaction deleted by a user does not come back at the next synchronization
+        $deleted = Db::queryOne("SELECT id, uuid FROM bank_transaction ORDER BY id LIMIT 1", "");
+        Transaction::delete($deleted['id']);
+        $sync();
+        $this->assertSame($count - 1, (int)Db::queryOne("SELECT COUNT(*) AS n FROM bank_transaction", "")['n']);
+        $this->assertNull(Db::queryOne("SELECT id FROM bank_transaction WHERE uuid = ?", "s", $deleted['uuid']));
+    }
+
     public function testComingFailureKeepsTheHistory()
     {
         Db::query("DELETE FROM bank_transaction");
