@@ -101,6 +101,8 @@ modification.
   plus). Un aperçu classe chaque transaction : **nouvelle** (cochée), **doublon probable**
   (même montant qu'une transaction existante à 3 jours près, souvent la même synchronisée
   avec un autre libellé : non cochée) ou **déjà présente** (même identifiant : ignorée).
+  Chaque transaction a sa case : décocher celles à ne pas importer (ou « Tout cocher » pour
+  tout cocher ou décocher) ; le bouton indique le nombre de transactions importées.
   Les transactions importées appartiennent à l'utilisateur connecté et passent par les
   règles de catégorisation ; la liste s'ouvre ensuite sur le dernier mois importé
   (`POST /transaction/import/preview`, `POST /transaction/import`). Aucun compte synchronisé

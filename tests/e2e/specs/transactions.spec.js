@@ -210,6 +210,45 @@ test('imports a bank statement file', async ({ adminPage: page }) => {
     await expect(page.locator('.transaction-item')).toHaveCount(8);
 });
 
+test('imports only the transactions left checked', async ({ adminPage: page }) => {
+    const day = d => {
+        const date = new Date();
+        date.setDate(d);
+        return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    };
+    const csv = 'Date;Libellé;Montant\n'
+        // Same amount as CB SUPERMARCHE CASINO, one day later: probable duplicate
+        + `${day(3)};CARTE SUPERMARCHE CASINO;-82,40\n`
+        + `${day(6)};CB LIBRAIRIE PAGE;-18,90\n`
+        + `${day(7)};CB FLEURISTE ROSE;-25,00\n`;
+
+    await page.getByRole('button', { name: tr('importButton') }).click();
+    const modal = page.getByRole('dialog', { name: tr('importTitle') });
+    await modal.locator('input[type="file"]').setInputFiles({ name: 'releve.csv', mimeType: 'text/csv', buffer: Buffer.from(csv) });
+    const checkbox = label => modal.getByRole('checkbox', { name: new RegExp(label) });
+    const all = modal.getByRole('checkbox', { name: tr('importSelectAll') });
+
+    // The two new transactions are checked: one is unchecked
+    await expect(checkbox('CB LIBRAIRIE PAGE')).toBeChecked();
+    await checkbox('CB LIBRAIRIE PAGE').uncheck();
+    await expect(modal.getByText(tr('importSelectedCount', { count: 1 }))).toBeVisible();
+    await expect(modal.getByRole('button', { name: tr('importConfirm', { count: 1 }) })).toBeEnabled();
+
+    // Check all (the probable duplicate too), then uncheck all: nothing to import
+    await all.check();
+    await expect(modal.getByRole('button', { name: tr('importConfirm', { count: 3 }) })).toBeEnabled();
+    await all.uncheck();
+    await expect(modal.getByRole('button', { name: tr('importConfirm', { count: 0 }) })).toBeDisabled();
+
+    // Only the florist is imported
+    await checkbox('CB FLEURISTE ROSE').check();
+    await modal.getByRole('button', { name: tr('importConfirm', { count: 1 }) }).click();
+    await expect(modal).toHaveCount(0);
+    await expect(row(page, 'CB FLEURISTE ROSE')).toHaveCount(1);
+    await expect(row(page, 'CB LIBRAIRIE PAGE')).toHaveCount(0);
+    await expect(row(page, 'CARTE SUPERMARCHE CASINO')).toHaveCount(0);
+});
+
 test('imports a statement file without any account to synchronize', async ({ adminPage: page }) => {
     // No followed account anymore
     await openTab(page, tr('tabAccounts'));
