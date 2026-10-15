@@ -297,7 +297,9 @@ ou importés depuis un fichier, sont regroupés à la fin sous **Autres comptes*
   direct, les logs de débogage de woob (requêtes vers la banque, trace de l'erreur Python),
   à un administrateur uniquement. La commande système lancée pour chaque étape (`Woob command …`)
   y figure toujours. En cas d'échec woob, un lien ouvre la recherche des tickets
-  woob sur le module concerné. Si aucun compte n'a pu être synchronisé, la catégorisation
+  woob sur le module concerné. Après une synchronisation en échec, quelle que soit l'erreur, le
+  bouton **Mettre à jour les modules bancaires** est aussi proposé sous le journal (un
+  module woob obsolète en est la cause la plus fréquente). Si aucun compte n'a pu être synchronisé, la catégorisation
   est sautée : seule l'erreur est notifiée. Pendant une synchronisation, l'icône de l'onglet tourne.
 
 La synchronisation de tous les comptes est planifiée côté serveur (`SYNC_INTERVAL` avec

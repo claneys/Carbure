@@ -1329,9 +1329,18 @@
                                 <span class="material-icons" aria-hidden="true">{{ showSyncLog ? 'expand_less' : 'expand_more' }}</span>
                                 {{ showSyncLog ? t('syncHideLog') : t('syncShowLog') }}
                             </button>
-                            <ol v-if="showSyncLog" class="sync-log" aria-live="polite">
+                            <!-- Focusable: its lines scrolled with the keyboard -->
+                            <ol v-if="showSyncLog" class="sync-log" aria-live="polite" tabindex="0" :aria-label="t('syncLogLabel')">
                                 <li v-for="(line, i) in syncLog" :key="i" :class="{ 'sync-log-debug': line.startsWith('Woob debug '), 'sync-log-command': line.startsWith('Woob command ') }">{{ line }}</li>
                             </ol>
+                            <!-- Failed synchronization: an outdated woob module is the most common cause -->
+                            <div v-if="isAdmin && syncStatus === 'error'" class="sync-woob-help">
+                                <p id="sync-woob-help-text" class="sync-woob-help-text">{{ t('syncWoobUpdateHelp') }}</p>
+                                <button type="button" class="btn-secondary woob-update-button sync-woob-update" @click="openWoobUpdate()" :disabled="woobUpdate.running" aria-describedby="sync-woob-help-text">
+                                    <span class="material-icons" :class="{ spin: woobUpdate.running }" aria-hidden="true">system_update_alt</span>
+                                    {{ t('woobUpdateButton') }}
+                                </button>
+                            </div>
                         </section>
                     </div>
                 </div>
@@ -2422,7 +2431,7 @@
                         <p class="setup-help">{{ t('woobTrustCompare') }}</p>
                         <div v-if="woobUpdate.status.error" class="sync-step-error" role="alert">{{ woobUpdate.status.error }}</div>
                     </template>
-                    <ol v-if="woobUpdate.lines.length" class="sync-log" aria-live="polite" :aria-label="t('woobUpdateLog')">
+                    <ol v-if="woobUpdate.lines.length" class="sync-log" aria-live="polite" tabindex="0" :aria-label="t('woobUpdateLog')">
                         <li v-for="(line, i) in woobUpdate.lines" :key="i">{{ line }}</li>
                     </ol>
                     <div v-if="woobUpdate.running" class="transactions-hint" role="status">{{ t('woobUpdateRunning') }}</div>

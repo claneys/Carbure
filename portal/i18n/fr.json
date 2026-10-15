@@ -339,6 +339,8 @@
     "sync2faWaiting": "Authentification forte : validez la connexion dans l'application de votre banque si elle vous le demande, la synchronisation attend votre validation.",
     "syncShowLog": "Voir le journal détaillé",
     "syncHideLog": "Masquer le journal",
+    "syncLogLabel": "Journal de la synchronisation",
+    "syncWoobUpdateHelp": "Une erreur de la banque vient souvent d'un module woob obsolète : mettez à jour les modules bancaires puis relancez la synchronisation.",
     "chooseCategory": "Catégoriser…",
     "ruleSuggestion": "Toujours classer « {label} » dans {category} ?",
     "createRule": "Créer une règle",

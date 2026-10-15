@@ -339,6 +339,8 @@
     "sync2faWaiting": "Strong authentication: approve the connection in your bank app if asked, the synchronization waits for your approval.",
     "syncShowLog": "Show detailed log",
     "syncHideLog": "Hide log",
+    "syncLogLabel": "Log of the synchronization",
+    "syncWoobUpdateHelp": "A bank error often comes from an outdated woob module: update the bank modules, then run the synchronization again.",
     "chooseCategory": "Categorize…",
     "ruleSuggestion": "Always file \"{label}\" under {category}?",
     "createRule": "Create a rule",

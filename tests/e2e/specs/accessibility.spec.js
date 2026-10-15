@@ -195,3 +195,42 @@ test('the menus, modals and the synchronization log are readable', async ({ admi
 
     expect(problems).toEqual([]);
 });
+
+test('the update of the bank modules offered after a failed synchronization is readable', async ({ adminPage: page }) => {
+    await openTab(page, tr('tabAccounts'));
+    await page.locator('.account-item').filter({ hasText: 'fail@bank' }).getByRole('button', { name: tr('syncAccount') }).click();
+    await expect(page.locator('.sync-status')).toContainText(tr('syncStatus_error'), { timeout: 15_000 });
+
+    const update = page.locator('.sync-woob-help').getByRole('button', { name: tr('woobUpdateButton') });
+    // Log collapsed, then open: the help and its button at rest and on hover
+    await expect(update).toBeVisible();
+    const problems = [...await contrastProblems(page, 'sync help')];
+    await page.getByRole('button', { name: tr('syncShowLog') }).click();
+    await expect(page.locator('.sync-log')).toBeVisible();
+    problems.push(...await contrastProblems(page, 'sync help (log open)'));
+
+    // On keyboard focus: a ring of 2px at least, the text still readable (the log before
+    // it is focusable too, to scroll it with the keyboard)
+    await update.focus();
+    await page.keyboard.press('Shift+Tab');
+    await expect(page.getByRole('list', { name: tr('syncLogLabel') })).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(update).toBeFocused();
+    const outline = await update.evaluate(el => {
+        const style = getComputedStyle(el);
+        return { style: style.outlineStyle, width: parseFloat(style.outlineWidth) };
+    });
+    expect(outline.style).not.toBe('none');
+    expect(outline.width).toBeGreaterThanOrEqual(2);
+    problems.push(...await contrastProblems(page, 'sync help (focus)'));
+    expect(problems).toEqual([]);
+
+    // In forced colors: a visible border, like the other buttons
+    await page.emulateMedia({ forcedColors: 'active' });
+    const border = await update.evaluate(el => {
+        const style = getComputedStyle(el);
+        return { style: style.borderTopStyle, width: parseFloat(style.borderTopWidth) };
+    });
+    expect(border.style).not.toBe('none');
+    expect(border.width).toBeGreaterThanOrEqual(1);
+});

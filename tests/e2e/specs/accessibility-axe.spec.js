@@ -176,3 +176,17 @@ test('text spacing: no text cut with the spacing of WCAG 1.4.12', async ({ admin
     await page.addStyleTag({ content: TEXT_SPACING });
     expect(await everyTab(page, [...MAIN_TABS, ...ADMIN_TABS], clippedTexts)).toEqual([]);
 });
+
+test('reflow: a failed synchronization at 320 CSS px, its update of the bank modules included', async ({ adminPage: page }) => {
+    await openTab(page, tr('tabAccounts'));
+    await page.locator('.account-item').filter({ hasText: 'fail@bank' }).getByRole('button', { name: tr('syncAccount') }).click();
+    await expect(page.locator('.sync-status')).toContainText(tr('syncStatus_error'), { timeout: 15_000 });
+    await page.getByRole('button', { name: tr('syncShowLog') }).click();
+
+    await page.setViewportSize({ width: 320, height: 256 });
+    const update = page.locator('.sync-woob-help').getByRole('button', { name: tr('woobUpdateButton') });
+    await update.scrollIntoViewIfNeeded();
+    await expect(update).toBeVisible();
+    expect([...await reflowProblems(page, 'sync'), ...await clippedTexts(page, 'sync')]).toEqual([]);
+    expect(await axeViolations(page, 'sync 320')).toEqual([]);
+});

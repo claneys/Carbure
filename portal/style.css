@@ -3560,6 +3560,32 @@ button .material-icons {
     margin-bottom: 10px;
 }
 
+/* Failed synchronization: update of the bank modules offered below the log */
+.sync-woob-help {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-left: 4px solid var(--info-color);
+    border-radius: var(--border-radius-sm);
+    background: var(--info-light);
+}
+
+/* The log collapsed: right under its toggle */
+.sync-log-toggle + .sync-woob-help {
+    margin-top: 0;
+}
+
+.sync-woob-help-text {
+    flex: 1 1 240px;
+    min-width: 0;
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 13px;
+}
+
 .sync-step-label {
     flex: 1;
     min-width: 0;

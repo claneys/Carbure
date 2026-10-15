@@ -97,6 +97,8 @@ test('synchronizes every account at once', async ({ adminPage: page }) => {
     await expect(account(page, '00012345678@bnp').locator('.account-sync-state')).toHaveText(tr('lastSync_OK'));
     await expect(account(page, 'fail@bank').locator('.account-sync-state')).toHaveText(tr('lastSync_ERROR'));
     await expect(page.getByRole('button', { name: tr('syncAllAccounts') })).toBeEnabled();
+    // At least one account failed: the update of the bank modules is offered below the log
+    await expect(page.locator('.sync-woob-help').getByRole('button', { name: tr('woobUpdateButton') })).toBeVisible();
 });
 
 test('reports a synchronization error', async ({ adminPage: page }) => {
@@ -106,6 +108,40 @@ test('reports a synchronization error', async ({ adminPage: page }) => {
     await expect(page.locator('.sync-status')).toContainText(tr('syncStatus_error'));
     await expect(page.locator('.sync-step-error').first()).toContainText('iter_accounts');
     await expect(account(page, 'fail@bank').locator('.account-sync-state')).toHaveText(tr('lastSync_ERROR'));
+});
+
+test('offers to update the bank modules below the log of a failed synchronization', async ({ adminPage: page }) => {
+    await openTab(page, tr('tabAccounts'));
+    await account(page, 'fail@bank').getByRole('button', { name: tr('syncAccount') }).click();
+    await expect(page.locator('.sync-status')).toContainText(tr('syncStatus_error'), { timeout: 15_000 });
+
+    // The log collapsed: right under its toggle, the button described by the help sentence
+    const help = page.locator('.sync-woob-help');
+    const update = help.getByRole('button', { name: tr('woobUpdateButton') });
+    await expect(help).toContainText(tr('syncWoobUpdateHelp'));
+    await expect(update).toBeEnabled();
+    await expect(update).toHaveAccessibleDescription(tr('syncWoobUpdateHelp'));
+    const toggle = page.getByRole('button', { name: tr('syncShowLog') });
+    expect(await toggle.evaluate(el => el.nextElementSibling?.classList.contains('sync-woob-help'))).toBe(true);
+
+    // The log open: below it
+    await toggle.click();
+    await expect(page.locator('.sync-log')).toBeVisible();
+    expect(await page.locator('.sync-log').evaluate(el => el.nextElementSibling?.classList.contains('sync-woob-help'))).toBe(true);
+
+    // Opens the update of the bank modules, from the keyboard
+    await update.focus();
+    await page.keyboard.press('Enter');
+    const modal = page.getByRole('dialog', { name: tr('woobUpdateTitle') });
+    await expect(modal).toBeVisible();
+    await expect(modal.getByRole('button', { name: tr('woobTrustAndUpdate') })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(modal).toHaveCount(0);
+
+    // Synchronization started again: not offered while it runs nor once it succeeds
+    await account(page, '00012345678@bnp').getByRole('button', { name: tr('syncAccount') }).click();
+    await expect(page.locator('.sync-status')).toContainText(tr('syncStatus_success'), { timeout: 15_000 });
+    await expect(help).toHaveCount(0);
 });
 
 test('adds accounts of a connected bank, from the accounts woob lists for it', async ({ adminPage: page }) => {
@@ -445,6 +481,9 @@ test('a fresh woob is not run before its repository is trusted', async ({ adminP
 
 test('the update of the bank modules is not offered to a user', async ({ userPage: page, request }) => {
     await expect(page.getByRole('button', { name: tr('woobUpdateButton') })).toHaveCount(0);
+    // Nor after a failed synchronization: the Accounts tab and its log are for administrators
+    await expect(page.locator('.tabs').getByRole('button', { name: tr('tabAccounts') })).toHaveCount(0);
+    await expect(page.locator('.sync-woob-help')).toHaveCount(0);
     const login = await request.post('/api/user/login', { data: { username: 'marie', password: 'marie-password' } });
     const headers = { Authorization: `Bearer ${(await login.json()).token}` };
     expect((await request.get('/api/bank/woob', { headers })).status()).toBe(403);
