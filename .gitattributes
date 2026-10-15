@@ -3,3 +3,6 @@
 
 *.png binary
 *.phar binary
+
+# Statement files of the banks: kept byte for byte (CRLF, Windows-1252...) to test the import
+tests/fixtures/import/* -text

@@ -1,0 +1,4 @@
+Date de comptabilisation;Libelle simplifie;Libelle operation;Reference;Informations complementaires;Type operation;Categorie;Sous categorie;Debit;Credit;Date operation;Date de valeur;Pointage operation
+20/01/2026;FOURNISSEUR ENERGIE;PRLV SEPA FOURNISSEUR ENERGIE;XX123456789;ECH/200126 ID EMETTEUR/FR12ZZZ123456;Prelevement;Logement;Energie;-125,30;;20/01/2026;20/01/2026;0
+21/01/2026;EMPLOYEUR SA;VIR SEPA EMPLOYEUR SA;XX123456790;SALAIRE JANVIER;Virement recu;Revenus;Salaires;;2500,00;21/01/2026;21/01/2026;0
+22/01/2026;CB SUPERMARCHE;CB SUPERMARCHE FACT 210126;XX123456791;;Paiement carte;Alimentation;Supermarche;-85,75;;21/01/2026;22/01/2026;0

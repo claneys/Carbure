@@ -1,0 +1,4 @@
+Statut;Date de la valeur (UTC);Date de l'opération (UTC);Montant total (TTC);Débit;Crédit;Solde;Devise;Nom de la contrepartie;IBAN de la contrepartie;Méthode de paiement;Identifiant de transaction;Référence;Catégorie de trésorerie
+Exécuté;10-01-2026 09:30:00;09-01-2026 18:12:00;-49,90;-49,90;;950,10;EUR;Fournisseur Logiciel;;Carte;txn_0001;Abonnement;Logiciels
+Exécuté;11-01-2026 10:00:00;11-01-2026 10:00:00;1200,00;;1200,00;2150,10;EUR;Client SARL;FR7630001007941234567890185;Virement;txn_0002;Facture F-2026-001;Ventes
+Refusé;12-01-2026 10:00:00;12-01-2026 10:00:00;-15,00;-15,00;;2150,10;EUR;Taxi;;Carte;txn_0003;;Transport

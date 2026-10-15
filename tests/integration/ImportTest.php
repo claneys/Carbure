@@ -39,6 +39,19 @@ class ImportTest extends DatabaseTestCase
         $this->assertArrayNotHasKey('uuid', $preview['rows'][1]);
     }
 
+    public function testPreviewOfANeobankExport()
+    {
+        // Revolut: comma separated, dates with a time, rows not booked skipped
+        $this->loginAs(self::USER);
+        $file = base64_encode(file_get_contents(__DIR__ . '/../fixtures/import/revolut.csv'));
+        $preview = Transaction::previewImport($file, 'revolut.csv');
+
+        $this->assertSame('csv', $preview['format']);
+        $this->assertSame(['new' => 3, 'known' => 0, 'duplicate' => 0], $preview['counts']);
+        // Cleaned like the labels of a synchronization (upper case)
+        $this->assertSame(['MONOPRIX', 'TOP-UP BY *1234', 'EXCHANGED TO USD'], array_column($preview['rows'], 'label'));
+    }
+
     public function testImportTheNewTransactions()
     {
         $this->loginAs(self::USER);

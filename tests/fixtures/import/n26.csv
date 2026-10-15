@@ -1,0 +1,4 @@
+"Booking Date","Value Date","Partner Name","Partner Iban","Type","Payment Reference","Account Name","Amount (EUR)","Original Amount","Original Currency","Exchange Rate"
+"2026-01-05","2026-01-05","BOULANGERIE DU MARCHE","","Presentment","","Compte principal","-4.80","","",""
+"2026-01-06","2026-01-06","MARTIN DUPONT","FR7630001007941234567890185","Credit Transfer","Remboursement restaurant","Compte principal","25.00","","",""
+"2026-01-08","2026-01-08","LIBRAIRIE EN LIGNE","","Presentment","","Compte principal","-120.50","-140.00","USD","1.1618"

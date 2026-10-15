@@ -1,0 +1,4 @@
+Status,Settlement date (UTC),Operation date (UTC),Total amount (incl. VAT),Currency,Counterparty name,Payment method,Transaction ID,IBAN,Reference,Category
+settled,2026-01-10 09:30:00,2026-01-09 18:12:00,-49.90,EUR,Fournisseur Logiciel,card,txn_0001,,Abonnement,software
+settled,2026-01-11 10:00:00,2026-01-11 10:00:00,1200.00,EUR,Client SARL,transfer,txn_0002,FR7630001007941234567890185,Facture F-2026-001,sales
+declined,2026-01-12 10:00:00,2026-01-12 10:00:00,-15.00,EUR,Taxi,card,txn_0003,,,transport

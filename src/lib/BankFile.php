@@ -51,6 +51,38 @@ final class BankFile
     ];
 
     /**
+     * Columns of a CSV header (normalized by normalizeHeader()), in the order they are
+     * tried: a header cell is the first column it matches among those not found yet.
+     * The operation date comes first (the date the bank books it is the "date"); shortlabel
+     * and reference only stand in for a missing label or detail (csvHeaderColumns()).
+     */
+    const CSV_COLUMNS = [
+        'operation' => '/^(date (de l |d )?op(e|é)ration|dateop|date op|transaction date|date de transaction|started date|operation date)/',
+        'date' => '/^(date comptable|date de comptabilisation|date compta|booking date|completed date|settlement date|date|datum)$/',
+        'label' => '/^(libelle(?! simplifie)|label|intitule|description|nature de l operation|payee|beneficiaire|partner name|counterparty name|nom de la contrepartie)/',
+        'shortlabel' => '/^libelle simplifie/',
+        'detail' => '/^(detail|details|memo|information|informations complementaires|commentaire)/',
+        'reference' => '/^(payment reference|reference de paiement|reference)$/',
+        'amount' => '/^(montant|amount|total amount|somme|valeur)/',
+        'debit' => '/^(debit|sortie)/',
+        'credit' => '/^(credit|entree)/',
+        'fee' => '/^(fee|fees|frais)$/',
+        'status' => '/^(state|status|statut)$/',
+    ];
+
+    /** A column stands in for a missing one: shortlabel for label, then detail; reference for detail */
+    const CSV_FALLBACKS = [['label', 'shortlabel'], ['label', 'detail'], ['detail', 'reference']];
+
+    /**
+     * Statuses of a neobank export (Revolut State, Qonto Status/Statut) of a transaction
+     * that was not booked: its row is skipped. Lower case, without accents.
+     */
+    const CSV_SKIPPED_STATUSES = [
+        'pending', 'reverted', 'declined', 'failed', 'cancelled', 'canceled', 'reversed',
+        'en attente', 'en cours', 'refuse', 'annule', 'rejete',
+    ];
+
+    /**
      * Read a statement file.
      *
      * @param string      $content  The content of the file
@@ -368,19 +400,63 @@ final class BankFile
     {
         $cell = fn($key) => isset($columns[$key]) ? trim($cells[$columns[$key]] ?? '') : '';
         $date = $cell('date') ?: $cell('operation');
-        if ($date === '') {
+        if ($date === '' || self::csvSkippedStatus($cell('status'))) {
             return null;
         }
-        $amount = isset($columns['amount']) ? $cell('amount') : self::csvDebitCredit($cell('debit'), $cell('credit'));
+        $amount = self::csvAmount($cell('amount'), $cell('debit'), $cell('credit'), $cell('fee'), isset($columns['amount']));
         if ($amount === null) {
             return null;
         }
-        $label = $cell('label');
-        $detail = $cell('detail');
-        if ($detail !== '' && stripos($label, $detail) === false) {
-            $label = trim("$label $detail");
+        return ['date' => $date, 'rdate' => $cell('operation'), 'amount' => $amount, 'raw' => self::csvLabel($cell('label'), $cell('detail')), 'hint' => null];
+    }
+
+    /**
+     * Whether the status of a row (neobank exports) says the transaction was not booked.
+     *
+     * @param string $status The status cell ('' when the file has none)
+     * @return bool
+     */
+    private static function csvSkippedStatus(string $status): bool
+    {
+        return $status !== '' && in_array(self::normalizeHeader($status), self::CSV_SKIPPED_STATUSES, true);
+    }
+
+    /**
+     * Amount of a CSV row: its amount column, else its debit and credit columns, minus the
+     * fee of the transaction when the file gives it apart (Revolut).
+     *
+     * @param string $amount    The amount cell
+     * @param string $debit     The debit cell
+     * @param string $credit    The credit cell
+     * @param string $fee       The fee cell ('' when the file has none)
+     * @param bool   $hasAmount Whether the file has an amount column
+     * @return string|null The amount, null if the row has none (or a zero one)
+     */
+    private static function csvAmount(string $amount, string $debit, string $credit, string $fee, bool $hasAmount): ?string
+    {
+        $value = $hasAmount ? self::amount($amount) : self::csvDebitCredit($debit, $credit);
+        // A zero amount is no transaction (a card authorization held by Revolut)
+        if ($value === null || $value == 0) {
+            return null;
         }
-        return ['date' => $date, 'rdate' => $cell('operation'), 'amount' => (string)$amount, 'raw' => $label, 'hint' => null];
+        $fee = self::amount($fee);
+        return (string)($fee ? round($value - abs($fee), 2) : $value);
+    }
+
+    /**
+     * Label of a CSV row: its label completed by its detail, or its detail alone when it
+     * already holds the label (Société Générale: "Libellé" and "Détail de l'écriture").
+     *
+     * @param string $label  The label cell
+     * @param string $detail The detail cell
+     * @return string
+     */
+    private static function csvLabel(string $label, string $detail): string
+    {
+        if ($detail === '' || stripos($label, $detail) !== false) {
+            return $label;
+        }
+        return $label !== '' && stripos($detail, $label) !== false ? $detail : trim("$label $detail");
     }
 
     /**
@@ -409,20 +485,10 @@ final class BankFile
      */
     private static function csvColumns(array $cells): ?array
     {
-        $patterns = [
-            // Date of the operation (the date the bank books it comes first)
-            'operation' => '/^(date (de l |d )?op(e|é)ration|dateop|date op|transaction date|date de transaction)/',
-            'date' => '/^(date comptable|date de comptabilisation|date compta|booking date|date|datum)$/',
-            'label' => '/^(libelle|label|libelle de l operation|libelle operation|intitule|description|nature de l operation|payee|beneficiaire)/',
-            'detail' => '/^(detail|details|memo|information|informations complementaires|commentaire)/',
-            'amount' => '/^(montant|amount|somme|valeur)/',
-            'debit' => '/^(debit|sortie)/',
-            'credit' => '/^(credit|entree)/',
-        ];
         $columns = [];
         foreach ($cells as $index => $cell) {
             // An empty line of the CSV gives a null cell
-            $key = self::csvColumnKey(self::normalizeHeader($cell ?? ''), $patterns, $columns);
+            $key = self::csvColumnKey(self::normalizeHeader($cell ?? ''), self::CSV_COLUMNS, $columns);
             if ($key !== null) {
                 $columns[$key] = $index;
             }
@@ -431,8 +497,8 @@ final class BankFile
     }
 
     /**
-     * Columns of a header row if it has a date, a label (the detail stands for a missing
-     * label) and an amount (or a debit and a credit), else null.
+     * Columns of a header row if it has a date, a label (see CSV_FALLBACKS for the columns
+     * that stand in for a missing one) and an amount (or a debit and a credit), else null.
      *
      * @param array<string, int> $columns The columns found in the row
      * @return array<string, int>|null
@@ -441,9 +507,11 @@ final class BankFile
     {
         $hasDate = isset($columns['date']) || isset($columns['operation']);
         $hasAmount = isset($columns['amount']) || (isset($columns['debit']) && isset($columns['credit']));
-        if (!isset($columns['label']) && isset($columns['detail'])) {
-            $columns['label'] = $columns['detail'];
-            unset($columns['detail']);
+        foreach (self::CSV_FALLBACKS as [$missing, $standIn]) {
+            if (!isset($columns[$missing]) && isset($columns[$standIn])) {
+                $columns[$missing] = $columns[$standIn];
+                unset($columns[$standIn]);
+            }
         }
         return $hasDate && $hasAmount && isset($columns['label']) ? $columns : null;
     }
@@ -601,7 +669,8 @@ final class BankFile
      */
     public static function date(string $value, bool $dayFirst = true): ?string
     {
-        $value = trim($value);
+        // A time after the date (31-01-2026 09:30:00, 2026-01-31 09:30:00) is not needed
+        $value = trim((string)preg_replace('/[ T]\d{1,2}:\d{2}(:\d{2})?.*$/', '', trim($value)));
         if (preg_match('/^(\d{4})-?(\d{2})-?(\d{2})/', $value, $m)) {
             [$year, $month, $day] = [(int)$m[1], (int)$m[2], (int)$m[3]];
         } elseif (preg_match('/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-\'](\d{2}|\d{4})$/', str_replace(' ', '', $value), $m)) {

@@ -69,6 +69,94 @@ class BankFileTest extends TestCase
         $this->assertSame([['date' => '2026-01-07', 'rdate' => '2026-01-07', 'amount' => -45.0, 'raw' => 'CARTE 06/01/26 SNCF', 'type' => 7]], $file['transactions']);
     }
 
+    /**
+     * Exports of French banks and neobanks (anonymized, in their format: preamble lines,
+     * encoding, delimiter, columns): file => transactions [date, rdate, amount, raw].
+     * The sources of each format are listed in docs/portail.md.
+     */
+    public static function bankExports(): array
+    {
+        return [
+            // Windows-1252, CRLF, account lines before the header, amount in euros and francs
+            'La Banque Postale' => ['banque-postale.csv', [
+                ['2026-10-12', '2026-10-12', -45.6, 'ACHAT CB SUPERMARCHE 11.10.26 CARTE NUMERO 123'],
+                ['2026-10-10', '2026-10-10', 1500.0, 'VIREMENT DE M MARTIN DUPONT'],
+            ]],
+            // Account line before the header; the detail of the label holds the label
+            'Société Générale' => ['societe-generale.csv', [
+                ['2026-01-19', '2026-01-19', 850.0, 'VIR RECU 508160 VIR RECU 1234567834S DE: M MARTIN DUPONT MOTIF: LOYER REF: 1234'],
+                ['2026-01-18', '2026-01-18', -8.1, 'COTISATION JAZZ'],
+                ['2026-01-17', '2026-01-17', -3.2, 'CARTE X1234 16/01 BOULANGERIE DU MARCHE'],
+            ]],
+            // ISO-8859-15, CRLF, negative debits
+            'Crédit Mutuel / CIC' => ['credit-mutuel.csv', [
+                ['2026-01-05', '2026-01-05', -26.99, 'PRLV SEPA OPERATEUR TELECOM'],
+                ['2026-01-06', '2026-01-06', 2950.0, 'VIR SALAIRE EMPLOYEUR SA'],
+                ['2026-01-07', '2026-01-07', -12.5, 'PAIEMENT CB 0601 PARIS BOULANGERIE CARTE 4974XXXXXXXX1234'],
+            ]],
+            // ISO-8859-1, an empty last column
+            'Fortuneo' => ['fortuneo.csv', [
+                ['2025-12-13', '2025-12-13', -6.4, 'CARTE 12/12 LIBRAIRIE METZ'],
+                ['2025-12-12', '2025-12-12', 150.0, 'VIR SEPA M MARTIN DUPONT'],
+            ]],
+            // BPCE: the full label rather than the simplified one, then its additional information
+            'Caisse d\'Épargne / Banque Populaire' => ['caisse-epargne.csv', [
+                ['2026-01-20', '2026-01-20', -125.3, 'PRLV SEPA FOURNISSEUR ENERGIE ECH/200126 ID EMETTEUR/FR12ZZZ123456'],
+                ['2026-01-21', '2026-01-21', 2500.0, 'VIR SEPA EMPLOYEUR SA SALAIRE JANVIER'],
+                ['2026-01-22', '2026-01-21', -85.75, 'CB SUPERMARCHE FACT 210126'],
+            ]],
+            // Summary lines before the header, dates as dd-mm-yyyy
+            'BNP Paribas' => ['bnp-paribas.csv', [
+                ['2026-10-12', '2026-10-12', -54.2, 'FACTURE CARTE DU 111026 SUPERMARCHE CARTE 4974XXXXXXXX1234'],
+                ['2026-10-10', '2026-10-10', 2100.0, 'VIR SEPA RECU /DE EMPLOYEUR SA /MOTIF SALAIRE'],
+            ]],
+            // Current export: partner name, then the payment reference
+            'N26' => ['n26.csv', [
+                ['2026-01-05', '2026-01-05', -4.8, 'BOULANGERIE DU MARCHE'],
+                ['2026-01-06', '2026-01-06', 25.0, 'MARTIN DUPONT Remboursement restaurant'],
+                ['2026-01-08', '2026-01-08', -120.5, 'LIBRAIRIE EN LIGNE'],
+            ]],
+            'N26 (former export, in French)' => ['n26-legacy.csv', [
+                ['2025-12-01', '2025-12-01', -32.4, 'SUPERMARCHE BIO'],
+                ['2025-12-02', '2025-12-02', 2100.0, 'EMPLOYEUR SA Salaire novembre'],
+            ]],
+            // Completed / started dates with a time, the fee taken off; zero, pending and
+            // reverted rows skipped
+            'Revolut' => ['revolut.csv', [
+                ['2026-01-04', '2026-01-03', -23.45, 'Monoprix'],
+                ['2026-01-05', '2026-01-05', 500.0, 'Top-Up by *1234'],
+                ['2026-01-06', '2026-01-06', -100.5, 'Exchanged to USD'],
+            ]],
+            // Declined row skipped
+            'Qonto' => ['qonto.csv', [
+                ['2026-01-10', '2026-01-09', -49.9, 'Fournisseur Logiciel Abonnement'],
+                ['2026-01-11', '2026-01-11', 1200.0, 'Client SARL Facture F-2026-001'],
+            ]],
+            // dd-mm-yyyy hh:mm:ss dates, refused row skipped
+            'Qonto (in French)' => ['qonto-fr.csv', [
+                ['2026-01-09', '2026-01-09', -49.9, 'Fournisseur Logiciel Abonnement'],
+                ['2026-01-11', '2026-01-11', 1200.0, 'Client SARL Facture F-2026-001'],
+            ]],
+        ];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('bankExports')]
+    public function testBankExport($file, $expected)
+    {
+        $parsed = $this->parse($file);
+        $this->assertSame('csv', $parsed['format']);
+        $actual = array_map(fn($t) => [$t['date'], $t['rdate'], $t['amount'], $t['raw']], $parsed['transactions']);
+        $this->assertSame($expected, $actual);
+    }
+
+    public function testCsvRowsNotBooked()
+    {
+        // Pending, cancelled (accents ignored) and zero amount rows of the neobanks are skipped
+        $csv = "Date,Description,Amount,State\n2026-01-02,A,-1.00,COMPLETED\n2026-01-03,B,-2.00,PENDING\n"
+             . "2026-01-04,C,-3.00,Annulé\n2026-01-05,D,0.00,COMPLETED\n";
+        $this->assertSame(['A'], array_column(BankFile::parse($csv, 'x.csv')['transactions'], 'raw'));
+    }
+
     public function testCsvWithMonthFirstDates()
     {
         $csv = "Date,Description,Amount\n01/31/2026,COFFEE SHOP,-3.50\n02/01/2026,REFUND,10.00\n";
@@ -122,6 +210,9 @@ class BankFileTest extends TestCase
         $this->assertSame('2026-01-31', BankFile::date('31/01/2026'));
         $this->assertSame('2026-01-31', BankFile::date('31.01.26'));
         $this->assertSame('2026-01-31', BankFile::date("1/31'26", false));
+        // With a time (Revolut, Qonto)
+        $this->assertSame('2026-01-31', BankFile::date('31-01-2026 09:30:00'));
+        $this->assertSame('2026-01-31', BankFile::date('2026-01-31 9:05:00'));
         $this->assertNull(BankFile::date('31/02/2026'));
         $this->assertNull(BankFile::date('hier'));
     }

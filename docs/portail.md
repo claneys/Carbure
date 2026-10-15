@@ -106,7 +106,8 @@ modification.
   cherche « EDF ». La recherche s'efface ensuite avec la croix, comme une recherche saisie.
 - **Importer un relevé** : le bouton « Importer » ouvre une fenêtre où déposer le fichier
   téléchargé depuis l'espace client de la banque (OFX/QFX, QIF, CSV ou CAMT.053, 1 Mo au
-  plus). Un aperçu classe chaque transaction : **nouvelle** (cochée), **doublon probable**
+  plus ; banques dont l'export CSV est vérifié : voir
+  [Fonctionnalités](fonctionnalites.md#import-de-releves-bancaires)). Un aperçu classe chaque transaction : **nouvelle** (cochée), **doublon probable**
   (même montant qu'une transaction existante à 3 jours près, souvent la même synchronisée
   avec un autre libellé : non cochée) ou **déjà présente** (même identifiant : ignorée).
   Chaque transaction a sa case : décocher celles à ne pas importer (ou « Tout cocher » pour

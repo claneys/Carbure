@@ -138,9 +138,33 @@ Pour une banque que woob ne couvre pas, ou pour reprendre l'historique d'avant C
    dernier mois importé.
 
 Les colonnes d'un CSV sont reconnues d'après leur en-tête (date, libellé, montant, ou débit et
-crédit), y compris les formats français (`;`, `1 234,56`, encodage Windows-1252). Le libellé
-est nettoyé comme à la synchronisation. Le contenu du fichier n'est jamais écrit dans les
-logs.
+crédit), y compris les formats français (`;`, `1 234,56`, encodage Windows-1252) et les
+lignes sur le compte avant l'en-tête. Les lignes non passées des néobanques (en attente,
+annulées, refusées) et les montants nuls (autorisations de carte) sont ignorés ; les frais
+donnés à part (Revolut) sont déduits. Le libellé est nettoyé comme à la synchronisation. Le
+contenu du fichier n'est jamais écrit dans les logs.
+
+Exports CSV vérifiés (formats relevés dans des projets open source qui les importent, puis
+testés sur un fichier anonymisé de même structure) :
+
+| Banque | Fichier à choisir | Particularités lues |
+|---|---|---|
+| Boursorama / BoursoBank | export CSV des mouvements | colonne `amount` signée |
+| Crédit Agricole | export CSV | lignes du compte avant l'en-tête, débit et crédit |
+| La Banque Postale | « Téléchargement des opérations », CSV | lignes du compte, `Montant(EUROS)`, Windows-1252 |
+| Société Générale | « Télécharger les opérations », CSV | ligne du compte, libellé et détail de l'écriture |
+| Crédit Mutuel / CIC | export CSV | débit négatif et crédit, ISO-8859-15 |
+| Caisse d'Épargne / Banque Populaire | export CSV | libellé de l'opération et informations complémentaires |
+| BNP Paribas / Hello bank! | export CSV | lignes de résumé avant l'en-tête, dates `jj-mm-aaaa` |
+| Fortuneo | `HistoriqueOperations….csv` | débit et crédit, ISO-8859-1 |
+| N26 | export CSV (ancien et nouveau format) | nom du bénéficiaire et référence de paiement |
+| Revolut | relevé « Excel » (un CSV) | dates avec l'heure, frais, état des opérations |
+| Qonto | export CSV (anglais ou français) | statut, nom de la contrepartie et référence |
+
+Pour une autre banque, ou si l'export CSV n'est pas reconnu, choisissez **OFX** (souvent
+appelé « Money » ou « Quicken ») : c'est le format le plus homogène d'une banque à l'autre.
+LCL, Shine, Lydia/Sumeria, BforBank et Monabanq n'ont pas pu être vérifiés faute d'exemple
+public de leurs exports.
 
 ### Transactions récurrentes
 
