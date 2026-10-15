@@ -64,3 +64,24 @@ test('theme.js: resolve gives the theme of a choice', () => {
     assert.equal(window.carbureTheme.resolve('dark', false), 'dark');
     assert.equal(window.carbureTheme.resolve('light', true), 'light');
 });
+
+test('theme.js: the header toggle switches to the other theme displayed', () => {
+    const { window, setSystemDark } = load({ systemDark: true });
+    const seen = [];
+    window.carbureTheme.subscribe(theme => seen.push(theme));
+    // Called at once with the theme displayed, then on each change
+    assert.deepEqual(seen, ['dark']);
+    assert.equal(window.carbureTheme.current(), 'dark');
+    assert.equal(window.carbureTheme.opposite(), 'light');
+
+    window.carbureTheme.apply(window.carbureTheme.opposite());
+    assert.equal(window.carbureTheme.current(), 'light');
+    assert.equal(window.carbureTheme.opposite(), 'dark');
+    assert.deepEqual(seen, ['dark', 'light']);
+
+    // A change of the system preference is followed with the "system" choice only
+    window.carbureTheme.apply('system');
+    setSystemDark(false);
+    assert.deepEqual(seen, ['dark', 'light', 'dark', 'light']);
+    assert.equal(window.carbureTheme.opposite(), 'dark');
+});

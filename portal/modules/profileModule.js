@@ -43,6 +43,9 @@ export function createProfileModule(getApiService) {
                 apiTokenDays: 90,
                 loadingDevices: false,
                 revealedTokens: {},
+                // Theme displayed by the page (light or dark), followed for the header toggle
+                displayedTheme: 'light',
+                savingTheme: false,
                 profileForm: {
                     email: '',
                     firstname: '',
@@ -62,6 +65,31 @@ export function createProfileModule(getApiService) {
              */
             isAdmin() {
                 return !!(this.currentUser && Number(this.currentUser.is_admin));
+            },
+
+            /**
+             * Action of the header theme toggle, its accessible name and tooltip
+             * @returns {string}
+             */
+            themeToggleLabel() {
+                return this.t(this.displayedTheme === 'dark' ? 'switchToLightTheme' : 'switchToDarkTheme');
+            },
+
+            /**
+             * Icon of the header theme toggle: the theme it switches to
+             * @returns {string} Material icon name
+             */
+            themeToggleIcon() {
+                return this.displayedTheme === 'dark' ? 'light_mode' : 'dark_mode';
+            }
+        },
+
+        mounted() {
+            // The theme displayed changes with the profile, the toggle and the system
+            if (typeof window !== 'undefined' && window.carbureTheme) {
+                window.carbureTheme.subscribe(theme => {
+                    this.displayedTheme = theme;
+                });
             }
         },
 
@@ -145,6 +173,40 @@ export function createProfileModule(getApiService) {
                     this.showToast(error.message);
                 } finally {
                     this.rotatingSecret = false;
+                }
+            },
+
+            /**
+             * Switches to the other theme (header toggle): light when the dark one is
+             * displayed, dark otherwise. Applied at once, then saved in the profile like
+             * the choice of the profile page (it follows the user on another browser);
+             * the profile keeps "Same as the system" to follow the system again.
+             * @returns {Promise<void>}
+             */
+            async toggleTheme() {
+                const themes = typeof window !== 'undefined' ? window.carbureTheme : null;
+                if (!themes || this.savingTheme) {
+                    return;
+                }
+                const previous = themes.choice();
+                const next = themes.opposite();
+                themes.apply(next);
+                this.profileForm.theme = next;
+                if (!this.currentUser) {
+                    return;
+                }
+
+                this.savingTheme = true;
+                try {
+                    const user = await getApiService().updateUserTheme(this.currentUser.id, next);
+                    this.currentUser = { ...this.currentUser, theme: user.theme };
+                } catch (error) {
+                    // Not saved: back to the previous choice
+                    themes.apply(previous);
+                    this.profileForm.theme = previous;
+                    this.showToast(error.message || this.t('errorSavingUser'));
+                } finally {
+                    this.savingTheme = false;
                 }
             },
 

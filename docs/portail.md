@@ -392,6 +392,13 @@ activer :
   *Sombre*), choix enregistré sur le serveur et retrouvé sur un autre navigateur. Le thème
   est appliqué avant l'affichage de la page (`portal/theme.js`), sans éclair de l'autre
   thème ;
+- **bouton de thème** : l'icône à droite de l'en-tête, juste avant le menu utilisateur,
+  passe d'un clic au thème opposé à celui affiché (lune `dark_mode` en thème clair :
+  *Passer au thème sombre* ; soleil `light_mode` en thème sombre : *Passer au thème
+  clair*). Le choix est enregistré dans le profil comme le sélecteur **Thème**, qui le
+  reflète ; pour suivre de nouveau le système, choisir *Comme le système* dans le
+  profil. L'écran de connexion n'a pas ce bouton (il applique le thème mémorisé par le
+  navigateur, sinon celui du système) ;
 - **contraste augmenté** (macOS, iOS, `prefers-contrast: more`) : textes secondaires et
   bordures plus foncés (plus clairs en sombre), anneau de focus plus épais ;
 - **couleurs forcées** (mode contraste élevé de Windows, `forced-colors`) : les couleurs

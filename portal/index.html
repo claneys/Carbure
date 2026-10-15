@@ -269,26 +269,33 @@
                         <span class="material-icons" aria-hidden="true">refresh</span>
                     </button>
                 </div>
-                <div class="user-menu" @click.stop>
-                    <button class="user-menu-toggle" @click="toggleUserMenu"
-                            aria-haspopup="menu" :aria-expanded="showUserMenu ? 'true' : 'false'">
-                        <span class="material-icons" aria-hidden="true">account_circle</span>
-                        <span class="user-menu-name">{{ currentUser ? currentUser.username : (username || '…') }}</span>
-                        <span class="material-icons user-menu-caret" aria-hidden="true">expand_more</span>
+                <div class="header-user">
+                    <!-- Light / dark theme in one click, saved in the profile -->
+                    <button type="button" class="theme-toggle" @click="toggleTheme"
+                            :title="themeToggleLabel" :aria-label="themeToggleLabel">
+                        <span class="material-icons" aria-hidden="true">{{ themeToggleIcon }}</span>
                     </button>
-                    <div v-if="showUserMenu" class="user-menu-dropdown" role="menu">
-                        <button role="menuitem" @click="openProfile">
-                            <span class="material-icons" aria-hidden="true">person</span>
-                            {{ t('myProfile') }}
+                    <div class="user-menu" @click.stop>
+                        <button class="user-menu-toggle" @click="toggleUserMenu"
+                                aria-haspopup="menu" :aria-expanded="showUserMenu ? 'true' : 'false'">
+                            <span class="material-icons" aria-hidden="true">account_circle</span>
+                            <span class="user-menu-name">{{ currentUser ? currentUser.username : (username || '…') }}</span>
+                            <span class="material-icons user-menu-caret" aria-hidden="true">expand_more</span>
                         </button>
-                        <button v-if="!isAdmin" role="menuitem" @click="closeUserMenu(); setActiveTab('agents')">
-                            <span class="material-icons" aria-hidden="true">smart_toy</span>
-                            {{ t('tabAgents') }}
-                        </button>
-                        <button role="menuitem" class="user-menu-logout" @click="logout">
-                            <span class="material-icons" aria-hidden="true">logout</span>
-                            {{ t('logout') }}
-                        </button>
+                        <div v-if="showUserMenu" class="user-menu-dropdown" role="menu">
+                            <button role="menuitem" @click="openProfile">
+                                <span class="material-icons" aria-hidden="true">person</span>
+                                {{ t('myProfile') }}
+                            </button>
+                            <button v-if="!isAdmin" role="menuitem" @click="closeUserMenu(); setActiveTab('agents')">
+                                <span class="material-icons" aria-hidden="true">smart_toy</span>
+                                {{ t('tabAgents') }}
+                            </button>
+                            <button role="menuitem" class="user-menu-logout" @click="logout">
+                                <span class="material-icons" aria-hidden="true">logout</span>
+                                {{ t('logout') }}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

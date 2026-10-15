@@ -12,6 +12,8 @@
     const CHOICES = ['system', 'light', 'dark'];
     const media = root.matchMedia ? root.matchMedia('(prefers-color-scheme: dark)') : null;
     let choice = 'system';
+    // Called with the theme displayed each time it is applied (the header toggle)
+    const listeners = [];
 
     /**
      * Theme to display for a choice
@@ -26,11 +28,38 @@
         return systemDark ? 'dark' : 'light';
     }
 
+    /**
+     * Theme displayed by the page
+     * @returns {string} light or dark
+     */
+    function current() {
+        return resolve(choice, !!(media && media.matches));
+    }
+
+    /**
+     * Theme to choose to switch the page to the other one (header toggle)
+     * @returns {string} dark when the light theme is displayed, light otherwise
+     */
+    function opposite() {
+        return current() === 'dark' ? 'light' : 'dark';
+    }
+
+    /**
+     * Calls a function with the theme displayed, now and on each change
+     * @param {Function} listener - Called with light or dark
+     */
+    function subscribe(listener) {
+        listeners.push(listener);
+        listener(current());
+    }
+
     /** Applies the current choice to the page */
     function render() {
         const html = root.document.documentElement;
-        html.dataset.theme = resolve(choice, !!(media && media.matches));
+        const theme = current();
+        html.dataset.theme = theme;
         html.dataset.themeChoice = choice;
+        listeners.forEach(listener => listener(theme));
     }
 
     /**
@@ -66,5 +95,5 @@
     }
     apply(cached);
 
-    root.carbureTheme = { apply, resolve, choice: () => choice, CHOICES };
+    root.carbureTheme = { apply, resolve, current, opposite, subscribe, choice: () => choice, CHOICES };
 })(window);

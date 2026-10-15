@@ -30,9 +30,9 @@ test('follows the light/dark preference of the system by default', async ({ user
 test('a theme chosen in the profile wins over the system and is kept', async ({ userPage: page }) => {
     await page.emulateMedia({ colorScheme: 'light' });
     await openProfile(page);
-    await expect(page.getByLabel(tr('theme'))).toHaveValue('system');
+    await expect(page.getByLabel(tr('theme'), { exact: true })).toHaveValue('system');
 
-    await page.getByLabel(tr('theme')).selectOption('dark');
+    await page.getByLabel(tr('theme'), { exact: true }).selectOption('dark');
     await page.getByRole('button', { name: tr('save') }).click();
     await expect(page.locator('.toast')).toHaveText(tr('profileUpdated'));
     await expect(theme(page)).toHaveAttribute('data-theme', 'dark');
@@ -46,14 +46,100 @@ test('a theme chosen in the profile wins over the system and is kept', async ({ 
     await expect(page.locator('.user-menu-name')).toHaveText('marie');
     await expect(theme(page)).toHaveAttribute('data-theme', 'dark');
     await openProfile(page);
-    await expect(page.getByLabel(tr('theme'))).toHaveValue('dark');
+    await expect(page.getByLabel(tr('theme'), { exact: true })).toHaveValue('dark');
 
     // "Light" wins over a dark system
     await page.emulateMedia({ colorScheme: 'dark' });
-    await page.getByLabel(tr('theme')).selectOption('light');
+    await page.getByLabel(tr('theme'), { exact: true }).selectOption('light');
     await page.getByRole('button', { name: tr('save') }).click();
     await expect(page.locator('.toast')).toHaveText(tr('profileUpdated'));
     await expect(theme(page)).toHaveAttribute('data-theme', 'light');
+});
+
+test('the header toggle switches the theme in one click and saves it in the profile', async ({ userPage: page }) => {
+    await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+    await expect(theme(page)).toHaveAttribute('data-theme', 'light');
+
+    // On the right of the header, just before the user menu; the icon names the theme to come
+    const toggle = page.locator('.header-user > button').first();
+    await expect(toggle).toHaveAccessibleName(tr('switchToDarkTheme'));
+    await expect(toggle).toHaveAttribute('title', tr('switchToDarkTheme'));
+    await expect(toggle.locator('.material-icons')).toHaveText('dark_mode');
+    await expect(toggle.locator('.material-icons')).toHaveAttribute('aria-hidden', 'true');
+    // A 44x44 target, its icon drawn by the icon font (a ligature, not the name as text)
+    const box = await toggle.boundingBox();
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    expect((await toggle.locator('.material-icons').boundingBox()).width).toBeLessThan(30);
+
+    // With the keyboard: switched to dark at once, the focus kept on the button
+    const saved = page.waitForResponse(response => response.url().includes('/api/user?id=') && response.request().method() === 'PUT');
+    await toggle.focus();
+    await page.keyboard.press('Enter');
+    await expect(theme(page)).toHaveAttribute('data-theme', 'dark');
+    await expect(theme(page)).toHaveAttribute('data-theme-choice', 'dark');
+    expect((await saved).ok()).toBe(true);
+    await expect(toggle).toBeFocused();
+    await expect(toggle).toHaveAccessibleName(tr('switchToLightTheme'));
+    await expect(toggle.locator('.material-icons')).toHaveText('light_mode');
+
+    // Saved on the server: applied again on another browser (nothing cached), shown by the profile
+    await page.evaluate(() => localStorage.removeItem('theme'));
+    await page.reload();
+    await expect(page.locator('.user-menu-name')).toHaveText('marie');
+    await expect(theme(page)).toHaveAttribute('data-theme', 'dark');
+    await openProfile(page);
+    await expect(page.getByLabel(tr('theme'), { exact: true })).toHaveValue('dark');
+
+    // Back to light: the profile select follows; it still offers "Same as the system"
+    await page.getByRole('button', { name: tr('switchToLightTheme') }).click();
+    await expect(theme(page)).toHaveAttribute('data-theme', 'light');
+    await expect(page.getByLabel(tr('theme'), { exact: true })).toHaveValue('light');
+    await page.getByLabel(tr('theme'), { exact: true }).selectOption('system');
+    await page.getByRole('button', { name: tr('save') }).click();
+    await expect(page.locator('.toast')).toHaveText(tr('profileUpdated'));
+    await expect(theme(page)).toHaveAttribute('data-theme-choice', 'system');
+
+    // Following the system again: the toggle offers the other theme than the system one
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await expect(page.getByRole('button', { name: tr('switchToLightTheme') })).toBeVisible();
+});
+
+test('the header toggle is readable and its focus visible, in both themes', async ({ userPage: page }) => {
+    await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+    for (const [name, next] of [['light', 'switchToDarkTheme'], ['dark', 'switchToLightTheme']]) {
+        const toggle = page.getByRole('button', { name: tr(next) });
+        // At rest and on hover (every button of the header: see a11y.js)
+        expect(await contrastProblems(page, `header ${name}`)).toEqual([]);
+
+        // On keyboard focus: a ring of 2px at least, and the icon still readable
+        await toggle.focus();
+        await page.keyboard.press('Shift+Tab');
+        await page.keyboard.press('Tab');
+        await expect(toggle).toBeFocused();
+        const outline = await toggle.evaluate(el => {
+            const style = getComputedStyle(el);
+            return { style: style.outlineStyle, width: parseFloat(style.outlineWidth) };
+        });
+        expect(outline.style).not.toBe('none');
+        expect(outline.width).toBeGreaterThanOrEqual(2);
+        expect(await contrastProblems(page, `header ${name} (focus)`)).toEqual([]);
+
+        await page.keyboard.press('Enter');
+        await expect(theme(page)).toHaveAttribute('data-theme', name === 'light' ? 'dark' : 'light');
+    }
+});
+
+test('on a phone, the header toggle stays next to the user menu, without horizontal scroll', async ({ userPage: page }) => {
+    await page.setViewportSize({ width: 375, height: 740 });
+    const toggle = page.getByRole('button', { name: tr('switchToDarkTheme') });
+    const menu = page.locator('.user-menu-toggle');
+    await expect(toggle).toBeVisible();
+    const [toggleBox, menuBox] = [await toggle.boundingBox(), await menu.boundingBox()];
+    // Same line, the toggle just before the menu
+    expect(Math.abs((toggleBox.y + toggleBox.height / 2) - (menuBox.y + menuBox.height / 2))).toBeLessThan(4);
+    expect(toggleBox.x + toggleBox.width).toBeLessThanOrEqual(menuBox.x);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
 test('the "increase contrast" setting of the system darkens the secondary texts', async ({ userPage: page }) => {
@@ -85,6 +171,7 @@ test('in forced colors, the controls keep visible borders and focus', async ({ a
         page.locator('.tab-button:not(.active)').first(),
         page.getByRole('button', { name: tr('connectBankTitle') }),
         page.getByRole('button', { name: tr('syncAllAccounts') }),
+        page.locator('.header-user > button').first(),
     ];
     for (const control of bordered) {
         const border = await control.evaluate(el => {

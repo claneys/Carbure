@@ -340,6 +340,40 @@ body {
     font-size: 20px;
 }
 
+/* Right-hand group of the header: theme toggle, then the user menu */
+.header-user {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Light / dark theme toggle: an icon button drawn like the user menu (44x44 target, the
+   icon in the primary color: 3:1 and more on the header at rest and on hover, in both
+   themes); no movement on hover, the colors only */
+.theme-toggle {
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    flex-shrink: 0;
+    background: transparent;
+    color: var(--primary-color);
+    border: 1px solid var(--divider);
+    box-shadow: none;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.theme-toggle:hover {
+    background: var(--background);
+    border-color: var(--primary-color);
+    box-shadow: none;
+    transform: none;
+}
+
+.theme-toggle .material-icons {
+    font-size: 22px;
+}
+
 /* Header user menu */
 .user-menu {
     position: relative;
@@ -349,6 +383,8 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
+    /* Same height as the theme toggle next to it (44x44 target) */
+    min-height: 44px;
     padding: 8px 12px;
     background: transparent;
     color: var(--text-primary);
@@ -1881,7 +1917,7 @@ button .material-icons {
         display: contents;
     }
 
-    .header .user-menu {
+    .header .header-user {
         order: 1;
     }
 

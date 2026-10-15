@@ -532,3 +532,61 @@ test('accountsByBank: the followed accounts under their bank, then the others', 
     assert.deepEqual(accountsByBank([], []), []);
     assert.deepEqual(accountsByBank(undefined, [{ id: 9, bank_name: 'x' }]).map(g => g.key), ['others']);
 });
+
+test('profile: the header toggle switches the theme at once and saves it in the profile', async () => {
+    const { createProfileModule } = await import('../../portal/modules/profileModule.js');
+    let choice = 'system';
+    window.carbureTheme = {
+        choice: () => choice,
+        opposite: () => (choice === 'dark' ? 'light' : 'dark'),
+        apply: value => { choice = value; return value; },
+    };
+    const saved = [];
+    let failure = null;
+    const api = {
+        updateUserTheme: async (id, theme) => {
+            saved.push([id, theme]);
+            if (failure) {
+                throw failure;
+            }
+            return { id, theme, email: 'marie@example.com' };
+        },
+    };
+    const module = createProfileModule(() => api);
+    const toasts = [];
+    const context = {
+        ...module.data(),
+        currentUser: { id: 2, username: 'marie', theme: 'system' },
+        t: key => key,
+        showToast: message => toasts.push(message),
+    };
+    context.toggleTheme = module.methods.toggleTheme.bind(context);
+    try {
+        // Light displayed (system): dark chosen, the profile select in sync
+        await context.toggleTheme();
+        assert.equal(choice, 'dark');
+        assert.deepEqual(saved, [[2, 'dark']]);
+        assert.equal(context.currentUser.theme, 'dark');
+        assert.equal(context.currentUser.username, 'marie');
+        assert.equal(context.profileForm.theme, 'dark');
+        assert.equal(context.savingTheme, false);
+
+        // Not saved: back to the previous choice, the error shown
+        failure = new Error('Network down');
+        await context.toggleTheme();
+        assert.deepEqual(saved[1], [2, 'light']);
+        assert.equal(choice, 'dark');
+        assert.equal(context.profileForm.theme, 'dark');
+        assert.deepEqual(toasts, ['Network down']);
+
+        // Label and icon: the action of the button
+        const label = displayedTheme => module.computed.themeToggleLabel.call({ displayedTheme, t: key => key });
+        const icon = displayedTheme => module.computed.themeToggleIcon.call({ displayedTheme });
+        assert.equal(label('light'), 'switchToDarkTheme');
+        assert.equal(icon('light'), 'dark_mode');
+        assert.equal(label('dark'), 'switchToLightTheme');
+        assert.equal(icon('dark'), 'light_mode');
+    } finally {
+        delete window.carbureTheme;
+    }
+});
