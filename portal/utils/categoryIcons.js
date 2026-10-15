@@ -157,7 +157,12 @@ export const CATEGORY_ICONS = Object.keys(SF_TO_MATERIAL);
  * @returns {{color: string, background: string}}
  */
 export function badgeStyle(color) {
-    return { color, background: `color-mix(in srgb, ${color} 14%, transparent)` };
+    // --category-ink (style.css): the color itself in the light theme, lightened in the dark
+    // theme so that the icon stays readable on its dark tint
+    return {
+        color: `color-mix(in srgb, ${color} var(--category-ink, 100%), white)`,
+        background: `color-mix(in srgb, ${color} 14%, transparent)`
+    };
 }
 
 /** Color names understood by the iOS app (SwiftUI) and the portal */

@@ -933,12 +933,19 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
      * @param {string} password - New password (optional)
      * @param {string} language - Interface language (optional, 'fr' or 'en')
      * @param {number|string} alertThreshold - Large expense alert threshold (optional, '' disables)
+     * @param {boolean} isAdmin - Administrator profile (optional, administrators only)
+     * @param {string} theme - Display theme (optional, 'system', 'light' or 'dark')
      * @returns {Promise<Object>} Updated user object
      * @throws {Error} If request fails
      */
-    async function updateUser(userId, email, firstname, lastname, password, language, alertThreshold, isAdmin) {
+    async function updateUser(userId, email, firstname, lastname, password, language, alertThreshold, isAdmin, theme) {
         const url = `${baseUrl}/user?id=${userId}`;
         const body = { email, firstname, lastname };
+
+        // Display theme of the portal (system, light, dark): sent only by the profile
+        if (theme) {
+            body.theme = theme;
+        }
 
         if (isAdmin !== undefined && isAdmin !== null) {
             body.is_admin = !!isAdmin;

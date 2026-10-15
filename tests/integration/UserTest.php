@@ -251,6 +251,26 @@ class UserTest extends DatabaseTestCase
         User::login('user', 'newpass');
     }
 
+    public function testTheme()
+    {
+        $this->loginAs(self::USER);
+        // The system preference by default, returned with the profile
+        $this->assertSame('system', User::me()['theme']);
+
+        $this->assertSame('dark', User::update(self::USER, theme: 'dark')['theme']);
+        $this->assertSame('dark', User::me()['theme']);
+        // Another field updated alone keeps the theme
+        $this->assertSame('dark', User::update(self::USER, firstname: 'Hugo')['theme']);
+
+        try {
+            User::update(self::USER, theme: 'pink');
+            $this->fail('Accepted an unknown theme');
+        } catch (Error $e) {
+            $this->assertSame(400, $e->getCode());
+        }
+        $this->assertSame('dark', User::me()['theme']);
+    }
+
     public function testAlertThreshold()
     {
         $this->loginAs(self::USER);

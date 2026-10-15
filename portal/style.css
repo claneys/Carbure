@@ -16,6 +16,8 @@
     --success-light: #e8f5e9;
     --error-color: #c62828;
     --error-light: #ffebee;
+    /* Hover of a red button, its text --on-accent (white: 7.5:1) */
+    --error-hover: #a51f1f;
     --info-color: #1976d2;
     --info-light: #e3f2fd;
     /* Darkened for the contrast of a text on white or --warning-light (WCAG AA: 5.6:1) */
@@ -39,11 +41,70 @@
     --border-radius-lg: 12px;
     --border-radius-xl: 16px;
     --border-radius-full: 50%;
+    /* Text on an accent color (buttons, active tabs, toasts): white on the dark accents of
+       the light theme, dark ink on the light accents of the dark theme */
+    --on-accent: #ffffff;
+    /* Page behind the cards, footer and chips laid on it */
+    --page-background: linear-gradient(135deg, #EF4860 0%, #F47287 50%, #F9A8B8 100%);
+    --page-chip: rgba(255, 255, 255, 0.92);
+    --footer-background: rgba(255, 255, 255, 0.94);
+    --footer-text: #475569;
+    /* Lines of the charts that are not a category color */
+    --chart-neutral: #52514e;
+    --chart-current: #2a78d6;
+    --chart-compare: #a8a7a1;
+    /* Share of a category color kept in its icons and texts: lightened in the dark theme */
+    --category-ink: 100%;
+    /* Background of a light button on hover (not darkened by the high contrast setting,
+       unlike --divider, the color of the borders) */
+    --hover-surface: #e2e8f0;
+    /* Form controls and native widgets of the browser in the light theme */
+    color-scheme: light;
+}
+
+/* Dark theme (theme.js: the choice of the profile, or the system preference): same
+   contrast rules as the light theme, 4.5:1 for a text and 3:1 for an icon or a border,
+   at rest, on hover and on focus. The accents are lighter, the text on them dark. */
+[data-theme="dark"] {
+    --primary-color: #fb7185;
+    --primary-dark: #fda4af;
+    --primary-light: #9f1239;
+    --success-color: #4ade80;
+    --success-light: #12321f;
+    --error-color: #f87171;
+    --error-light: #3f1a1d;
+    /* Hover of a red button, its text --on-accent (dark: 9.4:1) */
+    --error-hover: #fca5a5;
+    --info-color: #60a5fa;
+    --info-light: #172a46;
+    --warning-color: #fb923c;
+    --warning-light: #3b2414;
+    --text-primary: #e2e8f0;
+    --text-secondary: #a5b4c8;
+    --text-disabled: #475569;
+    --divider: #334155;
+    --background: #0f172a;
+    --surface: #1e293b;
+    --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.6);
+    --shadow-2: 0 3px 6px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.5);
+    --shadow-3: 0 10px 20px rgba(0, 0, 0, 0.5), 0 3px 6px rgba(0, 0, 0, 0.4);
+    --shadow-4: 0 15px 25px rgba(0, 0, 0, 0.5), 0 5px 10px rgba(0, 0, 0, 0.4);
+    --on-accent: #0f172a;
+    --page-background: linear-gradient(135deg, #1a0b14 0%, #0f172a 60%, #111827 100%);
+    --page-chip: #1e293b;
+    --footer-background: #1e293b;
+    --footer-text: #a5b4c8;
+    --chart-neutral: #cbd5e1;
+    --chart-current: #60a5fa;
+    --chart-compare: #94a3b8;
+    --category-ink: 60%;
+    --hover-surface: #334155;
+    color-scheme: dark;
 }
 
 body {
     font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: linear-gradient(135deg, #EF4860 0%, #F47287 50%, #F9A8B8 100%);
+    background: var(--page-background);
     min-height: 100vh;
     padding: 24px;
     color: var(--text-primary);
@@ -201,7 +262,7 @@ body {
     gap: 8px;
     padding: 14px 24px;
     background: var(--primary-color);
-    color: white;
+    color: var(--on-accent);
     border: none;
     border-radius: var(--border-radius-md);
     font-size: 16px;
@@ -447,7 +508,7 @@ body {
 
 .language-switcher button.active {
     background: var(--primary-color);
-    color: white;
+    color: var(--on-accent);
     box-shadow: var(--shadow-1);
 }
 
@@ -493,7 +554,7 @@ select:focus {
 button {
     padding: 14px 28px;
     background: var(--primary-color);
-    color: white;
+    color: var(--on-accent);
     border: none;
     border-radius: var(--border-radius-md);
     font-size: 15px;
@@ -607,7 +668,7 @@ button .material-icons {
 
 .tab-button.active {
     background: var(--primary-color);
-    color: white;
+    color: var(--on-accent);
     box-shadow: var(--shadow-2);
     transform: translateY(-2px);
 }
@@ -1171,7 +1232,7 @@ button .material-icons {
     bottom: 24px;
     right: 24px;
     background: var(--text-primary);
-    color: white;
+    color: var(--on-accent);
     padding: 16px 24px;
     border-radius: var(--border-radius-lg);
     box-shadow: var(--shadow-4);
@@ -1193,7 +1254,7 @@ button .material-icons {
 
 /* Footer */
 .footer {
-    background: rgba(255,255,255,0.94);
+    background: var(--footer-background);
     border-radius: 10px;
     padding: 12px 20px;
     margin-top: 40px;
@@ -1209,7 +1270,7 @@ button .material-icons {
     flex-wrap: nowrap;
     font-size: 10px;
     /* Darker than --text-secondary: the footer lies on the pink background of the page */
-    color: #475569;
+    color: var(--footer-text);
     text-align: center;
 }
 
@@ -1220,7 +1281,7 @@ button .material-icons {
 }
 
 .footer-content > span:not(:first-child) {
-    color: rgba(0,0,0,0.45);
+    color: var(--footer-text);
     margin: 0 6px;
 }
 
@@ -1341,7 +1402,7 @@ button .material-icons {
 }
 
 .btn-secondary:hover:not(:disabled) {
-    background: var(--divider);
+    background: var(--hover-surface);
     color: var(--text-primary);
 }
 
@@ -1778,7 +1839,7 @@ button .material-icons {
     height: 48px;
     border-radius: var(--border-radius-lg);
     background: var(--primary-color);
-    color: white;
+    color: var(--on-accent);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1937,7 +1998,7 @@ button .material-icons {
     gap: 8px;
     padding: 12px 24px;
     background: var(--primary-color);
-    color: white;
+    color: var(--on-accent);
     border: none;
     border-radius: var(--border-radius-md);
     font-size: 14px;
@@ -2530,7 +2591,7 @@ button .material-icons {
     display: inline-block;
     padding: 4px 12px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.92);
+    background: var(--page-chip);
     color: var(--text-primary);
 }
 
@@ -2785,7 +2846,7 @@ button .material-icons {
 .swatch.line {
     height: 0;
     width: 14px;
-    border-top: 2px dashed #52514e;
+    border-top: 2px dashed var(--chart-neutral);
     border-radius: 0;
 }
 
@@ -2819,7 +2880,7 @@ button .material-icons {
 
 .trends-chart .planned-line {
     fill: none;
-    stroke: #52514e;
+    stroke: var(--chart-neutral);
     stroke-width: 2;
     stroke-dasharray: 6 4;
 }
@@ -3180,11 +3241,11 @@ button .material-icons {
 }
 
 .comparison-bar .bar.current {
-    background: #2a78d6;
+    background: var(--chart-current);
 }
 
 .comparison-bar .bar.compare {
-    background: #a8a7a1;
+    background: var(--chart-compare);
 }
 
 .comparison-bar .value {
@@ -3231,13 +3292,13 @@ button .material-icons {
 /* Savings rate line */
 .trends-chart .rate-line {
     fill: none;
-    stroke: #2a78d6;
+    stroke: var(--chart-current);
     stroke-width: 2;
     stroke-linejoin: round;
 }
 
 .trends-chart .rate-point {
-    fill: #2a78d6;
+    fill: var(--chart-current);
     stroke: var(--surface);
     stroke-width: 2;
 }
@@ -4579,7 +4640,7 @@ a.footer-brand:hover {
 .setup-steps li.active .setup-step-number {
     border-color: var(--primary-color);
     background: var(--primary-color);
-    color: #fff;
+    color: var(--on-accent);
 }
 
 .setup-steps li.completed .setup-step-number {
@@ -4810,7 +4871,7 @@ a.footer-brand:hover {
 
 .btn-danger:hover {
     background: var(--error-color);
-    color: #fff;
+    color: var(--on-accent);
 }
 
 /* Any insight color: the card and its icon follow --insight-color */
@@ -4820,6 +4881,16 @@ a.footer-brand:hover {
 
 .insight-card[style*="--insight-color"] .insight-icon {
     background: var(--insight-color);
+}
+
+/* An icon on a color of the insight palette (not a color of the theme) stays white */
+.insight-card.insight-green .insight-icon,
+.insight-card.insight-red .insight-icon,
+.insight-card.insight-blue .insight-icon,
+.insight-card.insight-orange .insight-icon,
+.insight-card.insight-gray .insight-icon,
+.insight-card[style*="--insight-color"] .insight-icon {
+    color: #ffffff;
 }
 
 .btn-danger.btn-danger-icon {
@@ -4878,7 +4949,7 @@ a.footer-brand:hover {
 .agent-tab.active {
     background: var(--primary-color);
     border-color: var(--primary-color);
-    color: #fff;
+    color: var(--on-accent);
 }
 
 .agent-panel .copy-field pre {
@@ -4964,7 +5035,7 @@ a.footer-brand:hover {
     height: 40px;
     border-radius: 50%;
     font-size: 22px;
-    color: #fff;
+    color: var(--on-accent);
     background: var(--tone);
     box-shadow: 0 4px 10px color-mix(in srgb, var(--tone) 35%, transparent);
 }
@@ -5258,7 +5329,7 @@ a.footer-brand:hover {
 
 .sub-tab.active {
     background: var(--primary-color);
-    color: #fff;
+    color: var(--on-accent);
 }
 
 .sub-tab .material-icons {
@@ -5400,7 +5471,7 @@ button.rule-chip.rule-chip-notify:focus-visible {
     padding: 10px 16px;
     border-radius: var(--border-radius-md);
     background: var(--text-primary);
-    color: #fff;
+    color: var(--on-accent);
     font-weight: 500;
     text-decoration: none;
 }
@@ -6139,19 +6210,133 @@ textarea:focus-visible,
     margin-top: 6px;
 }
 
+/* ===== Dark theme: the colors that are not variables of the theme ===== */
+[data-theme="dark"] .transaction-icon.type-4 { background: #2e1a3d; color: #d8b4fe; }
+[data-theme="dark"] .transaction-icon.type-6 { background: #3d1a2b; color: #f9a8d4; }
+[data-theme="dark"] .transaction-icon.type-7 { background: #0f2f2c; color: #5eead4; }
+[data-theme="dark"] .transaction-icon.type-9 { background: #3a3110; color: #fde047; }
+[data-theme="dark"] .transaction-icon.type-12 { background: #251c45; color: #c4b5fd; }
+
+[data-theme="dark"] .progress-status.near-limit { color: #fdba74; }
+[data-theme="dark"] .progress-status.ok { color: #5eead4; }
+[data-theme="dark"] .progress-chip.near-limit { background: #3b2414; color: #fdba74; border-color: #9a3412; }
+[data-theme="dark"] .progress-chip.over-budget { background: #3f1a1d; color: #fca5a5; border-color: #991b1b; }
+[data-theme="dark"] .progress-chip.ok { background: #0f2f2c; color: #5eead4; border-color: #115e59; }
+
+/* ===== "Increase contrast" of the system (macOS, iOS, some Linux desktops) ===== */
+@media (prefers-contrast: more) {
+    :root {
+        --text-secondary: #334155;
+        --divider: #64748b;
+        --footer-text: #1e293b;
+    }
+
+    [data-theme="dark"] {
+        --text-secondary: #e2e8f0;
+        --divider: #94a3b8;
+        --footer-text: #e2e8f0;
+    }
+
+    /* A focus ring that cannot be missed */
+    :focus-visible {
+        outline: 3px solid var(--text-primary) !important;
+        outline-offset: 2px;
+    }
+}
+
+/* ===== Forced colors (Windows high contrast): the system chooses every color; the
+   borders, focus rings and selected states drawn with backgrounds or shadows would
+   vanish, so they are drawn with system colors ===== */
+@media (forced-colors: active) {
+    button,
+    .btn-icon,
+    .tab-button,
+    .sub-tab,
+    .agent-tab,
+    .category-chip,
+    .progress-chip,
+    .rule-chip,
+    input,
+    select,
+    textarea {
+        border: 1px solid ButtonText;
+    }
+
+    .tab-button.active,
+    .sub-tab.active,
+    .agent-tab.active,
+    .language-switcher button.active,
+    [aria-selected="true"],
+    [aria-current="page"] {
+        border: 2px solid Highlight;
+        outline: 1px solid Highlight;
+    }
+
+    :focus-visible {
+        outline: 3px solid Highlight !important;
+        outline-offset: 2px;
+    }
+
+    .header,
+    .tabs,
+    .stat-card,
+    .footer,
+    .modal,
+    .card,
+    .transaction-item,
+    .budget-card,
+    .insight-card,
+    .account-item,
+    .bank-connection,
+    .user-menu-dropdown,
+    .toast {
+        border: 1px solid CanvasText;
+    }
+
+    /* Bars and toggles are drawn with backgrounds: keep them visible */
+    .progress-bar-linear,
+    .toggle-track {
+        border: 1px solid CanvasText;
+    }
+
+    .progress-bar-fill,
+    .toggle-switch input:checked + .toggle-track .toggle-thumb,
+    .comparison-bar .bar {
+        forced-color-adjust: none;
+        background: Highlight;
+    }
+
+    .toggle-thumb {
+        forced-color-adjust: none;
+        background: CanvasText;
+    }
+
+    /* Charts: lines and points in the text color */
+    svg [stroke]:not([stroke="none"]),
+    .trends-chart .planned-line,
+    .trends-chart .rate-line {
+        stroke: CanvasText;
+    }
+
+    .material-icons {
+        forced-color-adjust: auto;
+    }
+}
+
 /* ===== Confirmation modal (askConfirm) ===== */
 .modal-confirm .confirm-error {
     margin: 0;
 }
 
-/* Destructive confirmation: red, darker on hover (white label readable on both) */
+/* Destructive confirmation: red, another shade on hover (label readable on both,
+   in both themes) */
 .btn-confirm-danger {
     background: var(--error-color);
-    color: #fff;
+    color: var(--on-accent);
 }
 
 .btn-confirm-danger:hover {
-    background: #a51f1f;
+    background: var(--error-hover);
 }
 
 /* Action running: the button keeps its colors (its label "…in progress" stays

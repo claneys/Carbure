@@ -60,8 +60,12 @@ test('cssColorFor: hex, SwiftUI names, CSS names', () => {
     assert.equal(cssColorFor(null), null);
 });
 
-test('badgeStyle: the color on a light tint of it', () => {
-    assert.deepEqual(badgeStyle('#ff0000'), { color: '#ff0000', background: 'color-mix(in srgb, #ff0000 14%, transparent)' });
+test('badgeStyle: the color on a light tint of it, lightened by the dark theme', () => {
+    assert.deepEqual(badgeStyle('#ff0000'), {
+        // --category-ink: 100% (the color itself) in the light theme, 60% in the dark one
+        color: 'color-mix(in srgb, #ff0000 var(--category-ink, 100%), white)',
+        background: 'color-mix(in srgb, #ff0000 14%, transparent)'
+    });
 });
 
 test('the colors and icons offered for the categories are understood by the portal', () => {

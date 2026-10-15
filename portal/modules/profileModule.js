@@ -2,10 +2,20 @@
  * Profile Module
  * 
  * Manages the authenticated user: header user menu and profile page
- * (email, names, password and interface language).
+ * (email, names, password, interface language and display theme).
  * 
  * @module profileModule
  */
+
+/**
+ * Applies the display theme of the profile (theme.js, loaded in the <head>)
+ * @param {string} theme - system, light or dark
+ */
+function applyTheme(theme) {
+    if (theme && typeof window !== 'undefined' && window.carbureTheme) {
+        window.carbureTheme.apply(theme);
+    }
+}
 
 /**
  * Creates a profile module mixin for Vue components
@@ -39,6 +49,7 @@ export function createProfileModule(getApiService) {
                     lastname: '',
                     password: '',
                     language: 'fr',
+                    theme: 'system',
                     alertThreshold: ''
                 }
             };
@@ -67,6 +78,9 @@ export function createProfileModule(getApiService) {
 
                 try {
                     this.currentUser = await apiService.fetchMe();
+
+                    // The theme of the profile wins over the one cached in this browser
+                    applyTheme(this.currentUser.theme);
 
                     // The language of the profile wins over the browser one
                     const language = this.currentUser.language;
@@ -167,6 +181,7 @@ export function createProfileModule(getApiService) {
                     lastname: user.lastname || '',
                     password: '',
                     language: user.language || this.locale,
+                    theme: user.theme || 'system',
                     alertThreshold: user.alert_threshold ? Number(user.alert_threshold) : ''
                 };
                 this.setActiveTab('profile');
@@ -366,9 +381,12 @@ export function createProfileModule(getApiService) {
                         this.profileForm.lastname,
                         this.profileForm.password,
                         this.profileForm.language,
-                        this.profileForm.alertThreshold
+                        this.profileForm.alertThreshold,
+                        undefined,
+                        this.profileForm.theme
                     );
                     this.profileForm.password = '';
+                    applyTheme(this.currentUser.theme);
 
                     if (this.currentUser.language !== this.locale) {
                         // Reloads the page in the new language

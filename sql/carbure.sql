@@ -191,6 +191,7 @@ CREATE TABLE `users` (
   `email` varchar(50) DEFAULT NULL,
   `is_admin` tinyint(1) NOT NULL DEFAULT 0,
   `language` varchar(5) NOT NULL DEFAULT 'fr',
+  `theme` varchar(10) NOT NULL DEFAULT 'system' COMMENT 'Display theme of the portal: system, light or dark',
   `alert_threshold` decimal(10,2) DEFAULT NULL,
   `last_login` datetime DEFAULT NULL,
   `failed_logins` tinyint(3) unsigned NOT NULL DEFAULT 0,
@@ -242,7 +243,8 @@ INSERT IGNORE INTO `schema_migrations` (`version`) VALUES
 ('2026-10-15_transaction_bank'),
 ('2026-10-16_bank_account_label'),
 ('2026-10-17_bank_backend_label'),
-('2026-10-18_transaction_deleted');
+('2026-10-18_transaction_deleted'),
+('2026-10-19_user_theme');
 
 SET FOREIGN_KEY_CHECKS = 1;
 COMMIT;

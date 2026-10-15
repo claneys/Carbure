@@ -25,6 +25,13 @@ module.exports = defineConfig({
     },
     projects: [
         { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+        // The contrasts again in the dark theme, chosen by the system preference (the
+        // default "system" choice of a profile)
+        {
+            name: 'chromium-dark',
+            testMatch: /accessibility\.spec\.js/,
+            use: { ...devices['Desktop Chrome'], colorScheme: 'dark' },
+        },
     ],
     // PHP built-in server with the e2e router (PHP with mysqli, see README.md)
     webServer: process.env.E2E_BASE_URL ? undefined : {

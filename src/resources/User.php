@@ -17,9 +17,14 @@ final class User {
     private const LANGUAGES = ['fr', 'en'];
 
     /**
+     * Display themes of the portal: system (follows the system preference), light, dark
+     */
+    private const THEMES = ['system', 'light', 'dark'];
+
+    /**
      * Public columns of a user (never the password)
      */
-    private const COLUMNS = "id, username, firstname, lastname, email, is_admin, language, alert_threshold";
+    private const COLUMNS = "id, username, firstname, lastname, email, is_admin, language, theme, alert_threshold";
 
     /**
      * Login.
@@ -347,12 +352,14 @@ final class User {
      * @param float|string|null $alertThreshold Push alert threshold for new expenses
      *                                    (optional, "" or 0 disables the alerts)
      * @param bool|int|string|null $is_admin Administrator profile (optional, administrators only): true, "true", 1...
+     * @param string|null $theme     The display theme of the portal (optional, system|light|dark)
      * @return array<string, mixed> The updated user data
      * @throws Error If the user is not found, email already exists or the caller is not allowed
      */
     #[ApiRoute('/user', method: 'PUT')]
     public static function update(int $id, ?string $email = null, ?string $firstname = null, ?string $lastname = null, ?string $password = null,
-        ?string $language = null, float|int|string|null $alertThreshold = null, bool|int|string|null $is_admin = null): array
+        ?string $language = null, float|int|string|null $alertThreshold = null, bool|int|string|null $is_admin = null,
+        ?string $theme = null): array
     {
         // A user can only update his own profile, unless administrator
         if ($id !== (int)Jwt::getUserIdFromToken()) {
@@ -364,7 +371,8 @@ final class User {
         self::checkEmailFree($id, $email, $currentUser['email']);
 
         // Update only the provided fields
-        $fields = self::updateFields($email, $firstname, $lastname, $language, $is_admin, $alertThreshold, $password);
+        $fields = [...self::updateFields($email, $firstname, $lastname, $language, $is_admin, $alertThreshold, $password),
+            ...self::themeField($theme)];
         if (!empty($fields)) {
             $types = implode('', array_column($fields, 1)) . "i";
             $params = [...array_column($fields, 2), $id];
@@ -479,6 +487,24 @@ final class User {
             $fields[] = ["password", "s", self::hashPassword($password)];
         }
         return $fields;
+    }
+
+    /**
+     * Column of the display theme to update, if sent.
+     *
+     * @param string|null $theme The display theme (system|light|dark)
+     * @return list<array{0: string, 1: string, 2: mixed}> [column, bind type, value], empty if not sent
+     * @throws Error If the theme is unknown
+     */
+    private static function themeField(?string $theme): array
+    {
+        if ($theme === null) {
+            return [];
+        }
+        if (!in_array($theme, self::THEMES, true)) {
+            throw new Error("Unsupported theme: $theme", 400);
+        }
+        return [["theme", "s", $theme]];
     }
 
     /**

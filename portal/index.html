@@ -8,6 +8,9 @@
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="icon.png">
     
+    <!-- Light or dark theme, applied before the first paint (theme.js) -->
+    <script src="theme.js"></script>
+
     <!-- Material Design Icons & Fonts -->
     <link href="vendor/fonts.css" rel="stylesheet">
     
@@ -897,8 +900,8 @@
                             <div class="trends-chart-head">
                                 <h3>{{ t('comparisonTitle') }}</h3>
                                 <ul class="trends-legend">
-                                    <li><span class="swatch" style="background: #2a78d6"></span>{{ trendsPeriodLabels.current }}</li>
-                                    <li><span class="swatch" style="background: #a8a7a1"></span>{{ trendsPeriodLabels.compare }}</li>
+                                    <li><span class="swatch" style="background: var(--chart-current)"></span>{{ trendsPeriodLabels.current }}</li>
+                                    <li><span class="swatch" style="background: var(--chart-compare)"></span>{{ trendsPeriodLabels.compare }}</li>
                                 </ul>
                             </div>
                             <div class="comparison-rows">
@@ -1662,6 +1665,15 @@
                                         <option value="fr">Français</option>
                                         <option value="en">English</option>
                                     </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="profile-theme">{{ t('theme') }}</label>
+                                    <select id="profile-theme" v-model="profileForm.theme" aria-describedby="profile-theme-help">
+                                        <option value="system">{{ t('themeSystem') }}</option>
+                                        <option value="light">{{ t('themeLight') }}</option>
+                                        <option value="dark">{{ t('themeDark') }}</option>
+                                    </select>
+                                    <small id="profile-theme-help">{{ t('themeHelp') }}</small>
                                 </div>
                                 <div class="form-group">
                                     <label for="profile-alert">{{ t('alertThreshold') }}</label>

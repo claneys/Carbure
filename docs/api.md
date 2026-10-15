@@ -77,7 +77,8 @@ n'existe pas).
 ### `GET /user/me`
 
 Profil de l'utilisateur connecté : `id`, `username`, `firstname`, `lastname`, `email`,
-`is_admin`, `language`, `alert_threshold` (`null` si les alertes sont désactivées).
+`is_admin`, `language`, `theme` (thème du portail : `system`, `light` ou `dark`),
+`alert_threshold` (`null` si les alertes sont désactivées).
 
 ```bash
 curl https://exemple.fr/api/user/me -H "Authorization: Bearer $TOKEN"
@@ -102,6 +103,7 @@ profil utilisateur par défaut). `400` si l'identifiant ou l'e-mail existe déj�
 | `email`, `firstname`, `lastname` | non | Nouvelles valeurs |
 | `password` | non | Nouveau mot de passe (ignoré si vide) |
 | `language` | non | `fr` ou `en` |
+| `theme` | non | Thème du portail : `system` (suit la préférence clair/sombre du système, par défaut), `light` ou `dark` ; `400` pour une autre valeur |
 | `alertThreshold` | non | Seuil d'alerte en euros pour les nouvelles dépenses ; `""` ou `0` désactive les alertes |
 | `is_admin` | non | Profil administrateur (`true`) ou utilisateur (`false`) ; administrateurs seulement, `409` pour retirer le rôle au dernier administrateur |
 

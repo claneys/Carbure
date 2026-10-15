@@ -98,7 +98,7 @@ test('the icon of a transaction is the one of its own category', () => {
     // Uncategorized: icon of the operation type, without category colors
     assert.equal(context.transactionIcon({ category: 0, type: 7 }), 'type-7');
     assert.equal(context.transactionIconStyle({ category: 0, type: 7 }), null);
-    assert.deepEqual(context.transactionIconStyle({ category: 3 }), { color: 'var(--primary-color)', background: 'color-mix(in srgb, var(--primary-color) 14%, transparent)' });
+    assert.deepEqual(context.transactionIconStyle({ category: 3 }), { color: 'color-mix(in srgb, var(--primary-color) var(--category-ink, 100%), white)', background: 'color-mix(in srgb, var(--primary-color) 14%, transparent)' });
 });
 
 test('categoryName and isUncategorized', () => {
