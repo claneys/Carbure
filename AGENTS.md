@@ -107,6 +107,10 @@ git config core.hooksPath .githooks   # pre-commit lint, pre-push unit tests
 - **Secrets**: nothing secret/personal/logs in the repo; samples use fake values. Never
   print or copy `data/conf/prod.ini`. Tests must not write to `data/logs/`.
 - Security headers: API via PHP; portal via nginx (`docker/nginx.conf`, no `.htaccess`).
+- **No external CDN**: every script, style, font and image is vendored and served locally
+  (`portal/vendor`, `swagger/vendor`, docs: Material `privacy` plugin); the CSP of the
+  portal and Swagger allows only `'self'` (+ `data:` images). `tests/portal/localAssets.test.mjs`
+  checks it.
 
 ## Portal
 
@@ -116,6 +120,8 @@ git config core.hooksPath .githooks   # pre-commit lint, pre-push unit tests
   on hover and on focus — never lower it with `opacity` or a grey label on a colored
   background; a button class that sets its own background keeps it on hover.
   `specs/accessibility.spec.js` checks every tab: extend it when adding a screen or modal.
+- No external CDN: a new library, font or image goes in `portal/vendor/` (listed in its
+  `README.md` with version, source and license), never a `https://` URL in a page.
 
 ## Issues, branches, PRs and commits
 

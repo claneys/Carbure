@@ -8,6 +8,7 @@
  * (started by Playwright for the tests, and by start.sh for the development)
  *
  * - /portal/...           : the static files of the portal
+ * - /swagger/...          : Swagger UI (its swagger.php run by the built-in server)
  * - /api/...              : the real API (src/api.php), on the e2e database
  * - /api/__e2e/reset      : recreates the e2e database with the data set (seed.php)
  *
@@ -36,8 +37,8 @@ if ($path === '/') {
     return true;
 }
 
-// Static files of the portal, served by the built-in server
-if (str_starts_with($path, '/portal/')) {
+// Static files of the portal and Swagger UI, served by the built-in server
+if (str_starts_with($path, '/portal/') || str_starts_with($path, '/swagger/')) {
     return false;
 }
 

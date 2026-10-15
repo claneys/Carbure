@@ -47,6 +47,9 @@ theme:
 plugins:
   - search:
       lang: fr
+  # No external CDN: the fonts (Google Fonts) and any other external asset are
+  # downloaded at build time and served with the site
+  - privacy
 
 # No "Made with Material for MkDocs" in the footer
 extra:

@@ -2,8 +2,9 @@
 data/
 
 # conf/ only holds versioned templates
-# Development tools installed by Composer (composer install)
-vendor/
+# Development tools installed by Composer (composer install), at the root only:
+# portal/vendor and swagger/vendor are self-hosted third-party assets, versioned
+/vendor/
 
 .phpunit.result.cache
 .phpunit.cache/
@@ -14,3 +15,6 @@ tests/e2e/node_modules/
 tests/e2e/test-results/
 tests/e2e/playwright-report/
 tests/e2e/.data/
+
+# Build cache of the documentation (Material privacy plugin: downloaded fonts)
+.cache/
