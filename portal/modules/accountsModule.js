@@ -34,6 +34,9 @@ export function accountsByBank(backends, accounts) {
 /** Configuration in woob of a bank being connected, empty */
 const EMPTY_SETUP = { module: '', backend: '', label: '', description: '', fields: [], values: {}, loading: false, busy: false, error: null };
 
+/** Update of the woob bank modules, closed */
+const EMPTY_WOOB_UPDATE = { open: false, loading: false, status: null, running: false, lines: [], error: null, done: false };
+
 /**
  * Creates an accounts module mixin for Vue components
  * @param {Function} getApiService - Function that returns the API service instance
@@ -54,8 +57,9 @@ export function createAccountsModule(getApiService) {
                 showBackendModal: false,
                 savingBackend: false,
                 backendForm: { name: '', module: '', label: '' },
-                // Banks supported by woob: [{module, description}]
+                // Banks supported by woob: [{module, description}], or why woob gave none
                 bankModules: [],
+                bankModulesError: null,
                 // Step 1: connect a bank (woob module chosen in the modal)
                 showConnectModal: false,
                 connectModule: '',
@@ -67,7 +71,10 @@ export function createAccountsModule(getApiService) {
                 selectedAccounts: [],
                 discovering: false,
                 discoverError: null,
-                followingAccounts: false
+                followingAccounts: false,
+                // Update of the woob bank modules: repository {repository, trusted, fingerprint,
+                // error}, its keyring trusted by the administrator, lines written by woob
+                woobUpdate: { ...EMPTY_WOOB_UPDATE }
             };
         },
 
@@ -184,6 +191,8 @@ export function createAccountsModule(getApiService) {
                 const [backends, modules] = await Promise.allSettled([api.fetchBankBackends(), api.fetchBankModules()]);
                 this.bankBackends = backends.status === 'fulfilled' ? backends.value : [];
                 this.bankModules = modules.status === 'fulfilled' ? modules.value : [];
+                // Why no bank can be chosen (e.g. woob repository to trust first)
+                this.bankModulesError = modules.status === 'rejected' ? modules.reason.message : null;
             },
 
             /**
@@ -288,6 +297,74 @@ export function createAccountsModule(getApiService) {
                 }
                 this.showToast(this.t('bankConnectionDeleted'));
                 await Promise.all([this.loadBankBackends(), this.loadBankAccounts()]);
+            },
+
+            /**
+             * Opens the update of the woob bank modules: started at once if the repository
+             * of woob is trusted, else its fingerprint is shown to be trusted first
+             * @returns {Promise<void>}
+             */
+            async openWoobUpdate() {
+                this.woobUpdate = { ...EMPTY_WOOB_UPDATE, open: true, loading: true };
+                try {
+                    const status = await getApiService().fetchWoobStatus();
+                    this.woobUpdate = { ...this.woobUpdate, loading: false, status };
+                    if (status.trusted) {
+                        await this.runWoobUpdate();
+                    }
+                } catch (error) {
+                    this.woobUpdate = { ...this.woobUpdate, loading: false, error: error.message };
+                }
+            },
+
+            /**
+             * Updates the woob bank modules, trusting the keyring of the repository whose
+             * fingerprint the administrator compared (woob must show exactly this one)
+             * @param {string|null} fingerprint - Fingerprint trusted, null if already trusted
+             * @returns {Promise<void>}
+             */
+            async runWoobUpdate(fingerprint = null) {
+                this.woobUpdate = { ...this.woobUpdate, running: true, lines: [], error: null, done: false };
+                try {
+                    await getApiService().updateWoob(line => this.onWoobUpdateLine(line), fingerprint);
+                } catch (error) {
+                    this.woobUpdate = { ...this.woobUpdate, error: error.message };
+                }
+                this.woobUpdate = { ...this.woobUpdate, running: false };
+                if (this.woobUpdate.done) {
+                    this.showToast(this.t('woobUpdated'));
+                    // The banks woob supports, once its repository is trusted
+                    await this.loadBankBackends();
+                }
+            },
+
+            /**
+             * A line of the update of woob: shown, its end understood
+             * @param {string} line - Line written by woob, or the end of the update
+             */
+            onWoobUpdateLine(line) {
+                const update = { ...this.woobUpdate, lines: [...this.woobUpdate.lines, line] };
+                const untrusted = line.match(/^Woob repository not trusted: ([0-9a-f]{40})$/);
+                if (line === 'Woob updated') {
+                    update.done = true;
+                    update.status = { ...(update.status || {}), trusted: true };
+                } else if (untrusted) {
+                    // The keyring woob shows: to compare before trusting it
+                    update.status = { ...(update.status || {}), trusted: false, fingerprint: untrusted[1] };
+                    update.error = this.t('woobNotTrusted');
+                } else if (line.startsWith('Woob update failed: ')) {
+                    update.error = line.slice('Woob update failed: '.length);
+                }
+                this.woobUpdate = update;
+            },
+
+            /**
+             * Closes the update of woob (not while woob runs)
+             */
+            closeWoobUpdate() {
+                if (!this.woobUpdate.running) {
+                    this.woobUpdate = { ...EMPTY_WOOB_UPDATE };
+                }
             },
 
             /**

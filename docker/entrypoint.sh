@@ -16,9 +16,24 @@ chmod -R u+rwX,go-rwx /data/woob 2>/dev/null || true
 # Update of woob at each start: repositories, keyring of the woob repository (to check
 # the signature of the bank modules; without it, installing a module fails with "No
 # keyring found") and installed bank modules. In the background (the portal starts
-# without waiting for the network), as www-data (the owner of /data/woob)
-su -s /bin/sh www-data -c "env HOME=/data/woob woob config update" > /dev/null 2>&1 \
-    || echo "Carbure: woob update failed (network?), it will be retried at the next start" >&2 &
+# without waiting for the network), as www-data (the owner of /data/woob).
+# The keyring of the woob repository is trusted by an administrator, who compares its
+# fingerprint in the portal (Accounts page, "update the bank modules"): until then, the
+# modules are not updated. The next keyrings are checked by woob with the previous one.
+woob_update() {
+    if [ -z "$(ls -A /data/woob/.local/share/woob/keyrings 2>/dev/null)" ]; then
+        echo "Carbure: woob repository not trusted yet: an administrator must trust it from the Accounts page of the portal to update the bank modules" >&2
+        return 0
+    fi
+    # Only once a keyring is trusted: without one, woob would trust the keyring of its
+    # repository by itself ("*** ASSUMING YES ***"); with one, woob checks the next ones
+    output=$(su -s /bin/sh www-data -c "env HOME=/data/woob woob config update" < /dev/null 2>&1) || true
+    if echo "$output" | grep -qiE "aborted|error|not trusted|invalid signature"; then
+        echo "Carbure: woob update failed, it will be retried at the next start: $(echo "$output" | grep -iE "aborted|error|not trusted|invalid signature" | tail -1)" >&2
+        return 1
+    fi
+}
+woob_update &
 
 if [ -f /data/conf/prod.ini ]; then
     # Wait for the database, then apply the migrations of the new version (if any);

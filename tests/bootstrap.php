@@ -23,6 +23,12 @@ $GLOBALS['SCOPE'] = 'test';
 
 // Fake woob CLI (see tests/fixtures/fake-woob.php)
 Config::set('woob_path', escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg(__DIR__ . '/fixtures/fake-woob.php'));
+// Its repository (keyring read without network) and the keyrings it trusts
+Config::set('woob_repository', __DIR__ . '/fixtures/woob-repository/');
+WoobRepository::$keyringDir = sys_get_temp_dir() . '/carbure-fake-woob-keyrings';
+// woob already run once (its list of repositories exists), its repository not trusted yet
+WoobRepository::$sourcesList = sys_get_temp_dir() . '/carbure-fake-woob-sources.list';
+file_put_contents(WoobRepository::$sourcesList, "https://updates.woob.tech/%(version)s/main/\n");
 
 /**
  * Create a fresh test database and point the configuration to it.

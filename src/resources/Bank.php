@@ -213,6 +213,75 @@ final class Bank {
     }
 
     /**
+     * Repository of the woob bank modules (administrators): trusted or not, and the
+     * fingerprint of its keyring (the one trusted, else the one woob would ask to trust,
+     * to compare with the one published by the woob maintainers).
+     *
+     * @return array{repository: string, trusted: bool, fingerprint: string|null, error: string|null}
+     *         error: why the fingerprint is unknown (repository not reachable), null if none
+     */
+    #[ApiRoute('/bank/woob', method: 'GET')]
+    public static function woob(): array
+    {
+        User::requireAdmin();
+        return WoobRepository::status();
+    }
+
+    /**
+     * Update the woob bank modules (administrators), streamed: each line of woob, then
+     * "Woob updated", "Woob repository not trusted: <fingerprint>" (the keyring must be
+     * confirmed, woob not started) or "Woob update failed: <cause>". While the repository
+     * is not trusted, woob (which would trust any keyring by itself) is started only if the
+     * confirmed fingerprint is the one of its keyring, and must store that very keyring.
+     *
+     * @param string|null $fingerprint Fingerprint of the keyring confirmed by the administrator
+     * @return void
+     * @throws Error If not an administrator or the fingerprint is invalid
+     */
+    #[ApiRoute('/bank/woob/update', method: 'GET', stream: true)]
+    public static function updateWoob(?string $fingerprint = null): void
+    {
+        User::requireAdmin();
+        $fingerprint = $fingerprint === '' ? null : $fingerprint;
+        if ($fingerprint !== null && !preg_match('/^[0-9a-fA-F]{40}$/', $fingerprint)) {
+            throw new Error("Invalid fingerprint (SHA-1: 40 hexadecimal characters)", 400);
+        }
+        set_time_limit(0);
+
+        // Not while a synchronization runs woob
+        if (!Db::query("SELECT GET_LOCK('bank_sync', 0) AS locked")->fetch_assoc()['locked']) {
+            Webservice::sendProgress("Woob update failed: synchronization in progress");
+            return;
+        }
+        try {
+            $result = WoobRepository::update($fingerprint, fn(string $line) => Webservice::sendProgress($line));
+        } finally {
+            Db::query("SELECT RELEASE_LOCK('bank_sync')");
+        }
+        Webservice::sendProgress(self::woobUpdateResult($result));
+    }
+
+    /**
+     * Last event of an update of woob, logged.
+     *
+     * @param array{updated: bool, asked: string|null, refused: bool, message: string} $result Result of the update
+     * @return string The event
+     */
+    private static function woobUpdateResult(array $result): string
+    {
+        if ($result['updated']) {
+            Logger::info("woob updated: " . $result['message']);
+            return "Woob updated";
+        }
+        if ($result['refused'] && $result['asked'] !== null) {
+            Logger::warn("woob update stopped: keyring " . $result['asked'] . " not trusted");
+            return "Woob repository not trusted: " . $result['asked'];
+        }
+        Logger::error("woob update failed: " . $result['message']);
+        return "Woob update failed: " . $result['message'];
+    }
+
+    /**
      * Give a name to a bank connection (woob backend), e.g. "Compte joint", shown in the
      * portal instead of its woob name (administrators).
      *
@@ -329,7 +398,8 @@ final class Bank {
      * @return array{backend: string, label: string|null, accounts: list<array<string, mixed>>}
      *               backend, label, accounts
      *               [{bankId, account_number, bank_name, label, balance, currency, followed}]
-     * @throws Error If a setting is missing or invalid, or woob refuses the bank
+     * @throws Error If a setting is missing or invalid, or woob refuses the bank; 409 if the
+     *               module must be installed before the woob repository is trusted
      */
     #[ApiRoute('/bank/backend', method: 'POST')]
     public static function createBackend(string $module, string $backend, mixed $settings = [], ?string $label = null): array

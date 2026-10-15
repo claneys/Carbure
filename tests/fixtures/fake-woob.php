@@ -9,6 +9,10 @@
  *        fake-woob.php config info <module> -f json       (settings once installed, like woob 3.7)
  *        fake-woob.php config add <module> '"<backend> key=value ..."' (installs with the probe name)
  *        fake-woob.php config remove <backend>           (no longer listed by config list)
+ *        fake-woob.php config update                     (trusts the keyring by itself the first time,
+ *                                                          like woob without a terminal)
+ * Like woob 3.7, the first run of any command (no carbure-fake-woob-sources.list) refreshes
+ * the repositories, trusting their keyring by itself; installing a module needs a keyring.
  *
  * - account "fail@bank"  : writes on stderr and exits with code 1
  * - account "empty@bank" : no output
@@ -27,6 +31,44 @@
 
 $type = $argv[2] ?? '';
 $account = $argv[3] ?? '';
+
+/**
+ * Like woob 3.7 refreshing its repositories while no keyring is trusted: without a
+ * terminal, it trusts the keyring of the repository by itself (with the file
+ * carbure-fake-woob-other-keyring, the repository serves another keyring)
+ */
+function fake_woob_trust_keyring(): void
+{
+    $keyrings = sys_get_temp_dir() . '/carbure-fake-woob-keyrings';
+    if (glob("$keyrings/*.gpg")) {
+        return;
+    }
+    $keyring = is_file(sys_get_temp_dir() . '/carbure-fake-woob-other-keyring')
+        ? "Another keyring\n" : file_get_contents(__DIR__ . '/woob-repository/trusted.gpg');
+    echo "The repository https://updates.woob.tech/3/main/ isn't trusted yet.\n"
+        . "Fingerprint of keyring is " . sha1($keyring) . "\n"
+        . "Are you sure you want to continue? (Y/n): ";
+    if (stream_isatty(STDIN)) {
+        $answer = fgets(STDIN);
+        if ($answer === false || !in_array(trim($answer), ['', 'y', 'Y'], true)) {
+            echo "\nAborted.\n";
+            exit(1);
+        }
+    } else {
+        echo "*** ASSUMING YES ***\n";
+    }
+    @mkdir($keyrings, 0700, true);
+    file_put_contents("$keyrings/https___updates_woob_tech_3_main_.gpg", $keyring);
+    file_put_contents("$keyrings/https___updates_woob_tech_3_main_.version", "202610130000\n");
+}
+
+// Like woob 3.7: the first run of any command (no list of repositories yet) creates the
+// list and refreshes the repositories first
+$sources = sys_get_temp_dir() . '/carbure-fake-woob-sources.list';
+if (!is_file($sources)) {
+    file_put_contents($sources, "https://updates.woob.tech/%(version)s/main/\n");
+    fake_woob_trust_keyring();
+}
 
 if (($argv[1] ?? '') === 'config' && $type === 'modules') {
     echo json_encode(['Name' => 'bnp', 'Capabilities' => ['CapBank'], 'Description' => 'BNP Paribas', 'Installed' => true]) . "\n";
@@ -87,7 +129,12 @@ if (($argv[1] ?? '') === 'config' && $type === 'add') {
     $words = explode(' ', trim($argv[4] ?? '', '"'));
     $backend = array_shift($words);
     if ($backend === 'carbure_install_probe') {
-        // Installs the module, then stops at the first setting asked
+        // Installs the module, then stops at the first setting asked; like woob, the
+        // signature of the module needs the keyring of its repository
+        if (!glob(sys_get_temp_dir() . '/carbure-fake-woob-keyrings/*.gpg')) {
+            fwrite(STDERR, "Error: No keyring found, please update repos.\n");
+            exit(1);
+        }
         touch(sys_get_temp_dir() . '/carbure-fake-woob-installed');
         echo "Module {$argv[3]} has been installed!\nAborted.\n";
         exit(130);
@@ -104,6 +151,14 @@ if (($argv[1] ?? '') === 'config' && $type === 'add') {
         exit(0);
     }
     echo "Backend \"$backend\" successfully added.\n";
+    exit(0);
+}
+
+if (($argv[1] ?? '') === 'config' && $type === 'update') {
+    // Like woob 3.7: the first update trusts the keyring of the repository
+    // (tests/fixtures/woob-repository/trusted.gpg) by itself, kept in carbure-fake-woob-keyrings
+    fake_woob_trust_keyring();
+    fwrite(STDERR, "\r  0% Updating repositories\r100% All modules are up-to-date.\n");
     exit(0);
 }
 

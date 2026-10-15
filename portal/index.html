@@ -1166,6 +1166,11 @@
                                             :title="t('syncAllAccounts')" :aria-label="t('syncAllAccounts')">
                                         <span class="material-icons" :class="{ spin: syncStatus === 'running' && syncTarget === null }" aria-hidden="true">sync</span>
                                     </button>
+                                    <!-- Update of the woob bank modules, its repository trusted by the administrator -->
+                                    <button v-if="isAdmin" type="button" class="btn-secondary woob-update-button" @click="openWoobUpdate()" :disabled="woobUpdate.running">
+                                        <span class="material-icons" :class="{ spin: woobUpdate.running }" aria-hidden="true">system_update_alt</span>
+                                        {{ t('woobUpdateButton') }}
+                                    </button>
                                     <!-- Step 1 of the addition of accounts: a labeled entry point -->
                                     <button type="button" class="btn-add" @click="openConnectModal()">
                                         <span class="material-icons" aria-hidden="true">add_link</span>
@@ -2183,6 +2188,7 @@
                             </option>
                         </select>
                     </div>
+                    <div v-if="bankModulesError" class="sync-step-error" role="alert">{{ bankModulesError }}</div>
                     <!-- Settings asked by the woob module, sent to woob only -->
                     <fieldset v-if="connectModule" class="bank-setup">
                         <legend>{{ t('bankSetupTitle', { bank: bankSetup.description || bankSetup.module }) }}</legend>
@@ -2298,6 +2304,53 @@
                     <button @click="submitBackendForm" :disabled="savingBackend">
                         <span class="material-icons" aria-hidden="true">check_circle</span>
                         {{ t('save') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Update of the woob bank modules: the keyring of the woob repository is trusted
+             by the administrator, after comparing its fingerprint -->
+        <div v-if="woobUpdate.open" class="modal-overlay" @click.self="closeWoobUpdate">
+            <div class="modal modal-form" role="dialog" aria-modal="true" aria-labelledby="modal-title-woob-update">
+                <div class="modal-header">
+                    <span class="material-icons" aria-hidden="true">system_update_alt</span>
+                    <h3 id="modal-title-woob-update">{{ t('woobUpdateTitle') }}</h3>
+                    <button class="modal-close" @click="closeWoobUpdate" :disabled="woobUpdate.running" :aria-label="t('close')">
+                        <span class="material-icons" aria-hidden="true">close</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div v-if="woobUpdate.loading" class="transactions-hint" role="status">{{ t('woobUpdateLoading') }}</div>
+                    <template v-else-if="woobUpdate.status && !woobUpdate.status.trusted && !woobUpdate.running">
+                        <p class="setup-help">
+                            <span class="material-icons inline-icon" aria-hidden="true">verified_user</span>{{ t('woobTrustHelp') }}
+                        </p>
+                        <dl class="woob-repository">
+                            <dt>{{ t('woobRepository') }}</dt>
+                            <dd><code>{{ woobUpdate.status.repository }}</code></dd>
+                            <dt>{{ t('woobFingerprint') }}</dt>
+                            <dd><code class="woob-fingerprint">{{ woobUpdate.status.fingerprint || t('woobFingerprintUnknown') }}</code></dd>
+                        </dl>
+                        <p class="setup-help">{{ t('woobTrustCompare') }}</p>
+                        <div v-if="woobUpdate.status.error" class="sync-step-error" role="alert">{{ woobUpdate.status.error }}</div>
+                    </template>
+                    <ol v-if="woobUpdate.lines.length" class="sync-log" aria-live="polite" :aria-label="t('woobUpdateLog')">
+                        <li v-for="(line, i) in woobUpdate.lines" :key="i">{{ line }}</li>
+                    </ol>
+                    <div v-if="woobUpdate.running" class="transactions-hint" role="status">{{ t('woobUpdateRunning') }}</div>
+                    <div v-if="woobUpdate.done" class="transactions-hint" role="status">{{ t('woobUpdated') }}</div>
+                    <div v-if="woobUpdate.error" class="sync-step-error" role="alert">{{ woobUpdate.error }}</div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" @click="closeWoobUpdate" :disabled="woobUpdate.running">
+                        <span class="material-icons" aria-hidden="true">{{ woobUpdate.done ? 'check' : 'cancel' }}</span>
+                        {{ woobUpdate.done ? t('close') : t('cancel') }}
+                    </button>
+                    <button v-if="woobUpdate.status && !woobUpdate.status.trusted && woobUpdate.status.fingerprint && !woobUpdate.running"
+                            type="button" @click="runWoobUpdate(woobUpdate.status.fingerprint)">
+                        <span class="material-icons" aria-hidden="true">verified_user</span>
+                        {{ t('woobTrustAndUpdate') }}
                     </button>
                 </div>
             </div>

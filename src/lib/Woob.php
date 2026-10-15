@@ -38,15 +38,22 @@ final class Woob {
      * Command that runs woob, after making sure that woob will accept to start: it
      * refuses a configuration file of the banks (logins and passwords) readable by
      * the group or the other users, as a file copied into a NAS shared folder often is.
+     * Not on a first run of woob before its repository is trusted: woob would trust the
+     * keyring of its repository by itself.
      *
+     * @param bool $refresh The command refreshes the repositories itself, once trusted by
+     *                      an administrator (WoobRepository::update())
      * @return string The command (woob_path of the configuration)
      * @throws Exception If the file stays readable by other users (ACL of the folder)
+     * @throws Error If the woob repository must be trusted first (409)
      */
-    public static function path(): string
+    public static function path(bool $refresh = false): string
     {
+        if (!$refresh) {
+            WoobRepository::requireTrustBeforeFirstRun();
+        }
         $woob_path = Config::get('woob_path');
-        // HOME given in the command (Docker: "env HOME=/data/woob woob"), or the one of PHP
-        $home = preg_match('/\bHOME=(\S+)/', (string)$woob_path, $m) ? trim($m[1], '"\'') : getenv('HOME');
+        $home = self::home();
         $dir = rtrim((string)$home, '/') . '/.config/woob';
         if ($home && is_dir($dir)) {
             if ((fileperms($dir) & 0077) !== 0) {
@@ -64,6 +71,19 @@ final class Woob {
         }
         // An unset woob_path gives an empty command, as before
         return (string)$woob_path;
+    }
+
+    /**
+     * Home directory of woob (its configuration, keyrings and modules): the HOME given in
+     * the command (Docker: "env HOME=/data/woob woob"), else the one of PHP.
+     *
+     * @return string|null The directory, null if unknown
+     */
+    public static function home(): ?string
+    {
+        $woob_path = (string)Config::get('woob_path');
+        $home = preg_match('/\bHOME=(\S+)/', $woob_path, $m) ? trim($m[1], '"\'') : getenv('HOME');
+        return $home ? (string)$home : null;
     }
 
     /**
@@ -231,6 +251,7 @@ final class Woob {
      *               description: string, default: string, required: bool, masked: bool, regexp: string|null,
      *               choices: list<array{value: string, label: string}>}>} The module and its fields
      * @throws Exception If woob does not know the module
+     * @throws Error If the module must be installed before the woob repository is trusted (409)
      */
     public static function moduleFields(string $module): array
     {
@@ -295,11 +316,19 @@ final class Woob {
      * setting it asks for (no input). A backend created anyway (module without
      * settings) is removed.
      *
+     * Not before the keyring of the woob repository is trusted: woob checks the signature
+     * of a module with it ("No keyring found" otherwise), and would trust it by itself on
+     * a first run.
+     *
      * @param string $module The woob module
      * @return void
+     * @throws Error If the woob repository is not trusted yet (409)
      */
     private static function installModule(string $module): void
     {
+        if (!WoobRepository::isTrusted()) {
+            throw new Error(WoobRepository::TRUST_FIRST . ", to install the module $module", 409);
+        }
         $woob_path = self::path();
         $probe = 'carbure_install_probe';
         $process = proc_open("$woob_path config add " . escapeshellarg($module) . ' ' . escapeshellarg($probe) . ' < /dev/null',
@@ -414,7 +443,9 @@ final class Woob {
     {
         $woob_path = self::path();
         $woob_transactions = Config::get('woob_transactions');
-        $woob_auto_update = Config::get('woob_auto_update');
+        // --auto-update refreshes the repositories after a crash of a module: woob would
+        // trust the keyring of its repository by itself if none is trusted yet
+        $woob_auto_update = Config::get('woob_auto_update') && WoobRepository::isTrusted();
 
         $auto_update_flag = $woob_auto_update ? " --auto-update" : "";
 

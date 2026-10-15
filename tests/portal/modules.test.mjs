@@ -428,6 +428,61 @@ test('confirm: answered by the buttons, the action kept running and its error sh
     assert.equal(await asked, false);
 });
 
+test('accounts: the woob repository is trusted only with the fingerprint shown, then updated', async () => {
+    const { createAccountsModule } = await import('../../portal/modules/accountsModule.js');
+    const fingerprint = 'b5fc136c2d500b8483696a0ee722865842a4cc45';
+    const calls = [];
+    let trusted = false;
+    const api = {
+        fetchWoobStatus: async () => ({ repository: 'https://updates.woob.tech/3/main/', trusted, fingerprint, error: null }),
+        updateWoob: async (onMessage, confirmed) => {
+            calls.push(confirmed);
+            if (!trusted && confirmed !== fingerprint) {
+                onMessage(`Woob repository not trusted: ${fingerprint}`);
+                return;
+            }
+            trusted = true;
+            onMessage('100% All modules are up-to-date.');
+            onMessage('Woob updated');
+        },
+    };
+    const { methods, data } = createAccountsModule(() => api);
+    const toasts = [];
+    let reloaded = 0;
+    const context = { ...data(), showToast: message => toasts.push(message), t: key => key, loadBankBackends: async () => { reloaded++; } };
+    for (const name of ['openWoobUpdate', 'runWoobUpdate', 'onWoobUpdateLine', 'closeWoobUpdate']) {
+        context[name] = methods[name].bind(context);
+    }
+
+    // Not trusted: shown, nothing run until the administrator trusts it
+    await context.openWoobUpdate();
+    assert.equal(context.woobUpdate.status.trusted, false);
+    assert.deepEqual(calls, []);
+
+    await context.runWoobUpdate(fingerprint);
+    assert.deepEqual(calls, [fingerprint]);
+    assert.equal(context.woobUpdate.done, true);
+    assert.equal(context.woobUpdate.error, null);
+    assert.deepEqual(toasts, ['woobUpdated']);
+    // The banks woob supports are read again
+    assert.equal(reloaded, 1);
+    context.closeWoobUpdate();
+    assert.equal(context.woobUpdate.open, false);
+
+    // Trusted: started at once, without fingerprint
+    await context.openWoobUpdate();
+    assert.deepEqual(calls, [fingerprint, null]);
+    assert.equal(context.woobUpdate.done, true);
+
+    // A fingerprint refused by the server: shown again to compare, with the error
+    context.onWoobUpdateLine(`Woob repository not trusted: ${'a'.repeat(40)}`);
+    assert.equal(context.woobUpdate.status.trusted, false);
+    assert.equal(context.woobUpdate.status.fingerprint, 'a'.repeat(40));
+    assert.equal(context.woobUpdate.error, 'woobNotTrusted');
+    context.onWoobUpdateLine('Woob update failed: network down');
+    assert.equal(context.woobUpdate.error, 'network down');
+});
+
 test('accounts: the accounts found by woob, the followed ones ticked and not followed again', async () => {
     const { createAccountsModule } = await import('../../portal/modules/accountsModule.js');
     const { methods } = createAccountsModule(() => null);

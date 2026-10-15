@@ -225,10 +225,15 @@ class WoobTest extends TestCase
     {
         Config::set('woob_debug', true);
         Config::set('woob_auto_update', true);
+        // --auto-update only once the woob repository is trusted (see WoobRepositoryTest)
+        $keyrings = WoobRepository::$keyringDir;
+        @mkdir($keyrings, 0700, true);
+        copy(dirname(__DIR__) . '/fixtures/woob-repository/trusted.gpg', "$keyrings/https___updates_woob_tech_3_main_.gpg");
         try {
             $command = (new ReflectionMethod(Woob::class, 'buildCommand'))->invoke(null, 'history', '1@bnp');
         } finally {
             Config::set('woob_debug', false);
+            array_map('unlink', glob("$keyrings/*") ?: []);
         }
 
         $this->assertStringContainsString("bank history '1@bnp'", $command);

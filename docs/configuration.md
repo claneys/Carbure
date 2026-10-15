@@ -88,7 +88,7 @@ transaction importée.
 | `woob_transactions` ✏️ | Nombre d'opérations demandées par appel (`--count`) |
 | `woob_logging` ✏️ | Niveau de log de woob, sur sa sortie d'erreur (jamais dans un fichier) : `debug` (`--debug`), `info` (`--verbose`), `warning` (par défaut), `error`/`critical` (`--quiet`) |
 | `woob_debug` ✏️ | `true` pour lancer woob en `--debug` (prioritaire sur `woob_logging`), journaliser sa sortie complète et l'afficher dans le journal de synchronisation du portail (administrateurs) |
-| `woob_auto_update` ✏️ | `true` pour laisser woob mettre à jour ses modules |
+| `woob_auto_update` ✏️ | `true` pour laisser woob mettre à jour ses modules (`--auto-update`, une fois le dépôt de woob approuvé, voir [Sécurité](securite.md)) |
 | `woob_2fa_wait` ✏️ | Synchronisation planifiée : secondes d'attente (0 à 300, 15 par défaut) avant de resynchroniser un compte dont la banque demande une validation dans son application |
 | `woob_2fa_retries` ✏️ | Synchronisation planifiée : nombre de nouvelles tentatives après cette demande (0 à 5, 1 par défaut ; 0 pour ne pas réessayer) |
 

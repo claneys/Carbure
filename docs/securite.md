@@ -197,9 +197,41 @@ du dépôt.
 Les modules bancaires de woob (code Python qui lit les identifiants) sont téléchargés
 depuis le dépôt de woob : l'image contient `gpgv`, avec lequel woob vérifie la signature
 de chaque module installé ou mis à jour et refuse un module dont la signature est
-invalide. À chaque démarrage, le conteneur lance `woob config update` : il met à jour les dépôts,
-la clé du dépôt (`/data/woob/.local/share/woob/keyrings/`) et les modules bancaires
-installés. Une commande woob lancée à la main dans le
+invalide.
+
+La clé du dépôt de woob (`https://updates.woob.tech/3/main/`) n'est approuvée qu'une
+fois : les clés suivantes sont vérifiées par woob avec la précédente. Mais **toute
+commande woob qui rafraîchit les dépôts alors qu'aucune clé n'est approuvée lui fait
+confiance d'elle-même** : sans terminal, woob affiche la question puis
+`*** ASSUMING YES ***`. Carbure ne lance donc pas woob tant qu'un **administrateur** n'a
+pas approuvé cette clé, depuis l'onglet **Comptes** (bouton **Mettre à jour les modules
+bancaires**) : le portail affiche le dépôt et l'empreinte SHA-1 de sa clé, à comparer avec
+celle publiée ou annoncée par les mainteneurs de woob, puis **Faire confiance et mettre à
+jour**. Carbure télécharge lui-même la clé juste avant : woob n'est lancé que si son
+empreinte est exactement celle confirmée ; après la mise à jour, la clé que woob a
+conservée (`/data/woob/.local/share/woob/keyrings/`) doit aussi être celle-là, sinon elle
+est supprimée et la mise à jour échoue.
+
+Tant que le dépôt n'est pas approuvé, Carbure refuse aussi (`409`, « Trust the woob
+repository first ») :
+
+- **toute commande woob** sur une installation neuve : au premier lancement (pas encore de
+  `~/.config/woob/sources.list`), n'importe quelle commande de woob crée la liste des
+  dépôts et les rafraîchit d'abord, faisant confiance à la clé d'elle-même ; la mise à
+  jour approuvée par l'administrateur est alors le premier lancement de woob ;
+- d'**installer un module bancaire** (connecter une banque dont le module n'est pas encore
+  installé) : woob vérifie sa signature avec la clé du dépôt ;
+- l'option `--auto-update` (`woob_auto_update`) n'est passée à woob qu'une fois le dépôt
+  approuvé : après le plantage d'un module, elle rafraîchit les dépôts.
+
+Approuvez donc le dépôt avant de connecter une banque. Une commande woob lancée à la main
+dans le conteneur (`woob config update`, ou n'importe laquelle au premier lancement) ferait
+confiance à la clé d'elle-même.
+
+Une fois le dépôt approuvé, le conteneur lance aussi `woob config update` à chaque
+démarrage (dépôts, clé et modules installés), sans jamais répondre à une question de
+woob ; tant qu'il ne l'est pas, il l'indique dans ses logs et ne met rien à jour. Un échec
+de la mise à jour est écrit dans les logs du conteneur. Une commande woob lancée à la main dans le
 conteneur doit l'être en `www-data` (`docker exec -u www-data …`) : lancée en root, elle
 créerait dans `/data/woob` des fichiers que Carbure ne pourrait plus modifier (le
 redémarrage du conteneur les lui rend).

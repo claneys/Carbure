@@ -1,6 +1,6 @@
 // Accessibility: every text of the portal is readable (WCAG 2.2 AA contrast), the
 // buttons at rest and on hover, on every tab and in the modals (see a11y.js)
-const { test, expect, tr, openTab } = require('../fixtures');
+const { test, expect, tr, openTab, trustWoobRepository } = require('../fixtures');
 const { contrastProblems } = require('../a11y');
 
 // Hovering every button of every screen takes time
@@ -82,8 +82,18 @@ test('the menus, modals and the synchronization log are readable', async ({ admi
     await page.keyboard.press('Escape');
     await expect(category).toHaveCount(0);
 
-    // Accounts: connecting a bank (its settings asked), then the accounts woob lists for one
+    // Accounts: update of the bank modules, the fingerprint of the woob repository to compare
     await openTab(page, tr('tabAccounts'));
+    await page.getByRole('button', { name: tr('woobUpdateButton') }).click();
+    const woobUpdate = page.getByRole('dialog', { name: tr('woobUpdateTitle') });
+    await expect(woobUpdate.getByRole('button', { name: tr('woobTrustAndUpdate') })).toBeVisible();
+    problems.push(...await contrastProblems(page, tr('woobUpdateTitle')));
+    await page.keyboard.press('Escape');
+    await expect(woobUpdate).toHaveCount(0);
+
+    // Connecting a bank (its settings asked, its module installed once the woob repository
+    // is trusted), then the accounts woob lists for one
+    trustWoobRepository();
     await page.getByRole('button', { name: tr('connectBankTitle') }).click();
     const connect = page.getByRole('dialog', { name: tr('connectBankTitle') });
     await connect.getByLabel(new RegExp(tr('connectBankModule'))).selectOption('boursorama');

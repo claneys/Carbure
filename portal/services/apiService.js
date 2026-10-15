@@ -620,6 +620,49 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
             throw new Error(message);
         }
 
+        await readEvents(response, onMessage);
+    }
+
+    /**
+     * Repository of the woob bank modules: trusted or not, fingerprint of its keyring
+     * @returns {Promise<{repository: string, trusted: boolean, fingerprint: (string|null), error: (string|null)}>}
+     */
+    async function fetchWoobStatus() {
+        return request(`${baseUrl}/bank/woob`, {}, 'Failed to read the woob repository');
+    }
+
+    /**
+     * Updates the woob bank modules and reports each line of woob (Server-Sent Events).
+     * The last message is "Woob updated", "Woob repository not trusted: <fingerprint>"
+     * or "Woob update failed: <cause>".
+     * @param {Function} onMessage - Called with each progress message
+     * @param {string|null} fingerprint - Fingerprint of the keyring trusted by the administrator
+     * @returns {Promise<void>} Resolved when the update ends
+     * @throws {Error} If the request fails
+     */
+    async function updateWoob(onMessage, fingerprint = null) {
+        const query = fingerprint ? `?fingerprint=${encodeURIComponent(fingerprint)}` : '';
+        const response = await authFetch(`${baseUrl}/bank/woob/update${query}`, { headers: getHeaders() });
+        if (!response.ok || !response.body) {
+            let message = `Failed to update woob (${response.status})`;
+            try {
+                message = JSON.parse(await response.text()).error || message;
+            } catch (e) {
+                // Keep default error message
+            }
+            throw new Error(message);
+        }
+        await readEvents(response, onMessage);
+    }
+
+    /**
+     * Reads a Server-Sent Events answer: "data: <message>" blocks, ": heartbeat"
+     * comments ignored.
+     * @param {Response} response - Answer of the API
+     * @param {Function} onMessage - Called with each message
+     * @returns {Promise<void>} Resolved at the end of the answer
+     */
+    async function readEvents(response, onMessage) {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
@@ -965,6 +1008,8 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
         renameBankBackend,
         deleteBankBackend,
         syncBanks,
+        fetchWoobStatus,
+        updateWoob,
         fetchCategories,
         createCategory,
         updateCategory,

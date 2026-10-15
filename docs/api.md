@@ -165,6 +165,9 @@ que ses comptes puissent être synchronisés : depuis le portail (routes ci-dess
 
 Paramètres demandés par un module woob : `module`, `description`, `fields` (`key`, `label`,
 `description`, `default`, `required`, `masked`, `choices`). Rien de secret n'est renvoyé.
+Un module pas encore installé l'est d'abord ; `409` si le dépôt de woob n'est pas encore
+approuvé (l'installer ferait confiance à sa clé, voir `GET /bank/woob/update`), comme
+pour `POST /bank/backend`.
 
 ### `POST /bank/backend` — administrateur
 
@@ -174,7 +177,8 @@ sans espace, choix vérifiés), `label` (facultatif : nom donné à la connexion
 caractères max, par exemple « Compte joint »). Les identifiants sont confiés à woob, ni
 stockés ni journalisés par Carbure (`settings` est masqué dans les logs). Renvoie
 `backend`, `label` et les `accounts` trouvés (même format que `/bank/discover`). `409` si
-une banque de ce nom existe déjà dans woob, `400` si un paramètre manque ou si woob refuse.
+une banque de ce nom existe déjà dans woob ou si son module n'est pas installé et le dépôt
+de woob pas encore approuvé, `400` si un paramètre manque ou si woob refuse.
 
 ### `PUT /bank/backend` — administrateur
 
@@ -190,6 +194,30 @@ l'oublie avec ses identifiants (`woob config remove`), son nom donné et ses com
 sont supprimés ; les transactions déjà importées sont conservées. Renvoie `true`. `404` si
 la banque n'est pas configurée dans woob, `400` si le nom est invalide, `500` si woob ne
 l'a pas supprimée.
+
+### `GET /bank/woob` — administrateur
+
+Sur une installation neuve (woob jamais lancé), toutes les routes qui lancent woob
+répondent `409` tant que la clé de son dépôt n'est pas approuvée (`GET /bank/woob/update`) :
+au premier lancement, woob ferait confiance à cette clé de lui-même.
+
+État du dépôt des modules bancaires de woob : `repository` (URL), `trusted` (clé déjà
+approuvée), `fingerprint` (empreinte SHA-1 de la clé approuvée, sinon de celle que woob
+demandera d'approuver, à comparer avec celle des mainteneurs de woob ; `null` si le dépôt
+est injoignable) et `error` (cause, `null` sinon).
+
+### `GET /bank/woob/update` — administrateur (flux SSE)
+
+Met à jour les dépôts et les modules bancaires (`woob config update`). Paramètre
+facultatif `fingerprint` (empreinte SHA-1 confirmée par l'administrateur, `400` si ce
+n'est pas 40 caractères hexadécimaux). Tant que la clé du dépôt n'est pas approuvée,
+woob (qui lui ferait confiance de lui-même) n'est lancé que si `fingerprint` est
+l'empreinte de la clé que Carbure télécharge juste avant, et la clé conservée par woob
+doit être celle-là (sinon elle est supprimée). Chaque ligne de woob est envoyée
+(`data: <ligne>`), puis le résultat : `Woob updated`, `Woob repository not trusted:
+<empreinte>` (woob non lancé : à comparer avant de réessayer avec elle) ou `Woob update
+failed: <cause>` (dont `synchronization in progress` : jamais pendant une
+synchronisation).
 
 ### `GET /bank/discover` — administrateur
 

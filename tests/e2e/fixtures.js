@@ -168,4 +168,16 @@ function escapeRegExp(text) {
     return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-module.exports = { test, expect: base.expect, USERS, openTab, tr, pickCategory, euros, currentMonth, escapeRegExp };
+/**
+ * The repository of the fake woob trusted, as after an update confirmed by an
+ * administrator (the keyrings of the fake woob are in the temporary directory, shared with
+ * the server; the reset of the database forgets them)
+ */
+function trustWoobRepository() {
+    const os = require('os');
+    const keyrings = path.join(os.tmpdir(), 'carbure-fake-woob-keyrings');
+    fs.mkdirSync(keyrings, { recursive: true });
+    fs.copyFileSync(path.join(__dirname, '../fixtures/woob-repository/trusted.gpg'), path.join(keyrings, 'https___updates_woob_tech_3_main_.gpg'));
+}
+
+module.exports = { test, expect: base.expect, USERS, openTab, tr, pickCategory, euros, currentMonth, escapeRegExp, trustWoobRepository };
