@@ -8,16 +8,16 @@ const source = readFileSync(new URL('../../portal/theme.js', import.meta.url), '
 
 /**
  * Runs theme.js in a fake page
- * @param {{stored?: string|null, systemDark?: boolean}} options
+ * @param {{stored?: string|null, systemDark?: boolean, metas?: Object[]}} options
  * @returns {{window: Object, html: Object, storage: Map, setSystemDark: Function}}
  */
-function load({ stored = null, systemDark = false } = {}) {
+function load({ stored = null, systemDark = false, metas } = {}) {
     const storage = new Map(stored === null ? [] : [['theme', stored]]);
     const listeners = [];
     const media = { matches: systemDark, addEventListener: (type, listener) => listeners.push(listener) };
     const html = { dataset: {} };
     const window = {
-        document: { documentElement: html },
+        document: { documentElement: html, ...(metas ? { querySelectorAll: () => metas } : {}) },
         localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) },
         matchMedia: () => media,
     };

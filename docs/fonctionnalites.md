@@ -405,7 +405,9 @@ utilisateurs ouvrent **Agent IA** depuis leur menu.
 - Les opérations récurrentes sont **détectées**, pas **planifiées** : pas d'échéancier de
   factures ni de prévision du solde.
 - Pas d'**objectifs d'épargne**.
-- L'app native est sur **iPhone** ; sur Android, le portail web s'utilise dans le
-  navigateur.
+- L'app native est sur **iPhone** ; sur Android et sur ordinateur, le portail web
+  s'utilise dans le navigateur ou s'installe comme une application
+  ([en HTTPS](portail.md#installer-le-portail-comme-une-application)), sans mode hors
+  ligne.
 
 Voir aussi le [comparatif](comparatif.md) avec Firefly III, Actual Budget et Kresus.

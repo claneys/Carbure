@@ -175,7 +175,8 @@ l'assistant y écrit la configuration.
 - `portal/` est servi en fichiers statiques (par exemple sous `/portal/`).
 - `swagger/` peut être servi pour consulter la spécification OpenAPI.
 - `data/`, `conf/`, `sql/`, `tests/` et `tools/` ne doivent **pas** être exposés.
-- Utiliser HTTPS.
+- Utiliser HTTPS (nécessaire aussi pour [installer le portail comme une application](portail.md#installer-le-portail-comme-une-application)).
+  Servir `.webmanifest` avec le type `application/manifest+json` (voir `docker/nginx.conf`).
 
 Exemple nginx (celui de l'image Docker est dans `docker/nginx.conf`) :
 

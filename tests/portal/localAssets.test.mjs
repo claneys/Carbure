@@ -108,7 +108,7 @@ test('the CSP of nginx allows the resources of the project only', () => {
     const policies = [...conf.matchAll(/(?:set \$csp_portal|Content-Security-Policy) "([^"]+)"/g)].map(m => m[1]);
     assert.equal(policies.length, 2, 'the CSP of the portal and the one of Swagger UI');
     for (const csp of policies) {
-        for (const directive of ['default-src', 'script-src', 'style-src', 'img-src', 'font-src', 'connect-src']) {
+        for (const directive of ['default-src', 'script-src', 'style-src', 'img-src', 'font-src', 'connect-src', 'manifest-src']) {
             const others = cspSources(csp, directive).filter(s => !["'self'", "'none'", "'unsafe-inline'", "'unsafe-eval'", 'data:'].includes(s));
             assert.deepEqual(others, [], `${directive} of "${csp}"`);
         }

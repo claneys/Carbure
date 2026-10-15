@@ -51,6 +51,33 @@ Insights et Agent IA suivent la même présentation : un en-tête avec le titre 
 un bouton rond **+** qui ouvre le formulaire dans une fenêtre modale, qui sert aussi à la
 modification.
 
+## Installer le portail comme une application
+
+Le portail peut s'installer comme une **application** : il s'ouvre alors dans sa propre
+fenêtre, sans barre d'adresse ni onglets, avec l'icône de Carbure dans le Dock, la barre des
+tâches ou l'écran d'accueil.
+
+| Navigateur | Installation |
+|---|---|
+| **Chrome, Edge** (Windows, macOS, Linux) | icône d'installation à droite de la barre d'adresse, ou menu **⋮** → **Installer Carbure** (Edge : **Applications** → **Installer cette application**) |
+| **Safari** (macOS Sonoma et suivants) | menu **Fichier** → **Ajouter au Dock** |
+| **Safari** (iPhone, iPad) | bouton **Partager** → **Sur l'écran d'accueil** |
+| **Chrome** (Android) | menu **⋮** → **Ajouter à l'écran d'accueil** (ou **Installer l'application**) |
+
+- **HTTPS obligatoire** : les navigateurs ne proposent l'installation que pour un site en
+  HTTPS (proxy inversé devant le conteneur, voir [Installation](installation.md)), sauf
+  sur `localhost`.
+- La fenêtre de l'application est celle du portail : même connexion (la session est
+  partagée avec le navigateur), même thème, déconnexion et reconnexion dans la fenêtre. La
+  couleur de sa barre de titre suit le thème clair ou sombre. Les liens externes (site de
+  Carbure, tickets woob) s'ouvrent dans le navigateur.
+- **Pas de mode hors ligne** : le portail n'a pas de *service worker* ; rien n'est gardé en
+  cache (ni les données bancaires ni le jeton de session), il faut le serveur pour
+  l'utiliser.
+- Le manifeste (`portal/manifest.webmanifest`) utilise des adresses relatives : il
+  fonctionne aussi quand Carbure est servi sous un sous-chemin. Ses icônes
+  (`portal/icons/`) sont tirées de `portal/icon.png`.
+
 ## En-tête
 
 - Le titre **Carbure** ramène à l'accueil : transactions du mois en cours.
@@ -441,4 +468,5 @@ des logs dans la console du navigateur.
 | `i18n.js` | Traductions `fr` et `en` |
 | `utils/formatters.js`, `utils/categoryIcons.js` | Formatage des montants, dates, icônes ; icônes et couleurs des catégories |
 | `vendor/` | Vue, CodeMirror (éditeur SQL) et polices, servis localement |
+| `manifest.webmanifest`, `icons/` | Manifeste et icônes de l'application installée |
 | `style.css` | Styles (variables CSS dans `:root`) |

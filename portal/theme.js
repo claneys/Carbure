@@ -12,6 +12,9 @@
     const CHOICES = ['system', 'light', 'dark'];
     const media = root.matchMedia ? root.matchMedia('(prefers-color-scheme: dark)') : null;
     let choice = 'system';
+    // Color of the window of the installed app (and of the mobile browser bar), as the
+    // <meta name="theme-color"> of index.html and the theme_color of manifest.webmanifest
+    const THEME_COLORS = { light: '#D12C48', dark: '#1a0b14' };
     // Called with the theme displayed each time it is applied (the header toggle)
     const listeners = [];
 
