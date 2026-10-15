@@ -676,10 +676,11 @@
                                 </div>
                             </div>
                             <div class="budget-meter large" :class="budgetStatus({ progress: budgetSummary.progress })"
-                                 role="progressbar" :aria-valuenow="budgetSummary.progress" aria-valuemin="0" aria-valuemax="100">
+                                 role="progressbar" :aria-valuenow="budgetSummary.progress" aria-valuemin="0" aria-valuemax="100"
+                                 aria-labelledby="budget-used-caption">
                                 <div class="budget-meter-fill" :style="{ width: Math.min(budgetSummary.progress, 100) + '%' }"></div>
                             </div>
-                            <div class="budget-summary-caption">{{ t('budgetUsed', { progress: budgetSummary.progress }) }}</div>
+                            <div id="budget-used-caption" class="budget-summary-caption">{{ t('budgetUsed', { progress: budgetSummary.progress }) }}</div>
                         </section>
 
                         <!-- Budgeted expenses, incomes, others -->

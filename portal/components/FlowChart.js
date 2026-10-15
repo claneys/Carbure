@@ -293,7 +293,7 @@ export default {
             </ul>
 
             <div class="flow-canvas">
-                <svg :viewBox="'0 0 ${WIDTH} ' + layout.height" preserveAspectRatio="xMidYMid meet" role="img" :aria-label="summary"
+                <svg :viewBox="'0 0 ${WIDTH} ' + layout.height" preserveAspectRatio="xMidYMid meet" role="group" :aria-label="summary"
                      @mouseleave="hover = null">
                     <defs>
                         <linearGradient v-for="link in layout.links" :key="'g-' + link.key" :id="gradient(link.key)"

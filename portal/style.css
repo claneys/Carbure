@@ -4056,7 +4056,8 @@ a.footer-brand:hover {
 
 .category-chip.role-admin {
     background: color-mix(in srgb, var(--primary-color) 14%, transparent);
-    color: var(--primary-color);
+    /* Darker than the brand red: readable on its tinted background (4.5:1) */
+    color: color-mix(in srgb, var(--primary-color) 80%, var(--text-primary));
 }
 
 @media (max-width: 768px) {
@@ -4466,6 +4467,13 @@ a.footer-brand:hover {
         flex-wrap: wrap;
     }
 
+    /* A long label (update of the bank modules) wraps instead of widening the page */
+    .panel-actions button {
+        max-width: 100%;
+        white-space: normal;
+        text-align: left;
+    }
+
     .form-row {
         grid-template-columns: 1fr;
     }
@@ -4685,8 +4693,9 @@ a.footer-brand:hover {
 
 .setup-checkbox input {
     flex: none;
-    width: 20px;
-    height: 20px;
+    /* Target of 24 px at least (WCAG 2.5.8) */
+    width: 24px;
+    height: 24px;
     margin: 0;
     accent-color: var(--primary-color);
 }
@@ -5051,7 +5060,8 @@ a.footer-brand:hover {
     font-weight: 500;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: var(--text-secondary);
+    /* Darker than --text-secondary: the tile has a tinted background (4.5:1) */
+    color: color-mix(in srgb, var(--text-secondary) 60%, var(--text-primary));
 }
 
 .flow-kpi-value {
@@ -5064,7 +5074,8 @@ a.footer-brand:hover {
 
 .flow-kpi-note {
     font-size: 12px;
-    color: var(--tone);
+    /* The tone darkened: readable on the tinted background of the tile (4.5:1) */
+    color: color-mix(in srgb, var(--tone) 80%, var(--text-primary));
 }
 
 /* Diagram */
@@ -5297,6 +5308,9 @@ a.footer-brand:hover {
 /* ===== Sub-tabs (Budget: flow / budgets) ===== */
 .sub-tabs {
     display: inline-flex;
+    /* At 320 px (zoom 400 %) the sub-tabs go to the next line instead of widening the page */
+    flex-wrap: wrap;
+    max-width: 100%;
     gap: 4px;
     margin-bottom: 20px;
     padding: 4px;
@@ -5423,7 +5437,8 @@ button.rule-chip {
 button.rule-chip:hover,
 button.rule-chip:focus-visible {
     background: color-mix(in srgb, var(--primary-color) 14%, transparent);
-    color: var(--primary-color);
+    /* Darker than the brand red: readable on its tinted background (4.5:1) */
+    color: color-mix(in srgb, var(--primary-color) 80%, var(--text-primary));
     transform: none;
     box-shadow: none;
 }
@@ -5442,7 +5457,7 @@ button.rule-chip.rule-chip-notify {
 button.rule-chip.rule-chip-notify:hover,
 button.rule-chip.rule-chip-notify:focus-visible {
     background: color-mix(in srgb, var(--error-color) 18%, var(--background));
-    color: var(--error-color);
+    color: color-mix(in srgb, var(--error-color) 80%, var(--text-primary));
 }
 
 .rule-chip-notify .rule-notify {
@@ -5649,8 +5664,6 @@ textarea:focus-visible,
     white-space: pre-wrap;
     word-break: break-word;
     color: var(--text-primary);
-    max-height: 240px;
-    overflow: auto;
 }
 
 /* ===== Import of a bank statement file (Transactions tab) ===== */

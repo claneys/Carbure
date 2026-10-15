@@ -18,6 +18,12 @@ const MIN_LARGE_TEXT = 3;
  */
 function measure(element) {
     const parse = value => {
+        // A color-mix() is computed by the browser as color(srgb r g b / a), channels 0..1
+        const srgb = String(value).match(/color\(srgb ([^)]+)\)/);
+        if (srgb) {
+            const [r, g, b, a = 1] = srgb[1].split(/[ /]+/).filter(Boolean).map(Number);
+            return { r: r * 255, g: g * 255, b: b * 255, a };
+        }
         const match = String(value).match(/rgba?\(([^)]+)\)/);
         if (!match) {
             return null;
@@ -61,7 +67,7 @@ function measure(element) {
     for (let node = element; node && node.nodeType === Node.ELEMENT_NODE; node = node.parentElement) {
         const style = getComputedStyle(node);
         opacity *= Number(style.opacity);
-        const stops = (style.backgroundImage.match(/rgba?\([^)]+\)/g) || []).map(parse);
+        const stops = (style.backgroundImage.match(/rgba?\([^)]+\)|color\(srgb [^)]+\)/g) || []).map(parse);
         const color = parse(style.backgroundColor);
         const layers = stops.length ? stops.map(stop => color && color.a ? over(stop, color) : stop) : [color];
         candidates = candidates.flatMap(stack => layers.map(layer => [...stack, layer]));
@@ -99,7 +105,10 @@ function measure(element) {
  */
 async function contrastReport(page, where) {
     const failures = [];
-    const buttons = page.locator('button:visible, a.btn:visible, [role="button"]:visible, [role="tab"]:visible, [role="menuitem"]:visible');
+    // A modal open: only its buttons (the page under it is inactive, behind its overlay)
+    const modal = page.locator('[aria-modal="true"]:visible').last();
+    const scope = await modal.count() ? modal : page;
+    const buttons = scope.locator('button:visible, a.btn:visible, [role="button"]:visible, [role="tab"]:visible, [role="menuitem"]:visible');
     const count = await buttons.count();
     // Buttons with the same classes look the same: the first one is checked
     const seen = new Set();
@@ -152,7 +161,9 @@ async function textReport(page, where) {
             return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && !el.closest('[aria-hidden="true"]:not(.material-icons)');
         };
         const name = el => el.tagName.toLowerCase() + (typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/).join('.') : '');
-        return [...document.querySelectorAll('body *')]
+        // A modal open: only its texts (the page under it is inactive, behind its overlay)
+        const modal = [...document.querySelectorAll('[aria-modal="true"]')].filter(visible).pop();
+        return [...(modal || document.body).querySelectorAll('*')]
             .filter(el => !['SCRIPT', 'STYLE', 'OPTION'].includes(el.tagName) && visible(el) && !el.closest(':disabled'))
             .map(el => {
                 const m = fn(el);
