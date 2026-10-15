@@ -87,6 +87,8 @@
     "importHelp": "Download the statement from the online banking of your bank, as OFX, QIF, CSV or CAMT.053. Before the import, Carbure shows the transactions already there and the probable duplicates. The categorization rules apply to the imported transactions.",
     "importTooLarge": "The file is larger than {size} KB.",
     "importAccount": "account {account}",
+    "importBankRecognized": "Recognized format: {bank}",
+    "importBankGeneric": "Generic format (columns guessed)",
     "importOtherFile": "Other file",
     "importStatus_new": "new",
     "importStatus_duplicate": "probable duplicates",

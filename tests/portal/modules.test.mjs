@@ -213,6 +213,19 @@ test('import: base64 of a file, by chunks', async () => {
     assert.equal(toBase64(new ArrayBuffer(0)), '');
 });
 
+test('import: how a CSV file was read, with the profile of its bank or not', async () => {
+    const { createImportModule } = await import('../../portal/modules/importModule.js');
+    const context = { t: (key, params) => `${key}${params ? ':' + params.bank : ''}` };
+    const label = createImportModule(() => null).methods.importBankLabel.bind(context);
+    assert.equal(label({ format: 'csv', bank: { id: 'boursorama', name: 'Boursorama / BoursoBank' } }), 'importBankRecognized:Boursorama / BoursoBank');
+    assert.equal(label({ format: 'csv', bank: null }), 'importBankGeneric');
+    // A server without the bank field: the columns were guessed
+    assert.equal(label({ format: 'csv' }), 'importBankGeneric');
+    // Other formats are read the same for every bank
+    assert.equal(label({ format: 'ofx', bank: null }), null);
+    assert.equal(label(null), null);
+});
+
 test('config: curl command of the synchronization', async () => {
     const { syncCommand } = await import('../../portal/modules/configModule.js');
     assert.equal(syncCommand('https://x.fr/api/bank/sync', 'abc'), 'curl -sN -H "X-Sync-Token: abc" "https://x.fr/api/bank/sync"');

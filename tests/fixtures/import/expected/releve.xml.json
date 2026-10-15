@@ -1,0 +1,20 @@
+{
+    "format": "camt",
+    "account": "FR7630004000010001234567890",
+    "transactions": [
+        {
+            "date": "2026-01-12",
+            "rdate": "2026-01-11",
+            "amount": -23.4,
+            "raw": "CB PHARMACIE CENTRALE",
+            "type": 7
+        },
+        {
+            "date": "2026-01-20",
+            "rdate": "2026-01-20",
+            "amount": 150.0,
+            "raw": "REMBOURSEMENT MUTUELLE",
+            "type": 5
+        }
+    ]
+}

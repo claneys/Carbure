@@ -1,0 +1,13 @@
+{
+    "format": "csv",
+    "account": null,
+    "transactions": [
+        {
+            "date": "2026-01-07",
+            "rdate": "2026-01-07",
+            "amount": -45.0,
+            "raw": "CARTE 06/01/26 SNCF",
+            "type": 7
+        }
+    ]
+}

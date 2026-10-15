@@ -18,6 +18,9 @@ class BankFileTest extends TestCase
     {
         $file = $this->parse('releve.ofx');
         $this->assertSame('ofx', $file['format']);
+        // OFX, QIF and CAMT are read the same for every bank: no profile
+        $this->assertNull($file['bank']);
+        $this->assertNull($file['bank']);
         $this->assertSame('00012345678', $file['account']);
         $this->assertCount(4, $file['transactions']);
 
@@ -72,7 +75,7 @@ class BankFileTest extends TestCase
     /**
      * Exports of French banks and neobanks (anonymized, in their format: preamble lines,
      * encoding, delimiter, columns): file => transactions [date, rdate, amount, raw].
-     * The sources of each format are listed in docs/portail.md.
+     * The sources of each format are in its profile (src/lib/import/banks).
      */
     public static function bankExports(): array
     {

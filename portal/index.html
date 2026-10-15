@@ -1783,6 +1783,7 @@
                                     <strong>{{ importFile.name }}</strong>
                                     <span>{{ importFormatLabel(importPreview.format) }}<template v-if="importPreview.account"> · {{ t('importAccount', { account: importPreview.account }) }}</template>
                                         · {{ formatDate(importPreview.from) }} → {{ formatDate(importPreview.to) }}</span>
+                                    <span v-if="importBankLabel(importPreview)" class="import-bank">{{ importBankLabel(importPreview) }}</span>
                                 </div>
                                 <button type="button" class="btn-secondary" @click="resetImport" :disabled="importing">{{ t('importOtherFile') }}</button>
                             </div>

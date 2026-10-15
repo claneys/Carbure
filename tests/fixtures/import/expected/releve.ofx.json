@@ -1,0 +1,34 @@
+{
+    "format": "ofx",
+    "account": "00012345678",
+    "transactions": [
+        {
+            "date": "2026-01-05",
+            "rdate": "2026-01-04",
+            "amount": -42.5,
+            "raw": "FACTURE CARTE DU 040126 BOULANGERIE",
+            "type": 7
+        },
+        {
+            "date": "2026-01-10",
+            "rdate": "2026-01-10",
+            "amount": -65.3,
+            "raw": "PRLV SEPA EDF ECH/100126",
+            "type": 2
+        },
+        {
+            "date": "2026-01-28",
+            "rdate": "2026-01-28",
+            "amount": 2000.0,
+            "raw": "VIR SALAIRE JANVIER",
+            "type": 1
+        },
+        {
+            "date": "2026-01-15",
+            "rdate": "2026-01-15",
+            "amount": -40.0,
+            "raw": "RETRAIT DAB PARIS & CIE",
+            "type": 6
+        }
+    ]
+}

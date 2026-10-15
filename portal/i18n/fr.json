@@ -87,6 +87,8 @@
     "importHelp": "Téléchargez le relevé depuis l'espace client de votre banque, au format OFX, QIF, CSV ou CAMT.053. Avant l'import, Carbure montre les transactions déjà présentes et les doublons probables. Les règles de catégorisation s'appliquent aux transactions importées.",
     "importTooLarge": "Le fichier dépasse {size} Ko.",
     "importAccount": "compte {account}",
+    "importBankRecognized": "Format reconnu : {bank}",
+    "importBankGeneric": "Format générique (colonnes devinées)",
     "importOtherFile": "Autre fichier",
     "importStatus_new": "nouvelles",
     "importStatus_duplicate": "doublons probables",

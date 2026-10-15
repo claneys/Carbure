@@ -56,6 +56,12 @@ keeps track of what was done).
       enough. Repetitions of an identical transaction have the UUID `md5(uuid . '#n')`
       (`Transaction::prepareAll()`): the migration must recompute them from the base UUID,
       rank by rank.
+- [ ] Bank profiles of the import (`src/lib/import/banks/`) kept the reading of the former
+      heuristics: the French Qonto export is booked on its operation date (the English one
+      on its settlement date), Boursorama ignores its value date and `comment`. Aligning
+      them changes the dates (not the UUID, made of the real date): check with real files
+      first. Variants without a fixture are still read by the generic reader: BNP Paribas
+      with `,`, the former N26 export in English or German (no public sample yet).
 - [ ] The account is not part of the UUID: the same operation (real date, label, amount) on
       two synchronized accounts is stored only once. Adding it changes every UUID (migration,
       or unique key `(account_number, uuid)`); only worth doing if accounts of the household

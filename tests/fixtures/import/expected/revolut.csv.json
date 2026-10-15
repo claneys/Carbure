@@ -1,0 +1,27 @@
+{
+    "format": "csv",
+    "account": null,
+    "transactions": [
+        {
+            "date": "2026-01-04",
+            "rdate": "2026-01-03",
+            "amount": -23.45,
+            "raw": "Monoprix",
+            "type": 0
+        },
+        {
+            "date": "2026-01-05",
+            "rdate": "2026-01-05",
+            "amount": 500.0,
+            "raw": "Top-Up by *1234",
+            "type": 0
+        },
+        {
+            "date": "2026-01-06",
+            "rdate": "2026-01-06",
+            "amount": -100.5,
+            "raw": "Exchanged to USD",
+            "type": 0
+        }
+    ]
+}

@@ -1,5 +1,6 @@
 // Transactions tab: month view, totals, search, check, categorization, detail modal
 const { test, expect, tr, openTab, pickCategory, euros, currentMonth } = require('../fixtures');
+const path = require('path');
 
 /** Row of a transaction, by its label */
 const row = (page, label) => page.locator('.transaction-item').filter({ hasText: label });
@@ -235,6 +236,8 @@ test('imports a bank statement file', async ({ adminPage: page }) => {
     await expect(modal.locator('.import-count.status-new strong')).toHaveText('2');
     await expect(modal.locator('.import-count.status-duplicate strong')).toHaveText('1');
     await expect(modal.locator('.import-count.status-known strong')).toHaveText('1');
+    // No bank writes this header: its columns were guessed
+    await expect(modal.locator('.import-bank')).toHaveText(tr('importBankGeneric'));
     await expect(modal.locator('.import-row.status-duplicate')).toContainText('CB SUPERMARCHE CASINO');
     // Only the new transaction is checked
     await expect(modal.locator('.import-row.status-duplicate input')).not.toBeChecked();
@@ -244,6 +247,23 @@ test('imports a bank statement file', async ({ adminPage: page }) => {
     await expect(modal).toHaveCount(0);
     await expect(row(page, 'CB FLEURISTE ROSE')).toHaveCount(2);
     await expect(page.locator('.transaction-item')).toHaveCount(8);
+});
+
+test('shows the bank whose export was recognized in the import preview', async ({ adminPage: page }) => {
+    await page.getByRole('button', { name: tr('importButton') }).click();
+    const modal = page.getByRole('dialog', { name: tr('importTitle') });
+
+    // An export of BoursoBank: read with its profile
+    await modal.locator('input[type="file"]').setInputFiles(path.join(__dirname, '../../fixtures/import/boursorama.csv'));
+    await expect(modal.locator('.import-bank')).toHaveText(tr('importBankRecognized', { bank: 'Boursorama / BoursoBank' }));
+    await expect(modal.locator('.import-row')).toHaveCount(1);
+    await expect(modal.locator('.import-row')).toContainText('CARTE 06/01/26 SNCF');
+
+    // An OFX file is read the same for every bank: no line about the bank
+    await modal.getByRole('button', { name: tr('importOtherFile') }).click();
+    await modal.locator('input[type="file"]').setInputFiles(path.join(__dirname, '../../fixtures/import/releve.ofx'));
+    await expect(modal.locator('.import-count.status-new strong')).toHaveText('4');
+    await expect(modal.locator('.import-bank')).toHaveCount(0);
 });
 
 test('imports only the transactions left checked', async ({ adminPage: page }) => {

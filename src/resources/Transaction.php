@@ -381,7 +381,9 @@ final class Transaction {
      *
      * @param string|null $file     The content of the file, base64 encoded
      * @param string|null $filename The name of the file (helps to tell the format)
-     * @return array<string, mixed> format, account, from, to, counts {new, known, duplicate} and rows
+     * @return array<string, mixed> format, bank ({id, name} of the profile that read a CSV file,
+     *               null when its columns were guessed or for another format), account, from, to,
+     *               counts {new, known, duplicate} and rows
      *               [{index, date, rdate, amount, label, type, status, match?}]
      * @throws Error If the file is not understood
      */
@@ -398,6 +400,8 @@ final class Transaction {
 
         return [
             'format' => $parsed['format'],
+            // Bank whose profile read a CSV file (added after the first version: optional)
+            'bank' => $parsed['bank'],
             'account' => $parsed['account'],
             'from' => min($dates),
             'to' => max($dates),
@@ -446,7 +450,7 @@ final class Transaction {
                 $categorized++;
             }
         }
-        Logger::info("Import of a " . $parsed['format'] . " file: " . count($created) . " new transaction(s), $categorized categorized");
+        Logger::info("Import of a " . $parsed['format'] . " file (" . ($parsed['bank']['id'] ?? 'generic') . "): " . count($created) . " new transaction(s), $categorized categorized");
 
         $dates = array_column($data, 'date');
         return [
@@ -462,7 +466,7 @@ final class Transaction {
      *
      * @param string      $file     The content of the file, base64 encoded
      * @param string|null $filename The name of the file
-     * @return array{0: array{format: string, account: string|null, transactions: list<array<string, mixed>>},
+     * @return array{0: array{format: string, bank: array{id: string, name: string}|null, account: string|null, transactions: list<array<string, mixed>>},
      *               1: list<array<string, mixed>>, 2: array<array<string, mixed>>}
      *               [parsed file (BankFile::parse), rows with their status, transactions as
      *               prepared by prepareAll()]

@@ -1,0 +1,20 @@
+{
+    "format": "csv",
+    "account": null,
+    "transactions": [
+        {
+            "date": "2026-01-03",
+            "rdate": "2026-01-03",
+            "amount": -19.99,
+            "raw": "PRLV SEPA FREE MOBILE",
+            "type": 2
+        },
+        {
+            "date": "2026-01-05",
+            "rdate": "2026-01-05",
+            "amount": 1200.0,
+            "raw": "VIR M DUPONT",
+            "type": 1
+        }
+    ]
+}

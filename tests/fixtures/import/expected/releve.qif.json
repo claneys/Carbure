@@ -1,0 +1,20 @@
+{
+    "format": "qif",
+    "account": null,
+    "transactions": [
+        {
+            "date": "2026-01-31",
+            "rdate": "2026-01-31",
+            "amount": -12.9,
+            "raw": "CB MONOPRIX",
+            "type": 7
+        },
+        {
+            "date": "2026-01-02",
+            "rdate": "2026-01-02",
+            "amount": 1500.0,
+            "raw": "VIR CAF ALLOCATIONS",
+            "type": 1
+        }
+    ]
+}

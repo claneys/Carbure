@@ -1,0 +1,20 @@
+{
+    "format": "csv",
+    "account": null,
+    "transactions": [
+        {
+            "date": "2026-01-09",
+            "rdate": "2026-01-09",
+            "amount": -49.9,
+            "raw": "Fournisseur Logiciel Abonnement",
+            "type": 0
+        },
+        {
+            "date": "2026-01-11",
+            "rdate": "2026-01-11",
+            "amount": 1200.0,
+            "raw": "Client SARL Facture F-2026-001",
+            "type": 0
+        }
+    ]
+}

@@ -18,6 +18,8 @@ built by the GitHub release workflow; committing/pushing is not deploying.
 | `src/api.php` | HTTP entry (`/api/*`); without `conf/<env>.ini` serves only `/api/setup` |
 | `src/autoload.php` | Loads `src/lib`, `src/resources`, then `Config::load(getenv('APP_ENV') ?: 'prod')` |
 | `src/lib/` | `Config`, `Db` (mysqli), `Logger`, `Jwt`, `Webservice` (+ security headers), `ApiResolver`, `ApiRoute`, `Woob`, `Apns`, `Setup`/`Installer`, `Migrator`, `Setting` |
+| `src/lib/import/` | Statement import behind `BankFile::parse()`: `OfxReader`, `QifReader`, `CamtReader`, `CsvReader` (+ `CsvGeneric` fallback), `BankProfiles` (schema) |
+| `src/lib/import/banks/` | One CSV profile per bank (`<id>.php` returns an array); fixtures `tests/fixtures/import/`, snapshots `…/expected/` |
 | `src/resources/` | `User`, `Bank`, `Transaction`, `Budget`, `Category`, `Insight`, `Device`, `ApiToken`, `Mcp`, `OAuth`, `System` |
 | `portal/` | Mixins in `modules/`, API calls in `services/apiService.js`, texts in `i18n/<locale>.json` (loader `i18n.js`) |
 | `swagger/` | OpenAPI via reflection + Swagger UI |
@@ -93,6 +95,10 @@ git config core.hooksPath .githooks   # pre-commit lint, pre-push unit tests
   chars), computed after `Transaction::cleanLabel()` + config `regex_label`. Identical
   rows in one batch: `md5(uuid . '#n')` (`Transaction::prepareAll()`). Changing label
   cleaning creates duplicates → needs a migration.
+- **Statement import**: a bank's CSV format = a profile in `src/lib/import/banks/` with its
+  anonymized fixture, its snapshot (`tests/fixtures/import/expected/`) and its row in the
+  bank table of `docs/fonctionnalites.md` (tests check all three); no bank-specific rule in
+  `CsvGeneric`. Existing snapshots must not change (labels feed the UUID).
 
 ## Compatibility & safety
 

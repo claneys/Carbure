@@ -11,6 +11,7 @@ icon: material/code-braces
 | Chemin | Contenu |
 |---|---|
 | `src/lib/` | Socle technique (configuration, base, logs, JWT, routage, woob, APNs, assistant d'installation, migrations, réglages) |
+| `src/lib/import/`, `src/lib/import/banks/` | Lecture des relevés importés (OFX, QIF, CAMT, CSV) et profils CSV des banques |
 | `src/resources/` | Ressources de l'API |
 | `portal/` | Portail web Vue 3 |
 | `swagger/` | Générateur OpenAPI et Swagger UI |
@@ -113,6 +114,71 @@ final class Transaction {
 !!! warning "Compatibilité"
     L'API est utilisée par l'app iOS, mise à jour indépendamment du serveur. N'ajouter
     que des routes ou des paramètres facultatifs ; ne jamais renommer ni supprimer.
+
+## Ajouter une banque à l'import
+
+Un relevé CSV est lu avec le **profil de sa banque** quand l'une de ses premières lignes est
+exactement l'en-tête d'un export connu, et qu'aucun autre profil ne le revendique ; sinon
+ses colonnes sont devinées d'après leur nom (lecteur générique `CsvGeneric`, qui garde les
+heuristiques d'avant les profils). OFX, QIF et CAMT.053 sont lus de la même façon pour
+toutes les banques (`OfxReader`, `QifReader`, `CamtReader`). `BankFile::parse()` reste le
+point d'entrée et indique dans `bank` le profil qui a lu le fichier.
+
+Pour ajouter l'export CSV d'une banque :
+
+1. **Profil** : `src/lib/import/banks/<id>.php` (identifiant en minuscules, `-` entre les
+   mots) renvoie un tableau dont le schéma est décrit et contrôlé par `BankProfiles` (clé
+   inconnue ou manquante, colonne absente de l'en-tête : exception, levée par les tests).
+   Son commentaire donne la source du format et ses particularités.
+
+    ```php
+    <?php
+
+    /**
+     * Ma Banque: export CSV of the operations.
+     *
+     * Particularities: lines about the account before the header, ";", Windows-1252.
+     * Sources: open source projects that read this format.
+     * Fixture: tests/fixtures/import/ma-banque.csv. Schema: BankProfiles.
+     */
+
+    return [
+        'name' => 'Ma Banque',            // montré par l'aperçu, ligne du tableau de la documentation
+        'formats' => [[                   // un format par variante (ancien et nouveau, langue)
+            'header' => ['Date', 'Libellé', 'Débit', 'Crédit'],  // l'en-tête écrit par la banque
+            'delimiter' => ';',           // ; , tabulation ou |
+            'preamble' => 5,              // lignes sur le compte avant l'en-tête (0 par défaut)
+            'encoding' => 'Windows-1252', // encodage d'un fichier qui n'est pas en UTF-8
+            'day_first' => true,          // jj/mm ; deviné d'après les dates si absent
+            'columns' => [                // colonne => son nom dans header
+                'date' => 'Date', 'label' => 'Libellé', 'debit' => 'Débit', 'credit' => 'Crédit',
+            ],
+            // 'skip_statuses' => ['PENDING'],  // valeurs de la colonne status des lignes ignorées
+            // 'filename' => '/^Historique/',   // nom de fichier exigé en plus de l'en-tête
+        ]],
+    ];
+    ```
+
+    Colonnes : `date` (date comptable) et `label` obligatoires ; `operation` (date de
+    l'opération), `detail` (ajouté au libellé, sauf si l'un contient l'autre), `amount`
+    (signé) **ou** `debit` et `credit` (un débit est négatif quel que soit son signe),
+    `fee` (déduit du montant), `status`. L'en-tête est comparé sans casse, accents ni
+    ponctuation, sans les cellules vides de fin de ligne.
+
+2. **Fixture** : un export **anonymisé** de même structure (lignes avant l'en-tête,
+   encodage, séparateur, fins de ligne) dans `tests/fixtures/import/<id>.csv`, ajouté à
+   `BankProfilesTest::bankFixtures()`. Les tests vérifient que chaque fixture n'est
+   reconnue que par son profil et que chaque format d'un profil a sa fixture.
+3. **Instantané** : `tests/fixtures/import/expected/<id>.csv.json`, la sortie attendue de
+   `BankFile::parse()` (sans `bank`), vérifiée transaction par transaction ; les
+   instantanés existants ne changent pas.
+4. **Documentation** : une ligne au nom du profil dans le tableau des banques de
+   [Fonctionnalités](fonctionnalites.md#import-de-releves-bancaires) (un test compare le
+   tableau aux profils).
+
+!!! warning "Libellés et empreintes"
+    Changer le libellé lu pour une banque change l'empreinte (UUID) de ses transactions :
+    un fichier déjà importé montrerait ses lignes comme doublons probables.
 
 ## Types
 

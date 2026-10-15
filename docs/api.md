@@ -354,12 +354,16 @@ Lit un relevé bancaire sans rien enregistrer.
 | `file` | oui | Contenu du fichier encodé en base64 (1 Mo au plus avant encodage) ; jamais écrit dans les logs |
 | `filename` | non | Nom du fichier (son extension aide à reconnaître le format) |
 
-Formats : OFX/QFX (1.x SGML et 2.x XML), QIF, CAMT.053 (ISO 20022) et CSV (séparateur
-détecté, colonnes trouvées d'après l'en-tête : date ou date d'opération, libellé, montant ou
-débit et crédit). L'ordre jour/mois des dates est déduit du fichier ; le type d'opération,
+Formats : OFX/QFX (1.x SGML et 2.x XML), QIF, CAMT.053 (ISO 20022) et CSV : lu avec le
+**profil de sa banque** quand son en-tête est celui d'un export connu (voir
+[Fonctionnalités](fonctionnalites.md#import-de-releves-bancaires)), sinon séparateur détecté
+et colonnes devinées d'après l'en-tête (date ou date d'opération, libellé, montant ou débit
+et crédit). L'ordre jour/mois des dates est déduit du fichier ; le type d'opération,
 du libellé (`CB`, `PRLV`, `VIR`, `RETRAIT`…) ou à défaut du fichier.
 
-Renvoie `format` (`ofx`, `qif`, `camt`, `csv`), `account` (numéro de compte ou IBAN lu dans
+Renvoie `format` (`ofx`, `qif`, `camt`, `csv`), `bank` (banque dont le profil a lu un CSV :
+`id` et `name`, par exemple `{"id": "boursorama", "name": "Boursorama / BoursoBank"}` ;
+`null` pour un CSV aux colonnes devinées ou un autre format), `account` (numéro de compte ou IBAN lu dans
 le fichier, sinon `null`), `from`, `to`, `counts` (`new`, `known`, `duplicate`) et `rows` :
 `index`, `date`, `rdate`, `amount`, `label` (nettoyé comme à la synchronisation), `type`,
 `status` et, pour un doublon probable, `match` (`id`, `date`, `label` de la transaction

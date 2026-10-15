@@ -1,0 +1,27 @@
+{
+    "format": "csv",
+    "account": null,
+    "transactions": [
+        {
+            "date": "2026-01-05",
+            "rdate": "2026-01-05",
+            "amount": -26.99,
+            "raw": "PRLV SEPA OPERATEUR TELECOM",
+            "type": 2
+        },
+        {
+            "date": "2026-01-06",
+            "rdate": "2026-01-06",
+            "amount": 2950.0,
+            "raw": "VIR SALAIRE EMPLOYEUR SA",
+            "type": 1
+        },
+        {
+            "date": "2026-01-07",
+            "rdate": "2026-01-07",
+            "amount": -12.5,
+            "raw": "PAIEMENT CB 0601 PARIS BOULANGERIE CARTE 4974XXXXXXXX1234",
+            "type": 7
+        }
+    ]
+}

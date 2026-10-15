@@ -1,0 +1,20 @@
+{
+    "format": "csv",
+    "account": null,
+    "transactions": [
+        {
+            "date": "2025-12-13",
+            "rdate": "2025-12-13",
+            "amount": -6.4,
+            "raw": "CARTE 12/12 LIBRAIRIE METZ",
+            "type": 7
+        },
+        {
+            "date": "2025-12-12",
+            "rdate": "2025-12-12",
+            "amount": 150.0,
+            "raw": "VIR SEPA M MARTIN DUPONT",
+            "type": 1
+        }
+    ]
+}

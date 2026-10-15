@@ -30,6 +30,8 @@ class ImportTest extends DatabaseTestCase
         $preview = Transaction::previewImport($this->statement(), 'releve.csv');
 
         $this->assertSame('csv', $preview['format']);
+        // No bank has this header: its columns were guessed
+        $this->assertNull($preview['bank']);
         $this->assertSame(['new' => 3, 'known' => 0, 'duplicate' => 1], $preview['counts']);
         $this->assertSame('2019-05-10', $preview['from']);
         $this->assertSame(['duplicate', 'new', 'new', 'new'], array_column($preview['rows'], 'status'));
@@ -47,6 +49,8 @@ class ImportTest extends DatabaseTestCase
         $preview = Transaction::previewImport($file, 'revolut.csv');
 
         $this->assertSame('csv', $preview['format']);
+        // Read with the profile of its bank
+        $this->assertSame(['id' => 'revolut', 'name' => 'Revolut'], $preview['bank']);
         $this->assertSame(['new' => 3, 'known' => 0, 'duplicate' => 0], $preview['counts']);
         // Cleaned like the labels of a synchronization (upper case)
         $this->assertSame(['MONOPRIX', 'TOP-UP BY *1234', 'EXCHANGED TO USD'], array_column($preview['rows'], 'label'));

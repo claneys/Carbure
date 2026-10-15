@@ -5861,7 +5861,8 @@ textarea:focus-visible,
     padding: 10px 12px;
     border-radius: var(--border-radius-md);
     background: color-mix(in srgb, var(--tone) 8%, var(--surface));
-    color: var(--text-secondary);
+    /* --text-secondary falls under 4.5:1 on the tinted background */
+    color: var(--text-primary);
     font-size: 13px;
 }
 
@@ -5909,10 +5910,6 @@ textarea:focus-visible,
     opacity: 0.55;
 }
 
-.import-row:not(.selected):not(.status-known) label {
-    opacity: 0.75;
-}
-
 .import-row.selected {
     background: color-mix(in srgb, var(--primary-color) 4%, var(--surface));
 }
@@ -5954,7 +5951,8 @@ textarea:focus-visible,
     align-items: center;
     gap: 6px;
     font-size: 12px;
-    color: var(--text-secondary);
+    /* Closer to the main text: --text-secondary falls under 4.5:1 on a selected row */
+    color: color-mix(in srgb, var(--text-secondary) 70%, var(--text-primary));
 }
 
 .import-badge {

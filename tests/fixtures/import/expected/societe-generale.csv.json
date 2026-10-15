@@ -1,0 +1,27 @@
+{
+    "format": "csv",
+    "account": null,
+    "transactions": [
+        {
+            "date": "2026-01-19",
+            "rdate": "2026-01-19",
+            "amount": 850.0,
+            "raw": "VIR RECU 508160 VIR RECU 1234567834S DE: M MARTIN DUPONT MOTIF: LOYER REF: 1234",
+            "type": 1
+        },
+        {
+            "date": "2026-01-18",
+            "rdate": "2026-01-18",
+            "amount": -8.1,
+            "raw": "COTISATION JAZZ",
+            "type": 9
+        },
+        {
+            "date": "2026-01-17",
+            "rdate": "2026-01-17",
+            "amount": -3.2,
+            "raw": "CARTE X1234 16/01 BOULANGERIE DU MARCHE",
+            "type": 7
+        }
+    ]
+}

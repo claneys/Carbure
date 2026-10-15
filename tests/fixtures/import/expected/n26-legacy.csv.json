@@ -1,0 +1,20 @@
+{
+    "format": "csv",
+    "account": null,
+    "transactions": [
+        {
+            "date": "2025-12-01",
+            "rdate": "2025-12-01",
+            "amount": -32.4,
+            "raw": "SUPERMARCHE BIO",
+            "type": 0
+        },
+        {
+            "date": "2025-12-02",
+            "rdate": "2025-12-02",
+            "amount": 2100.0,
+            "raw": "EMPLOYEUR SA Salaire novembre",
+            "type": 0
+        }
+    ]
+}

@@ -139,15 +139,20 @@ Pour une banque que woob ne couvre pas, ou pour reprendre l'historique d'avant C
 
 ![Aperçu de l'import d'un relevé CSV Boursorama : transactions nouvelles cochées, doublons probables décochés, avec la transaction existante correspondante](assets/screenshot-import.png)
 
-Les colonnes d'un CSV sont reconnues d'après leur en-tête (date, libellé, montant, ou débit et
-crédit), y compris les formats français (`;`, `1 234,56`, encodage Windows-1252) et les
-lignes sur le compte avant l'en-tête. Les lignes non passées des néobanques (en attente,
+Un CSV exporté par l'une des banques ci-dessous est lu avec le **profil de sa banque**
+(ses colonnes, son encodage, ses lignes avant l'en-tête) : l'aperçu l'indique, par exemple
+« Format reconnu : Boursorama / BoursoBank ». Pour une autre banque, l'aperçu affiche
+« Format générique (colonnes devinées) » : les colonnes sont reconnues d'après leur en-tête
+(date, libellé, montant, ou débit et crédit), y compris les formats français (`;`,
+`1 234,56`, encodage Windows-1252) et les lignes sur le compte avant l'en-tête ; vérifiez
+alors l'aperçu avant de valider. Les lignes non passées des néobanques (en attente,
 annulées, refusées) et les montants nuls (autorisations de carte) sont ignorés ; les frais
 donnés à part (Revolut) sont déduits. Le libellé est nettoyé comme à la synchronisation. Le
 contenu du fichier n'est jamais écrit dans les logs.
 
-Exports CSV vérifiés (formats relevés dans des projets open source qui les importent, puis
-testés sur un fichier anonymisé de même structure) :
+Exports CSV reconnus (formats relevés dans des projets open source qui les importent, puis
+testés sur un fichier anonymisé de même structure ; un profil par banque, voir
+[Ajouter une banque à l'import](developpement.md#ajouter-une-banque-a-limport)) :
 
 | Banque | Fichier à choisir | Particularités lues |
 |---|---|---|

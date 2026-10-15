@@ -223,6 +223,20 @@ export function createImportModule(getApiService) {
              */
             importFormatLabel(format) {
                 return { ofx: 'OFX', qif: 'QIF', camt: 'CAMT.053', csv: 'CSV' }[format] || format;
+            },
+
+            /**
+             * How a CSV file was read: with the profile of its bank, or its columns guessed
+             * @param {Object} preview - Answer of POST /transaction/import/preview
+             * @returns {string|null} The text, null for another format
+             */
+            importBankLabel(preview) {
+                if (!preview || preview.format !== 'csv') {
+                    return null;
+                }
+                return preview.bank
+                    ? this.t('importBankRecognized', { bank: preview.bank.name })
+                    : this.t('importBankGeneric');
             }
         }
     };

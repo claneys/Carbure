@@ -1,0 +1,27 @@
+{
+    "format": "csv",
+    "account": null,
+    "transactions": [
+        {
+            "date": "2026-01-20",
+            "rdate": "2026-01-20",
+            "amount": -125.3,
+            "raw": "PRLV SEPA FOURNISSEUR ENERGIE ECH/200126 ID EMETTEUR/FR12ZZZ123456",
+            "type": 2
+        },
+        {
+            "date": "2026-01-21",
+            "rdate": "2026-01-21",
+            "amount": 2500.0,
+            "raw": "VIR SEPA EMPLOYEUR SA SALAIRE JANVIER",
+            "type": 1
+        },
+        {
+            "date": "2026-01-22",
+            "rdate": "2026-01-21",
+            "amount": -85.75,
+            "raw": "CB SUPERMARCHE FACT 210126",
+            "type": 7
+        }
+    ]
+}
