@@ -62,6 +62,12 @@
         const theme = current();
         html.dataset.theme = theme;
         html.dataset.themeChoice = choice;
+        // The window of the installed app takes the color of the theme displayed, even
+        // when a theme chosen in the profile differs from the system preference
+        if (root.document.querySelectorAll) {
+            root.document.querySelectorAll('meta[name="theme-color"]')
+                .forEach(meta => meta.setAttribute('content', THEME_COLORS[theme]));
+        }
         listeners.forEach(listener => listener(theme));
     }
 

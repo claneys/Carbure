@@ -85,3 +85,15 @@ test('theme.js: the header toggle switches to the other theme displayed', () => 
     assert.deepEqual(seen, ['dark', 'light', 'dark', 'light']);
     assert.equal(window.carbureTheme.opposite(), 'dark');
 });
+
+test('theme.js: the color of the app window follows the theme displayed', () => {
+    const meta = () => ({ content: '', setAttribute(name, value) { this[name] = value; } });
+    const metas = [meta(), meta()];
+    const { window, setSystemDark } = load({ systemDark: true, metas });
+    assert.deepEqual(metas.map(m => m.content), ['#1a0b14', '#1a0b14']);
+    setSystemDark(false);
+    assert.deepEqual(metas.map(m => m.content), ['#D12C48', '#D12C48']);
+    // A theme chosen in the profile wins over the system preference
+    window.carbureTheme.apply('dark');
+    assert.deepEqual(metas.map(m => m.content), ['#1a0b14', '#1a0b14']);
+});
