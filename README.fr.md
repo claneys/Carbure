@@ -166,7 +166,7 @@ L'image Docker embarque des logiciels tiers, non modifiés, sous leur propre lic
 |---|---|---|
 | [woob](https://woob.tech) (synchronisation bancaire) | LGPL-3.0-or-later | [gitlab.com/woob/woob](https://gitlab.com/woob/woob) (version fixée par `WOOB_VERSION` dans `docker/Dockerfile`) |
 | [curl_cffi](https://github.com/lexiforest/curl_cffi) | MIT | [github.com/lexiforest/curl_cffi](https://github.com/lexiforest/curl_cffi) |
-| PHP, nginx, Alpine Linux | Licence PHP, BSD-2-Clause, diverses (BusyBox : GPL-2.0) | Images officielles `php:8.3-fpm-alpine` |
+| PHP, nginx, Alpine Linux | Licence PHP, BSD-2-Clause, diverses (BusyBox : GPL-2.0) | Images officielles `php:8.5-fpm-alpine` |
 | Vue.js, CodeMirror, Roboto, Material Icons (portail) | MIT, MIT, OFL-1.1, Apache-2.0 | [`portal/vendor/`](portal/vendor/README.md) |
 
 Carbure appelle woob comme un programme séparé ; il peut être remplacé par une autre

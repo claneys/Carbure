@@ -164,7 +164,7 @@ l'identité de l'utilisateur du jeton. Voir [Agents IA (MCP)](mcp.md).
 
 | Élément | Rôle |
 |---|---|
-| `docker/Dockerfile` | `php:8.3-fpm-alpine` + nginx (image multi-étapes : woob est construit à part, sans compilateur dans l'image finale), extensions `mysqli` et APCu, woob et `curl_cffi` dans `/opt/woob`, `HEALTHCHECK` sur `/api/health` |
+| `docker/Dockerfile` | `php:8.5-fpm-alpine` + nginx (image multi-étapes : woob est construit à part, sans compilateur dans l'image finale), extensions `mysqli` et APCu, woob et `curl_cffi` dans `/opt/woob`, `HEALTHCHECK` sur `/api/health` |
 | `docker/nginx.conf` | Site nginx (portail, Swagger, API, en-têtes de sécurité) |
 | `docker/php.ini`, `docker/php-fpm.conf` | Réglages PHP et PHP-FPM |
 | `docker/entrypoint.sh` | Prépare `/data`, attend la base et applique les migrations si Carbure est installé, lance la synchronisation périodique (`SYNC_INTERVAL`), puis PHP-FPM et nginx |
