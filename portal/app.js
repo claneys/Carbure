@@ -65,7 +65,7 @@ let budgetStore = null;
  * Manages the overall application state and coordinates between
  * different views (transactions, budgets, insights).
  */
-createApp({
+const app = createApp({
     // Register imported components
     components: {
         CategoryPicker,
@@ -102,10 +102,11 @@ createApp({
             selectedYear: new Date().getFullYear(),
             // Months that have transactions, newest first: [{year, month}]
             periods: [],
-            locale: localStorage.getItem('locale') || defaultLocale(),
+            // Language of the texts loaded by loadLocale() (i18n.js)
+            locale: currentLocale(),
             apiBaseUrl: API_BASE_URL,
-            // Version of Carbure (GET /api/health), shown in the footer
-            appVersion: null,
+            // Version of Carbure (GET /api/health, asked by loadLocale()), shown in the footer
+            appVersion: serverVersion(),
             // Money flow of the selected month (Budget tab)
             budgetFlow: null,
             // Node of the flow diagram whose transactions are shown, and these transactions
@@ -661,12 +662,6 @@ createApp({
             this.checkSetup();
         }
 
-        // Version of the server for the footer
-        fetch(`${this.apiBaseUrl}/health`)
-            .then(response => response.ok ? response.json() : null)
-            .then(health => { this.appVersion = health && health.version ? health.version : null; })
-            .catch(() => { this.appVersion = null; });
-
         if (this.isDebugMode) {
             console.log('apiBaseUrl =', this.apiBaseUrl);
             console.log('isAuthenticated =', this.isAuthenticated);
@@ -676,4 +671,11 @@ createApp({
             this.startSession();
         }
     }
-}).mount('#app');
+});
+
+// The texts of the language (i18n/<locale>.json) are loaded before the first render: the
+// page stays hidden until then (v-cloak), a minimal message replaces it if they cannot be
+loadLocale().then(() => app.mount('#app'), error => {
+    console.error('Error loading the translations:', error);
+    showLocaleError();
+});

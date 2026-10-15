@@ -60,3 +60,10 @@ keeps track of what was done).
       two synchronized accounts is stored only once. Adding it changes every UUID (migration,
       or unique key `(account_number, uuid)`); only worth doing if accounts of the household
       can have identical operations.
+- [ ] The PHP notifications and emails (APNs pushes, e-mails) read the same translation files
+      as the portal (`portal/i18n/<locale>.json`) instead of their `$french ? … : …` strings
+      (separate issue to create).
+- [ ] Once the branches started before the split of the translations (#139) are merged
+      (email notifications, theme toggle, budget alerts, PWA), remove
+      `tools/i18n-split.mjs` (conversion of the old `portal/i18n.js`, see
+      docs/developpement.md) and its section of the docs.

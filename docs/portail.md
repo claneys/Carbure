@@ -465,7 +465,7 @@ des logs dans la console du navigateur.
 | `services/apiService.js` | Appels HTTP vers l'API |
 | `stores/budgetStore.js` | Navigation dans l'arborescence des budgets |
 | `components/*.js` | Composants : diagramme de flux (`FlowChart`), sélecteur de catégorie (`CategoryPicker`, compact dans les listes), éditeur SQL (`SqlEditor`) |
-| `i18n.js` | Traductions `fr` et `en` |
+| `i18n.js`, `i18n/*.json` | Chargement des traductions, et un fichier JSON par langue (`fr` de référence, `en`) |
 | `utils/formatters.js`, `utils/categoryIcons.js` | Formatage des montants, dates, icônes ; icônes et couleurs des catégories |
 | `vendor/` | Vue, CodeMirror (éditeur SQL) et polices, servis localement |
 | `manifest.webmanifest`, `icons/` | Manifeste et icônes de l'application installée |

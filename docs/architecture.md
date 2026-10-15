@@ -118,7 +118,8 @@ sequenceDiagram
 ## Portail web
 
 Le portail (`portal/`) est une application Vue 3 sans étape de build : `index.html`
-charge Vue, `i18n.js` et le module `app.js`. L'état et les méthodes sont répartis en
+charge Vue, `i18n.js` (chargement des textes `i18n/<langue>.json` avant l'affichage) et
+le module `app.js`. L'état et les méthodes sont répartis en
 *mixins* (`portal/modules/`), les appels HTTP sont centralisés dans
 `portal/services/apiService.js`. Voir [Portail web](portail.md).
 

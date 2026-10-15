@@ -19,7 +19,7 @@ built by the GitHub release workflow; committing/pushing is not deploying.
 | `src/autoload.php` | Loads `src/lib`, `src/resources`, then `Config::load(getenv('APP_ENV') ?: 'prod')` |
 | `src/lib/` | `Config`, `Db` (mysqli), `Logger`, `Jwt`, `Webservice` (+ security headers), `ApiResolver`, `ApiRoute`, `Woob`, `Apns`, `Setup`/`Installer`, `Migrator`, `Setting` |
 | `src/resources/` | `User`, `Bank`, `Transaction`, `Budget`, `Category`, `Insight`, `Device`, `ApiToken`, `Mcp`, `OAuth`, `System` |
-| `portal/` | Mixins in `modules/`, API calls in `services/apiService.js`, i18n in `i18n.js` |
+| `portal/` | Mixins in `modules/`, API calls in `services/apiService.js`, texts in `i18n/<locale>.json` (loader `i18n.js`) |
 | `swagger/` | OpenAPI via reflection + Swagger UI |
 | `sql/carbure.sql`, `sql/migrations/` | Full schema; dated migrations (`Migrator`, table `schema_migrations`) |
 | `tools/migrate.php` | CLI migrations (run by the Docker entrypoint) |
@@ -116,7 +116,10 @@ git config core.hooksPath .githooks   # pre-commit lint, pre-push unit tests
 
 ## Portal
 
-- Every string via `t('key')`; add each key in **both** `fr` and `en`.
+- Every string via `t('key')`; add each key in **both** `portal/i18n/fr.json` and
+  `portal/i18n/en.json` (same `{placeholders}`). Plurals: `<key>_one` / `<key>_other`,
+  called with `t('key', { count })`, never "(s)". `tests/portal/i18n.test.mjs` checks
+  parity, used and unused keys.
 - Any added/changed feature gets a Playwright spec in `tests/e2e/specs/` (data: `seed.php`).
 - Accessibility (WCAG 2.2 AA) is mandatory: text contrast ≥ 4.5:1 (icons 3:1) at rest,
   on hover and on focus — never lower it with `opacity` or a grey label on a colored

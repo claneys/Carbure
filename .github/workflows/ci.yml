@@ -304,6 +304,11 @@ jobs:
           # Security headers of the portal and the API
           curl -fsSI http://localhost:8080/portal/ | grep -qi "content-security-policy: default-src 'self'"
           curl -fsSI http://localhost:8080/portal/ | grep -qi 'x-frame-options: DENY'
+          # Texts of the portal, one JSON file per language, with the same headers
+          for locale in fr en; do
+            curl -fsSI "http://localhost:8080/portal/i18n/$locale.json?v=ci" | grep -qi 'content-type: application/json'
+            curl -fsSI "http://localhost:8080/portal/i18n/$locale.json?v=ci" | grep -qi 'x-content-type-options: nosniff'
+          done
           curl -sI http://localhost:8080/api/health | grep -qi 'cache-control: no-store'
           ! curl -sI http://localhost:8080/api/health | grep -qi 'x-powered-by'
           # woob and curl_cffi are installed

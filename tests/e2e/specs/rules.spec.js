@@ -49,7 +49,7 @@ test('modifies a rule, showing the transactions it matches', async ({ adminPage:
     await rule(page, 'LOYER').click();
 
     const modal = page.getByRole('dialog', { name: tr('editRule') });
-    await expect(modal.locator('.rule-count')).toContainText(tr('ruleCount', { matching: 3, categorized: 3 }));
+    await expect(modal.locator('.rule-count')).toContainText(tr('ruleCount', { count: 3, categorized: 3 }));
     await expect(modal.getByLabel(tr('ruleNotifyLabel'))).toBeChecked();
 
     await modal.getByLabel(tr('ruleNotifyLabel')).uncheck();

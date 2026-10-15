@@ -12,7 +12,8 @@ to the API of `src/` (`/api/...`). User documentation: [docs/portail.md](../docs
 | `stores/budgetStore.js` | Navigation in the budget categories |
 | `components/` | `CategoryPicker`, `FlowChart`, `SqlEditor` |
 | `utils/` | Formatting, icons and colors of the categories |
-| `i18n.js` | Texts in French and English (every key in both) |
+| `i18n.js` | Loader of the texts, `t()` (fallback to French, plurals `_one` / `_other`) |
+| `i18n/*.json` | Texts, one file per language (`fr` reference, `en`): every key in each |
 | `vendor/` | Vue, CodeMirror and the fonts, self-hosted |
 | `manifest.webmanifest`, `icons/` | Web App Manifest and icons: the portal installs as an app (no service worker, no offline mode) |
 

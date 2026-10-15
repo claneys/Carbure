@@ -11,7 +11,7 @@ E2E_DB_HOST=127.0.0.1 E2E_DB_PASSWORD=root npx playwright test
 | Path | Content |
 |---|---|
 | `playwright.config.js` | Chromium, one worker, PHP built-in server started by Playwright |
-| `fixtures.js` | Database reset, logged-in pages (`adminPage`, `userPage`), `api`, `tr()` (texts of `portal/i18n.js`) |
+| `fixtures.js` | Database reset, logged-in pages (`adminPage`, `userPage`), `api`, `tr()` (texts of `portal/i18n/*.json`, with the `t()` of `portal/i18n.js`) |
 | `server/router.php` | Router of `php -S`: portal, API, `/api/__e2e/reset` (APP_ENV=e2e only) |
 | `server/seed.php` | Data set: users `admin` / `marie` (password: `<username>-password`), categories, budgets, rules, accounts |
 | `specs/` | One file per part of the portal |

@@ -7,29 +7,27 @@
 const base = require('@playwright/test');
 const fs = require('fs');
 const path = require('path');
-const vm = require('vm');
+const { translate, resolveText, LOCALES } = require('../../portal/i18n.js');
 
-/** Translations of the portal (portal/i18n.js) */
-const i18n = (() => {
-    const source = fs.readFileSync(path.join(__dirname, '../../portal/i18n.js'), 'utf8');
-    const context = { localStorage: { getItem: () => null, setItem: () => {} }, navigator: { language: 'fr' } };
-    vm.runInNewContext(source + '\nthis.i18n = i18n;', context);
-    return context.i18n;
-})();
+/** Translations of the portal (portal/i18n/<locale>.json), by language */
+const i18n = Object.fromEntries(LOCALES.map(locale => [
+    locale,
+    JSON.parse(fs.readFileSync(path.join(__dirname, `../../portal/i18n/${locale}.json`), 'utf8')),
+]));
 
 /**
- * Text of the portal for a translation key, like t() of the portal
+ * Text of the portal for a translation key, with the t() of the portal (portal/i18n.js):
+ * same {placeholders} and plural forms (count chooses <key>_one / <key>_other)
  * @param {string} key - Key (nested keys with dots)
  * @param {Object} params - Values of the {placeholders}
  * @param {string} locale - fr or en
  * @returns {string}
  */
 function tr(key, params = {}, locale = 'fr') {
-    const text = key.split('.').reduce((value, part) => value && value[part], i18n[locale]);
-    if (typeof text !== 'string') {
-        throw new Error(`Unknown translation key: ${key}`);
+    if (typeof resolveText(i18n, [locale], key, params) !== 'string') {
+        throw new Error(`Unknown translation key: ${key} (${locale})`);
     }
-    return text.replace(/\{(\w+)\}/g, (match, name) => (name in params ? String(params[name]) : match));
+    return translate(i18n, [locale], key, params);
 }
 
 /** Users of the data set (server/seed.php) */

@@ -1,1350 +1,299 @@
-// Localization file for Carbure Portal
-const i18n = {
-    fr: {
-        // Header
-        appTitle: 'Carbure',
-        
-        // Tabs
-        tabTransactions: 'Transactions',
-        tabBudget: 'Budget',
-        tabInsights: 'Insights',
-        tabRules: 'Règles',
-        ruleSavedApplied: 'Règle enregistrée et appliquée à {count} transaction(s)',
-        ruleAppliesToAll: 'La règle s\'applique à toutes les transactions de la base dont le libellé contient le mot-clé, y compris celles déjà catégorisées, puis à chaque nouvelle transaction.',
-        skipToContent: 'Aller au contenu',
-        mainNavigation: 'Navigation principale',
-        editRule: 'Modifier la règle',
-        ruleUpdated: 'Règle modifiée',
-        ruleNotify: 'Notification à chaque nouvelle transaction',
-        ruleNotifyLabel: 'Envoyer un push notification',
-        ruleCount: '{matching} transaction(s) contiennent ce mot-clé, dont {categorized} dans cette catégorie',
-        transactionDetail: 'Détail de la transaction',
-        transactionDate: 'Date',
-        transactionRealDate: 'Date réelle',
-        transactionType: 'Type',
-        transactionCard: 'Carte',
-        transactionBank: 'Banque',
-        transactionImported: 'Importée le',
-        transactionChecked: 'Transaction vérifiée',
-        transactionSaved: 'Transaction mise à jour',
-        deleteTransaction: 'Supprimer la transaction',
-        searchSimilarTransactions: 'Transactions similaires',
-        confirmDeleteTransaction: 'Supprimer la transaction « {label} » ? Elle ne sera pas réimportée par la synchronisation ni par l\'import d\'un fichier.',
-        transactionDeleted: 'Transaction supprimée',
-        budgetFlowTab: 'Flux',
-        budgetConfigTab: 'Budgets',
-        flowEmpty: 'Aucune transaction ce mois-ci.',
-        weakJwtSecret: 'La clé qui protège les sessions est celle de l\'exemple : renouvelez-la (tout le monde devra se reconnecter, portail et application iOS).',
-        rotateJwtSecret: 'Renouveler',
-        confirmRotateJwtSecret: 'Renouveler la clé des sessions ? Tous les utilisateurs, vous compris, devront se reconnecter.',
-        bankSetupTitle: 'Connecter {bank}',
-        bankSetupHelp: 'Vos identifiants sont transmis à woob, qui les conserve sur votre serveur pour se connecter à votre banque. Carbure ne les enregistre pas.',
-        bankConnectionLabel: 'Nom de la connexion',
-        bankConnectionLabelHelp: 'Facultatif : un nom pour reconnaître cet accès (par exemple « Compte joint » ou « BNP pro »), modifiable ensuite.',
-        renameBankConnection: 'Renommer la connexion',
-        renameBankConnectionOf: 'Renommer la connexion {bank}',
-        bankConnectionInWoob: 'Nom dans woob :',
-        bankConnectionRenamed: 'Connexion renommée',
-        deleteBankConnection: 'Supprimer la connexion',
-        deleteBankConnectionOf: 'Supprimer la connexion {bank}',
-        confirmDeleteBankConnection: 'Supprimer la connexion {bank} ? woob oublie ses identifiants et ses comptes suivis ne le seront plus (comptes suivis : {count}). Les transactions déjà importées sont conservées.',
-        bankConnectionDeleted: 'Connexion supprimée',
-        woobUpdateButton: 'Mettre à jour les modules bancaires',
-        woobUpdateTitle: 'Mise à jour des modules bancaires',
-        woobUpdateLoading: 'Lecture du dépôt de woob…',
-        woobUpdateRunning: 'Mise à jour en cours…',
-        woobUpdateLog: 'Journal de la mise à jour',
-        woobUpdated: 'Modules bancaires à jour',
-        woobTrustHelp: 'woob télécharge les modules bancaires (le code qui lit vos identifiants bancaires) depuis son dépôt et vérifie leur signature avec la clé de ce dépôt. Cette clé n\'est pas encore de confiance : faites-lui confiance une fois, les clés suivantes seront vérifiées par woob avec la précédente.',
-        woobRepository: 'Dépôt',
-        woobFingerprint: 'Empreinte de la clé (SHA-1)',
-        woobFingerprintUnknown: 'inconnue (dépôt injoignable)',
-        woobTrustCompare: 'Comparez cette empreinte avec celle publiée ou annoncée par les mainteneurs de woob avant de lui faire confiance. woob ne sera accepté que s\'il présente exactement cette empreinte.',
-        woobTrustAndUpdate: 'Faire confiance et mettre à jour',
-        woobNotTrusted: 'Dépôt de woob non approuvé : comparez son empreinte avant de lui faire confiance.',
-        bankConnectionDeleteButton: 'Supprimer',
-        bankConnectionDeleting: 'Suppression en cours…',
-        bankConnect: 'Connecter la banque',
-        bankConnecting: 'Connexion à la banque…',
-        bankConnected: 'Banque connectée : choisissez les comptes à suivre',
-        bankConnectedNoAccount: 'Banque configurée, mais aucun compte trouvé : vérifiez vos identifiants',
-        bankSettingRequired: 'Champ requis : {field}',
-        bankSettingFormat: 'Format incorrect : {field}',
-        footerLicense: 'Logiciel libre sous licence MIT',
-        flowTitle: 'Flux du mois',
-        flowHelp: 'D\'où vient l\'argent du mois et où il va : dépenses par catégorie, épargne et reste. Les virements internes (hors budget) sont exclus.',
-        flowIncome: 'Revenus du mois',
-        flowBalance: 'Reste',
-        flowDeficit: 'Déficit',
-        flowOthers: 'Autres ({count})',
-        flowSummary: 'Revenus {income}, dépenses {expenses}, épargne {savings}, reste {balance}.',
-        flowShowTable: 'Voir le tableau',
-        flowHideTable: 'Masquer le tableau',
-        flowFrom: 'De',
-        flowTo: 'Vers',
-        flowAmount: 'Montant',
-        importButton: 'Importer',
-        importTitle: 'Importer un relevé bancaire',
-        importDrop: 'Déposez le fichier de votre banque ici',
-        importDropHint: 'ou cliquez pour le choisir (1 Mo au plus)',
-        importReading: 'Lecture du fichier…',
-        importHelp: 'Téléchargez le relevé depuis l\'espace client de votre banque, au format OFX, QIF, CSV ou CAMT.053. Avant l\'import, Carbure montre les transactions déjà présentes et les doublons probables. Les règles de catégorisation s\'appliquent aux transactions importées.',
-        importTooLarge: 'Le fichier dépasse {size} Ko.',
-        importAccount: 'compte {account}',
-        importOtherFile: 'Autre fichier',
-        importStatus_new: 'nouvelles',
-        importStatus_duplicate: 'doublons probables',
-        importStatus_known: 'déjà présentes',
-        importBadge_duplicate: 'Doublon probable',
-        importBadge_known: 'Déjà présente',
-        importBadge_deleted: 'Supprimée',
-        importMatch: 'comme « {label} » du {date}',
-        importDuplicateHelp: 'Un doublon probable a le même montant qu\'une transaction existante à quelques jours d\'écart (souvent la même, synchronisée avec un autre libellé). Ils ne sont pas cochés : cochez-les pour les importer quand même.',
-        importSelectAll: 'Tout cocher',
-        importSelectedCount: '{count} sélectionnée(s)',
-        importConfirm: 'Importer ({count})',
-        importDone: '{count} transaction(s) importée(s), {categorized} catégorisée(s)',
-        flowKpiIncome: 'Revenus',
-        flowKpiExpenses: 'Dépenses',
-        flowSavingsRate: '{rate} % des revenus',
-        flowClickHint: 'Cliquez sur une catégorie pour voir ses transactions.',
-        flowTransactions: 'Transactions : {name}',
-        uncategorized: 'Non catégorisé',
-        userLocked: 'Bloqué jusqu\'au {date}',
-        unlockUser: 'Débloquer',
-        userUnlocked: 'Compte de {username} débloqué',
-        accountLocked: 'Compte bloqué pour 24 h après 5 tentatives de connexion échouées. Un administrateur peut le débloquer.',
-        invalidCredentials: 'Identifiant ou mot de passe incorrect',
-        apiTokenLifetime: 'Durée de validité',
-        apiTokenDays: '{days} jours',
-        apiTokenOneYear: '1 an',
-        apiTokenNoExpiry: 'Sans expiration',
-        apiTokenExpires: 'expire le {date}',
-        apiTokenExpired: 'Expiré',
-        neverLoggedIn: 'Jamais',
-        tabAgents: 'Agent IA',
-        tabAdministration: 'Administration',
-        myApiTokens: 'Mes jetons d\'accès',
-        mcpEnabled: 'Serveur MCP activé',
-        mcpOn: 'Serveur MCP activé',
-        mcpOff: 'Serveur MCP désactivé',
-        mcpOnHelp: 'Les agents IA peuvent se connecter avec un jeton d\'accès.',
-        mcpOffHelp: 'Un administrateur doit activer le serveur MCP pour connecter un agent IA.',
-        mcpOffHelpAdmin: 'Activez le serveur MCP pour permettre aux utilisateurs de connecter un agent IA.',
-        mcpEnabledToast: 'Serveur MCP activé',
-        mcpDisabledToast: 'Serveur MCP désactivé',
-        agentChoose: 'Connecter votre agent IA',
-        agentHow_claudeCode: 'Dans un terminal, lancez cette commande, puis /mcp dans Claude Code pour vérifier la connexion.',
-        oauthConnectTitle: 'Connecter Claude (web, Desktop, mobile)',
-        oauthConnectHelp: 'Dans Claude : Paramètres → Connecteurs → Ajouter un connecteur personnalisé. Collez cette URL, puis cliquez sur Se connecter : Claude vous ramène ici pour autoriser l\'accès. Aucun jeton à créer ; Carbure doit être accessible en HTTPS depuis Internet.',
-        oauthTitle: 'Autoriser {name} ?',
-        oauthIntro: '{name} demande à consulter les données du foyer (transactions, budgets, catégories, tendances), en lecture seule, pour répondre à vos questions.',
-        oauthRedirect: 'Vous serez ensuite renvoyé vers {host}.',
-        oauthRevoke: 'Vous pourrez retirer cet accès à tout moment : il apparaît dans « Mes jetons d\'accès » de l\'onglet Agent IA.',
-        oauthAllow: 'Autoriser',
-        oauthDeny: 'Refuser',
-        oauthInvalid: 'Demande d\'autorisation invalide ou expirée',
-        agentHow_chatgpt: 'Réglages → Applications et connecteurs → Mode développeur → Créer : collez cette URL (Carbure doit être accessible en HTTPS depuis Internet), sans authentification.',
-        agentHow_cursor: 'Réglages → MCP → Ajouter un serveur : collez ce bloc dans ~/.cursor/mcp.json.',
-        agentHow_vscode: 'Commande « MCP: Open User Configuration » : collez ce bloc dans mcp.json, puis utilisez Copilot en mode Agent.',
-        agentHow_gemini: 'Dans un terminal, lancez cette commande, puis /mcp dans Gemini CLI pour vérifier la connexion.',
-        insightChecking: 'Vérification de la requête…',
-        insightValid: 'Requête valide : {amount} pour le mois affiché',
-        schemaUpdateAvailable: 'Mise à jour de la base de données disponible ({count} étape(s)). Sauvegardez votre base, puis appliquez-la.',
-        schemaUpdate: 'Mettre à jour',
-        confirmMigrate: 'Votre base de données est-elle sauvegardée ? La mise à jour conserve vos données.',
-        migrationDone: 'Base de données à jour (version {version})',
-        setupTitle: 'Installer Carbure',
-        setupSubtitle: 'Quelques informations et Carbure est prêt.',
-        setupProgress: 'Étapes de l\'installation',
-        setupStep_database: 'Base de données',
-        setupStep_review: 'Installation',
-        setupStep_done: 'Terminé',
-        setupDatabaseTitle: 'Base de données',
-        setupDatabaseHelp: 'Carbure enregistre vos données dans une base MariaDB ou MySQL. Avec Docker, tout est déjà rempli : cliquez simplement sur Continuer.',
-        setupCode: 'Code d\'installation',
-        setupCodeHelp: 'Carbure est appelé depuis Internet : saisissez le code affiché dans les journaux du conteneur Docker (ou dans le fichier conf/setup.code du serveur).',
-        setupDbHost: 'Serveur',
-        setupDbPort: 'Port',
-        setupDbName: 'Nom de la base',
-        setupDbUser: 'Utilisateur',
-        setupDbPassword: 'Mot de passe',
-        setupDbPasswordDocker: 'Fourni par Docker',
-        setupDbPasswordDockerHelp: 'Laissez vide : le mot de passe de docker-compose.yml est utilisé.',
-        setupCheckDatabase: 'Continuer',
-        setupReviewTitle: 'Vérification',
-        setupState_none: 'Base vide : Carbure va créer ses tables.',
-        setupState_current: 'Base Carbure existante et à jour : vos données sont conservées.',
-        setupState_outdated: 'Base Carbure existante : des mises à jour sont à appliquer. Vos données sont conservées.',
-        setupSchemaVersion: 'Version du schéma : {version}',
-        setupBackupConfirm: 'J\'ai une sauvegarde de ma base de données',
-        setupStarterTitle: 'Pour bien démarrer',
-        setupStarterHelp: 'Facultatif : vous pourrez tout modifier ou supprimer ensuite.',
-        setupStarterCategories: 'Ajouter des catégories et des règles de catégorisation courantes',
-        setupStarterInsights: 'Ajouter des insights (dépenses, revenus, épargne, budget…)',
-        setupBackupRequired: 'Confirmez que votre base est sauvegardée avant de la mettre à jour.',
-        setupAdminTitle: 'Compte administrateur',
-        setupAdminHelp: 'Ce compte gère Carbure : comptes bancaires, catégories, utilisateurs du foyer.',
-        setupPasswordConfirm: 'Confirmer le mot de passe',
-        setupPasswordHelp: '8 caractères minimum.',
-        setupPasswordTooShort: 'Le mot de passe doit contenir au moins 8 caractères.',
-        setupPasswordMismatch: 'Les deux mots de passe sont différents.',
-        setupBack: 'Retour',
-        setupInstall: 'Installer',
-        setupFinish: 'Terminer',
-        setupDoneTitle: 'Carbure est prêt !',
-        setupDoneHelp: 'Connectez-vous, puis ajoutez vos comptes bancaires dans l\'onglet Comptes.',
-        addInsight: 'Ajouter un insight',
-        editInsight: 'Modifier l\'insight',
-        deleteInsight: 'Supprimer l\'insight',
-        insightName: 'Nom',
-        insightSql: 'Requête SQL',
-        insightSqlHelp: 'Une seule requête SELECT renvoyant une colonne amount ; {month} et {year} sont remplacés par le mois affiché. Elle est testée à l\'enregistrement et exécutée en lecture seule (tables users, api_tokens et devices interdites).',
-        insightColor_red: 'Rouge',
-        insightColor_green: 'Vert',
-        insightColor_blue: 'Bleu',
-        insightColor_orange: 'Orange',
-        insightColor_gray: 'Gris',
-        insightColor_amber: 'Ambre',
-        insightColor_lime: 'Citron vert',
-        insightColor_teal: 'Sarcelle',
-        insightColor_cyan: 'Cyan',
-        insightColor_indigo: 'Indigo',
-        insightColor_purple: 'Violet',
-        insightColor_pink: 'Rose',
-        insightColor_brown: 'Marron',
-        insightAdded: 'Insight ajouté',
-        insightUpdated: 'Insight modifié',
-        insightDeleted: 'Insight supprimé',
-        confirmDeleteInsight: 'Supprimer l\'insight « {name} » ?',
-        apiTokensTitle: 'Accès pour les agents IA (MCP)',
-        apiTokensHelp: 'Connectez Claude, ChatGPT, Cursor, Copilot ou Gemini à Carbure : ils pourront consulter vos données, en lecture seule, pour répondre à vos questions sur votre budget.',
-        addApiToken: 'Créer un jeton d\'accès',
-        noApiTokens: 'Aucun jeton d\'accès',
-        apiToken: 'Jeton',
-        apiTokenName: 'Nom',
-        apiTokenNameHelp: 'Pour le reconnaître, par exemple « Claude Code sur mon portable ».',
-        apiTokenNameRequired: 'Le nom est requis',
-        apiTokenCreated: 'Créé le',
-        apiTokenLastUsed: 'dernière utilisation',
-        apiTokenNeverUsed: 'jamais utilisé',
-        apiTokenShownOnce: 'Copiez ce jeton maintenant : il ne sera plus jamais affiché.',
-        apiTokenPrivacy: 'Les données consultées par un agent IA (libellés, montants, catégories) sont envoyées à son fournisseur pour l\'analyse. Révoquez un jeton à tout moment pour couper l\'accès.',
-        revokeApiToken: 'Révoquer le jeton',
-        apiTokenRevoked: 'Jeton révoqué',
-        confirmRevokeApiToken: 'Révoquer le jeton « {name} » ? Claude n\'aura plus accès à vos données avec ce jeton.',
-        copied: 'Copié',
-        copy: 'Copier',
-        create: 'Créer',
-        done: 'Terminé',
-        close: 'Fermer',
-        addRuleTitle: 'Ajouter une règle',
-        ruleKeywordHelp: 'Mot-clé recherché dans le libellé des transactions (les dates et numéros de carte sont à retirer).',
-        categoriesHelp: 'Les catégories classent les transactions et portent les budgets. Icônes et couleurs sont partagées avec l\'application iOS.',
-        accountsHelp: 'Comptes bancaires synchronisés avec woob, avec le résultat de leur dernière synchronisation.',
-        'categoryTypes_DEBIT': 'Dépenses',
-        'categoryTypes_CREDIT': 'Revenus',
-        'categoryTypes_HORS-BUDGET': 'Hors budget',
-        searchCategory: 'Rechercher une catégorie',
-        noCategoryFound: 'Aucune catégorie',
-        home: 'Accueil',
-        accountAddedBy: 'Ajouté par {user}',
-        syncAccount: 'Synchroniser ce compte',
-        syncAllAccounts: 'Synchroniser tous les comptes',
-        lastSync_OK: 'Synchronisé',
-        lastSync_ERROR: 'Échec',
-        lastSyncNever: 'Jamais synchronisé',
-        todayAt: "aujourd'hui {time}",
-        userRole: 'Profil',
-        role_user: 'Utilisateur',
-        role_admin: 'Administrateur',
-        roleHelp: 'Un administrateur gère en plus les règles, les catégories, les comptes et les utilisateurs.',
-        tabCategories: 'Catégories',
-        categoriesTitle: 'Catégorisation des transactions',
-        addCategory: 'Ajouter une catégorie',
-        editCategory: 'Modifier la catégorie',
-        deleteCategory: 'Supprimer la catégorie',
-        categoryName: 'Nom',
-        categoryParent: 'Catégorie parente',
-        categoryTopLevel: 'Aucune (catégorie principale)',
-        categoryType: 'Type',
-        'categoryType_DEBIT': 'Dépense',
-        'categoryType_CREDIT': 'Revenu',
-        'categoryType_HORS-BUDGET': 'Hors budget',
-        categoryColor: 'Couleur',
-        categoryIcon: 'Icône',
-        categoryDefault: 'Par défaut',
-        categoryNameRequired: 'Le nom est requis',
-        categoryAdded: 'Catégorie ajoutée',
-        categoryUpdated: 'Catégorie modifiée',
-        categoryDeleted: 'Catégorie supprimée',
-        confirmDeleteCategory: 'Supprimer la catégorie « {name} » ? Ses transactions passeront en « Non catégorisé », ses budgets et règles seront supprimés.',
-        tabSync: 'Synchro',
-        tabAccounts: 'Comptes',
-        accountsTitle: 'Comptes du foyer',
-        connectedBanksTitle: 'Banques connectées et comptes suivis',
-        followedAccountsOf: 'Comptes suivis de {bank}',
-        noFollowedAccountInBank: 'Aucun compte suivi : ajoutez des comptes de cette banque.',
-        otherAccountsTitle: 'Autres comptes',
-        otherAccountsHelp: 'Comptes d\'une banque qui n\'est plus connectée, ou importés depuis un fichier.',
-        noConnectedBank: 'Aucune banque connectée : commencez par « Connecter une banque », puis ajoutez ses comptes.',
-        bankSetupLoading: 'Chargement des informations demandées par la banque…',
-        connectBankTitle: 'Connecter une banque',
-        connectBankHelp: 'Choisissez votre banque et saisissez vos identifiants : woob s\'y connecte, puis vous choisissez les comptes à suivre. Une banque déjà connectée peut l\'être à nouveau avec d\'autres identifiants.',
-        connectBankModule: 'Banque',
-        connectBankChoose: 'Choisir une banque supportée par woob…',
-        addAccountsButton: 'Ajouter des comptes',
-        addAccountsTo: 'Ajouter des comptes de {bank}',
-        addAccountsTitle: 'Comptes de {bank}',
-        addAccountsHelp: 'Comptes que woob trouve avec cette connexion : cochez ceux à suivre.',
-        discoverNoAccount: 'woob ne trouve aucun compte pour cette banque.',
-        followSelected: 'Suivre les comptes sélectionnés ({count})',
-        accountsFollowedToast: '{count} compte(s) suivi(s)',
-        accountInWoob: 'Compte dans woob :',
-        accountLabel: 'Nom du compte',
-        accountLabelPlaceholder: 'ex. Compte joint, Livret A…',
-        accountLabelHelp: 'Facultatif : affiché à la place de la banque et de la fin du numéro.',
-        bankAnotherLogin: 'autre identifiant',
-        bankNotConfigured: 'Cette banque n\'est pas encore configurée dans woob : ses comptes ne seront synchronisés qu\'après avoir saisi vos identifiants avec',
-        editAccount: 'Modifier le compte',
-        deleteAccount: 'Ne plus suivre le compte',
-        confirmDeleteAccount: 'Ne plus suivre le compte {account} ? Ses transactions déjà importées sont conservées.',
-        accountUpdated: 'Compte modifié',
-        accountDeleted: 'Compte retiré',
-        discovering: 'woob interroge vos banques…',
-        accountFollowed: 'Suivi',
-        syncTitle: 'Synchronisation',
-        syncHelp: 'Récupère les opérations à venir et l\'historique de vos comptes via woob, catégorise les nouvelles transactions et envoie les notifications.',
-        syncStart: 'Lancer la synchronisation',
-        syncRunning: 'Synchronisation en cours…',
-        syncAccounts: 'Comptes',
-        syncStatus_running: 'Synchronisation en cours, cela peut prendre quelques minutes…',
-        syncStatus_success: 'Synchronisation terminée',
-        syncStatus_error: 'Synchronisation terminée avec des erreurs',
-        syncStatus_busy: 'Une synchronisation est déjà en cours, réessayez dans quelques minutes',
-        syncDuration: 'en {seconds} s',
-        syncStep_coming: 'Opérations à venir',
-        syncStep_history: 'Historique',
-        syncStep_notify: 'Notifications',
-        syncStep_sync: 'Synchronisation',
-        syncStep_categories: 'Catégorisation automatique',
-        syncStep_error: 'Erreur',
-        syncState_running: 'en cours',
-        syncState_ok: 'OK',
-        syncState_error: 'KO',
-        syncStepCount: '{count} transaction(s)',
-        syncStepResult: '{count} reçue(s) · {created} nouvelle(s)',
-        woobIssues: 'Problème connu ? Voir les tickets woob sur le module « {module} »',
-        lastSync2fa: 'Authentification forte requise',
-        sync2faHelp: 'La banque demande une authentification forte : lancez-la, puis validez la connexion sur votre téléphone (application bancaire). Elle reste valable plusieurs semaines.',
-        sync2faButton: 'Valider l\'authentification forte',
-        sync2faWaiting: 'Authentification forte : validez la connexion dans l\'application de votre banque si elle vous le demande, la synchronisation attend votre validation.',
-        syncShowLog: 'Voir le journal détaillé',
-        syncHideLog: 'Masquer le journal',
-        chooseCategory: 'Catégoriser…',
-        ruleSuggestion: 'Toujours classer « {label} » dans {category} ?',
-        createRule: 'Créer une règle',
-        ignore: 'Ignorer',
-        rulesTitle: 'Catégorisation automatique',
-        rulesHelp: 'Une transaction dont le libellé contient le mot-clé reçoit la catégorie choisie.',
-        applyRules: 'Resynchroniser',
-        applyRulesHelp: 'Appliquer toutes les règles à toutes les transactions de la base',
-        rulesApplied: 'Règles appliquées à toute la base : {count} transaction(s) recatégorisée(s)',
-        ruleKeyword: 'Mot-clé',
-        ruleKeywordPlaceholder: 'Mot-clé du libellé (ex. CARREFOUR)',
-        ruleCategoryPlaceholder: 'Catégorie…',
-        addRule: 'Ajouter',
-        ruleRequired: 'Mot-clé et catégorie requis',
-        ruleAdded: 'Règle ajoutée',
-        ruleDeleted: 'Règle supprimée',
-        deleteRule: 'Supprimer la règle',
-        confirmDeleteRule: 'Supprimer la règle « {keyword} » ?',
-        rulesCount: '{count} règle(s)',
-        ruleFilterPlaceholder: 'Filtrer…',
-        loadingRules: 'Chargement des règles…',
-        noRules: 'Aucune règle',
-        tabTrends: 'Tendances',
-        loadingTrends: 'Chargement des tendances…',
-        trendsTitle: 'Tendances sur {months} mois',
-        trendsPeriod: 'Période',
-        monthsShort: '{months} mois',
-        trendsTotalSavings: 'Épargne cumulée',
-        trendsAverageSavings: 'Épargne moyenne / mois',
-        trendsSavingsRate: 'Taux d\'épargne',
-        trendsAverageDebit: 'Dépenses moyennes / mois',
-        trendsVsPlanned: 'pour {amount} planifiés',
-        trendsFlowsTitle: 'Revenus, dépenses et budget planifié',
-        trendsCredit: 'Crédit',
-        trendsDebit: 'Débit',
-        trendsOffBudget: 'Hors budget',
-        trendsPlanned: 'Budget planifié',
-        trendsSavings: 'Épargne',
-        trendsSavingsHelp: 'Montants versés sur la catégorie « Épargne » et ses sous-catégories, moins les retraits.',
-        trendsSavingsTitle: 'Épargne mensuelle',
-        trendsSavingsRateTitle: 'Taux d\'épargne mensuel',
-        trendsAverageRate: 'Moyenne de la période ({rate} %)',
-        trendsSaved: 'Mis de côté',
-        trendsOverspent: 'Retrait',
-        trendsShowTable: 'Voir les données en tableau',
-        trendsHideTable: 'Masquer le tableau',
-        compareWith: 'Comparer à',
-        compareNone: 'Sans comparaison',
-        comparePrevious: 'Période précédente',
-        compareLastYear: 'Même période l\'an dernier',
-        comparedTo: 'comparé à {period}',
-        comparisonTitle: 'Comparaison des totaux',
-        pointsVs: '{points} pts (vs {rate} %)',
-        
-        // Controls
-        monthLabel: 'Mois',
-        periodLabel: 'Période',
-        yearLabel: 'Année',
-        refreshButton: 'Actualiser',
-        
-        // Months
-        months: {
-            1: 'Janvier',
-            2: 'Février',
-            3: 'Mars',
-            4: 'Avril',
-            5: 'Mai',
-            6: 'Juin',
-            7: 'Juillet',
-            8: 'Août',
-            9: 'Septembre',
-            10: 'Octobre',
-            11: 'Novembre',
-            12: 'Décembre'
-        },
-        
-        // Stats
-        incomeLabel: 'Revenus',
-        expenseLabel: 'Dépenses',
-        balanceLabel: 'Solde',
-        
-        // Transactions
-        transactionsTitle: 'Transactions',
-        transactionCount: '{count} transaction(s)',
-        uncheckedCount: '{count} non vérifiée(s)',
-        filterLabel: 'Filtrer les transactions',
-        checkTransaction: 'Marquer comme vérifiée',
-        uncheckTransaction: 'Marquer comme non vérifiée',
-        allChecked: 'Toutes les transactions sont vérifiées',
-        recurringCount: '{count} récurrente(s)',
-        recurringBadge: 'Mensuelle',
-        recurringBadgeTitle: 'Transaction récurrente : retrouvée chaque mois',
-        recurringExpectedTitle: 'Attendues ce mois-ci',
-        recurringMissingTitle: 'Absentes ce mois-ci',
-        recurringDay: 'vers le {day}',
-        noRecurringReceived: 'Aucune transaction récurrente reçue ce mois-ci',
-        searchPlaceholder: 'Rechercher un libellé…',
-        searchResultsTitle: 'Résultats de recherche',
-        clearSearch: 'Effacer la recherche',
-        searching: 'Recherche…',
-        noSearchResults: 'Aucune transaction ne correspond',
-        searchTotal: 'Total des {count} transaction(s) trouvée(s)',
-        
-        // Budget
-        budgetTitle: 'Budget par Catégorie',
-        categoryLabel: 'Catégorie',
-        budgetedLabel: 'Budgété',
-        consumedLabel: 'Consommé',
-        progressLabel: 'Progression',
-        noBudgetMessage: 'Aucun budget défini pour cette période',
-        loadingBudgetMessage: 'Chargement du budget...',
-        overBudget: 'Dépassé',
-        nearLimit: 'Proche limite',
-        onTrack: 'En bonne voie',
-        budgetEditTitle: 'Modifier le budget',
-        allCategories: 'Toutes les catégories',
-        categoryTransactions: 'Transactions : {category}',
-        spentLabel: 'Dépensé',
-        remainingLabel: 'Reste',
-        overspentLabel: 'Dépassement',
-        budgetUsed: '{progress} % du budget du mois utilisé',
-        expensesSection: 'Dépenses budgétées',
-        incomesSection: 'Revenus',
-        othersSection: 'Hors budget et sans activité',
-        remainingAmount: 'Reste {amount}',
-        overspentAmount: 'Dépassé de {amount}',
-        budgetEditLabel: 'Nouveau montant',
-        budgetUpdatedToast: 'Budget mis à jour',
-        navigationError: 'Impossible d\'afficher cette catégorie',
-        budgetUseChildren: 'Somme des sous-catégories ({amount})',
-        budgetOverrideLabel: 'Montant défini',
-        budgetChildrenHelp: 'Sans montant défini, le budget de la catégorie est la somme des budgets de ses sous-catégories.',
-        budgetSumOfChildren: 'Somme des budgets des sous-catégories',
-        budgetInvalidAmount: 'Montant invalide',
-        budgetCopyButton: 'Recopier les budgets du mois précédent ({month})',
-        budgetCopyTitle: 'Recopier les budgets',
-        budgetCopyHelp: 'Recopie les budgets du mois précédent ({month}) vers le mois affiché.',
-        budgetCopyMissing: 'Compléter seulement (garder les montants déjà saisis)',
-        budgetCopyOverwrite: 'Écraser les budgets du mois affiché',
-        budgetCopyConfirm: 'Recopier',
-        budgetCopiedToast: '{count} budget(s) recopié(s)',
-        budgetCopyEmpty: 'Aucun budget à recopier en {month}',
-        cancel: 'Annuler',
-        save: 'Enregistrer',
-        
-        // Users
-        tabUsers: 'Utilisateurs',
-        tabLogs: 'Logs',
-        tabSettings: 'Paramètres',
-        tabSync: 'Synchro',
-        configTitle: 'Fichier de configuration',
-        configIntro: 'Contenu de {file}. Seuls les réglages sans risque se modifient ici, chaque valeur étant vérifiée par le serveur ; le fichier précédent est gardé en .bak. Les secrets, la base de données, la commande woob et le nettoyage des libellés se changent sur le serveur.',
-        configNotWritable: 'Le fichier n\'est pas modifiable par le serveur web : la configuration est en lecture seule.',
-        configOn: 'Activé',
-        configOff: 'Désactivé',
-        configUnset: 'non défini',
-        configLocked: 'Modifiable uniquement sur le serveur',
-        configLockedSecret: 'Secret : jamais affiché, modifiable uniquement sur le serveur',
-        configChanges: '{count} réglage(s) modifié(s)',
-        configNoChange: 'Aucune modification',
-        configSaved: 'Configuration enregistrée',
-        configSection_global: 'Général',
-        configSection_database: 'Base de données',
-        configSection_cleansing: 'Nettoyage des libellés',
-        configSection_auth: 'Authentification',
-        configSection_woob: 'Synchronisation bancaire (woob)',
-        configSection_apns: 'Notifications iOS (APNs)',
-        configHelp_log_level: 'Niveau minimal des messages écrits dans les logs.',
-        configHelp_log_retention_days: 'Nombre de jours de conservation des fichiers de log ; les plus anciens sont supprimés à la fin de la synchronisation bancaire (0 : conservés indéfiniment).',
-        configHelp_development: 'Mode développement.',
-        configHelp_savings_category: 'Catégorie de l\'épargne (et ses sous-catégories) pour le flux et les tendances.',
-        configHelp_public_url: 'Adresse publique du serveur, si le proxy HTTPS ne la transmet pas (OAuth, agents IA).',
-        configHelp_regex_label: 'Nettoyage des libellés : le modifier change les identifiants des transactions (doublons à la synchronisation suivante).',
-        configHelp_jwtsecret: 'Signature des sessions : se renouvelle avec le bandeau de sécurité.',
-        configHelp_password_salt: 'Vérification des anciens mots de passe SHA-256.',
-        configHelp_sync_token: 'Jeton du planificateur de synchronisation : voir l\'onglet Synchro.',
-        configHelp_woob_path: 'Commande woob exécutée par le serveur.',
-        configHelp_woob_transactions: 'Nombre de transactions demandées à la banque par compte et par synchronisation.',
-        configHelp_woob_logging: 'Niveau des messages de woob.',
-        configHelp_woob_debug: 'Messages de débogage de woob dans les logs et le journal de synchronisation.',
-        configHelp_woob_auto_update: 'Mise à jour automatique des modules bancaires de woob.',
-        configHelp_woob_2fa_wait: 'Synchronisation planifiée : secondes d\'attente avant de réessayer un compte dont la banque demande une validation dans son application (0 à 300).',
-        configHelp_woob_2fa_retries: 'Synchronisation planifiée : nombre de nouvelles tentatives après une demande de validation de la banque (0 à 5, 0 pour ne pas réessayer).',
-        configHelp_apns_environment: 'Serveurs Apple : production (App Store, TestFlight) ou sandbox (Xcode).',
-        configHelp_apns_auth_method: 'Authentification auprès d\'Apple : clé .p8 (token) ou certificat.',
-        configHelp_apns_bundle_id: 'Identifiant de l\'app iOS.',
-        configHelp_apns_key_id: 'Identifiant de la clé .p8 (10 caractères).',
-        configHelp_apns_team_id: 'Identifiant de l\'équipe Apple Developer (10 caractères).',
-        configHelp_apns_key_path: 'Chemin de la clé .p8 sur le serveur.',
-        syncCommandTitle: 'Lancer la synchronisation',
-        syncCommandHelp: 'Requête HTTP à programmer (cron, tâche planifiée Synology…) pour synchroniser les comptes bancaires sans ouvrir le portail. Elle s\'authentifie avec le jeton sync_token.',
-        syncTokenShow: 'Afficher',
-        syncTokenHide: 'Masquer',
-        syncTokenRenew: 'Renouveler',
-        syncTokenCreate: 'Créer un jeton',
-        syncTokenMissing: 'Aucun jeton n\'est configuré : seule la synchronisation depuis le portail fonctionne. Créez-en un pour la programmer.',
-        syncTokenRenewConfirm: 'Renouveler le jeton ? Les tâches planifiées qui utilisent l\'ancien ne fonctionneront plus.',
-        syncTokenCreateConfirm: 'Créer un jeton de synchronisation ?',
-        syncTokenRenewed: 'Nouveau jeton enregistré',
-        syncCommandAccount: 'Comptes',
-        syncCommandAllAccounts: 'Tous les comptes',
-        syncCommandCurl: 'Commande curl',
-        syncCommandCron: 'Tous les jours à 6 h (crontab)',
-        syncCommandNotes: 'La réponse est un flux d\'événements (Server-Sent Events) : la progression s\'affiche au fur et à mesure, d\'où l\'option -N. Une seule synchronisation à la fois ; le bouton Copier copie la commande avec le vrai jeton.',
-        logsTitle: 'Journaux',
-        logsHelp: 'Entrées des fichiers de log du serveur (data/logs), les plus récentes d\'abord. Un clic sur l\'identifiant d\'une requête affiche toutes ses entrées.',
-        logsRetention: 'Les fichiers de log sont conservés {days} jours, puis supprimés à la fin de la synchronisation bancaire (paramètre log_retention_days).',
-        logsRetentionForever: 'Les fichiers de log sont conservés indéfiniment : réglez log_retention_days dans Paramètres pour supprimer les anciens à la fin de la synchronisation bancaire.',
-        logsFile: 'Fichier',
-        logsLevel: 'Niveau minimal',
-        logsSearch: 'Recherche',
-        logsSearchPlaceholder: 'Texte ou identifiant de requête',
-        logsEmpty: 'Aucune entrée',
-        logsTruncated: 'Fichier volumineux : seule sa fin (2 Mo) est lue.',
-        logsByUid: 'Toutes les entrées de cette requête',
-        logsIp: 'Adresse du client',
-        logsUser: 'Utilisateur',
-        usersTitle: 'Gestion des utilisateurs',
-        addUser: 'Ajouter un utilisateur',
-        editUser: 'Modifier l\'utilisateur',
-        deleteUser: 'Supprimer l\'utilisateur',
-        username: 'Nom d\'utilisateur',
-        email: 'Email',
-        password: 'Mot de passe',
-        firstname: 'Prénom',
-        lastname: 'Nom',
-        actions: 'Actions',
-        noUsersMessage: 'Aucun utilisateur',
-        loadingUsersMessage: 'Chargement des utilisateurs...',
-        userCreated: 'Utilisateur créé avec succès',
-        userDeleted: 'Utilisateur supprimé avec succès',
-        userUpdated: 'Utilisateur modifié avec succès',
-        confirmDeleteUser: 'Êtes-vous sûr de vouloir supprimer l\'utilisateur {username} ?',
-        usernameRequired: 'Le nom d\'utilisateur est requis',
-        emailRequired: 'L\'email est requis',
-        emailInvalid: 'L\'email est invalide',
-        passwordRequired: 'Le mot de passe est requis',
-        passwordTooShort: 'Le mot de passe doit contenir au moins 6 caractères',
-        leaveBlankPassword: 'Laisser vide pour ne pas modifier',
-        errorLoadingUsers: 'Erreur lors du chargement des utilisateurs',
-        errorSavingUser: 'Erreur lors de l\'enregistrement',
-        errorDeletingUser: 'Erreur lors de la suppression',
-        updateNotImplemented: 'La modification n\'est pas encore implémentée',
-        
-        // Login
-        loginSubtitle: 'Gestion Bancaire',
-        loginButton: 'Se connecter',
-        loggingIn: 'Connexion...',
-        loginRequired: 'Nom d\'utilisateur et mot de passe requis',
-        loginError: 'Erreur de connexion',
-        sessionExpired: 'Votre session a expiré, veuillez vous reconnecter.',
-        logout: 'Déconnexion',
-        myProfile: 'Mon profil',
-        language: 'Langue',
-        theme: 'Thème',
-        themeSystem: 'Comme le système',
-        themeLight: 'Clair',
-        themeDark: 'Sombre',
-        themeHelp: 'Le mode contraste élevé du système est toujours respecté.',
-        switchToDarkTheme: 'Passer au thème sombre',
-        switchToLightTheme: 'Passer au thème clair',
-        profileUpdated: 'Profil mis à jour',
-        myDevices: 'Mes appareils',
-        alertThreshold: 'Seuil d\'alerte (€)',
-        alertThresholdPlaceholder: 'Désactivé',
-        alertThresholdHelp: 'Notification push sur l\'iPhone pour toute nouvelle dépense supérieure à ce montant. Laisser vide pour désactiver.',
-        loadingDevices: 'Chargement des appareils…',
-        noDevices: 'Aucun appareil enregistré (connectez-vous depuis l\'app iOS)',
-        unnamedDevice: 'Appareil sans nom',
-        lastLogin: 'Dernière connexion',
-        showToken: 'Afficher le token',
-        hideToken: 'Masquer le token',
-        copyToken: 'Copier le token',
-        tokenCopied: 'Token copié',
-        copyUnavailable: 'Copie indisponible (HTTPS requis) : token affiché',
-        deleteDevice: 'Supprimer l\'appareil',
-        confirmDeleteDevice: 'Supprimer l\'appareil « {name} » ? Il ne recevra plus de notifications.',
-        deviceDeleted: 'Appareil supprimé',
-        
-        // Insights
-        insightsTitle: 'Analyses Financières',
-        noInsightsMessage: 'Aucune analyse disponible',
-        loadingInsightsMessage: 'Chargement des analyses...',
-        insightNames: {
-            'CREDIT': 'Crédits',
-            'DEBIT': 'Débits',
-            'BUDGET-PLANIFIE': 'Budget Planifié',
-            'HORS-BUDGET': 'Hors Budget',
-            'EPARGNE': 'Épargne'
-        },
-        
-        // Loading & Messages
-        loadingMessage: 'Chargement des transactions...',
-        emptyMessage: 'Aucune transaction pour cette période',
-        emptyImportHint: 'Importez un relevé téléchargé depuis votre banque (OFX, QIF, CSV, CAMT.053), même sans compte synchronisé.',
-        errorMessage: 'Erreur lors du chargement des transactions',
-        
-        // Transaction Types
-        transactionTypes: {
-            1: 'Virement',
-            2: 'Prélèvement',
-            3: 'Chèque',
-            4: 'Remise Chèque',
-            5: 'Remboursement',
-            6: 'Retrait DAB',
-            7: 'Facture Carte',
-            8: 'Dépense',
-            9: 'Commissions',
-            12: 'En cours Carte'
-        },
-        
-        // Currency
-        currencySymbol: '€'
-    },
-    
-    en: {
-        // Header
-        appTitle: 'Carbure',
-        
-        // Tabs
-        tabTransactions: 'Transactions',
-        tabBudget: 'Budget',
-        tabInsights: 'Insights',
-        tabRules: 'Rules',
-        ruleSavedApplied: 'Rule saved and applied to {count} transaction(s)',
-        ruleAppliesToAll: 'The rule applies to every transaction of the database whose label contains the keyword, categorized ones included, then to each new transaction.',
-        skipToContent: 'Skip to content',
-        mainNavigation: 'Main navigation',
-        editRule: 'Edit the rule',
-        ruleUpdated: 'Rule updated',
-        ruleNotify: 'Notification for each new transaction',
-        ruleNotifyLabel: 'Send a push notification',
-        ruleCount: '{matching} transaction(s) contain this keyword, {categorized} of them in this category',
-        transactionDetail: 'Transaction detail',
-        transactionDate: 'Date',
-        transactionRealDate: 'Real date',
-        transactionType: 'Type',
-        transactionCard: 'Card',
-        transactionBank: 'Bank',
-        transactionImported: 'Imported on',
-        transactionChecked: 'Checked transaction',
-        transactionSaved: 'Transaction updated',
-        deleteTransaction: 'Delete the transaction',
-        searchSimilarTransactions: 'Similar transactions',
-        confirmDeleteTransaction: 'Delete the transaction "{label}"? It will not be imported again by the synchronization nor by the import of a file.',
-        transactionDeleted: 'Transaction deleted',
-        budgetFlowTab: 'Flow',
-        budgetConfigTab: 'Budgets',
-        flowEmpty: 'No transaction this month.',
-        weakJwtSecret: 'The key protecting the sessions is the example one: renew it (everybody will have to log in again, portal and iOS app).',
-        rotateJwtSecret: 'Renew',
-        confirmRotateJwtSecret: 'Renew the key of the sessions? Every user, you included, will have to log in again.',
-        bankSetupTitle: 'Connect {bank}',
-        bankSetupHelp: 'Your credentials are given to woob, which keeps them on your server to connect to your bank. Carbure does not store them.',
-        bankConnectionLabel: 'Name of the connection',
-        bankConnectionLabelHelp: 'Optional: a name to recognize this access (e.g. "Joint account" or "BNP pro"), can be changed later.',
-        renameBankConnection: 'Rename the connection',
-        renameBankConnectionOf: 'Rename the connection {bank}',
-        bankConnectionInWoob: 'Name in woob:',
-        bankConnectionRenamed: 'Connection renamed',
-        deleteBankConnection: 'Remove the connection',
-        deleteBankConnectionOf: 'Remove the connection {bank}',
-        confirmDeleteBankConnection: 'Remove the connection {bank}? woob forgets its credentials and its followed accounts will no longer be followed (followed accounts: {count}). The transactions already imported are kept.',
-        bankConnectionDeleted: 'Connection removed',
-        woobUpdateButton: 'Update the bank modules',
-        woobUpdateTitle: 'Update of the bank modules',
-        woobUpdateLoading: 'Reading the woob repository…',
-        woobUpdateRunning: 'Updating…',
-        woobUpdateLog: 'Log of the update',
-        woobUpdated: 'Bank modules up to date',
-        woobTrustHelp: 'woob downloads the bank modules (the code that reads your bank credentials) from its repository and checks their signature with the key of this repository. This key is not trusted yet: trust it once, woob will check the next keys with the previous one.',
-        woobRepository: 'Repository',
-        woobFingerprint: 'Fingerprint of the key (SHA-1)',
-        woobFingerprintUnknown: 'unknown (repository not reachable)',
-        woobTrustCompare: 'Compare this fingerprint with the one published or announced by the woob maintainers before trusting it. woob will only be accepted if it shows exactly this fingerprint.',
-        woobTrustAndUpdate: 'Trust and update',
-        woobNotTrusted: 'woob repository not trusted: compare its fingerprint before trusting it.',
-        bankConnectionDeleteButton: 'Remove',
-        bankConnectionDeleting: 'Removing…',
-        bankConnect: 'Connect the bank',
-        bankConnecting: 'Connecting to the bank…',
-        bankConnected: 'Bank connected: choose the accounts to follow',
-        bankConnectedNoAccount: 'Bank configured, but no account found: check your credentials',
-        bankSettingRequired: 'Required field: {field}',
-        bankSettingFormat: 'Wrong format: {field}',
-        footerLicense: 'Free software under the MIT license',
-        flowTitle: 'Money flow of the month',
-        flowHelp: 'Where the money of the month comes from and where it goes: expenses by category, savings and what is left. Internal transfers (off-budget) are left out.',
-        flowIncome: 'Income of the month',
-        flowBalance: 'Left',
-        flowDeficit: 'Deficit',
-        flowOthers: 'Others ({count})',
-        flowSummary: 'Income {income}, expenses {expenses}, savings {savings}, left {balance}.',
-        flowShowTable: 'Show the table',
-        flowHideTable: 'Hide the table',
-        flowFrom: 'From',
-        flowTo: 'To',
-        flowAmount: 'Amount',
-        importButton: 'Import',
-        importTitle: 'Import a bank statement',
-        importDrop: 'Drop the file of your bank here',
-        importDropHint: 'or click to choose it (1 MB at most)',
-        importReading: 'Reading the file…',
-        importHelp: 'Download the statement from the online banking of your bank, as OFX, QIF, CSV or CAMT.053. Before the import, Carbure shows the transactions already there and the probable duplicates. The categorization rules apply to the imported transactions.',
-        importTooLarge: 'The file is larger than {size} KB.',
-        importAccount: 'account {account}',
-        importOtherFile: 'Other file',
-        importStatus_new: 'new',
-        importStatus_duplicate: 'probable duplicates',
-        importStatus_known: 'already there',
-        importBadge_duplicate: 'Probable duplicate',
-        importBadge_known: 'Already there',
-        importBadge_deleted: 'Deleted',
-        importMatch: 'like "{label}" of {date}',
-        importDuplicateHelp: 'A probable duplicate has the same amount as an existing transaction a few days apart (often the same one, synchronized with another label). They are not checked: check them to import them anyway.',
-        importSelectAll: 'Check all',
-        importSelectedCount: '{count} selected',
-        importConfirm: 'Import ({count})',
-        importDone: '{count} transaction(s) imported, {categorized} categorized',
-        flowKpiIncome: 'Income',
-        flowKpiExpenses: 'Expenses',
-        flowSavingsRate: '{rate} % of income',
-        flowClickHint: 'Click a category to see its transactions.',
-        flowTransactions: 'Transactions: {name}',
-        uncategorized: 'Uncategorized',
-        userLocked: 'Locked until {date}',
-        unlockUser: 'Unlock',
-        userUnlocked: 'Account of {username} unlocked',
-        accountLocked: 'Account locked for 24 hours after 5 failed logins. An administrator can unlock it.',
-        invalidCredentials: 'Wrong username or password',
-        apiTokenLifetime: 'Validity',
-        apiTokenDays: '{days} days',
-        apiTokenOneYear: '1 year',
-        apiTokenNoExpiry: 'Never expires',
-        apiTokenExpires: 'expires on {date}',
-        apiTokenExpired: 'Expired',
-        neverLoggedIn: 'Never',
-        tabAgents: 'AI agent',
-        tabAdministration: 'Administration',
-        myApiTokens: 'My access tokens',
-        mcpEnabled: 'MCP server enabled',
-        mcpOn: 'MCP server enabled',
-        mcpOff: 'MCP server disabled',
-        mcpOnHelp: 'AI agents can connect with an access token.',
-        mcpOffHelp: 'An administrator must enable the MCP server to connect an AI agent.',
-        mcpOffHelpAdmin: 'Enable the MCP server to let the users connect an AI agent.',
-        mcpEnabledToast: 'MCP server enabled',
-        mcpDisabledToast: 'MCP server disabled',
-        agentChoose: 'Connect your AI agent',
-        agentHow_claudeCode: 'In a terminal, run this command, then /mcp in Claude Code to check the connection.',
-        oauthConnectTitle: 'Connect Claude (web, Desktop, mobile)',
-        oauthConnectHelp: 'In Claude: Settings → Connectors → Add custom connector. Paste this URL, then click Connect: Claude brings you back here to allow the access. No token to create; Carbure must be reachable over HTTPS from Internet.',
-        oauthTitle: 'Allow {name}?',
-        oauthIntro: '{name} asks to read the data of the household (transactions, budgets, categories, trends), read-only, to answer your questions.',
-        oauthRedirect: 'You will then go back to {host}.',
-        oauthRevoke: 'You can remove this access at any time: it is listed in "My access tokens" of the AI agent tab.',
-        oauthAllow: 'Allow',
-        oauthDeny: 'Deny',
-        oauthInvalid: 'Invalid or expired authorization request',
-        agentHow_chatgpt: 'Settings → Apps & Connectors → Developer mode → Create: paste this URL (Carbure must be reachable over HTTPS from Internet), without authentication.',
-        agentHow_cursor: 'Settings → MCP → Add a server: paste this block in ~/.cursor/mcp.json.',
-        agentHow_vscode: 'Command "MCP: Open User Configuration": paste this block in mcp.json, then use Copilot in Agent mode.',
-        agentHow_gemini: 'In a terminal, run this command, then /mcp in Gemini CLI to check the connection.',
-        insightChecking: 'Checking the query…',
-        insightValid: 'Valid query: {amount} for the displayed month',
-        schemaUpdateAvailable: 'A database update is available ({count} step(s)). Back up your database, then apply it.',
-        schemaUpdate: 'Update',
-        confirmMigrate: 'Is your database backed up? The update keeps your data.',
-        migrationDone: 'Database up to date (version {version})',
-        setupTitle: 'Install Carbure',
-        setupSubtitle: 'A few details and Carbure is ready.',
-        setupProgress: 'Installation steps',
-        setupStep_database: 'Database',
-        setupStep_review: 'Installation',
-        setupStep_done: 'Done',
-        setupDatabaseTitle: 'Database',
-        setupDatabaseHelp: 'Carbure stores your data in a MariaDB or MySQL database. With Docker, everything is already filled in: just click Continue.',
-        setupCode: 'Setup code',
-        setupCodeHelp: 'Carbure is reached from Internet: type the code shown in the logs of the Docker container (or in the conf/setup.code file of the server).',
-        setupDbHost: 'Server',
-        setupDbPort: 'Port',
-        setupDbName: 'Database name',
-        setupDbUser: 'User',
-        setupDbPassword: 'Password',
-        setupDbPasswordDocker: 'Given by Docker',
-        setupDbPasswordDockerHelp: 'Leave empty: the password of docker-compose.yml is used.',
-        setupCheckDatabase: 'Continue',
-        setupReviewTitle: 'Check',
-        setupState_none: 'Empty database: Carbure will create its tables.',
-        setupState_current: 'Existing Carbure database, up to date: your data is kept.',
-        setupState_outdated: 'Existing Carbure database: updates have to be applied. Your data is kept.',
-        setupSchemaVersion: 'Schema version: {version}',
-        setupBackupConfirm: 'I have a backup of my database',
-        setupStarterTitle: 'Getting started',
-        setupStarterHelp: 'Optional: you can change or delete everything later.',
-        setupStarterCategories: 'Add common categories and categorization rules',
-        setupStarterInsights: 'Add insights (expenses, income, savings, budget…)',
-        setupBackupRequired: 'Confirm that your database is saved before updating it.',
-        setupAdminTitle: 'Administrator account',
-        setupAdminHelp: 'This account manages Carbure: bank accounts, categories, users of the household.',
-        setupPasswordConfirm: 'Confirm the password',
-        setupPasswordHelp: '8 characters minimum.',
-        setupPasswordTooShort: 'The password must contain at least 8 characters.',
-        setupPasswordMismatch: 'The two passwords are different.',
-        setupBack: 'Back',
-        setupInstall: 'Install',
-        setupFinish: 'Finish',
-        setupDoneTitle: 'Carbure is ready!',
-        setupDoneHelp: 'Log in, then add your bank accounts in the Accounts tab.',
-        addInsight: 'Add an insight',
-        editInsight: 'Edit the insight',
-        deleteInsight: 'Delete the insight',
-        insightName: 'Name',
-        insightSql: 'SQL query',
-        insightSqlHelp: 'A single SELECT query returning an amount column; {month} and {year} are replaced by the displayed month. It is tested when saved and run read-only (users, api_tokens and devices tables forbidden).',
-        insightColor_red: 'Red',
-        insightColor_green: 'Green',
-        insightColor_blue: 'Blue',
-        insightColor_orange: 'Orange',
-        insightColor_gray: 'Gray',
-        insightColor_amber: 'Amber',
-        insightColor_lime: 'Lime',
-        insightColor_teal: 'Teal',
-        insightColor_cyan: 'Cyan',
-        insightColor_indigo: 'Indigo',
-        insightColor_purple: 'Purple',
-        insightColor_pink: 'Pink',
-        insightColor_brown: 'Brown',
-        insightAdded: 'Insight added',
-        insightUpdated: 'Insight updated',
-        insightDeleted: 'Insight deleted',
-        confirmDeleteInsight: 'Delete the insight "{name}"?',
-        apiTokensTitle: 'Access for AI agents (MCP)',
-        apiTokensHelp: 'Connect Claude, ChatGPT, Cursor, Copilot or Gemini to Carbure: they can read your data, read-only, to answer your questions about your budget.',
-        addApiToken: 'Create an access token',
-        noApiTokens: 'No access token',
-        apiToken: 'Token',
-        apiTokenName: 'Name',
-        apiTokenNameHelp: 'To recognize it, e.g. "Claude Code on my laptop".',
-        apiTokenNameRequired: 'The name is required',
-        apiTokenCreated: 'Created',
-        apiTokenLastUsed: 'last used',
-        apiTokenNeverUsed: 'never used',
-        apiTokenShownOnce: 'Copy this token now: it will never be shown again.',
-        apiTokenPrivacy: 'The data read by an AI agent (labels, amounts, categories) is sent to its provider for the analysis. Revoke a token at any time to cut the access.',
-        revokeApiToken: 'Revoke the token',
-        apiTokenRevoked: 'Token revoked',
-        confirmRevokeApiToken: 'Revoke the token "{name}"? Claude will no longer access your data with it.',
-        copied: 'Copied',
-        copy: 'Copy',
-        create: 'Create',
-        done: 'Done',
-        close: 'Close',
-        addRuleTitle: 'Add a rule',
-        ruleKeywordHelp: 'Keyword searched in the label of the transactions (remove dates and card numbers).',
-        categoriesHelp: 'Categories classify the transactions and carry the budgets. Icons and colors are shared with the iOS app.',
-        accountsHelp: 'Bank accounts synchronized with woob, with the result of their last synchronization.',
-        'categoryTypes_DEBIT': 'Expenses',
-        'categoryTypes_CREDIT': 'Income',
-        'categoryTypes_HORS-BUDGET': 'Off-budget',
-        searchCategory: 'Search a category',
-        noCategoryFound: 'No category',
-        home: 'Home',
-        accountAddedBy: 'Added by {user}',
-        syncAccount: 'Synchronize this account',
-        syncAllAccounts: 'Synchronize every account',
-        lastSync_OK: 'Synchronized',
-        lastSync_ERROR: 'Failed',
-        lastSyncNever: 'Never synchronized',
-        todayAt: 'today {time}',
-        userRole: 'Profile',
-        role_user: 'User',
-        role_admin: 'Administrator',
-        roleHelp: 'An administrator also manages the rules, categories, accounts and users.',
-        tabCategories: 'Categories',
-        categoriesTitle: 'Transaction categorization',
-        addCategory: 'Add a category',
-        editCategory: 'Edit category',
-        deleteCategory: 'Delete category',
-        categoryName: 'Name',
-        categoryParent: 'Parent category',
-        categoryTopLevel: 'None (main category)',
-        categoryType: 'Type',
-        'categoryType_DEBIT': 'Expense',
-        'categoryType_CREDIT': 'Income',
-        'categoryType_HORS-BUDGET': 'Off-budget',
-        categoryColor: 'Color',
-        categoryIcon: 'Icon',
-        categoryDefault: 'Default',
-        categoryNameRequired: 'The name is required',
-        categoryAdded: 'Category added',
-        categoryUpdated: 'Category updated',
-        categoryDeleted: 'Category deleted',
-        confirmDeleteCategory: 'Delete the category "{name}"? Its transactions become uncategorized, its budgets and rules are deleted.',
-        tabSync: 'Sync',
-        tabAccounts: 'Accounts',
-        accountsTitle: 'Household accounts',
-        connectedBanksTitle: 'Connected banks and followed accounts',
-        followedAccountsOf: 'Followed accounts of {bank}',
-        noFollowedAccountInBank: 'No followed account: add accounts of this bank.',
-        otherAccountsTitle: 'Other accounts',
-        otherAccountsHelp: 'Accounts of a bank no longer connected, or imported from a file.',
-        noConnectedBank: 'No connected bank: start with "Connect a bank", then add its accounts.',
-        bankSetupLoading: 'Loading the information asked by the bank…',
-        connectBankTitle: 'Connect a bank',
-        connectBankHelp: 'Choose your bank and type your credentials: woob connects to it, then you choose the accounts to follow. A bank already connected can be connected again with other credentials.',
-        connectBankModule: 'Bank',
-        connectBankChoose: 'Choose a bank supported by woob…',
-        addAccountsButton: 'Add accounts',
-        addAccountsTo: 'Add accounts of {bank}',
-        addAccountsTitle: 'Accounts of {bank}',
-        addAccountsHelp: 'Accounts woob finds with this connection: tick the ones to follow.',
-        discoverNoAccount: 'woob finds no account for this bank.',
-        followSelected: 'Follow the selected accounts ({count})',
-        accountsFollowedToast: '{count} account(s) followed',
-        accountInWoob: 'Account in woob:',
-        accountLabel: 'Account name',
-        accountLabelPlaceholder: 'e.g. Joint account, Savings…',
-        accountLabelHelp: 'Optional: shown instead of the bank and the end of the number.',
-        bankAnotherLogin: 'another login',
-        bankNotConfigured: 'This bank is not configured in woob yet: its accounts are synchronized only once your credentials are entered with',
-        editAccount: 'Edit account',
-        deleteAccount: 'Stop following the account',
-        confirmDeleteAccount: 'Stop following the account {account}? Its imported transactions are kept.',
-        accountUpdated: 'Account updated',
-        accountDeleted: 'Account removed',
-        discovering: 'woob is querying your banks…',
-        accountFollowed: 'Followed',
-        syncTitle: 'Synchronization',
-        syncHelp: 'Fetches the pending operations and the history of your accounts with woob, categorizes the new transactions and sends the notifications.',
-        syncStart: 'Start synchronization',
-        syncRunning: 'Synchronizing…',
-        syncAccounts: 'Accounts',
-        syncStatus_running: 'Synchronizing, this can take a few minutes…',
-        syncStatus_success: 'Synchronization complete',
-        syncStatus_error: 'Synchronization complete with errors',
-        syncStatus_busy: 'A synchronization is already running, try again in a few minutes',
-        syncDuration: 'in {seconds}s',
-        syncStep_coming: 'Pending operations',
-        syncStep_history: 'History',
-        syncStep_notify: 'Notifications',
-        syncStep_sync: 'Synchronization',
-        syncStep_categories: 'Automatic categorization',
-        syncStep_error: 'Error',
-        syncState_running: 'running',
-        syncState_ok: 'OK',
-        syncState_error: 'Failed',
-        syncStepCount: '{count} transaction(s)',
-        syncStepResult: '{count} received · {created} new',
-        woobIssues: 'Known issue? See the woob tickets about the "{module}" module',
-        lastSync2fa: 'Strong authentication needed',
-        sync2faHelp: 'The bank asks for a strong authentication: start it, then approve the connection on your phone (bank app). It stays valid for several weeks.',
-        sync2faButton: 'Approve the strong authentication',
-        sync2faWaiting: 'Strong authentication: approve the connection in your bank app if asked, the synchronization waits for your approval.',
-        syncShowLog: 'Show detailed log',
-        syncHideLog: 'Hide log',
-        chooseCategory: 'Categorize…',
-        ruleSuggestion: 'Always file "{label}" under {category}?',
-        createRule: 'Create a rule',
-        ignore: 'Ignore',
-        rulesTitle: 'Automatic categorization',
-        rulesHelp: 'A transaction whose label contains the keyword gets the chosen category.',
-        applyRules: 'Resynchronize',
-        applyRulesHelp: 'Apply every rule to every transaction of the database',
-        rulesApplied: 'Rules applied to the whole database: {count} transaction(s) recategorized',
-        ruleKeyword: 'Keyword',
-        ruleKeywordPlaceholder: 'Label keyword (e.g. CARREFOUR)',
-        ruleCategoryPlaceholder: 'Category…',
-        addRule: 'Add',
-        ruleRequired: 'Keyword and category required',
-        ruleAdded: 'Rule added',
-        ruleDeleted: 'Rule deleted',
-        deleteRule: 'Delete rule',
-        confirmDeleteRule: 'Delete the rule "{keyword}"?',
-        rulesCount: '{count} rule(s)',
-        ruleFilterPlaceholder: 'Filter…',
-        loadingRules: 'Loading rules…',
-        noRules: 'No rule',
-        tabTrends: 'Trends',
-        loadingTrends: 'Loading trends…',
-        trendsTitle: 'Trends over {months} months',
-        trendsPeriod: 'Period',
-        monthsShort: '{months} months',
-        trendsTotalSavings: 'Total savings',
-        trendsAverageSavings: 'Average savings / month',
-        trendsSavingsRate: 'Savings rate',
-        trendsAverageDebit: 'Average spending / month',
-        trendsVsPlanned: 'for {amount} planned',
-        trendsFlowsTitle: 'Income, spending and planned budget',
-        trendsCredit: 'Credit',
-        trendsDebit: 'Debit',
-        trendsOffBudget: 'Off-budget',
-        trendsPlanned: 'Planned budget',
-        trendsSavings: 'Savings',
-        trendsSavingsHelp: 'Amounts moved to the "Épargne" (savings) category and its sub-categories, minus withdrawals.',
-        trendsSavingsTitle: 'Monthly savings',
-        trendsSavingsRateTitle: 'Monthly savings rate',
-        trendsAverageRate: 'Period average ({rate}%)',
-        trendsSaved: 'Put aside',
-        trendsOverspent: 'Withdrawn',
-        trendsShowTable: 'Show data as a table',
-        trendsHideTable: 'Hide table',
-        compareWith: 'Compare with',
-        compareNone: 'No comparison',
-        comparePrevious: 'Previous period',
-        compareLastYear: 'Same period last year',
-        comparedTo: 'compared to {period}',
-        comparisonTitle: 'Totals comparison',
-        pointsVs: '{points} pts (vs {rate}%)',
-        
-        // Controls
-        monthLabel: 'Month',
-        periodLabel: 'Period',
-        yearLabel: 'Year',
-        refreshButton: 'Refresh',
-        
-        // Months
-        months: {
-            1: 'January',
-            2: 'February',
-            3: 'March',
-            4: 'April',
-            5: 'May',
-            6: 'June',
-            7: 'July',
-            8: 'August',
-            9: 'September',
-            10: 'October',
-            11: 'November',
-            12: 'December'
-        },
-        
-        // Stats
-        incomeLabel: 'Income',
-        expenseLabel: 'Expenses',
-        balanceLabel: 'Balance',
-        
-        // Transactions
-        transactionsTitle: 'Transactions',
-        transactionCount: '{count} transaction(s)',
-        uncheckedCount: '{count} unchecked',
-        filterLabel: 'Filter transactions',
-        checkTransaction: 'Mark as checked',
-        uncheckTransaction: 'Mark as unchecked',
-        allChecked: 'All transactions are checked',
-        recurringCount: '{count} recurring',
-        recurringBadge: 'Monthly',
-        recurringBadgeTitle: 'Recurring transaction: found every month',
-        recurringExpectedTitle: 'Expected this month',
-        recurringMissingTitle: 'Missing this month',
-        recurringDay: 'around the {day}',
-        noRecurringReceived: 'No recurring transaction received this month',
-        searchPlaceholder: 'Search a label…',
-        searchResultsTitle: 'Search results',
-        clearSearch: 'Clear search',
-        searching: 'Searching…',
-        noSearchResults: 'No matching transaction',
-        searchTotal: 'Total of the {count} transaction(s) found',
-        
-        // Budget
-        budgetTitle: 'Budget by Category',
-        categoryLabel: 'Category',
-        budgetedLabel: 'Budgeted',
-        consumedLabel: 'Consumed',
-        progressLabel: 'Progress',
-        noBudgetMessage: 'No budget defined for this period',
-        loadingBudgetMessage: 'Loading budget...',
-        overBudget: 'Over Budget',
-        nearLimit: 'Near Limit',
-        onTrack: 'On Track',
-        budgetEditTitle: 'Edit Budget',
-        allCategories: 'All categories',
-        categoryTransactions: 'Transactions: {category}',
-        spentLabel: 'Spent',
-        remainingLabel: 'Remaining',
-        overspentLabel: 'Overspent',
-        budgetUsed: '{progress}% of the monthly budget used',
-        expensesSection: 'Budgeted expenses',
-        incomesSection: 'Income',
-        othersSection: 'Off-budget and inactive',
-        remainingAmount: '{amount} left',
-        overspentAmount: 'Over by {amount}',
-        budgetEditLabel: 'New amount',
-        budgetUpdatedToast: 'Budget updated',
-        navigationError: 'Unable to show this category',
-        budgetUseChildren: 'Sum of the sub-categories ({amount})',
-        budgetOverrideLabel: 'Set amount',
-        budgetChildrenHelp: 'Without a set amount, the budget of the category is the sum of the budgets of its sub-categories.',
-        budgetSumOfChildren: 'Sum of the budgets of the sub-categories',
-        budgetInvalidAmount: 'Invalid amount',
-        budgetCopyButton: 'Copy budgets from {month}',
-        budgetCopyTitle: 'Copy the budgets',
-        budgetCopyHelp: 'Copies the budgets of {month} to the displayed month.',
-        budgetCopyMissing: 'Fill in only (keep the amounts already set)',
-        budgetCopyOverwrite: 'Overwrite the budgets of the displayed month',
-        budgetCopyConfirm: 'Copy',
-        budgetCopiedToast: '{count} budget(s) copied',
-        budgetCopyEmpty: '{month} has no budgets to copy',
-        cancel: 'Cancel',
-        save: 'Save',
-        
-        // Users
-        tabUsers: 'Users',
-        tabLogs: 'Logs',
-        tabSettings: 'Settings',
-        tabSync: 'Sync',
-        configTitle: 'Configuration file',
-        configIntro: 'Content of {file}. Only the safe settings are changed here, each value being checked by the server; the previous file is kept as .bak. The secrets, the database, the woob command and the cleaning of the labels are changed on the server.',
-        configNotWritable: 'The web server cannot write the file: the configuration is read-only.',
-        configOn: 'On',
-        configOff: 'Off',
-        configUnset: 'not set',
-        configLocked: 'Can only be changed on the server',
-        configLockedSecret: 'Secret: never shown, can only be changed on the server',
-        configChanges: '{count} setting(s) changed',
-        configNoChange: 'No change',
-        configSaved: 'Configuration saved',
-        configSection_global: 'General',
-        configSection_database: 'Database',
-        configSection_cleansing: 'Cleaning of the labels',
-        configSection_auth: 'Authentication',
-        configSection_woob: 'Bank synchronization (woob)',
-        configSection_apns: 'iOS notifications (APNs)',
-        configHelp_log_level: 'Lowest level of the messages written in the logs.',
-        configHelp_log_retention_days: 'Days the log files are kept; older ones are deleted at the end of the bank synchronization (0: kept forever).',
-        configHelp_development: 'Development mode.',
-        configHelp_savings_category: 'Category of the savings (and its sub-categories) for the money flow and the trends.',
-        configHelp_public_url: 'Public address of the server, when the HTTPS proxy does not send it (OAuth, AI agents).',
-        configHelp_regex_label: 'Cleaning of the labels: changing it changes the identifiers of the transactions (duplicates at the next synchronization).',
-        configHelp_jwtsecret: 'Signature of the sessions: renewed with the security banner.',
-        configHelp_password_salt: 'Check of the legacy SHA-256 passwords.',
-        configHelp_sync_token: 'Token of the synchronization scheduler: see the Sync tab.',
-        configHelp_woob_path: 'woob command run by the server.',
-        configHelp_woob_transactions: 'Number of transactions asked to the bank per account and per synchronization.',
-        configHelp_woob_logging: 'Level of the messages of woob.',
-        configHelp_woob_debug: 'Debug messages of woob in the logs and the synchronization log.',
-        configHelp_woob_auto_update: 'Automatic update of the bank modules of woob.',
-        configHelp_woob_2fa_wait: 'Scheduled synchronization: seconds to wait before trying again an account whose bank asks a validation in its app (0 to 300).',
-        configHelp_woob_2fa_retries: 'Scheduled synchronization: number of new attempts after a validation asked by the bank (0 to 5, 0 to never try again).',
-        configHelp_apns_environment: 'Apple servers: production (App Store, TestFlight) or sandbox (Xcode).',
-        configHelp_apns_auth_method: 'Authentication with Apple: .p8 key (token) or certificate.',
-        configHelp_apns_bundle_id: 'Identifier of the iOS app.',
-        configHelp_apns_key_id: 'Identifier of the .p8 key (10 characters).',
-        configHelp_apns_team_id: 'Identifier of the Apple Developer team (10 characters).',
-        configHelp_apns_key_path: 'Path of the .p8 key on the server.',
-        syncCommandTitle: 'Start the synchronization',
-        syncCommandHelp: 'HTTP request to schedule (cron, Synology scheduled task…) to synchronize the bank accounts without opening the portal. It authenticates with the sync_token.',
-        syncTokenShow: 'Show',
-        syncTokenHide: 'Hide',
-        syncTokenRenew: 'Renew',
-        syncTokenCreate: 'Create a token',
-        syncTokenMissing: 'No token is configured: only the synchronization from the portal works. Create one to schedule it.',
-        syncTokenRenewConfirm: 'Renew the token? The scheduled tasks that use the old one will stop working.',
-        syncTokenCreateConfirm: 'Create a synchronization token?',
-        syncTokenRenewed: 'New token saved',
-        syncCommandAccount: 'Accounts',
-        syncCommandAllAccounts: 'All the accounts',
-        syncCommandCurl: 'curl command',
-        syncCommandCron: 'Every day at 6 am (crontab)',
-        syncCommandNotes: 'The answer is a stream of events (Server-Sent Events): the progress is shown as it goes, hence the -N option. One synchronization at a time; the Copy button copies the command with the real token.',
-        logsTitle: 'Logs',
-        logsHelp: 'Entries of the log files of the server (data/logs), newest first. A click on the id of a request shows all its entries.',
-        logsRetention: 'Log files are kept {days} days, then deleted at the end of the bank synchronization (setting log_retention_days).',
-        logsRetentionForever: 'Log files are kept forever: set log_retention_days in Settings to delete the old ones at the end of the bank synchronization.',
-        logsFile: 'File',
-        logsLevel: 'Minimum level',
-        logsSearch: 'Search',
-        logsSearchPlaceholder: 'Text or request id',
-        logsEmpty: 'No entry',
-        logsTruncated: 'Large file: only its end (2 MB) is read.',
-        logsByUid: 'Every entry of this request',
-        logsIp: 'Address of the client',
-        logsUser: 'User',
-        usersTitle: 'User Management',
-        addUser: 'Add user',
-        editUser: 'Edit user',
-        deleteUser: 'Delete user',
-        username: 'Username',
-        email: 'Email',
-        password: 'Password',
-        firstname: 'First name',
-        lastname: 'Last name',
-        actions: 'Actions',
-        noUsersMessage: 'No users',
-        loadingUsersMessage: 'Loading users...',
-        userCreated: 'User created successfully',
-        userDeleted: 'User deleted successfully',
-        userUpdated: 'User updated successfully',
-        confirmDeleteUser: 'Are you sure you want to delete user {username}?',
-        usernameRequired: 'Username is required',
-        emailRequired: 'Email is required',
-        emailInvalid: 'Email is invalid',
-        passwordRequired: 'Password is required',
-        passwordTooShort: 'Password must be at least 6 characters',
-        leaveBlankPassword: 'Leave blank to keep unchanged',
-        errorLoadingUsers: 'Error loading users',
-        errorSavingUser: 'Error saving user',
-        errorDeletingUser: 'Error deleting user',
-        updateNotImplemented: 'Update not yet implemented',
-        
-        // Login
-        loginSubtitle: 'Banking Management',
-        loginButton: 'Log in',
-        loggingIn: 'Logging in...',
-        loginRequired: 'Username and password required',
-        loginError: 'Login error',
-        sessionExpired: 'Your session has expired, please log in again.',
-        logout: 'Log out',
-        myProfile: 'My profile',
-        language: 'Language',
-        theme: 'Theme',
-        themeSystem: 'Same as the system',
-        themeLight: 'Light',
-        themeDark: 'Dark',
-        themeHelp: 'The high contrast mode of the system is always respected.',
-        switchToDarkTheme: 'Switch to dark theme',
-        switchToLightTheme: 'Switch to light theme',
-        profileUpdated: 'Profile updated',
-        myDevices: 'My devices',
-        alertThreshold: 'Alert threshold (€)',
-        alertThresholdPlaceholder: 'Disabled',
-        alertThresholdHelp: 'Push notification on the iPhone for any new expense above this amount. Leave empty to disable.',
-        loadingDevices: 'Loading devices…',
-        noDevices: 'No registered device (log in from the iOS app)',
-        unnamedDevice: 'Unnamed device',
-        lastLogin: 'Last login',
-        showToken: 'Show token',
-        hideToken: 'Hide token',
-        copyToken: 'Copy token',
-        tokenCopied: 'Token copied',
-        copyUnavailable: 'Copy unavailable (HTTPS required): token shown',
-        deleteDevice: 'Delete device',
-        confirmDeleteDevice: 'Delete the device "{name}"? It will no longer receive notifications.',
-        deviceDeleted: 'Device deleted',
-        
-        // Insights
-        insightsTitle: 'Financial Insights',
-        noInsightsMessage: 'No insights available',
-        loadingInsightsMessage: 'Loading insights...',
-        insightNames: {
-            'CREDIT': 'Credits',
-            'DEBIT': 'Debits',
-            'BUDGET-PLANIFIE': 'Planned Budget',
-            'HORS-BUDGET': 'Off Budget',
-            'EPARGNE': 'Savings'
-        },
-        
-        // Loading & Messages
-        loadingMessage: 'Loading transactions...',
-        emptyMessage: 'No transactions for this period',
-        emptyImportHint: 'Import a statement downloaded from your bank (OFX, QIF, CSV, CAMT.053), even without a synchronized account.',
-        errorMessage: 'Error loading transactions',
-        
-        // Transaction Types
-        transactionTypes: {
-            1: 'Transfer',
-            2: 'Direct Debit',
-            3: 'Check',
-            4: 'Check Deposit',
-            5: 'Refund',
-            6: 'ATM Withdrawal',
-            7: 'Card Payment',
-            8: 'Expense',
-            9: 'Commissions',
-            12: 'Pending Card'
-        },
-        
-        // Currency
-        currencySymbol: '€'
-    }
-};
+// Translations of the Carbure portal: one JSON file per language, i18n/<locale>.json.
+//
+// loadLocale() fetches the active language (and the reference language, French, as the
+// fallback of the missing keys) before the Vue application is mounted (see app.js); t()
+// then translates synchronously: active language -> reference language -> the key itself.
+// Plurals: t(key, { count }) uses <key>_one / <key>_other... (categories of
+// Intl.PluralRules) when the language has them, <key> otherwise.
+//
+// A plain script (no module): its functions are globals of the page, and it is also
+// loaded by Node for the tests (module.exports at the end).
 
-// Language before login: the browser one (the profile language applies after login)
+/** Languages of the portal (each one has its file i18n/<locale>.json) */
+const LOCALES = ['fr', 'en'];
+
+/** Reference language: complete, fallback of the missing keys */
+const REFERENCE_LOCALE = 'fr';
+
+/** Texts loaded, by language */
+const i18n = {};
+
+/** State of the loader: active language, version of the server, keys already reported */
+const i18nState = { locale: null, version: null, debug: false, reported: new Set(), pluralRules: {} };
+
+/**
+ * Language before login: the browser one (the profile language applies after login)
+ * @returns {string}
+ */
 function defaultLocale() {
-    return (navigator.language || '').toLowerCase().startsWith('en') ? 'en' : 'fr';
+    const language = (typeof navigator !== 'undefined' && navigator.language) || '';
+    return language.toLowerCase().startsWith('en') ? 'en' : 'fr';
 }
 
-// Helper function to get translated text
-function t(key, params = {}) {
-    const locale = localStorage.getItem('locale') || defaultLocale();
-    const keys = key.split('.');
-    let value = i18n[locale];
-    
-    for (const k of keys) {
-        value = value?.[k];
+/**
+ * Language chosen in this browser (localStorage), the browser one otherwise
+ * @returns {string}
+ */
+function storedLocale() {
+    let stored = null;
+    try {
+        stored = localStorage.getItem('locale');
+    } catch (e) {
+        stored = null;
     }
-    
+    return LOCALES.includes(stored) ? stored : defaultLocale();
+}
+
+/**
+ * Active language: the one loaded by loadLocale(), the chosen one before
+ * @returns {string}
+ */
+function currentLocale() {
+    return i18nState.locale || storedLocale();
+}
+
+/**
+ * Version of Carbure given by the server (GET /api/health) while loading, null if unknown
+ * @returns {string|null}
+ */
+function serverVersion() {
+    return i18nState.version;
+}
+
+/**
+ * Languages searched for a key: the active one, then the reference one
+ * @param {string} locale - Active language
+ * @returns {string[]}
+ */
+function fallbackChain(locale) {
+    return locale === REFERENCE_LOCALE ? [locale] : [locale, REFERENCE_LOCALE];
+}
+
+/**
+ * Value of a key in the texts of a language (nested keys with dots: months.1)
+ * @param {Object|undefined} texts - Texts of a language
+ * @param {string} key - Key
+ * @returns {*} The value, undefined if missing
+ */
+function lookup(texts, key) {
+    return key.split('.').reduce((value, part) => (value === undefined || value === null ? undefined : value[part]), texts);
+}
+
+/**
+ * The number deciding the plural form: params.count, if it is a number
+ * @param {Object} params - Parameters of the text
+ * @returns {number|null}
+ */
+function pluralCount(params) {
+    const count = params ? params.count : undefined;
+    if (count === undefined || count === null || count === '' || typeof count === 'boolean') {
+        return null;
+    }
+    const number = Number(count);
+    return Number.isFinite(number) ? number : null;
+}
+
+/**
+ * Plural category of a number in a language (one, other, many...)
+ * @param {string} locale - Language
+ * @param {number} count - Number
+ * @returns {string}
+ */
+function pluralCategory(locale, count) {
+    try {
+        if (!i18nState.pluralRules[locale]) {
+            i18nState.pluralRules[locale] = new Intl.PluralRules(locale);
+        }
+        return i18nState.pluralRules[locale].select(count);
+    } catch (e) {
+        return 'other';
+    }
+}
+
+/**
+ * Text of a key in the first language of the chain that has it; with a count, the
+ * plural form of the language (<key>_<category>, then <key>_other) before <key>
+ * @param {Object<string, Object>} dictionaries - Texts, by language
+ * @param {string[]} locales - Languages to search, in order
+ * @param {string} key - Key
+ * @param {Object} params - Parameters (count chooses the plural form)
+ * @returns {*} The value, undefined if no language has it
+ */
+function resolveText(dictionaries, locales, key, params) {
+    const count = pluralCount(params);
+    for (const locale of locales) {
+        const texts = dictionaries[locale];
+        if (!texts) {
+            continue;
+        }
+        const candidates = count === null ? [key] : [`${key}_${pluralCategory(locale, count)}`, `${key}_other`, key];
+        for (const candidate of candidates) {
+            const value = lookup(texts, candidate);
+            if (value !== undefined && value !== null) {
+                return value;
+            }
+        }
+    }
+    return undefined;
+}
+
+/**
+ * Replaces the {placeholders} of a text by the parameters (unknown ones are kept)
+ * @param {string} text - Text
+ * @param {Object} params - Parameters
+ * @returns {string}
+ */
+function formatText(text, params) {
+    return text.replace(/\{(\w+)\}/g, (match, name) => (params && params[name] !== undefined && params[name] !== null) ? params[name] : match);
+}
+
+/**
+ * Translation of a key in a chain of languages: the logic of t(), also used by the tests
+ * (tests/e2e/fixtures.js) with the JSON files
+ * @param {Object<string, Object>} dictionaries - Texts, by language
+ * @param {string[]} locales - Languages to search, in order
+ * @param {string} key - Key (nested keys with dots)
+ * @param {Object} params - Values of the {placeholders}; count chooses the plural form
+ * @returns {*} The text, the key itself if no language has it
+ */
+function translate(dictionaries, locales, key, params = {}) {
+    const value = resolveText(dictionaries, locales, key, params);
     if (typeof value === 'string') {
-        // Replace parameters in the string
-        return value.replace(/\{(\w+)\}/g, (match, param) => (params[param] !== undefined && params[param] !== null) ? params[param] : match);
+        return formatText(value, params);
     }
-    
     return value || key;
 }
 
-// Function to change locale
+/**
+ * Debug mode of the portal (?debug=true)
+ * @returns {boolean}
+ */
+function i18nDebug() {
+    try {
+        return String(new URLSearchParams(location.search).get('debug')).toLowerCase() === 'true';
+    } catch (e) {
+        return false;
+    }
+}
+
+/**
+ * Reports once a key missing from the active language (debug mode)
+ * @param {string} locale - Active language
+ * @param {string} key - Key
+ * @param {Object} params - Parameters
+ */
+function reportMissing(locale, key, params) {
+    if (i18nState.reported.has(`${locale}:${key}`)) {
+        return;
+    }
+    i18nState.reported.add(`${locale}:${key}`);
+    const fallback = locale !== REFERENCE_LOCALE && resolveText(i18n, [REFERENCE_LOCALE], key, params) !== undefined;
+    console.warn(`[i18n] Missing translation "${key}" in ${locale}` + (fallback ? ` (${REFERENCE_LOCALE} text shown)` : ''));
+}
+
+/**
+ * Translated text of a key in the active language
+ * @param {string} key - Key (nested keys with dots: months.1)
+ * @param {Object} params - Values of the {placeholders}; count chooses the plural form
+ * @returns {string} The text (the key itself if it is missing everywhere)
+ */
+function t(key, params = {}) {
+    const locale = currentLocale();
+    if (i18nState.debug && resolveText(i18n, [locale], key, params) === undefined) {
+        reportMissing(locale, key, params);
+    }
+    return translate(i18n, fallbackChain(locale), key, params);
+}
+
+/**
+ * Changes the language: stored in this browser, then the page reloads to load its texts
+ * @param {string} locale - Language (one of LOCALES)
+ */
 function setLocale(locale) {
-    if (i18n[locale]) {
+    if (LOCALES.includes(locale)) {
         localStorage.setItem('locale', locale);
         location.reload();
     }
 }
 
-// Export for use in other files
+/**
+ * Version of Carbure (GET /api/health), to fetch the texts of this version and not those
+ * kept in the cache of the browser; null if the server does not answer (installation)
+ * @returns {Promise<string|null>}
+ */
+async function fetchServerVersion() {
+    try {
+        const response = await fetch(new URL('../api/health', location.href).href);
+        const health = response.ok ? await response.json() : null;
+        return health && typeof health.version === 'string' ? health.version : null;
+    } catch (e) {
+        return null;
+    }
+}
+
+/**
+ * Texts of a language: i18n/<locale>.json?v=<version>; without a released version (dev,
+ * unknown) the cache of the browser is revalidated
+ * @param {string} locale - Language
+ * @param {string|null} version - Version of Carbure
+ * @returns {Promise<Object>}
+ */
+async function fetchTexts(locale, version) {
+    const url = new URL(`i18n/${locale}.json?v=${encodeURIComponent(version || 'dev')}`, location.href).href;
+    const released = version && version !== 'dev';
+    const response = await fetch(url, { cache: released ? 'default' : 'no-cache' });
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status} for ${url}`);
+    }
+    const texts = await response.json();
+    if (!texts || typeof texts !== 'object' || Array.isArray(texts)) {
+        throw new Error(`Invalid translations in ${url}`);
+    }
+    return texts;
+}
+
+/**
+ * Loads the texts of the active language and of the reference language (fallback),
+ * before the application is mounted. A language that cannot be loaded falls back to the
+ * reference language; <html lang> follows the language shown.
+ * @returns {Promise<string>} The active language
+ * @throws {Error} If no language could be loaded
+ */
+async function loadLocale() {
+    const wanted = storedLocale();
+    i18nState.debug = i18nDebug();
+    i18nState.version = await fetchServerVersion();
+    const locales = fallbackChain(wanted);
+    const results = await Promise.allSettled(locales.map(locale => fetchTexts(locale, i18nState.version)));
+    results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+            i18n[locales[index]] = result.value;
+        } else {
+            console.error(`[i18n] ${locales[index]} not loaded:`, result.reason);
+        }
+    });
+    const loaded = locales.find(locale => i18n[locale]);
+    if (!loaded) {
+        throw new Error('No translation could be loaded');
+    }
+    i18nState.locale = loaded;
+    document.documentElement.lang = loaded;
+    return loaded;
+}
+
+/**
+ * Message shown when the texts cannot be loaded (written here: there is no translation
+ * to show it with)
+ */
+function showLocaleError() {
+    const message = document.createElement('p');
+    message.className = 'load-error';
+    message.setAttribute('role', 'alert');
+    message.textContent = 'Le portail n\'a pas pu être chargé : rechargez la page. / The portal could not be loaded: reload the page.';
+    document.body.prepend(message);
+}
+
+// Export for the tests run by Node
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { i18n, t, setLocale };
+    module.exports = { i18n, t, setLocale, loadLocale, translate, resolveText, currentLocale, defaultLocale, serverVersion, showLocaleError, LOCALES, REFERENCE_LOCALE };
 }

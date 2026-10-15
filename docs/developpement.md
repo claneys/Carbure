@@ -192,8 +192,8 @@ npx playwright show-report                   # rapport HTML de la dernière exé
 - woob est remplacé par `tests/fixtures/fake-woob.php`, les logs vont dans
   `tests/e2e/.data/logs/`.
 - Les tests s'exécutent l'un après l'autre (une seule base). Les textes attendus sont lus
-  dans `portal/i18n.js` (`tr()` de `tests/e2e/fixtures.js`) : modifier un libellé ne casse
-  pas les tests.
+  dans `portal/i18n/<langue>.json` (`tr()` de `tests/e2e/fixtures.js`, qui reprend la
+  traduction du portail, pluriels compris) : modifier un libellé ne casse pas les tests.
 - L'assistant d'installation et les bandeaux d'administration simulent les réponses de
   l'API (`page.route`), le serveur de test étant déjà installé et à jour.
 
@@ -283,6 +283,62 @@ Quand toutes les bases connues ont passé un ensemble de migrations, celles-ci p
 retirées : `sql/carbure.sql` les contient déjà (c'est ce qui a été fait pour la version 1.0,
 voir `sql/migrations/README.md`).
 
+## Traductions du portail
+
+Les textes du portail sont dans un fichier JSON par langue : `portal/i18n/fr.json`
+(langue de référence, complète) et `portal/i18n/en.json`. `portal/i18n.js` les charge
+avant d'afficher le portail : la langue active (choisie dans le profil, sinon celle du
+navigateur) et le français, qui sert de repli pour une clé manquante (puis la clé
+elle-même). Les fichiers sont demandés en `i18n/<langue>.json?v=<version>` (version
+donnée par `/api/health`) pour ne pas garder ceux d'une version précédente en cache.
+Avec `?debug=true`, une clé manquante est signalée une fois dans la console.
+
+- Un texte s'utilise par sa clé, `t('importTitle')` ; les clés imbriquées avec un point
+  (`months.1`) ; les paramètres entre accolades : `t('bankSetupTitle', { bank })`.
+- **Pluriels** : jamais de « transaction(s) ». Le texte qui dépend d'un nombre a une
+  forme par catégorie de pluriel de la langue (`Intl.PluralRules`, convention i18next),
+  et le nombre est passé en paramètre `count` :
+
+  ```json
+  "rulesCount_one": "{count} règle",
+  "rulesCount_other": "{count} règles"
+  ```
+
+  `t('rulesCount', { count: rules.length })` choisit `rulesCount_one` ou
+  `rulesCount_other` (`_other` si la catégorie de la langue manque : `many`, `few`…).
+  En français 0 et 1 sont au singulier, en anglais seul 1 l'est.
+- Chaque clé existe dans **toutes** les langues, avec les mêmes `{paramètres}`, sans
+  texte vide ; chaque clé utilisée par le portail existe et aucune clé n'est inutilisée.
+  `tests/portal/i18n.test.mjs` le vérifie (les clés construites par le code,
+  `t('syncStep_' + étape)`, sont reconnues par leur préfixe).
+- Les fichiers gardent l'indentation de 4 espaces et une fin de ligne finale (vérifié
+  par le même test).
+
+### Ajouter une langue
+
+1. Copier `portal/i18n/en.json` en `portal/i18n/<code>.json` (code BCP 47 : `de`,
+   `es`…) et traduire chaque texte ; écrire les formes de pluriel de la langue
+   (`_one`, `_few`, `_many`, `_other`… selon `Intl.PluralRules`), `_other` étant
+   obligatoire.
+2. Déclarer la langue dans `LOCALES` de `portal/i18n.js`, ajouter son `<option>` aux
+   listes de langue de `portal/index.html` (profil et assistant d'installation) et
+   l'accepter côté API (`User::LANGUAGES`).
+3. Ajouter la langue au test de parité (`TEXTS` de `tests/portal/i18n.test.mjs`) et le
+   lancer : `node --test 'tests/portal/*.test.mjs'`.
+
+### Branches commencées avant le découpage
+
+Une branche qui ajoutait des clés dans l'ancien `portal/i18n.js` (un objet `fr` puis
+`en`) les reporte dans les fichiers JSON avec `tools/i18n-split.mjs` :
+
+```bash
+git show <branche>:portal/i18n.js > /tmp/old-i18n.js   # avant le rebase
+git rebase origin/main                                   # garder le i18n.js de main
+node tools/i18n-split.mjs --merge /tmp/old-i18n.js       # ajoute seulement les clés absentes
+```
+
+Les textes en « (s) » restants sont signalés : les écrire en `_one` / `_other`.
+
 ## Documentation
 
 ```bash
@@ -293,5 +349,6 @@ mkdocs serve      # http://127.0.0.1:8000
 ## Conventions
 
 - PHP : PHPDoc sur chaque méthode, requêtes SQL préparées uniquement.
-- Portail : textes via `t('clé')`, clés ajoutées en `fr` **et** en `en` dans `i18n.js`.
+- Portail : textes via `t('clé')`, clés ajoutées dans `portal/i18n/fr.json` **et**
+  `portal/i18n/en.json` ; pluriels en `_one` / `_other` avec `{ count }`.
 - Fins de ligne LF (`.gitattributes`), messages de commit en anglais.

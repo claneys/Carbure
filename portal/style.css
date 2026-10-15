@@ -112,6 +112,19 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
+/* The template is hidden until Vue mounts it, after the texts of the language are loaded */
+[v-cloak] {
+    display: none;
+}
+
+/* Texts of the language not loaded (i18n.js, showLocaleError) */
+.load-error {
+    max-width: 640px;
+    margin: 48px auto;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
 #app {
     max-width: 1400px;
     margin: 0 auto;

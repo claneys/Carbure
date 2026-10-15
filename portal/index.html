@@ -31,13 +31,13 @@
     <script src="vendor/codemirror/codemirror.min.js"></script>
     <script src="vendor/codemirror/sql.min.js"></script>
     
-    <!-- Localization -->
+    <!-- Localization: loader of the texts i18n/<locale>.json (loaded before the app is mounted) -->
     <script src="i18n.js"></script>
     <!-- App script -->
     <script type="module" src="app.js"></script>
 </head>
 <body>
-    <div id="app">
+    <div id="app" v-cloak>
         <!-- Installation wizard (Carbure not installed yet) -->
         <main v-if="!isAuthenticated && setupMode" class="login-container">
             <div class="login-card setup-card">
@@ -2106,7 +2106,7 @@
                     </label>
                     <p v-if="newRule.id && ruleCount" class="rule-count" aria-live="polite">
                         <span class="material-icons inline-icon" aria-hidden="true">receipt_long</span>
-                        {{ t('ruleCount', { matching: ruleCount.matching, categorized: ruleCount.categorized }) }}
+                        {{ t('ruleCount', { count: ruleCount.matching, categorized: ruleCount.categorized }) }}
                     </p>
                 </form>
                 <div class="modal-footer">
