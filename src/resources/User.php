@@ -22,9 +22,38 @@ final class User {
     private const THEMES = ['system', 'light', 'dark'];
 
     /**
-     * Public columns of a user (never the password)
+     * Whether the column users.theme exists (migration 2026-10-19_user_theme), checked
+     * once per request; null until checked
      */
-    private const COLUMNS = "id, username, firstname, lastname, email, is_admin, language, theme, alert_threshold";
+    private static ?bool $themeColumn = null;
+
+    /**
+     * Public columns of a user (never the password). Until the migration of the theme
+     * is applied, the theme reads "system": the profile still loads, and with it the
+     * banner that offers the administrator to apply the migration.
+     *
+     * @return string The columns, for a SELECT on the table users
+     */
+    private static function columns(): string
+    {
+        $theme = self::hasThemeColumn() ? "theme" : "'system' AS theme";
+        return "id, username, firstname, lastname, email, is_admin, language, $theme, alert_threshold";
+    }
+
+    /**
+     * Whether the column of the display theme exists (its migration applied).
+     *
+     * @return bool True once the migration 2026-10-19_user_theme is applied
+     */
+    private static function hasThemeColumn(): bool
+    {
+        if (self::$themeColumn === null) {
+            $row = Db::queryOne("SELECT COUNT(*) AS found FROM information_schema.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'theme'", "");
+            self::$themeColumn = (int)($row['found'] ?? 0) > 0;
+        }
+        return self::$themeColumn;
+    }
 
     /**
      * Login.
@@ -211,7 +240,7 @@ final class User {
     #[ApiRoute('/user', method: 'GET')]
     public static function get(): array
     {
-        $sql = "SELECT " . self::COLUMNS . ", last_login, locked_until FROM users";
+        $sql = "SELECT " . self::columns() . ", last_login, locked_until FROM users";
         if (self::isAdmin()) {
             $stmt = Db::execute($sql . " ORDER BY username", "");
         } else {
@@ -237,7 +266,7 @@ final class User {
     #[ApiRoute('/user/me', method: 'GET')]
     public static function me(): array
     {
-        $sql = "SELECT " . self::COLUMNS . " FROM users WHERE id=?";
+        $sql = "SELECT " . self::columns() . " FROM users WHERE id=?";
         $user = Db::queryOne($sql, "i", Jwt::getUserIdFromToken());
 
         if (!$user) {
@@ -382,7 +411,7 @@ final class User {
         }
 
         // Get updated user data
-        $updatedUser = Db::queryOne("SELECT " . self::COLUMNS . " FROM users WHERE id=?", "i", $id);
+        $updatedUser = Db::queryOne("SELECT " . self::columns() . " FROM users WHERE id=?", "i", $id);
         if ($updatedUser === null) {
             throw new Error("User not found", 404);
         }
@@ -494,7 +523,7 @@ final class User {
      *
      * @param string|null $theme The display theme (system|light|dark)
      * @return list<array{0: string, 1: string, 2: mixed}> [column, bind type, value], empty if not sent
-     * @throws Error If the theme is unknown
+     * @throws Error If the theme is unknown, or its migration is not applied yet (409)
      */
     private static function themeField(?string $theme): array
     {
@@ -503,6 +532,9 @@ final class User {
         }
         if (!in_array($theme, self::THEMES, true)) {
             throw new Error("Unsupported theme: $theme", 400);
+        }
+        if (!self::hasThemeColumn()) {
+            throw new Error("Apply the pending database migrations first: the theme cannot be saved yet", 409);
         }
         return [["theme", "s", $theme]];
     }

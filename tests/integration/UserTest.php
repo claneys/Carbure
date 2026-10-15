@@ -271,6 +271,39 @@ class UserTest extends DatabaseTestCase
         $this->assertSame('dark', User::me()['theme']);
     }
 
+    public function testThemeBeforeItsMigration()
+    {
+        // Instance updated without its migrations applied yet: no column users.theme
+        Db::query("ALTER TABLE users DROP COLUMN theme");
+        $this->resetThemeColumnCache();
+        try {
+            $this->loginAs(self::USER);
+            // The profile still loads (and with it the banner of the migrations)
+            $this->assertSame('system', User::me()['theme']);
+            $this->assertSame('system', User::get()[0]['theme']);
+            $this->assertSame('Hugo', User::update(self::USER, firstname: 'Hugo')['firstname']);
+
+            try {
+                User::update(self::USER, theme: 'dark');
+                $this->fail('Saved a theme without its column');
+            } catch (Error $e) {
+                $this->assertSame(409, $e->getCode());
+            }
+        } finally {
+            Db::query("ALTER TABLE users ADD COLUMN `theme` varchar(10) NOT NULL DEFAULT 'system' AFTER `language`");
+            $this->resetThemeColumnCache();
+        }
+        $this->assertSame('system', User::me()['theme']);
+    }
+
+    /**
+     * Forgets whether the column of the theme exists (checked once per request)
+     */
+    private function resetThemeColumnCache(): void
+    {
+        (new ReflectionProperty(User::class, 'themeColumn'))->setValue(null, null);
+    }
+
     public function testAlertThreshold()
     {
         $this->loginAs(self::USER);

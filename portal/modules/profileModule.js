@@ -121,6 +121,10 @@ export function createProfileModule(getApiService) {
                     }
                 } catch (error) {
                     console.error('Error loading current user:', error);
+                    // The profile may fail because of a pending migration of the database:
+                    // the banner that applies it must still be offered (the route is
+                    // reserved to administrators, the others get no banner)
+                    this.loadSchemaStatus();
                 }
             },
 
