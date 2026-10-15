@@ -41,6 +41,15 @@ test('every tab is readable, buttons on hover included', async ({ adminPage: pag
     expect(problems).toEqual([]);
 });
 
+test('the accounts grouped under their bank are readable', async ({ adminPage: page }) => {
+    await openTab(page, tr('tabAccounts'));
+    // A bank with an account, a bank without (its hint), the other accounts
+    await expect(page.locator('.bank-group')).toHaveCount(3);
+    await expect(page.locator('.bank-group-empty')).toBeVisible();
+    await expect(page.locator('.bank-group-others')).toBeVisible();
+    expect(await contrastProblems(page, tr('tabAccounts'))).toEqual([]);
+});
+
 test('the menus, modals and the synchronization log are readable', async ({ adminPage: page }) => {
     const problems = [];
 

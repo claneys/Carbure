@@ -1174,59 +1174,68 @@
                                 </div>
                             </div>
 
-                            <!-- Step 1: the banks connected in woob (one per login), step 2: their accounts -->
+                            <!-- The banks connected in woob (one per login), each with its followed accounts
+                                 below it; the accounts of no connected bank (removed connection, imported
+                                 file) in a last group -->
                             <h3 class="accounts-section-title">{{ t('connectedBanksTitle') }}</h3>
-                            <div v-if="bankBackends.length === 0" class="transactions-hint">{{ t('noConnectedBank') }}</div>
-                            <ul v-else class="bank-connections">
-                                <li v-for="b in bankBackends" :key="b.name" class="bank-connection">
-                                    <span class="material-icons account-icon" aria-hidden="true">account_balance</span>
-                                    <div class="account-details">
-                                        <div class="account-name">{{ bankDescription(b) }}</div>
-                                        <code class="device-token">{{ b.name }}</code>
-                                    </div>
-                                    <button type="button" class="btn-secondary" @click="openAddAccounts(b.name)" :aria-label="t('addAccountsTo', { bank: backendName(b) })">
-                                        <span class="material-icons" aria-hidden="true">playlist_add</span>{{ t('addAccountsButton') }}
-                                    </button>
-                                    <button type="button" class="btn-icon" @click="openBackendModal(b)" :title="t('renameBankConnection')" :aria-label="t('renameBankConnectionOf', { bank: backendName(b) })">
-                                        <span class="material-icons" aria-hidden="true">edit</span>
-                                    </button>
-                                    <button type="button" class="btn-icon btn-icon-delete" @click="removeBackend(b)" :title="t('deleteBankConnection')" :aria-label="t('deleteBankConnectionOf', { bank: backendName(b) })">
-                                        <span class="material-icons" aria-hidden="true">delete</span>
-                                    </button>
-                                </li>
-                            </ul>
-
-                            <h3 class="accounts-section-title">{{ t('followedAccountsTitle') }}</h3>
-                            <div v-if="bankAccounts.length === 0" class="transactions-hint">{{ t('noAccounts') }}</div>
-                            <ul v-else class="accounts-list">
-                                <li v-for="a in bankAccounts" :key="a.id" class="account-item">
-                                    <span class="material-icons account-icon" aria-hidden="true">account_balance</span>
-                                    <div class="account-details">
-                                        <div class="account-name">
-                                            {{ accountName(a) }}
-                                            <span v-if="a.username" class="account-owner" :title="t('accountAddedBy', { user: a.username })"><span class="material-icons inline-icon" aria-hidden="true">person_add</span>{{ t('accountAddedBy', { user: a.username }) }}</span>
+                            <div v-if="bankGroups.length === 0" class="transactions-hint">{{ t('noConnectedBank') }}</div>
+                            <ul v-else class="bank-groups">
+                                <li v-for="g in bankGroups" :key="g.key" class="bank-group">
+                                    <div v-if="g.backend" class="bank-connection">
+                                        <span class="material-icons account-icon" aria-hidden="true">account_balance</span>
+                                        <div class="account-details">
+                                            <h4 class="account-name bank-group-title">{{ bankDescription(g.backend) }}</h4>
+                                            <code class="device-token">{{ g.backend.name }}</code>
                                         </div>
-                                        <code class="device-token">{{ a.bankId }}</code>
-                                    </div>
-                                    <div class="account-sync" :class="'last-sync-' + (a.last_sync_status || 'never').toLowerCase()"
-                                         :title="a.last_sync_message || ''">
-                                        <span class="material-icons" aria-hidden="true">{{ { OK: 'check_circle', ERROR: 'error' }[a.last_sync_status] || 'schedule' }}</span>
-                                        <span>
-                                            <span class="account-sync-state">{{ a.last_sync_status === 'ERROR' && needsTwoFactor(a.last_sync_message) ? t('lastSync2fa') : a.last_sync_status ? t('lastSync_' + a.last_sync_status) : t('lastSyncNever') }}</span>
-                                            <span v-if="a.last_sync_at" class="account-sync-date">{{ formatSyncDate(a.last_sync_at) }}</span>
-                                        </span>
-                                    </div>
-                                    <div class="device-actions">
-                                        <button v-if="a.last_sync_status === 'ERROR' && needsTwoFactor(a.last_sync_message)" class="btn-secondary sync-2fa-button account-2fa-button" @click="startSync(a.bankId, true)" :disabled="syncStatus === 'running'">
-                                            <span class="material-icons" aria-hidden="true">phonelink_lock</span>
-                                            {{ t('sync2faButton') }}
+                                        <button type="button" class="btn-secondary" @click="openAddAccounts(g.backend.name)" :aria-label="t('addAccountsTo', { bank: backendName(g.backend) })">
+                                            <span class="material-icons" aria-hidden="true">playlist_add</span>{{ t('addAccountsButton') }}
                                         </button>
-                                        <button class="btn-icon" @click="startSync(a.bankId)" :disabled="syncStatus === 'running'" :title="t('syncAccount')" :aria-label="t('syncAccount')">
-                                            <span class="material-icons" aria-hidden="true" :class="{ spin: syncStatus === 'running' && syncTarget === a.bankId }">sync</span>
+                                        <button type="button" class="btn-icon" @click="openBackendModal(g.backend)" :title="t('renameBankConnection')" :aria-label="t('renameBankConnectionOf', { bank: backendName(g.backend) })">
+                                            <span class="material-icons" aria-hidden="true">edit</span>
                                         </button>
-                                        <button class="btn-icon" @click="openAccountModal(a)" :title="t('editAccount')" :aria-label="t('editAccount')"><span class="material-icons" aria-hidden="true">edit</span></button>
-                                        <button class="btn-icon btn-icon-delete" @click="removeAccount(a)" :title="t('deleteAccount')" :aria-label="t('deleteAccount')"><span class="material-icons" aria-hidden="true">delete</span></button>
+                                        <button type="button" class="btn-icon btn-icon-delete" @click="removeBackend(g.backend)" :title="t('deleteBankConnection')" :aria-label="t('deleteBankConnectionOf', { bank: backendName(g.backend) })">
+                                            <span class="material-icons" aria-hidden="true">delete</span>
+                                        </button>
                                     </div>
+                                    <div v-else class="bank-group-header bank-group-others">
+                                        <span class="material-icons account-icon" aria-hidden="true">folder_open</span>
+                                        <div class="account-details">
+                                            <h4 class="account-name bank-group-title">{{ t('otherAccountsTitle') }}</h4>
+                                            <p class="bank-group-help">{{ t('otherAccountsHelp') }}</p>
+                                        </div>
+                                    </div>
+                                    <ul v-if="g.accounts.length" class="accounts-list bank-group-accounts" :aria-label="t('followedAccountsOf', { bank: g.backend ? backendName(g.backend) : t('otherAccountsTitle') })">
+                                        <li v-for="a in g.accounts" :key="a.id" class="account-item">
+                                            <span class="material-icons account-icon" aria-hidden="true">account_balance</span>
+                                            <div class="account-details">
+                                                <div class="account-name">
+                                                    {{ accountName(a) }}
+                                                    <span v-if="a.username" class="account-owner" :title="t('accountAddedBy', { user: a.username })"><span class="material-icons inline-icon" aria-hidden="true">person_add</span>{{ t('accountAddedBy', { user: a.username }) }}</span>
+                                                </div>
+                                                <code class="device-token">{{ a.bankId }}</code>
+                                            </div>
+                                            <div class="account-sync" :class="'last-sync-' + (a.last_sync_status || 'never').toLowerCase()"
+                                                 :title="a.last_sync_message || ''">
+                                                <span class="material-icons" aria-hidden="true">{{ { OK: 'check_circle', ERROR: 'error' }[a.last_sync_status] || 'schedule' }}</span>
+                                                <span>
+                                                    <span class="account-sync-state">{{ a.last_sync_status === 'ERROR' && needsTwoFactor(a.last_sync_message) ? t('lastSync2fa') : a.last_sync_status ? t('lastSync_' + a.last_sync_status) : t('lastSyncNever') }}</span>
+                                                    <span v-if="a.last_sync_at" class="account-sync-date">{{ formatSyncDate(a.last_sync_at) }}</span>
+                                                </span>
+                                            </div>
+                                            <div class="device-actions">
+                                                <button v-if="a.last_sync_status === 'ERROR' && needsTwoFactor(a.last_sync_message)" class="btn-secondary sync-2fa-button account-2fa-button" @click="startSync(a.bankId, true)" :disabled="syncStatus === 'running'">
+                                                    <span class="material-icons" aria-hidden="true">phonelink_lock</span>
+                                                    {{ t('sync2faButton') }}
+                                                </button>
+                                                <button class="btn-icon" @click="startSync(a.bankId)" :disabled="syncStatus === 'running'" :title="t('syncAccount')" :aria-label="t('syncAccount')">
+                                                    <span class="material-icons" aria-hidden="true" :class="{ spin: syncStatus === 'running' && syncTarget === a.bankId }">sync</span>
+                                                </button>
+                                                <button class="btn-icon" @click="openAccountModal(a)" :title="t('editAccount')" :aria-label="t('editAccount')"><span class="material-icons" aria-hidden="true">edit</span></button>
+                                                <button class="btn-icon btn-icon-delete" @click="removeAccount(a)" :title="t('deleteAccount')" :aria-label="t('deleteAccount')"><span class="material-icons" aria-hidden="true">delete</span></button>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                    <p v-else class="bank-group-empty">{{ t('noFollowedAccountInBank') }}</p>
                                 </li>
                             </ul>
                         </section>

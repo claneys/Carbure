@@ -15,6 +15,28 @@ test('lists the followed accounts with their last synchronization', async ({ adm
     await expect(account(page, 'fail@bank').locator('.account-sync-state')).toHaveText(tr('lastSyncNever'));
 });
 
+test('shows each followed account under its bank, the others in a last group', async ({ adminPage: page }) => {
+    await openTab(page, tr('tabAccounts'));
+
+    // bnp and cic_pro connected in woob, then the accounts of no connected bank
+    const groups = page.locator('.bank-group');
+    await expect(groups).toHaveCount(3);
+    await expect(groups.nth(0).locator('.bank-group-title')).toHaveText('BNP Paribas');
+    await expect(groups.nth(1).locator('.bank-connection code')).toHaveText('cic_pro');
+    await expect(groups.nth(2).locator('.bank-group-title')).toHaveText(tr('otherAccountsTitle'));
+
+    // The BNP account under BNP, with its actions
+    const bnpAccounts = groups.nth(0).getByRole('list', { name: tr('followedAccountsOf', { bank: 'BNP Paribas (bnp)' }) });
+    await expect(bnpAccounts.locator('.account-item')).toHaveCount(1);
+    await expect(account(page, '00012345678@bnp').getByRole('button', { name: tr('syncAccount') })).toBeVisible();
+    await expect(groups.nth(0).locator('.account-item code')).toHaveText('00012345678@bnp');
+    // No account followed for cic_pro: a hint, its button to add some stays in its header
+    await expect(groups.nth(1).locator('.bank-group-empty')).toHaveText(tr('noFollowedAccountInBank'));
+    await expect(groups.nth(1).locator('.account-item')).toHaveCount(0);
+    // fail@bank: its bank is not connected in woob
+    await expect(groups.nth(2).locator('.account-item code')).toHaveText('fail@bank');
+});
+
 test('synchronizes one account', async ({ adminPage: page }) => {
     await openTab(page, tr('tabAccounts'));
     await account(page, '00012345678@bnp').getByRole('button', { name: tr('syncAccount') }).click();

@@ -214,6 +214,12 @@ protégée.
 
 ## Comptes (administrateurs)
 
+La page est organisée par banque : chaque **banque connectée** (en-tête avec son nom et
+ses actions) présente juste en dessous, en retrait, les **comptes suivis** qui en
+viennent ; une banque sans compte suivi l'indique (« Aucun compte suivi : ajoutez des
+comptes de cette banque »). Les comptes d'une banque qui n'est plus connectée dans woob,
+ou importés depuis un fichier, sont regroupés à la fin sous **Autres comptes**.
+
 - **Comptes du foyer** (partagés par tous les utilisateurs) : chaque compte suivi avec
   « Ajouté par » (l'utilisateur qui l'a ajouté), la date et le statut de sa dernière
   synchronisation (Synchronisé, Échec ou Jamais synchronisé ; le détail au survol), et

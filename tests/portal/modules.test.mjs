@@ -455,3 +455,25 @@ test('accounts: the accounts found by woob, the followed ones ticked and not fol
     assert.equal(context.backendName({ name: 'bnp_2', module: 'bnp' }), 'BNP Paribas (bnp_2)');
     assert.equal(context.backendName({ name: 'cic_pro', module: 'cic' }), 'cic_pro');
 });
+
+test('accountsByBank: the followed accounts under their bank, then the others', async () => {
+    const { accountsByBank } = await import('../../portal/modules/accountsModule.js');
+    const backends = [{ name: 'bnp', module: 'bnp' }, { name: 'cic_pro', module: 'cic' }, { name: 'bnp_2', module: 'bnp' }];
+    const accounts = [
+        { id: 1, bank_name: 'bank', bankId: 'fail@bank' },
+        { id: 2, bank_name: 'bnp', bankId: '1@bnp' },
+        { id: 3, bank_name: 'bnp_2', bankId: '2@bnp_2' },
+        { id: 4, bank_name: 'bnp', bankId: '3@bnp' },
+    ];
+    const groups = accountsByBank(backends, accounts);
+    // In the order of the connections, a connection without account kept, the others last
+    assert.deepEqual(groups.map(g => g.key), ['bank-bnp', 'bank-cic_pro', 'bank-bnp_2', 'others']);
+    assert.deepEqual(groups.map(g => g.accounts.map(a => a.id)), [[2, 4], [], [3], [1]]);
+    assert.equal(groups[0].backend.name, 'bnp');
+    assert.equal(groups[3].backend, null);
+
+    // No account of an unknown bank: no "others" group; nothing at all: no group
+    assert.deepEqual(accountsByBank(backends, accounts.slice(1)).map(g => g.key), ['bank-bnp', 'bank-cic_pro', 'bank-bnp_2']);
+    assert.deepEqual(accountsByBank([], []), []);
+    assert.deepEqual(accountsByBank(undefined, [{ id: 9, bank_name: 'x' }]).map(g => g.key), ['others']);
+});

@@ -3578,6 +3578,70 @@ button .material-icons {
     gap: 4px;
 }
 
+/* Each connected bank with its followed accounts nested below it */
+.bank-groups {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+}
+
+.bank-group {
+    padding: 4px 0 12px;
+    border-bottom: 1px solid var(--divider);
+}
+
+.bank-group:last-child {
+    border-bottom: none;
+}
+
+.bank-group .bank-connection,
+.bank-group-header {
+    border-bottom: none;
+}
+
+.bank-group-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+}
+
+.bank-group-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.bank-group-help {
+    margin: 2px 0 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+/* The accounts of a bank: indented under its name, a line showing the hierarchy */
+.accounts-list.bank-group-accounts {
+    margin: 0 0 0 11px;
+    padding-left: 24px;
+    border-left: 2px solid var(--divider);
+}
+
+.bank-group-empty {
+    margin: 0 0 0 11px;
+    padding: 8px 0 8px 24px;
+    border-left: 2px solid var(--divider);
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+    .accounts-list.bank-group-accounts,
+    .bank-group-empty {
+        margin-left: 4px;
+        padding-left: 12px;
+    }
+}
+
 .account-woob-id {
     margin-bottom: 12px;
     color: var(--text-secondary);
