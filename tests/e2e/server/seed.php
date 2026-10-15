@@ -81,8 +81,8 @@ function carbure_e2e_seed($demo = false)
     $conn->query("INSERT INTO bank_transaction_category (id, name, parent_category, type, icon, color) VALUES
         (0, 'Non catégorisé', 0, 'HORS-BUDGET', 'help', '#9e9e9e'),
         (1, 'Alimentation', 0, 'DEBIT', 'restaurant', 'green'),
-        (2, 'Supermarché', 1, 'DEBIT', 'shopping_cart', 'teal'),
-        (3, 'Restaurant', 1, 'DEBIT', 'local_dining', 'orange'),
+        (2, 'Supermarché', 1, 'DEBIT', 'shopping_cart', 'green'),
+        (3, 'Restaurant', 1, 'DEBIT', 'local_dining', 'green'),
         (4, 'Logement', 0, 'DEBIT', 'home', 'blue'),
         (5, 'Salaire', 0, 'CREDIT', 'payments', 'green'),
         (6, 'Épargne', 0, 'HORS-BUDGET', 'savings', 'purple'),
@@ -149,9 +149,9 @@ function carbure_demo_data(callable $exec)
     // Sub-categories and new categories (ids after the ones of the data set)
     $categories = [
         // id => [name, parent, type, icon, color]
-        8 => ['Boulangerie', 1, 'DEBIT', 'bakery_dining', 'orange'],
-        9 => ['Électricité', 4, 'DEBIT', 'bolt', 'yellow'],
-        10 => ['Internet et mobile', 4, 'DEBIT', 'wifi', 'indigo'],
+        8 => ['Boulangerie', 1, 'DEBIT', 'bakery_dining', 'green'],
+        9 => ['Électricité', 4, 'DEBIT', 'bolt', 'blue'],
+        10 => ['Internet et mobile', 4, 'DEBIT', 'wifi', 'blue'],
         11 => ['Transport', 0, 'DEBIT', 'directions_car', 'red'],
         12 => ['Carburant', 11, 'DEBIT', 'local_gas_station', 'red'],
         13 => ['Transports en commun', 11, 'DEBIT', 'train', 'red'],
