@@ -24,10 +24,9 @@ final class System {
      * @return bool True if replaced
      * @throws Exception If the configuration file cannot be written
      */
-    #[ApiRoute('/system/jwt-secret', method: 'POST')]
+    #[ApiRoute('/system/jwt-secret', method: 'POST', admin: true)]
     public static function rotateJwtSecret(): bool
     {
-        User::requireAdmin();
         $file = self::$configFile ?? Config::get('config_file');
         if (!is_file($file) || !is_writable($file)) {
             throw new Exception("The configuration file cannot be written by the web server");
@@ -83,10 +82,9 @@ final class System {
      *
      * @return list<array{name: string, size: int|false, modified: string}> The files: name, size (bytes), modified (Y-m-d H:i:s)
      */
-    #[ApiRoute('/system/logs', method: 'GET')]
+    #[ApiRoute('/system/logs', method: 'GET', admin: true)]
     public static function logs(): array
     {
-        User::requireAdmin();
         $files = [];
         foreach (Logger::files() as $name => $file) {
             $files[] = ['name' => $name, 'size' => filesize($file), 'modified' => date('Y-m-d H:i:s', filemtime($file))];
@@ -101,10 +99,9 @@ final class System {
      *
      * @return array{days: int} days (0: kept forever)
      */
-    #[ApiRoute('/system/logs/retention', method: 'GET')]
+    #[ApiRoute('/system/logs/retention', method: 'GET', admin: true)]
     public static function logRetention(): array
     {
-        User::requireAdmin();
         return ['days' => Logger::retentionDays()];
     }
 
@@ -119,10 +116,9 @@ final class System {
      * @return array{file: string, entries: list<array<string, mixed>>, truncated: bool} file, entries [{time, level, uid, caller, message}], truncated
      * @throws Error If the file name is invalid or the file does not exist
      */
-    #[ApiRoute('/system/logs/entries', method: 'GET')]
+    #[ApiRoute('/system/logs/entries', method: 'GET', admin: true)]
     public static function logEntries(string $file, ?string $level = null, ?string $search = null, int|string $limit = 200): array
     {
-        User::requireAdmin();
         // A file of the logs directory only: no path
         if (!preg_match(Logger::FILE_PATTERN, (string)$file)) {
             throw new Error("Invalid log file", 400);
@@ -210,10 +206,9 @@ final class System {
      *
      * @return array<string, mixed> version, pending
      */
-    #[ApiRoute('/system/schema', method: 'GET')]
+    #[ApiRoute('/system/schema', method: 'GET', admin: true)]
     public static function schema(): array
     {
-        User::requireAdmin();
         $migrator = new Migrator(Db::getConnection());
         return ['version' => $migrator->version(), 'pending' => $migrator->pending(), 'weakJwtSecret' => self::weakJwtSecret()];
     }
@@ -224,10 +219,9 @@ final class System {
      * @return array<string, mixed> version, applied
      * @throws Exception If a migration fails
      */
-    #[ApiRoute('/system/migrate', method: 'POST')]
+    #[ApiRoute('/system/migrate', method: 'POST', admin: true)]
     public static function migrate(): array
     {
-        User::requireAdmin();
         $migrator = new Migrator(Db::getConnection());
         try {
             $applied = $migrator->migrate(fn($message) => Logger::info("Migration $message"));

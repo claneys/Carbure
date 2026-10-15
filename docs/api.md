@@ -20,7 +20,10 @@ icon: material/api
 - **Profils** : un **utilisateur** consulte et pointe les transactions, les budgets, les
   insights et les tendances. Un **administrateur** gère en plus les règles, les
   catégories, les comptes, les insights, le serveur MCP et les utilisateurs : les routes
-  marquées « administrateur » renvoient `403` aux autres.
+  marquées « administrateur » renvoient `403` aux autres. Elles sont déclarées dans leur
+  attribut (`#[ApiRoute(..., admin: true)]`) et vérifiées avant l'appel de la méthode ;
+  un test unitaire fixe le niveau d'accès (public, utilisateur, administrateur) de chaque
+  route, et Swagger l'affiche (extension `x-carbure-access`).
 
 ## Erreurs
 

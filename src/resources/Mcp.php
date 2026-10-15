@@ -136,10 +136,9 @@ final class Mcp {
      * @param bool|int|string|null $enabled True to enable it (or "true", "1"...)
      * @return array{enabled: bool} enabled
      */
-    #[ApiRoute('/mcp/settings', method: 'PUT')]
+    #[ApiRoute('/mcp/settings', method: 'PUT', admin: true)]
     public static function updateSettings(bool|int|string|null $enabled): array
     {
-        User::requireAdmin();
         Setting::set('mcp_enabled', filter_var($enabled, FILTER_VALIDATE_BOOLEAN) ? '1' : '0');
         return ['enabled' => self::enabled()];
     }

@@ -278,14 +278,7 @@ class SettingsTest extends DatabaseTestCase
     public function testAdministratorsOnly()
     {
         $this->loginAs(self::USER);
-        foreach ([fn() => Settings::get(), fn() => Settings::update(['log_level' => 'debug']), fn() => Settings::sync(true),
-                  fn() => Settings::renewSyncToken(), fn() => Settings::testEmail('user@example.com')] as $call) {
-            try {
-                $call();
-                $this->fail('A user is not an administrator');
-            } catch (Error $e) {
-                $this->assertSame(403, $e->getCode());
-            }
-        }
+        $this->assertAdminOnly(['GET /system/config', 'PUT /system/config', 'GET /system/sync', 'POST /system/sync-token',
+            'POST /system/smtp-test']);
     }
 }

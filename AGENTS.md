@@ -62,18 +62,24 @@ git config core.hooksPath .githooks   # pre-commit lint, pre-push unit tests
 ## API conventions
 
 - Flow: `api.php` → `Webservice::exec()` → `ApiResolver::findRoute()` → static method in
-  `src/resources/`. Route cache in APCu, auto-invalidated on file mtime changes.
+  `src/resources/`. Route cache in APCu, auto-invalidated on file mtime changes (key
+  versioned: bump it when the cached `ApiRoute` changes).
 - Route = **public static** method with
-  `#[ApiRoute('/path', method: 'GET', public: false, stream: false, raw: false)]`.
-  `public: true` = no JWT; `stream: true` = SSE (`Webservice::sendProgress()`/`sendHeartbeat()`).
+  `#[ApiRoute('/path', method: 'GET', public: false, stream: false, raw: false, admin: false)]`.
+  `public: true` = no JWT; `stream: true` = SSE (`Webservice::sendProgress()`/`sendHeartbeat()`);
+  `admin: true` = administrators only, checked by `Webservice` before the method is called
+  (403 of `User::requireAdmin()`; invalid with `public: true`).
 - Request params (JSON body + query string) are injected **by name** into method params:
   renaming one breaks the API; unknown param → 400.
 - Errors: `throw new Error(msg, 4xx)` (code = HTTP status); `Exception` = 500.
   Response: `{"error","code","uid"}`.
 - SQL: prepared statements only (`Db::execute`, `Db::queryOne`).
 - Current user: `Jwt::getUserIdFromToken()`; headers: `Webservice::getHeader()`.
-- Admin actions: `User::requireAdmin()` first (`users.is_admin`); portal shows them only
-  if `isAdmin`. Non-admins read/edit only their own profile.
+- Admin actions: declare the route `admin: true` (`users.is_admin`); call
+  `User::requireAdmin()` in the method only for a conditional check (e.g. `PUT /user` on
+  another user or `is_admin`). Portal shows them only if `isAdmin`. Non-admins read/edit
+  only their own profile. `tests/unit/ApiResolverTest.php` pins the access level
+  (public/user/admin) of every route: add each new route there.
 - Passwords: `password_hash()`; legacy salted SHA-256 migrated at login (`User::verifyPassword`).
 - `Logger` masks `password`/`token`; never log secrets otherwise.
 - PHPDoc on every method; match existing style.

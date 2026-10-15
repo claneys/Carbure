@@ -48,6 +48,48 @@ abstract class DatabaseTestCase extends TestCase
     }
 
     /**
+     * Call a route as an HTTP request, through Webservice::exec() (access control of its
+     * ApiRoute attribute included), with its parameters in the query string.
+     *
+     * @return string The response body
+     */
+    protected function callRoute($method, $path, $params = [])
+    {
+        $_SERVER['REQUEST_URI'] = '/api' . $path;
+        $_SERVER['REQUEST_METHOD'] = $method;
+        $_GET = $params;
+        $level = ob_get_level();
+        try {
+            return Webservice::exec();
+        } finally {
+            // The stream headers close the output buffers: restore PHPUnit's
+            while (ob_get_level() < $level) {
+                ob_start();
+            }
+            $_GET = [];
+        }
+    }
+
+    /**
+     * Assert that each route refuses the authenticated user with the error of
+     * User::requireAdmin() (403), before its method is called.
+     *
+     * @param list<string> $routes The routes, e.g. "POST /category"
+     */
+    protected function assertAdminOnly($routes)
+    {
+        foreach ($routes as $route) {
+            [$method, $path] = explode(' ', $route, 2);
+            try {
+                $this->callRoute($method, $path);
+                $this->fail("$route accepted");
+            } catch (Error $e) {
+                $this->assertSame([403, 'Forbidden - Administrator only'], [$e->getCode(), $e->getMessage()], $route);
+            }
+        }
+    }
+
+    /**
      * Authenticate the next calls as the given user.
      */
     protected function loginAs($userId)

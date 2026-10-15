@@ -22,7 +22,9 @@ icon: material/shield-lock-outline
 | Utilisateur | Données du foyer (comptes, transactions, budgets, insights, tendances), pointage et catégorie des transactions, montants des budgets, synchronisation par l'API, son profil, ses appareils, ses jetons d'accès MCP |
 | Administrateur (`users.is_admin = 1`) | En plus : règles de catégorisation, catégories, comptes bancaires suivis (et leur synchronisation depuis le portail), insights (requêtes SQL), activation du serveur MCP, mise à jour de la base de données, utilisateurs (profil, déblocage) |
 
-Les routes réservées renvoient `403` ; le portail masque les onglets correspondants.
+Les routes réservées sont déclarées dans leur attribut (`#[ApiRoute(..., admin: true)]`) et
+renvoient `403` avant l'appel de la méthode ; un test unitaire fixe le niveau d'accès de
+chaque route. Le portail masque les onglets correspondants.
 
 Après **5 tentatives de connexion échouées** d'affilée, le compte est **bloqué 24 heures**
 (`423`, dès le 5e échec : la mire de connexion l'indique aussitôt), même avec le bon mot

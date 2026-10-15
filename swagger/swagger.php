@@ -150,12 +150,8 @@ class SwaggerGenerator {
         // Add parameters or requestBody based on HTTP method
         $operation = $this->addParameters($operation, $httpMethod, $parameters);
 
-        // Add security based on ApiRoute->public property (not public = requires auth)
-        if (!$apiRoute->public) {
-            $operation['security'] = [
-                ['BearerAuth' => []]
-            ];
-        }
+        // Access level of the route: security, description and responses
+        $operation = $this->addAccess($operation, $apiRoute);
 
         // Initialize path if not exists
         if (!isset($this->spec['paths'][$path])) {
@@ -163,6 +159,33 @@ class SwaggerGenerator {
         }
 
         $this->spec['paths'][$path][$httpMethod] = $operation;
+    }
+
+    /**
+     * Add the access level of the route to an operation: the x-carbure-access extension
+     * (public, user or admin), the JWT unless public, and for the administrator routes a
+     * mention in the description and the 403 response.
+     *
+     * @param array<string, mixed> $operation The operation
+     * @param ApiRoute             $apiRoute  The route
+     * @return array<string, mixed> The operation with its access level
+     */
+    private function addAccess(array $operation, ApiRoute $apiRoute): array {
+        $operation['x-carbure-access'] = $apiRoute->access();
+
+        // Not public = requires a JWT
+        if (!$apiRoute->public) {
+            $operation['security'] = [
+                ['BearerAuth' => []]
+            ];
+        }
+
+        if ($apiRoute->admin) {
+            $operation['description'] .= ' (Administrators only.)';
+            $operation['responses']['403'] = ['description' => 'Forbidden - Administrator only'];
+            ksort($operation['responses']);
+        }
+        return $operation;
     }
 
     /**

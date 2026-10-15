@@ -19,9 +19,11 @@ final class ApiResolver {
     private static ?array $routeCache = null;
     
     /**
-     * APCu cache key
+     * APCu cache key, versioned with the format of the cached routes: v2 carries the
+     * admin flag of ApiRoute, so a route cached by an older version (without the flag,
+     * read as false) cannot open an administrator route to every user
      */
-    private const APCU_CACHE_KEY = 'carbure_routes_cache';
+    private const APCU_CACHE_KEY = 'carbure_routes_cache_v2';
     
     /**
      * Check if APCu is available
@@ -127,15 +129,17 @@ final class ApiResolver {
     }
     
     /**
-     * Compute a signature of the resource files (names and modification times),
-     * so that the cache is rebuilt as soon as a resource is added or modified.
+     * Compute a signature of the resource files and of the ApiRoute attribute (names and
+     * modification times), so that the cache is rebuilt as soon as a resource or the
+     * attribute is added or modified.
      *
      * @return string The signature
      */
     private static function getResourcesSignature(): string
     {
         $signature = '';
-        foreach (glob(Config::get('install_dir') . '/src/resources/*.php') ?: [] as $file) {
+        $files = glob(Config::get('install_dir') . '/src/resources/*.php') ?: [];
+        foreach ([...$files, __DIR__ . '/ApiRoute.php'] as $file) {
             $signature .= basename($file) . ':' . filemtime($file) . ';';
         }
         return md5($signature);

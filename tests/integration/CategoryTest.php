@@ -41,16 +41,17 @@ class CategoryTest extends DatabaseTestCase
     {
         $this->loginAs(self::USER);
         $this->assertCount(5, Category::get());
-        foreach ([fn() => Category::create('X', 'DEBIT'), fn() => Category::update(1, 'X', 'DEBIT'), fn() => Category::delete(1),
-                  fn() => Category::createKeyword('X', 1), fn() => Category::deleteKeyword(1), fn() => Category::applyKeywords(),
-                  fn() => Category::updateKeyword(1, 'X', 1), fn() => Category::countKeyword(1)] as $i => $call) {
-            try {
-                $call();
-                $this->fail("Case $i accepted");
-            } catch (Error $e) {
-                $this->assertSame(403, $e->getCode(), "Case $i");
-            }
+        $this->assertAdminOnly(['POST /category', 'PUT /category', 'DELETE /category', 'POST /category/keyword',
+            'DELETE /category/keyword', 'POST /category/keyword/apply', 'PUT /category/keyword', 'GET /category/keyword/count']);
+
+        // Refused before the method is called: the category is still there
+        try {
+            $this->callRoute('DELETE', '/category', ['id' => 1]);
+            $this->fail('Deleted by a user');
+        } catch (Error $e) {
+            $this->assertSame(403, $e->getCode());
         }
+        $this->assertCount(5, Category::get());
     }
 
     public function testGet()

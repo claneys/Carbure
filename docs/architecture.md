@@ -32,7 +32,7 @@ flowchart LR
 | nginx | Sert le portail (`/portal/`) et Swagger UI (`/swagger/`) avec leurs en-têtes de sécurité, transmet `/api/` à PHP-FPM (sans tampon, pour les flux SSE) ; tout autre chemin renvoie `404` |
 | `src/api.php` | Point d'entrée : sans configuration, ne sert que l'assistant d'installation (`Setup`) ; sinon toute URL sans point est traitée comme un appel d'API ; convertit les erreurs en réponse JSON avec code HTTP |
 | `Webservice` | Lit le corps JSON et la query string, positionne les en-têtes (sécurité, JSON ou SSE), contrôle l'accès (JWT), appelle la ressource |
-| `ApiResolver` | Découvre les routes par réflexion sur l'attribut `#[ApiRoute(path, method, public, stream, raw)]`, avec cache APCu invalidé quand un fichier de ressource change |
+| `ApiResolver` | Découvre les routes par réflexion sur l'attribut `#[ApiRoute(path, method, public, stream, raw, admin)]`, avec cache APCu invalidé quand un fichier de ressource change ; `Webservice` vérifie le JWT et, pour `admin: true`, le profil administrateur avant d'appeler la méthode |
 | `src/resources/` | Logique métier : `User`, `Bank`, `Transaction`, `Budget`, `Category`, `Insight`, `Device`, `ApiToken`, `Mcp`, `System` |
 | `Setup`, `Installer` | Assistant d'installation (`/api/setup`) : base, schéma, premier administrateur, `data/conf/prod.ini` |
 | `Migrator` | Versionnement du schéma (table `schema_migrations`) et application des migrations |

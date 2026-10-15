@@ -96,17 +96,17 @@ class BankTest extends DatabaseTestCase
         $this->loginAs(self::USER);
         $own = Bank::get()[0]['id'];
 
-        foreach ([fn() => Bank::accounts(), fn() => Bank::create('222', 'bnp'), fn() => Bank::update($own, '222', 'bnp'),
-                  fn() => Bank::delete($own), fn() => Bank::backends(), fn() => Bank::modules(), fn() => Bank::discover(),
-                  fn() => Bank::module('bnp'), fn() => Bank::createBackend('bnp', 'x', []),
-                  fn() => Bank::renameBackend('bnp', 'x')] as $i => $call) {
-            try {
-                $call();
-                $this->fail("Case $i accepted");
-            } catch (Error $e) {
-                $this->assertSame(403, $e->getCode(), "Case $i");
-            }
+        $this->assertAdminOnly(['GET /bank/accounts', 'POST /bank', 'PUT /bank', 'DELETE /bank', 'GET /bank/backends',
+            'GET /bank/modules', 'GET /bank/discover', 'GET /bank/module', 'POST /bank/backend', 'PUT /bank/backend']);
+
+        // Refused before the method is called: the account is still there
+        try {
+            $this->callRoute('DELETE', '/bank', ['id' => $own]);
+            $this->fail('Deleted by a user');
+        } catch (Error $e) {
+            $this->assertSame(403, $e->getCode());
         }
+        $this->assertSame($own, Bank::get()[0]['id']);
     }
 
     public function testDeleteUnknownAccount()
@@ -331,9 +331,7 @@ class BankTest extends DatabaseTestCase
     public function testDeleteBackendRequiresAnAdministrator()
     {
         $this->loginAs(self::USER);
-        $this->expectException(Error::class);
-        $this->expectExceptionCode(403);
-        Bank::deleteBackend('bnp');
+        $this->assertAdminOnly(['DELETE /bank/backend']);
     }
 
     public function testCreateBackendWrongCredentials()
@@ -1099,13 +1097,7 @@ class BankTest extends DatabaseTestCase
     public function testWoobRequiresAnAdministrator()
     {
         $this->loginAs(self::USER);
-        foreach ([fn() => Bank::woob(), fn() => Bank::updateWoob()] as $i => $call) {
-            try {
-                $call();
-                $this->fail("Case $i: allowed to a user");
-            } catch (Error $e) {
-                $this->assertSame(403, $e->getCode(), "Case $i");
-            }
-        }
+        // The stream (Server-Sent Events) is refused before it starts
+        $this->assertAdminOnly(['GET /bank/woob', 'GET /bank/woob/update']);
     }
 }

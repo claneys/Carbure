@@ -121,10 +121,9 @@ final class Bank {
      *               label (name given to the account, null if none), user_id and username
      *               (who added it), last_sync_at, last_sync_status (OK|ERROR), last_sync_message
      */
-    #[ApiRoute('/bank/accounts', method: 'GET')]
+    #[ApiRoute('/bank/accounts', method: 'GET', admin: true)]
     public static function accounts(): array
     {
-        User::requireAdmin();
         $sql = "SELECT a.id, a.account_number, a.bank_name, a.label, a.user_id, u.username,
                        a.last_sync_at, a.last_sync_status, a.last_sync_message
                 FROM bank_account a JOIN users u ON u.id = a.user_id
@@ -145,10 +144,9 @@ final class Bank {
      * @return array<string, mixed> The account (user_id: the administrator who added it)
      * @throws Error If invalid or already followed by the household
      */
-    #[ApiRoute('/bank', method: 'POST')]
+    #[ApiRoute('/bank', method: 'POST', admin: true)]
     public static function create(string $account_number, string $bank_name, ?string $label = null): array
     {
-        User::requireAdmin();
         self::validateAccount($account_number, $bank_name);
         $label = self::normalizeLabel($label);
         $userId = (int)Jwt::getUserIdFromToken();
@@ -173,10 +171,9 @@ final class Bank {
      * @return array<string, mixed> The account
      * @throws Error If not found, invalid or already followed by the household
      */
-    #[ApiRoute('/bank', method: 'PUT')]
+    #[ApiRoute('/bank', method: 'PUT', admin: true)]
     public static function update(int $id, string $account_number, string $bank_name, ?string $label = null): array
     {
-        User::requireAdmin();
         $account = self::existingAccount($id);
         self::validateAccount($account_number, $bank_name);
         $label = $label === null ? $account['label'] : self::normalizeLabel($label);
@@ -198,10 +195,9 @@ final class Bank {
      * @return bool True if deleted
      * @throws Error If not found
      */
-    #[ApiRoute('/bank', method: 'DELETE')]
+    #[ApiRoute('/bank', method: 'DELETE', admin: true)]
     public static function delete(int $id): bool
     {
-        User::requireAdmin();
         self::existingAccount($id);
         Db::execute("DELETE FROM bank_account WHERE id = ?", "i", $id);
         return true;
@@ -214,10 +210,9 @@ final class Bank {
      * @return list<array{name: mixed, module: mixed, label: string|null}> The backends (label:
      *               name given to the bank connection, null if none)
      */
-    #[ApiRoute('/bank/backends', method: 'GET')]
+    #[ApiRoute('/bank/backends', method: 'GET', admin: true)]
     public static function backends(): array
     {
-        User::requireAdmin();
         $labels = [];
         foreach (Db::execute("SELECT name, label FROM bank_backend", "")->get_result()->fetch_all(MYSQLI_ASSOC) as $row) {
             $labels[$row['name']] = $row['label'];
@@ -233,10 +228,9 @@ final class Bank {
      * @return array{repository: string, trusted: bool, fingerprint: string|null, error: string|null}
      *         error: why the fingerprint is unknown (repository not reachable), null if none
      */
-    #[ApiRoute('/bank/woob', method: 'GET')]
+    #[ApiRoute('/bank/woob', method: 'GET', admin: true)]
     public static function woob(): array
     {
-        User::requireAdmin();
         return WoobRepository::status();
     }
 
@@ -251,10 +245,9 @@ final class Bank {
      * @return void
      * @throws Error If not an administrator or the fingerprint is invalid
      */
-    #[ApiRoute('/bank/woob/update', method: 'GET', stream: true)]
+    #[ApiRoute('/bank/woob/update', method: 'GET', stream: true, admin: true)]
     public static function updateWoob(?string $fingerprint = null): void
     {
-        User::requireAdmin();
         $fingerprint = $fingerprint === '' ? null : $fingerprint;
         if ($fingerprint !== null && !preg_match('/^[0-9a-fA-F]{40}$/', $fingerprint)) {
             throw new Error("Invalid fingerprint (SHA-1: 40 hexadecimal characters)", 400);
@@ -303,10 +296,9 @@ final class Bank {
      * @return array{name: string, label: string|null} The woob backend and its name
      * @throws Error If the backend name is invalid, the name too long, or the backend unknown
      */
-    #[ApiRoute('/bank/backend', method: 'PUT')]
+    #[ApiRoute('/bank/backend', method: 'PUT', admin: true)]
     public static function renameBackend(string $backend, ?string $label = null): array
     {
-        User::requireAdmin();
         if (!preg_match('/^[a-z0-9_-]{1,50}$/', $backend)) {
             throw new Error("Invalid bank name (lowercase letters, digits, - and _)", 400);
         }
@@ -328,10 +320,9 @@ final class Bank {
      * @throws Error If the backend name is invalid or the backend unknown
      * @throws Exception If woob did not remove it
      */
-    #[ApiRoute('/bank/backend', method: 'DELETE')]
+    #[ApiRoute('/bank/backend', method: 'DELETE', admin: true)]
     public static function deleteBackend(string $backend): bool
     {
-        User::requireAdmin();
         if (!preg_match('/^[a-z0-9_-]{1,50}$/', $backend)) {
             throw new Error("Invalid bank name (lowercase letters, digits, - and _)", 400);
         }
@@ -372,10 +363,9 @@ final class Bank {
      *
      * @return list<array{module: mixed, description: mixed}> The modules
      */
-    #[ApiRoute('/bank/modules', method: 'GET')]
+    #[ApiRoute('/bank/modules', method: 'GET', admin: true)]
     public static function modules(): array
     {
-        User::requireAdmin();
         return Woob::listBankModules();
     }
 
@@ -387,10 +377,9 @@ final class Bank {
      * @return array<string, mixed> module, description, fields [{key, label, description, default, required, masked, choices}]
      * @throws Error If the module name is invalid
      */
-    #[ApiRoute('/bank/module', method: 'GET')]
+    #[ApiRoute('/bank/module', method: 'GET', admin: true)]
     public static function module(string $module): array
     {
-        User::requireAdmin();
         if (!preg_match('/^[a-z0-9_]{1,50}$/', $module)) {
             throw new Error("Invalid woob module", 400);
         }
@@ -414,10 +403,9 @@ final class Bank {
      * @throws Error If a setting is missing or invalid, or woob refuses the bank; 409 if the
      *               module must be installed before the woob repository is trusted
      */
-    #[ApiRoute('/bank/backend', method: 'POST')]
+    #[ApiRoute('/bank/backend', method: 'POST', admin: true)]
     public static function createBackend(string $module, string $backend, mixed $settings = [], ?string $label = null): array
     {
-        User::requireAdmin();
         if (!preg_match('/^[a-z0-9_]{1,50}$/', $module) || !preg_match('/^[a-z0-9_-]{1,50}$/', $backend)) {
             throw new Error("Invalid woob module or bank name (lowercase letters, digits, - and _)", 400);
         }
@@ -555,10 +543,9 @@ final class Bank {
      * @throws Error If the backend name is invalid
      * @throws Exception If woob fails
      */
-    #[ApiRoute('/bank/discover', method: 'GET')]
+    #[ApiRoute('/bank/discover', method: 'GET', admin: true)]
     public static function discover(?string $backend = null): array
     {
-        User::requireAdmin();
         $backend = $backend === '' ? null : $backend;
         if ($backend !== null && !preg_match('/^[a-z0-9_-]{1,50}$/', $backend)) {
             throw new Error("Invalid bank name (lowercase letters, digits, - and _)", 400);

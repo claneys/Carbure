@@ -37,10 +37,9 @@ final class Insight {
      *
      * @return list<array<string, mixed>> The insights: id, name, color, sql
      */
-    #[ApiRoute('/insight', method: 'GET')]
+    #[ApiRoute('/insight', method: 'GET', admin: true)]
     public static function get(): array
     {
-        User::requireAdmin();
         return Db::execute("SELECT id, name, color, icon, `sql` FROM budget_insight ORDER BY id", "")->get_result()->fetch_all(MYSQLI_ASSOC);
     }
 
@@ -54,10 +53,9 @@ final class Insight {
      * @return array<string, mixed> The insight with the amount of the current month
      * @throws Error If a field or the query is invalid
      */
-    #[ApiRoute('/insight', method: 'POST')]
+    #[ApiRoute('/insight', method: 'POST', admin: true)]
     public static function create(string $name, string $color, string $sql, ?string $icon = null): array
     {
-        User::requireAdmin();
         [$name, $color, $sql] = self::validate($name, $color, $sql);
         $icon = self::icon($icon);
         $amount = self::test($sql);
@@ -78,10 +76,9 @@ final class Insight {
      * @return array<string, mixed> The insight with the amount of the current month
      * @throws Error If not found, or a field or the query is invalid
      */
-    #[ApiRoute('/insight', method: 'PUT')]
+    #[ApiRoute('/insight', method: 'PUT', admin: true)]
     public static function update(int $id, string $name, string $color, string $sql, ?string $icon = null): array
     {
-        User::requireAdmin();
         if (!Db::queryOne("SELECT id FROM budget_insight WHERE id = ?", "i", $id)) {
             throw new Error("Insight not found", 404);
         }
@@ -103,10 +100,9 @@ final class Insight {
      * @param int|string|null $year  The year (current year by default)
      * @return array{valid: bool, amount?: float|null, error?: string|null} valid, amount (if valid), error (if not)
      */
-    #[ApiRoute('/insight/check', method: 'POST')]
+    #[ApiRoute('/insight/check', method: 'POST', admin: true)]
     public static function check(string $sql, int|string|null $month = null, int|string|null $year = null): array
     {
-        User::requireAdmin();
         try {
             [, , $sql] = self::validate('check', 'red', $sql);
             $amount = self::run($sql, ...Month::resolve($month, $year));
@@ -142,10 +138,9 @@ final class Insight {
      * @return bool True if deleted
      * @throws Error If not found
      */
-    #[ApiRoute('/insight', method: 'DELETE')]
+    #[ApiRoute('/insight', method: 'DELETE', admin: true)]
     public static function delete(int $id): bool
     {
-        User::requireAdmin();
         $stmt = Db::execute("DELETE FROM budget_insight WHERE id = ?", "i", $id);
         if ($stmt->affected_rows === 0) {
             throw new Error("Insight not found", 404);

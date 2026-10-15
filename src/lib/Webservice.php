@@ -172,9 +172,11 @@ final class Webservice {
     }
 
     /**
-     * Check access control for the endpoint
+     * Check access control for the endpoint, before its method is called: a valid JWT
+     * unless public, and an administrator for the routes declared with admin: true.
      * @param ApiRoute $apiRoute The API route metadata
      * @return void
+     * @throws Error 401 without a valid JWT, 403 if the route is reserved to the administrators
      */
     private static function checkAccess(ApiRoute $apiRoute): void
     {
@@ -186,6 +188,11 @@ final class Webservice {
         // Protected endpoints require valid JWT token
         if (!Jwt::checkAuthorization()) {
             throw new Error("Unauthorized - Invalid or missing JWT token", 401);
+        }
+
+        // Administrator endpoints: same error as the checks made by the methods themselves
+        if ($apiRoute->admin) {
+            User::requireAdmin();
         }
     }
 

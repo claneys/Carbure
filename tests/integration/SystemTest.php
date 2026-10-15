@@ -36,10 +36,10 @@ class SystemTest extends DatabaseTestCase
             $this->assertMatchesRegularExpression('/^[0-9a-f]{64}$/', $ini['jwtsecret']);
             $this->assertSame('keep', $ini['sync_token']);
 
+            // Refused before the method is called: the secret is unchanged
             $this->loginAs(self::USER);
-            $this->expectException(Error::class);
-            $this->expectExceptionCode(403);
-            System::rotateJwtSecret();
+            $this->assertAdminOnly(['POST /system/jwt-secret']);
+            $this->assertSame($ini['jwtsecret'], parse_ini_file($file)['jwtsecret']);
         } finally {
             System::$configFile = null;
             @unlink($file);
@@ -95,13 +95,7 @@ class SystemTest extends DatabaseTestCase
     public function testAdministratorsOnly()
     {
         $this->loginAs(self::USER);
-        foreach ([fn() => System::schema(), fn() => System::migrate(), fn() => System::logs(), fn() => System::logEntries('carbure_20260101.log')] as $call) {
-            try {
-                $call();
-                $this->fail('Accepted');
-            } catch (Error $e) {
-                $this->assertSame(403, $e->getCode());
-            }
-        }
+        $this->assertAdminOnly(['GET /system/schema', 'POST /system/migrate', 'GET /system/logs', 'GET /system/logs/retention',
+            'GET /system/logs/entries']);
     }
 }

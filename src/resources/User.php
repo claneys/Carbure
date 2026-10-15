@@ -197,10 +197,9 @@ final class User {
      * @return bool True if unlocked
      * @throws Error If not an administrator or the user does not exist
      */
-    #[ApiRoute('/user/unlock', method: 'POST')]
+    #[ApiRoute('/user/unlock', method: 'POST', admin: true)]
     public static function unlock(int $id): bool
     {
-        self::requireAdmin();
         if (!Db::queryOne("SELECT id FROM users WHERE id = ?", "i", $id)) {
             throw new Error("User not found", 404);
         }
@@ -288,11 +287,9 @@ final class User {
      * @return array<string, mixed> The created user data with id
      * @throws Error If the username or email already exists or the caller is not an administrator
      */
-    #[ApiRoute('/user', method: 'POST')]
+    #[ApiRoute('/user', method: 'POST', admin: true)]
     public static function create(string $username, string $password, string $email, ?string $firstname = null, ?string $lastname = null, bool|int|string|null $is_admin = false): array
     {
-        self::requireAdmin();
-
         // Check if username already exists
         $sql = "SELECT id FROM users WHERE username=?";
         $stmt = Db::execute($sql, "s", $username);
@@ -338,11 +335,9 @@ final class User {
      * @return bool True if deleted successfully
      * @throws Error If the user is not found or the caller is not an administrator
      */
-    #[ApiRoute('/user', method: 'DELETE')]
+    #[ApiRoute('/user', method: 'DELETE', admin: true)]
     public static function delete(int $id): bool
     {
-        self::requireAdmin();
-
         if ($id === (int)Jwt::getUserIdFromToken()) {
             throw new Error("You cannot delete your own account", 400);
         }

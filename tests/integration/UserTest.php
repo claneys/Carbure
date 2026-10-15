@@ -41,12 +41,7 @@ class UserTest extends DatabaseTestCase
 
         // A user cannot unlock, an administrator can
         $this->loginAs(self::USER);
-        try {
-            User::unlock(self::USER);
-            $this->fail('Unlocked by a user');
-        } catch (Error $e) {
-            $this->assertSame(403, $e->getCode());
-        }
+        $this->assertAdminOnly(['POST /user/unlock']);
         $this->loginAs(self::ADMIN);
         $this->assertTrue(User::unlock(self::USER));
         $this->assertArrayHasKey('token', User::login('user', 'userpass'));
@@ -194,9 +189,7 @@ class UserTest extends DatabaseTestCase
     public function testCreateRequiresAdmin()
     {
         $this->loginAs(self::USER);
-        $this->expectException(Error::class);
-        $this->expectExceptionCode(403);
-        User::create('new', 'x', 'new@example.com');
+        $this->assertAdminOnly(['POST /user']);
     }
 
     public function testDelete()
@@ -209,9 +202,17 @@ class UserTest extends DatabaseTestCase
     public function testDeleteRequiresAdmin()
     {
         $this->loginAs(self::USER);
-        $this->expectException(Error::class);
-        $this->expectExceptionCode(403);
-        User::delete(self::LEGACY);
+        $this->assertAdminOnly(['DELETE /user']);
+
+        // Refused before the method is called: the user is still there
+        try {
+            $this->callRoute('DELETE', '/user', ['id' => self::LEGACY]);
+            $this->fail('Deleted by a user');
+        } catch (Error $e) {
+            $this->assertSame(403, $e->getCode());
+        }
+        $this->loginAs(self::ADMIN);
+        $this->assertCount(3, User::get());
     }
 
     public function testDeleteSelf()

@@ -108,11 +108,9 @@ final class Category {
      * @return array<string, mixed> The category
      * @throws Error If invalid or the name already exists
      */
-    #[ApiRoute('/category', method: 'POST')]
+    #[ApiRoute('/category', method: 'POST', admin: true)]
     public static function create(string $name, string $type, int|string|null $parent_category = 0, ?string $icon = '', ?string $color = ''): array
     {
-        User::requireAdmin();
-
         [$name, $parent, $type, $icon, $color] = self::validate(null, $name, $parent_category, $type, $icon, $color);
 
         $stmt = Db::execute("INSERT INTO bank_transaction_category (name, parent_category, type, icon, color) VALUES (?, ?, ?, ?, ?)",
@@ -133,11 +131,9 @@ final class Category {
      * @return array<string, mixed> The category
      * @throws Error If not found, protected, invalid or the name already exists
      */
-    #[ApiRoute('/category', method: 'PUT')]
+    #[ApiRoute('/category', method: 'PUT', admin: true)]
     public static function update(int $id, string $name, string $type, int|string|null $parent_category = 0, ?string $icon = '', ?string $color = ''): array
     {
-        User::requireAdmin();
-
         self::existing($id);
         [$name, $parent, $type, $icon, $color] = self::validate($id, $name, $parent_category, $type, $icon, $color);
 
@@ -155,11 +151,9 @@ final class Category {
      * @return bool True if deleted
      * @throws Error If not found, protected or with sub-categories
      */
-    #[ApiRoute('/category', method: 'DELETE')]
+    #[ApiRoute('/category', method: 'DELETE', admin: true)]
     public static function delete(int $id): bool
     {
-        User::requireAdmin();
-
         self::existing($id);
         if (Db::queryOne("SELECT id FROM bank_transaction_category WHERE parent_category = ? AND id <> ? LIMIT 1", "ii", $id, $id)) {
             throw new Error("Delete or move its sub-categories first", 409);
@@ -213,11 +207,9 @@ final class Category {
      * @return array<string, mixed> The rule, with applied: the transactions of the history recategorized
      * @throws Error If the keyword is empty or already exists, or the category does not exist
      */
-    #[ApiRoute('/category/keyword', method: 'POST')]
+    #[ApiRoute('/category/keyword', method: 'POST', admin: true)]
     public static function createKeyword(string $keyword, int $category, bool|int|string|null $notify = false): array
     {
-        User::requireAdmin();
-
         // Labels are stored in upper case
         $keyword = strtoupper(trim($keyword));
         if ($keyword === '' || strlen($keyword) > 60) {
@@ -254,10 +246,9 @@ final class Category {
      * @return array<string, mixed> The rule, with applied: the transactions of the history recategorized
      * @throws Error If not found, invalid or the keyword already exists
      */
-    #[ApiRoute('/category/keyword', method: 'PUT')]
+    #[ApiRoute('/category/keyword', method: 'PUT', admin: true)]
     public static function updateKeyword(int $id, string $keyword, int $category, bool|int|string|null $notify = false): array
     {
-        User::requireAdmin();
         if (!Db::queryOne("SELECT id FROM bank_transaction_category_keyword WHERE id=?", "i", $id)) {
             throw new Error("Rule not found", 404);
         }
@@ -286,10 +277,9 @@ final class Category {
      * @return array{matching: int, categorized: int} matching (transactions), categorized (with the category of the rule)
      * @throws Error If not found
      */
-    #[ApiRoute('/category/keyword/count', method: 'GET')]
+    #[ApiRoute('/category/keyword/count', method: 'GET', admin: true)]
     public static function countKeyword(int $id): array
     {
-        User::requireAdmin();
         $rule = Db::queryOne("SELECT keyword, category FROM bank_transaction_category_keyword WHERE id=?", "i", $id);
         if (!$rule) {
             throw new Error("Rule not found", 404);
@@ -307,11 +297,9 @@ final class Category {
      * @return bool True if deleted
      * @throws Error If the rule does not exist
      */
-    #[ApiRoute('/category/keyword', method: 'DELETE')]
+    #[ApiRoute('/category/keyword', method: 'DELETE', admin: true)]
     public static function deleteKeyword(int $id): bool
     {
-        User::requireAdmin();
-
         $stmt = Db::execute("DELETE FROM bank_transaction_category_keyword WHERE id=?", "i", $id);
 
         if ($stmt->affected_rows === 0) {
@@ -327,11 +315,9 @@ final class Category {
      *
      * @return array{updated: int} The number of transactions whose category changed
      */
-    #[ApiRoute('/category/keyword/apply', method: 'POST')]
+    #[ApiRoute('/category/keyword/apply', method: 'POST', admin: true)]
     public static function applyKeywords(): array
     {
-        User::requireAdmin();
-
         $keywords = self::loadKeywords();
         $updated = 0;
         foreach (Db::execute("SELECT id, label, category FROM bank_transaction", "")->get_result()->fetch_all(MYSQLI_ASSOC) as $row) {

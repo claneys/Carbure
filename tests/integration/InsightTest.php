@@ -50,15 +50,7 @@ class InsightTest extends DatabaseTestCase
     {
         $this->loginAs(self::USER);
         $this->assertCount(1, Budget::getInsights());
-        foreach ([fn() => Insight::get(), fn() => Insight::create('X', 'red', self::SQL), fn() => Insight::check(self::SQL),
-                  fn() => Insight::update(1, 'X', 'red', self::SQL), fn() => Insight::delete(1)] as $i => $call) {
-            try {
-                $call();
-                $this->fail("Case $i accepted");
-            } catch (Error $e) {
-                $this->assertSame(403, $e->getCode(), "Case $i");
-            }
-        }
+        $this->assertAdminOnly(['GET /insight', 'POST /insight', 'POST /insight/check', 'PUT /insight', 'DELETE /insight']);
     }
 
     public function testDangerousQueriesAreRefused()

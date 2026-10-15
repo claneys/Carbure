@@ -156,12 +156,8 @@ class McpTest extends DatabaseTestCase
 
         // A user cannot enable it
         $this->loginAs(self::USER);
-        try {
-            Mcp::updateSettings(true);
-            $this->fail('Enabled by a user');
-        } catch (Error $e) {
-            $this->assertSame(403, $e->getCode());
-        }
+        $this->assertAdminOnly(['PUT /mcp/settings']);
+        $this->assertFalse(Mcp::settings()['enabled']);
 
         $this->loginAs(self::ADMIN);
         $this->assertTrue(Mcp::updateSettings(true)['enabled']);

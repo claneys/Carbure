@@ -106,8 +106,13 @@ final class Transaction {
 - `public: true` désactive le contrôle du JWT ; `stream: true` produit une réponse SSE ;
   `raw: true` renvoie tel quel le texte retourné par la méthode (serveur MCP). Un test
   unitaire vérifie la liste des routes publiques.
-- Route d'administration : appeler `User::requireAdmin()` en premier (`403` sinon), et
-  ajouter l'onglet ou l'action du portail à la liste réservée aux administrateurs.
+- Route d'administration : la déclarer `admin: true` dans son attribut ; `Webservice` la
+  refuse (`403`) aux autres avant d'appeler la méthode. `User::requireAdmin()` ne sert
+  qu'aux contrôles conditionnels dans la méthode (ex. `PUT /user` sur un autre
+  utilisateur). Ajouter l'onglet ou l'action du portail à la liste réservée aux
+  administrateurs.
+- Un test unitaire (`tests/unit/ApiResolverTest.php`) fixe le niveau d'accès de chaque
+  route (`public`, `user` ou `admin`) : y ajouter toute nouvelle route.
 - Erreur client : `throw new Error("message", 400)` ; erreur serveur : `Exception`.
 - Utilisateur courant : `Jwt::getUserIdFromToken()`.
 
