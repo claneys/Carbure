@@ -24,6 +24,20 @@ final class Webservice {
     private const CONTENT_TYPE_SSE = "Content-Type: text/event-stream";
 
     /**
+     * The calls that led to an exception, without their arguments: they may hold
+     * passwords (bank credentials, login) that the masking of Logger cannot find in a
+     * positional list.
+     *
+     * @param Throwable $exception The exception or error
+     * @return list<array<string, mixed>> file, line, class, type and function of each call (no args, no object)
+     */
+    public static function traceWithoutArgs(Throwable $exception): array
+    {
+        return array_map(fn(array $call): array => array_diff_key($call, ['args' => true, 'object' => true]),
+            $exception->getTrace());
+    }
+
+    /**
      * Return an error message in JSON and log the message.
      *
      * @param int       $code      The HTTP error code
@@ -32,7 +46,7 @@ final class Webservice {
      */
     public static function error(int $code, Throwable $exception): void
     {
-        Logger::error($exception->getMessage(), $exception->getTrace());
+        Logger::error($exception->getMessage(), self::traceWithoutArgs($exception));
 
         if (!headers_sent()) {
             http_response_code($code);

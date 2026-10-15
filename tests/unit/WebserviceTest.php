@@ -31,6 +31,31 @@ class WebserviceTest extends TestCase
         $this->assertSame(Logger::getUID(), $output['uid']);
     }
 
+    public function testTheLoggedTraceHasNoArgument()
+    {
+        // Even when PHP keeps the arguments of the traces (built-in default)
+        $ignoreArgs = ini_set('zend.exception_ignore_args', '0');
+        try {
+            try {
+                (fn(string $password) => throw new Error("Bank refused"))('s3cret-bank-password');
+            } catch (Error $error) {
+                $this->assertSame('s3cret-bank-password', $error->getTrace()[0]['args'][0] ?? null);
+                foreach (Webservice::traceWithoutArgs($error) as $call) {
+                    $this->assertArrayNotHasKey('args', $call);
+                }
+                ob_start();
+                Webservice::error(502, $error);
+                ob_end_clean();
+                Logger::flush();
+            }
+            $log = file_get_contents(Config::get('data_dir') . '/logs/carbure_test_' . date('Ymd') . '.log');
+            $this->assertStringContainsString('Bank refused', $log);
+            $this->assertStringNotContainsString('s3cret-bank-password', $log);
+        } finally {
+            ini_set('zend.exception_ignore_args', (string)$ignoreArgs);
+        }
+    }
+
     public function testInvalidUtf8IsAnErrorNotAnEmptyAnswer()
     {
         // "Épargne" read in latin1 (database connection in the wrong charset)
