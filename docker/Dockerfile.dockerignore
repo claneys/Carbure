@@ -11,6 +11,12 @@ docs
 tests
 CLAUDE.md
 TODO.md
-tools/phpunit.phar
+# Development tools (Composer: PHPStan, PHPUnit): the image has no Composer dependency
+vendor
+composer.json
+composer.lock
+phpstan.neon
+phpunit.xml
+tools/phpstan
 tools/coverage-check.php
 mkdocs.yml

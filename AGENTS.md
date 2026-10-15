@@ -6,7 +6,7 @@ Rules for coding agents and contributors on Carbure. Pending work: [TODO.md](TOD
 
 Household budget/bank-transaction tracker: **portal** `portal/` (Vue 3 global build, no
 bundler) + **PHP 8.2+ REST API** `src/` (no framework, no runtime dependency; Composer only
-for dev tools: PHPStan), also used by the
+for dev tools: PHPStan, PHPUnit), also used by the
 **iOS app**. Transactions synced via woob, categorized by keywords; APNs notifications;
 read-only MCP server at `/api/mcp`. Production = Docker image (nginx + PHP-FPM + woob)
 built by the GitHub release workflow; committing/pushing is not deploying.
@@ -36,10 +36,10 @@ built by the GitHub release workflow; committing/pushing is not deploying.
 ```bash
 ./start.sh   # dev stack http://localhost:8000/portal/ (admin/admin-password); --reset --build --stop --clean
 find src tests swagger -name '*.php' -not -path '*/node_modules/*' -print0 | xargs -0 -n1 php -l
-composer install && composer phpstan   # PHP types (PHPStan, dev dependency)
+composer install && composer phpstan   # dev tools (PHPStan, PHPUnit) + PHP types
 for f in $(find portal -name '*.js' -not -path '*/vendor/*'); do cp "$f" /tmp/c.mjs && node --check /tmp/c.mjs; done
-php tools/phpunit.phar --testsuite unit
-DB_HOST=127.0.0.1 DB_USER=root DB_PASSWORD=root php tools/phpunit.phar   # + integration (recreates carbure_test)
+composer test                          # PHPUnit unit suite (vendor/bin/phpunit --testsuite unit)
+DB_HOST=127.0.0.1 DB_USER=root DB_PASSWORD=root composer test:all   # + integration (recreates carbure_test)
 node --test 'tests/portal/*.test.mjs'
 cd tests/e2e && npm ci && npx playwright install chromium               # once
 E2E_DB_HOST=127.0.0.1 E2E_DB_PASSWORD=root PHP_BIN=… npx playwright test
@@ -53,6 +53,8 @@ git config core.hooksPath .githooks   # pre-commit lint, pre-push unit tests
   `https://dl.static-php.dev/static-php-cli/common/php-8.3.x-cli-linux-x86_64.tar.gz`
   (lint + unit tests; no `mysqli`/`pcov`) or `…/bulk/…` (has `mysqli`: integration/e2e
   with MariaDB in Docker; coverage only in CI).
+- Composer not installed either: download `https://getcomposer.org/download/latest-stable/composer.phar`
+  into the same scratch dir and run it with that PHP (`php composer.phar install`, `… test`).
 - Case-insensitive FS; LF line endings (`.gitattributes`).
 
 ## API conventions

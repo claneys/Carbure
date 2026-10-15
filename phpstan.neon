@@ -11,7 +11,6 @@ parameters:
         - swagger
         - tools
     excludePaths:
-        - tools/*.phar
         - vendor
 
 # Parameters, return values and properties typed in the code, not only in the PHPDoc

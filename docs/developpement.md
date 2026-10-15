@@ -19,8 +19,8 @@ icon: material/code-braces
 | `tests/portal/` | Tests unitaires du portail (`node:test`) |
 | `tests/e2e/` | Tests de bout en bout du portail (Playwright) |
 | `tools/migrate.php` | Migrations du schéma (`--status`, `--dry-run`, `--baseline`) |
-| `tools/phpunit.phar`, `tools/coverage-check.php` | PHPUnit 11 et contrôle du seuil de couverture |
-| `composer.json`, `phpstan.neon`, `tools/phpstan/` | Outils de développement (PHPStan, installé par Composer dans `vendor/`) et règle de typage de Carbure ; l'API elle-même n'a aucune dépendance |
+| `tools/coverage-check.php` | Contrôle du seuil de couverture |
+| `composer.json`, `phpstan.neon`, `phpunit.xml`, `tools/phpstan/` | Outils de développement (PHPStan et PHPUnit 11, installés par Composer dans `vendor/`) et règles de Carbure ; l'API elle-même n'a aucune dépendance |
 | `docker/` | `Dockerfile`, `docker-compose.yml` (avec MariaDB), configuration nginx et PHP-FPM, `entrypoint.sh` |
 | `data/` (non versionné) | Données de l'instance : `conf/` (`prod.ini`, `certs/`), `logs/`, `cache/`, `woob/` (banques et identifiants) |
 | `VERSION` | Version de Carbure (`dev` dans le dépôt, écrite par le build de release) |
@@ -121,7 +121,7 @@ PHP à l'exécution) ; les tableaux sont détaillés dans la PHPDoc (`array<stri
 PHPStan le contrôle (niveau 6 et règle `tools/phpstan/NativeTypesRule.php`) :
 
 ```bash
-composer install     # une fois : PHPStan dans vendor/ (outil de développement)
+composer install     # une fois : PHPStan et PHPUnit dans vendor/ (outils de développement)
 composer phpstan
 ```
 
@@ -140,11 +140,13 @@ grossit se découpe en petites méthodes privées.
 ## Tests
 
 ```bash
-# Unitaires : sans dépendance externe
-php tools/phpunit.phar --testsuite unit
+composer install     # une fois : PHPUnit dans vendor/
 
-# Unitaires + intégration : MariaDB/MySQL requis
-DB_HOST=127.0.0.1 DB_USER=root DB_PASSWORD=root php tools/phpunit.phar
+# Unitaires : sans dépendance externe (vendor/bin/phpunit --testsuite unit)
+composer test
+
+# Unitaires + intégration : MariaDB/MySQL requis (vendor/bin/phpunit)
+DB_HOST=127.0.0.1 DB_USER=root DB_PASSWORD=root composer test:all
 ```
 
 - `APP_ENV=testing` (défini dans `phpunit.xml`) charge `conf/testing.ini`.
@@ -213,7 +215,7 @@ git config core.hooksPath .githooks
 | Hook | Vérification |
 |---|---|
 | `pre-commit` | `php -l` et `node --check` sur les fichiers indexés, PHPStan si un fichier PHP est indexé (`composer install` requis) |
-| `pre-push` | Tests unitaires PHP et du portail |
+| `pre-push` | Tests unitaires PHP (`composer install` requis) et du portail |
 
 ## Intégration et livraison continues
 

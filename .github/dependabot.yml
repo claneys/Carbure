@@ -43,7 +43,7 @@ updates:
       prefix: "chore"
       include: "scope"
 
-  # Development tools (PHPStan)
+  # Development tools (PHPStan, PHPUnit)
   - package-ecosystem: composer
     directory: /
     schedule:

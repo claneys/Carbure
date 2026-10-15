@@ -4,13 +4,16 @@
 
 PHP=${PHP:-php}
 
-if command -v "$PHP" >/dev/null 2>&1; then
-    "$PHP" tools/phpunit.phar --testsuite unit --no-progress || {
+if ! command -v "$PHP" >/dev/null 2>&1; then
+    echo "pre-push: php not found, PHP unit tests skipped (set PHP=/path/to/php)" >&2
+elif [ ! -f vendor/bin/phpunit ]; then
+    echo "pre-push: PHPUnit not installed, run: composer install" >&2
+    exit 1
+else
+    "$PHP" vendor/bin/phpunit --testsuite unit --no-progress || {
         echo "pre-push: PHP unit tests failed, push aborted" >&2
         exit 1
     }
-else
-    echo "pre-push: php not found, PHP unit tests skipped (set PHP=/path/to/php)" >&2
 fi
 
 if command -v node >/dev/null 2>&1; then
