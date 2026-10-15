@@ -14,6 +14,16 @@ keeps track of what was done).
       `X-Forwarded-For`). Set `log_retention_days` (missing from existing configurations:
       logs kept forever) in **Administration → Settings**.
 
+- [ ] **GitHub settings** (owner, after the merge of the workflow hardening, #125): in
+      **Settings → Actions → General**, tick "Require actions to be pinned to a full-length
+      commit SHA" and restrict the allowed actions to those of GitHub, verified creators
+      and the list used by the workflows (`shivammathur/setup-php`, `hadolint/hadolint-action`,
+      `aquasecurity/trivy-action`, `gitleaks/gitleaks-action`, `docker/*`); in the ruleset
+      of `main`, add the check "Conventional Commits title" (workflow PR title) to the
+      required checks and set **GitHub Actions** as the source of every required check (not
+      "any source"). After the next release, check on the NAS
+      `gh attestation verify oci://docker.io/ltoinel/carbure:<version> --owner ltoinel`.
+
 - [ ] Strong authentication: handle the validations by **code** (SMS OTP, woob
       `BrowserQuestion`), which wait for input on stdin (closed today by
       `tools/woob-tty.py`); and offer the interactive mode to "Find my accounts in woob" /

@@ -1,4 +1,10 @@
 # Conventional Commits titles (see CONTRIBUTING.md): "ci(deps): …", "chore(deps): …"
+# Cooldown: a new version is only proposed 7 days after its publication (time for a
+# compromised or broken release to be spotted and withdrawn); security updates are not
+# delayed.
+# Not covered: the mariadb image of the "services" of ci.yml (Dependabot does not read
+# the services of a workflow): updated by hand (10.11, an LTS older than the image of
+# docker-compose.yml).
 version: 2
 updates:
   # GitHub Actions — also keeps SHA-pinned actions up to date
@@ -6,6 +12,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     groups:
       actions:
         patterns: ["*"]
@@ -18,6 +26,8 @@ updates:
     directory: /docker
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: "chore"
       include: "scope"
@@ -27,6 +37,8 @@ updates:
     directory: /docker
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: "chore"
       include: "scope"
@@ -36,6 +48,8 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: "chore"
       include: "scope"
@@ -45,6 +59,8 @@ updates:
     directory: /tests/e2e
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 7
     groups:
       e2e:
         patterns: ["*"]
@@ -57,6 +73,8 @@ updates:
     directory: /docs
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 7
     groups:
       docs:
         patterns: ["*"]

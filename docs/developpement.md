@@ -220,9 +220,16 @@ git config core.hooksPath .githooks
 | Workflow | Déclencheur | Étapes |
 |---|---|---|
 | CI | Pull request, push sur `main` | Lint PHP/JS/CSS, tests unitaires du portail, tests unitaires et d'intégration (MariaDB), couverture ≥ 90 %, tests de bout en bout du portail (Playwright, rapport en artefact en cas d'échec) ; image Docker : hadolint, build, scan Trivy, démarrage avec `docker compose`, installation par l'assistant et test de fumée |
-| Release | Push d'un tag (`v1.2.0` ou `1.2.0`), ou lancement manuel avec le tag | CI, image Docker `amd64`/`arm64` publiée sur Docker Hub (`ltoinel/carbure`) (version passée par `CARBURE_VERSION`), avec SBOM et provenance ; puis création de la release avec l'archive de l'application (`src`, `portal`, `swagger`, `sql`, `tools/migrate.php`, `VERSION` écrit depuis le tag) et les notes générées |
+| Release | Push d'un tag (`v1.2.0` ou `1.2.0`), ou lancement manuel avec le tag | CI, image Docker `amd64`/`arm64` publiée sur Docker Hub (`ltoinel/carbure`) (version passée par `CARBURE_VERSION`), avec SBOM et provenance, et attestation de provenance signée par GitHub ; puis création de la release avec l'archive de l'application (`src`, `portal`, `swagger`, `sql`, `tools/migrate.php`, `VERSION` écrit depuis le tag) et les notes générées |
 | Security | Pull request, push sur `main`, chaque lundi, lancement manuel | Scan de secrets de l'historique (gitleaks), vulnérabilités des dépendances du dépôt (Trivy) ; chaque lundi et à la demande, vulnérabilités de l'image publiée sur Docker Hub (Trivy). Rapports dans l'onglet Security |
-| Docs | Push sur `main` | Construction MkDocs et déploiement GitHub Pages |
+| Docs | Push sur `main`, pull request (documentation modifiée) | Construction MkDocs ; sur `main`, déploiement GitHub Pages |
+| PR title | Pull request (ouverture, modification, push) | Titre conforme à Conventional Commits (il devient le commit de `main`) |
+
+Les actions sont référencées par l'empreinte de leur commit (`uses: owner/action@<sha> # vX.Y.Z`),
+mises à jour par Dependabot : pour en ajouter une, résoudre l'empreinte du tag
+(`gh api repos/<owner>/<action>/commits/<tag> --jq .sha`). Chaque job a un
+`timeout-minutes` ; un nouveau push sur une pull request annule son exécution précédente,
+jamais celles de `main`.
 
 Publier une version : pousser un tag sur `main` (ne **pas** créer la release dans
 l'interface de GitHub) :
@@ -237,10 +244,14 @@ Le workflow lance la CI, publie l'image Docker Hub `ltoinel/carbure` (`1.2.0`, `
 étiquette, `.github/release.yml`). Un tag avec un suffixe (`v1.2.0-rc.1`) donne une
 pré-release, sans le tag `latest`. Les releases du dépôt sont **immuables** : aucun fichier
 ne peut être ajouté une fois la release publiée, d'où cet ordre (le workflow crée un
-brouillon, y joint les archives, puis le publie).
+brouillon, y joint les archives, puis le publie). L'image reçoit aussi une attestation de
+provenance (voir [Sécurité](securite.md#verifier-lorigine-de-limage)).
 
 **Actions → Release → Run workflow** (champ `tag`) reconstruit l'image Docker d'un tag
-existant ; sa release, immuable, n'est pas modifiée.
+existant ; sa release, immuable, n'est pas modifiée. Le tag doit être une version
+sémantique existante (`v1.2.0`, `1.2.0`, `v1.2.0-rc.1`). `latest` n'est posé que sur la plus
+haute version publiée et `1.2` que sur la plus haute `1.2.x` : reconstruire une ancienne
+version ne les fait pas reculer.
 
 La publication sur Docker Hub (`ltoinel/carbure`) utilise les secrets du dépôt
 `DOCKERHUB_USERNAME` et `DOCKERHUB_TOKEN` (jeton d'accès Docker Hub en lecture/écriture, dans

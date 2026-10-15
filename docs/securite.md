@@ -255,6 +255,37 @@ Pour analyser une image localement :
 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image ltoinel/carbure:latest
 ```
 
+### Vérifier l'origine de l'image
+
+Depuis la version 1.4.0, le workflow **Release** publie aussi une **attestation de
+provenance** signée par GitHub (Sigstore) pour l'image poussée sur Docker Hub : elle prouve
+que l'image (identifiée par son empreinte `sha256`) a été construite par le workflow
+`release.yml` du dépôt `ltoinel/Carbure`, à partir du tag indiqué. Avant de mettre à jour le
+NAS, on la vérifie avec la [CLI GitHub](https://cli.github.com/) (`gh auth login` au
+préalable), depuis le NAS ou n'importe quel poste :
+
+```bash
+gh attestation verify oci://docker.io/ltoinel/carbure:1.4.0 --owner ltoinel
+# Plus strict : le dépôt et le workflow qui ont signé
+gh attestation verify oci://docker.io/ltoinel/carbure:1.4.0 \
+  --repo ltoinel/Carbure \
+  --signer-workflow ltoinel/Carbure/.github/workflows/release.yml
+```
+
+La commande échoue si l'image n'a pas d'attestation valide (image modifiée, poussée par un
+autre moyen que le workflow, ou version antérieure à 1.4.0). L'attestation est aussi
+visible dans l'onglet **Actions → Attestations** du dépôt. Pour figer exactement l'image
+vérifiée, la référencer ensuite par son empreinte (`ltoinel/carbure@sha256:…`, affichée
+par la commande) plutôt que par son tag.
+
+### Chaîne de build
+
+Les workflows GitHub Actions référencent chaque action par l'**empreinte complète de son
+commit** (et non par un tag, qui peut être déplacé), tenue à jour par Dependabot avec un
+délai de 7 jours après chaque nouvelle version ; `actions/checkout` ne conserve pas le
+jeton git dans le dépôt cloné, chaque job a une durée maximale, et le titre de chaque pull
+request (le message du commit sur `main`) est vérifié.
+
 ## Signaler une vulnérabilité
 
 Merci de ne pas ouvrir d'issue publique : contacter le mainteneur via GitHub
