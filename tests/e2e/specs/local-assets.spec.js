@@ -37,3 +37,10 @@ test('Swagger UI loads everything from its own origin', async ({ page, baseURL }
     await expect(page.locator('.validator-badge, img[src*="validator"]')).toHaveCount(0);
     expect(external).toEqual([]);
 });
+
+test('the Carbure link of the footer opens the site of the project', async ({ adminPage: page }) => {
+    const link = page.locator('.footer').getByRole('link', { name: tr('appTitle'), exact: true });
+    await expect(link).toHaveAttribute('href', 'https://carbure.org/');
+    await expect(link).toHaveAttribute('target', '_blank');
+    await expect(link).toHaveAttribute('rel', 'noopener');
+});
