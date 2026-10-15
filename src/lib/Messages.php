@@ -39,6 +39,10 @@ final class Messages {
             // A transaction: its label, amount and date (rule, expense)
             'transaction_body' => '{label} : {amount}',
             'transaction_body_dated' => '{label} : {amount} le {date}',
+            // Spending of the month of a budget over the threshold of the user (kind budget)
+            'budget_exceeded_title' => 'Budget dépassé : {category}',
+            'budget_reached_title' => 'Budget presque atteint : {category}',
+            'budget_body' => '{spent} sur {budget} ({percent} %)',
             // Emails
             'email_subject' => '[Carbure] {title}',
             'email_footer' => 'Vous recevez cet email selon vos préférences de notification (Mon profil > Notifications).',
@@ -59,6 +63,9 @@ final class Messages {
             'expense_title' => 'Large expense to check',
             'transaction_body' => '{label}: {amount}',
             'transaction_body_dated' => '{label}: {amount} on {date}',
+            'budget_exceeded_title' => 'Budget exceeded: {category}',
+            'budget_reached_title' => 'Budget almost reached: {category}',
+            'budget_body' => '{spent} of {budget} ({percent}%)',
             'email_subject' => '[Carbure] {title}',
             'email_footer' => 'You receive this email according to your notification preferences (My profile > Notifications).',
             'email_sent_by' => 'Sent by Carbure',

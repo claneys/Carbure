@@ -23,7 +23,10 @@ class NotificationTest extends DatabaseTestCase
         $notifications = Notification::get();
 
         $default = ['push' => true, 'email' => false];
-        $this->assertSame(['sync' => $default, 'rule' => $default, 'expense' => $default], $notifications['preferences']);
+        // The budget alerts are opt-in: off on every channel
+        $off = ['push' => false, 'email' => false];
+        $this->assertSame(['sync' => $default, 'rule' => $default, 'expense' => $default, 'budget' => $off], $notifications['preferences']);
+        $this->assertSame(100, $notifications['budget_threshold']);
         $this->assertTrue($notifications['smtp']);
         $this->assertSame('admin@example.com', $notifications['address']);
         $this->assertTrue($notifications['email_available']);
@@ -54,6 +57,7 @@ class NotificationTest extends DatabaseTestCase
             'sync' => ['push' => false, 'email' => true],
             'rule' => ['push' => true, 'email' => false],
             'expense' => ['push' => true, 'email' => true],
+            'budget' => ['push' => false, 'email' => false],
         ], $notifications['preferences']);
 
         // Saved, and only for this user
@@ -73,7 +77,7 @@ class NotificationTest extends DatabaseTestCase
     public static function refusedPreferences(): array
     {
         return [
-            'unknown kind' => [['budget' => ['push' => true]]],
+            'unknown kind' => [['weather' => ['push' => true]]],
             'unknown channel' => [['sync' => ['sms' => true]]],
             'not a boolean' => [['sync' => ['push' => 'maybe']]],
             'empty string' => [['sync' => ['email' => '']]],

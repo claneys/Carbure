@@ -123,30 +123,42 @@ Canaux de chaque type de notification de l'utilisateur connecté :
   "preferences": {
     "sync": {"push": true, "email": false},
     "rule": {"push": true, "email": false},
-    "expense": {"push": true, "email": true}
+    "expense": {"push": true, "email": true},
+    "budget": {"push": false, "email": false}
   },
   "smtp": true,
   "address": "alice@example.com",
-  "email_available": true
+  "email_available": true,
+  "budget_threshold": 100
 }
 ```
 
 Types : `sync` (résultat d'une synchronisation), `rule` (nouvelle transaction d'une règle
-`notify`), `expense` (dépense au-delà du seuil d'alerte). Sans choix de l'utilisateur, un
-type est envoyé en push et pas par email. `smtp` indique qu'un serveur SMTP est configuré,
-`address` l'adresse du profil (`null` si aucune) et `email_available` que les emails
-peuvent partir (les deux). Les notifications (push et email) sont rédigées dans la langue
-du profil (`language`, `fr` par défaut).
+`notify`), `expense` (dépense au-delà du seuil d'alerte), `budget` (dépenses du mois d'une
+catégorie budgétée au-delà du seuil des budgets). Sans choix de l'utilisateur, un type est
+envoyé en push et pas par email, sauf `budget`, désactivé sur tous les canaux (à activer).
+`smtp` indique qu'un serveur SMTP est configuré, `address` l'adresse du profil (`null` si
+aucune), `email_available` que les emails peuvent partir (les deux) et `budget_threshold`
+le seuil des alertes de budget, en pourcentage du budget (100 par défaut). Les notifications (push et email) sont
+rédigées dans la langue du profil (`language`, `fr` par défaut).
 
 ### `PUT /user/notifications`
 
-`preferences` : `{type: {push?, email?}}`, chaque canal `true`/`false` (ou `"true"`,
-`"false"`, `1`, `0`). Les types et canaux absents sont conservés ; type, canal ou valeur
-inconnus : `400`. Renvoie le résultat de `GET /user/notifications`.
+| Paramètre | Obligatoire | Description |
+|---|---|---|
+| `preferences` | non | `{type: {push?, email?}}`, chaque canal `true`/`false` (ou `"true"`, `"false"`, `1`, `0`) |
+| `budgetThreshold` | non | Seuil des alertes de budget (type `budget`) en pourcentage du budget : entier de 50 à 200 (nombre ou chaîne) |
+
+Les types, canaux et seuil absents sont conservés ; type, canal, valeur ou seuil invalides :
+`400`, sans rien enregistrer. Renvoie le résultat de `GET /user/notifications`.
 
 ```bash
 curl -X PUT "https://exemple.fr/api/user/notifications" -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' -d '{"preferences":{"expense":{"email":true}}}'
+
+# Alertes de budget par email, dès 90 % du budget
+curl -X PUT "https://exemple.fr/api/user/notifications" -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' -d '{"preferences":{"budget":{"email":true}},"budgetThreshold":"90"}'
 ```
 
 ### `DELETE /user` — administrateur

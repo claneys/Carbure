@@ -1,5 +1,6 @@
 // Profile page: personal information, language, devices
 const { test, expect, tr } = require('../fixtures');
+const { startFakeSmtp } = require('../fake-smtp');
 
 /**
  * Opens the profile page from the user menu
@@ -65,7 +66,7 @@ test('shows, reveals then deletes a device', async ({ adminPage: page }) => {
 /**
  * Checkbox of a channel of a kind of notification
  * @param {import('@playwright/test').Page} page
- * @param {string} kind - sync, rule or expense
+ * @param {string} kind - sync, rule, expense or budget
  * @param {string} channel - push or email
  */
 function notification(page, kind, channel) {
@@ -111,4 +112,56 @@ test('chooses the channels of each notification', async ({ userPage: page, api }
     await expect(page.locator('#notifications-email-unavailable')).toContainText(tr('notificationsEmailNoAddress'));
     await expect(notification(page, 'expense', 'email')).toBeEnabled();
     await expect(notification(page, 'rule', 'email')).toBeDisabled();
+});
+
+test('alerts by email when the spending of a budget reaches the threshold', async ({ userPage: page, api }) => {
+    const smtp = await startFakeSmtp();
+    try {
+        // An administrator configures the SMTP server (the fake one)
+        const response = await api.put('/api/system/config', { data: { values: { smtp_host: '127.0.0.1', smtp_port: String(smtp.port), smtp_from: 'carbure@example.com' } } });
+        expect(response.ok()).toBeTruthy();
+        await openProfile(page);
+
+        // Opt-in: off on every channel, 100 % by default
+        await expect(notification(page, 'budget', 'push')).not.toBeChecked();
+        await expect(notification(page, 'budget', 'email')).not.toBeChecked();
+        const threshold = page.getByLabel(tr('budgetThreshold'));
+        await expect(threshold).toHaveValue('100');
+
+        // A threshold out of range: refused, not sent
+        await threshold.fill('30');
+        await threshold.press('Enter');
+        await expect(page.locator('#budget-threshold-error')).toHaveText(tr('budgetThresholdInvalid'));
+        await expect(threshold).toHaveAttribute('aria-invalid', 'true');
+
+        await threshold.fill('90');
+        await threshold.press('Enter');
+        await expect(page.locator('.toast')).toHaveText(tr('notificationsSaved'));
+        await expect(page.locator('#budget-threshold-error')).toHaveCount(0);
+        await notification(page, 'budget', 'email').check();
+        await expect(page.locator('.toast')).toHaveText(tr('notificationsSaved'));
+
+        // Saved on the server
+        await page.reload();
+        await openProfile(page);
+        await expect(page.getByLabel(tr('budgetThreshold'))).toHaveValue('90');
+        await expect(notification(page, 'budget', 'email')).toBeChecked();
+
+        // An import of the current month: Logement (950 € of 1 000 €) reaches 90 %
+        const today = new Date();
+        const date = [String(Math.min(today.getDate(), 28)).padStart(2, '0'), String(today.getMonth() + 1).padStart(2, '0'), today.getFullYear()].join('/');
+        const statement = label => Buffer.from(`Date;Libellé;Montant\n${date};${label};-10,00\n`).toString('base64');
+        const imported = await api.post('/api/transaction/import', { data: { file: statement('CB SUPERMARCHE MONOPRIX'), filename: 'releve.csv' } });
+        expect(imported.ok()).toBeTruthy();
+        await expect.poll(() => smtp.messages.length).toBe(1);
+        expect(smtp.messages[0].to).toEqual(['marie@example.com']);
+        expect(smtp.messages[0].data).toContain('Subject: [Carbure] Budget presque atteint : Logement');
+
+        // Once a month: another import alerts nothing more
+        const again = await api.post('/api/transaction/import', { data: { file: statement('CB SUPERMARCHE FRANPRIX'), filename: 'releve.csv' } });
+        expect(again.ok()).toBeTruthy();
+        expect(smtp.messages).toHaveLength(1);
+    } finally {
+        await smtp.close();
+    }
 });

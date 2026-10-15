@@ -1772,6 +1772,21 @@
                                         </tr>
                                     </tbody>
                                 </table>
+                                <!-- Threshold of the budget alerts (kind budget) -->
+                                <div class="form-group budget-threshold">
+                                    <label for="budget-threshold">{{ t('budgetThreshold') }}</label>
+                                    <div class="budget-threshold-field">
+                                        <input id="budget-threshold" type="number" inputmode="numeric" step="1"
+                                               :min="budgetThresholdMin" :max="budgetThresholdMax" v-model="budgetThreshold"
+                                               :aria-invalid="budgetThresholdErrorKey ? 'true' : null"
+                                               :aria-describedby="budgetThresholdErrorKey ? 'budget-threshold-error budget-threshold-help' : 'budget-threshold-help'"
+                                               :disabled="savingBudgetThreshold"
+                                               @change="saveBudgetThreshold" @keydown.enter.prevent="saveBudgetThreshold" />
+                                        <span aria-hidden="true">%</span>
+                                    </div>
+                                    <p v-if="budgetThresholdErrorKey" id="budget-threshold-error" class="sync-step-error" role="alert">{{ t(budgetThresholdErrorKey) }}</p>
+                                    <small id="budget-threshold-help">{{ t('budgetThresholdHelp') }}</small>
+                                </div>
                                 <p v-if="emailUnavailable" id="notifications-email-unavailable" class="rules-help notifications-unavailable">
                                     <span class="material-icons inline-icon" aria-hidden="true">info</span>{{ t(emailUnavailable) }}
                                 </p>

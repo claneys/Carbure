@@ -15,6 +15,8 @@ erDiagram
     users ||--o{ devices : "possède"
     users ||--o{ api_tokens : "possède"
     users ||--o{ user_notification : "choisit"
+    users ||--o{ budget_alert : "alerté"
+    bank_transaction_category ||--o{ budget_alert : "alerte"
     users ||--o{ bank_account : "a ajouté"
     users ||--o{ bank_transaction : "rattachement"
     bank_transaction_category ||--o{ bank_transaction : "catégorise"
@@ -33,6 +35,7 @@ erDiagram
         varchar language "fr ou en"
         varchar theme "system, light ou dark"
         decimal alert_threshold "seuil d'alerte, NULL = désactivé"
+        smallint budget_threshold "seuil des budgets en %, 100"
         datetime last_login
         tinyint failed_logins
         datetime locked_until "NULL = non bloqué"
@@ -46,9 +49,18 @@ erDiagram
     }
     user_notification {
         int user_id PK
-        varchar kind PK "sync, rule, expense"
+        varchar kind PK "sync, rule, expense, budget"
         tinyint push "1 par défaut"
         tinyint email "0 par défaut"
+    }
+    budget_alert {
+        int user_id PK
+        tinyint category PK
+        date month PK "premier jour du mois"
+        decimal budget "budget alerté"
+        decimal spent
+        smallint percent
+        datetime sent_at
     }
     api_tokens {
         int id PK
@@ -128,9 +140,10 @@ erDiagram
 
 | Table | Rôle |
 |---|---|
-| `users` | Comptes. `is_admin` donne le profil administrateur ; `language` la langue du portail ; `theme` son thème (`system` : celui du système, `light`, `dark`) ; `alert_threshold` le montant à partir duquel une nouvelle dépense déclenche une notification (`NULL` = désactivé) ; `last_login` la dernière connexion réussie ; `failed_logins` les échecs de connexion d'affilée et `locked_until` la fin du blocage (24 h après 5 échecs). |
+| `users` | Comptes. `is_admin` donne le profil administrateur ; `language` la langue du portail ; `theme` son thème (`system` : celui du système, `light`, `dark`) ; `alert_threshold` le montant à partir duquel une nouvelle dépense déclenche une notification (`NULL` = désactivé) ; `budget_threshold` le pourcentage du budget du mois d'une catégorie à partir duquel ses dépenses l'alertent (50 à 200, 100 par défaut) ; `last_login` la dernière connexion réussie ; `failed_logins` les échecs de connexion d'affilée et `locked_until` la fin du blocage (24 h après 5 échecs). |
 | `devices` | Appareils iOS (token APNs), enregistrés à la connexion. Supprimés avec l'utilisateur. |
-| `user_notification` | Canaux choisis par un utilisateur pour un type de notification (`kind` : `sync`, `rule`, `expense`) : `push` vers ses appareils, `email` vers l'adresse de son profil. Sans ligne pour un type : push oui, email non. Supprimés avec l'utilisateur. |
+| `user_notification` | Canaux choisis par un utilisateur pour un type de notification (`kind` : `sync`, `rule`, `expense`, `budget`) : `push` vers ses appareils, `email` vers l'adresse de son profil. Sans ligne pour un type : push oui, email non, sauf `budget` (ni l'un ni l'autre). Supprimés avec l'utilisateur. |
+| `budget_alert` | Alertes de budget envoyées : une par utilisateur, catégorie et mois (`month`, premier jour), avec le budget (`budget`), les dépenses (`spent`) et le pourcentage (`percent`) au moment de l'alerte. Une nouvelle alerte ne part que si le budget du mois dépasse celui déjà alerté. Supprimées avec l'utilisateur ou la catégorie. |
 | `api_tokens` | Jetons d'accès des agents IA (serveur MCP) : seule l'empreinte SHA-256 (`token_hash`) est stockée, `token_hint` (début du jeton) sert à le reconnaître ; `expires_at` `NULL` = sans expiration. Supprimés avec l'utilisateur. |
 | `bank_account` | Comptes bancaires suivis par le foyer : `account_number@bank_name` forme le `bankId` passé à woob. `user_id` est l'utilisateur qui a ajouté le compte (« Ajouté par ») ; `last_sync_at`, `last_sync_status`, `last_sync_message` décrivent la dernière synchronisation. Unicité `(account_number, bank_name, user_id)` ; l'API refuse en plus un compte déjà suivi par le foyer. |
 | `bank_transaction` | Transactions. `uuid` unique sert au dédoublonnage ; `user` = premier utilisateur ayant ajouté le compte (`MIN(user_id)`), sans effet sur la visibilité ; suppression de l'utilisateur interdite tant qu'il a des transactions (`ON DELETE RESTRICT`) ; index `transaction_date` sur `date`. |

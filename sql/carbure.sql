@@ -193,6 +193,7 @@ CREATE TABLE `users` (
   `language` varchar(5) NOT NULL DEFAULT 'fr',
   `theme` varchar(10) NOT NULL DEFAULT 'system' COMMENT 'Display theme of the portal: system, light or dark',
   `alert_threshold` decimal(10,2) DEFAULT NULL,
+  `budget_threshold` smallint(5) unsigned NOT NULL DEFAULT 100 COMMENT 'Percent of a budget whose spending of the month alerts (50 to 200)',
   `last_login` datetime DEFAULT NULL,
   `failed_logins` tinyint(3) unsigned NOT NULL DEFAULT 0,
   `locked_until` datetime DEFAULT NULL,
@@ -212,6 +213,24 @@ CREATE TABLE `user_notification` (
   `email` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Email to the address of the user',
   PRIMARY KEY (`user_id`, `kind`),
   CONSTRAINT `fk_user_notification_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+-- Table `budget_alert`: budget alerts sent, one per user, category and month (alerted
+-- again when the budget is raised above the amount alerted and reached again)
+
+CREATE TABLE `budget_alert` (
+  `user_id` int(10) unsigned NOT NULL,
+  `category` tinyint(3) unsigned NOT NULL,
+  `month` date NOT NULL COMMENT 'First day of the month',
+  `budget` decimal(10,2) NOT NULL COMMENT 'Budget of the month when alerted',
+  `spent` decimal(10,2) NOT NULL COMMENT 'Spending of the month when alerted',
+  `percent` smallint(5) unsigned NOT NULL COMMENT 'Spending in percent of the budget',
+  `sent_at` datetime NOT NULL,
+  PRIMARY KEY (`user_id`, `category`, `month`),
+  KEY `budget_alert_category` (`category`),
+  CONSTRAINT `fk_budget_alert_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_budget_alert_category` FOREIGN KEY (`category`) REFERENCES `bank_transaction_category` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -258,7 +277,9 @@ INSERT IGNORE INTO `schema_migrations` (`version`) VALUES
 ('2026-10-17_bank_backend_label'),
 ('2026-10-18_transaction_deleted'),
 ('2026-10-19_user_theme'),
-('2026-10-20_user_notification');
+('2026-10-20_user_notification'),
+('2026-10-21_user_budget_threshold'),
+('2026-10-22_budget_alert');
 
 SET FOREIGN_KEY_CHECKS = 1;
 COMMIT;

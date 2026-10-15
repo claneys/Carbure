@@ -648,6 +648,59 @@ test('notifications: why the email channel is disabled', async () => {
     assert.equal(emailUnavailableReason({ smtp: true, address: null, email_available: false }), 'notificationsEmailNoAddress');
 });
 
+test('notifications: the budget alert threshold is an integer from 50 to 200', async () => {
+    const { budgetThresholdError, NOTIFICATION_KINDS } = await import('../../portal/modules/notificationsModule.js');
+    assert.ok(NOTIFICATION_KINDS.includes('budget'));
+    for (const value of [50, 100, '120', ' 200 ']) {
+        assert.equal(budgetThresholdError(value), '', String(value));
+    }
+    for (const value of ['', null, undefined, 49, 201, '80.5', 'abc', -100]) {
+        assert.equal(budgetThresholdError(value), 'budgetThresholdInvalid', String(value));
+    }
+});
+
+test('notifications: the budget alert threshold is loaded, checked and saved', async () => {
+    const { createNotificationsModule } = await import('../../portal/modules/notificationsModule.js');
+    const sent = [];
+    let refuse = false;
+    const api = {
+        fetchNotifications: async () => ({ preferences: {}, smtp: true, address: 'a@example.com', email_available: true, budget_threshold: 90 }),
+        updateBudgetThreshold: async threshold => {
+            sent.push(threshold);
+            if (refuse) {
+                throw new Error('Refused');
+            }
+            return { preferences: {}, smtp: true, address: 'a@example.com', email_available: true, budget_threshold: threshold };
+        },
+    };
+    const { methods, data } = createNotificationsModule(() => api);
+    const toasts = [];
+    const context = { ...data(), ...methods, t: key => key, showToast: message => toasts.push(message) };
+    assert.equal(context.budgetThreshold, 100);
+
+    await context.loadNotifications();
+    assert.equal(context.budgetThreshold, 90);
+
+    // Invalid: not sent, the error shown
+    context.budgetThreshold = 300;
+    await context.saveBudgetThreshold();
+    assert.deepEqual(sent, []);
+    assert.equal(context.budgetThresholdErrorKey, 'budgetThresholdInvalid');
+
+    context.budgetThreshold = '80';
+    await context.saveBudgetThreshold();
+    assert.deepEqual(sent, [80]);
+    assert.equal(context.budgetThresholdErrorKey, '');
+    assert.equal(context.notifications.budget_threshold, 80);
+    assert.deepEqual(toasts, ['notificationsSaved']);
+    assert.equal(context.savingBudgetThreshold, false);
+
+    refuse = true;
+    await context.saveBudgetThreshold();
+    assert.equal(toasts.at(-1), 'Refused');
+    assert.equal(context.savingBudgetThreshold, false);
+});
+
 test('notifications: a change is saved at once, undone if refused', async () => {
     const { createNotificationsModule } = await import('../../portal/modules/notificationsModule.js');
     const preferences = () => ({ sync: { push: true, email: false }, rule: { push: true, email: false }, expense: { push: true, email: false } });

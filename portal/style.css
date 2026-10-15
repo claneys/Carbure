@@ -6331,6 +6331,26 @@ textarea:focus-visible,
     margin-top: 12px;
 }
 
+/* Threshold of the budget alerts, under the notifications table */
+.budget-threshold {
+    margin-top: 16px;
+}
+
+.budget-threshold-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-primary);
+}
+
+.budget-threshold-field input {
+    width: 7em;
+}
+
+.budget-threshold .sync-step-error {
+    margin: 6px 0 0;
+}
+
 .config-subtitle {
     margin: 18px 0 8px;
     font-size: 14px;

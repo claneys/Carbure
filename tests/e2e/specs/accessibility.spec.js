@@ -51,6 +51,11 @@ test('the notifications of the profile and the test email are readable', async (
     await page.getByRole('menuitem', { name: tr('myProfile') }).click();
     await expect(page.locator('#notifications-email-unavailable')).toBeVisible();
     problems.push(...await contrastProblems(page, tr('notificationsTitle')));
+    // The budget alert threshold refused: its error message
+    await page.getByLabel(tr('budgetThreshold')).fill('20');
+    await page.getByLabel(tr('budgetThreshold')).press('Enter');
+    await expect(page.locator('#budget-threshold-error')).toBeVisible();
+    problems.push(...await contrastProblems(page, `${tr('budgetThreshold')} (error)`));
 
     // Settings: the test email failed (no SMTP server), then sent
     const smtp = await startFakeSmtp();

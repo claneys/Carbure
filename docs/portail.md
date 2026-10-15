@@ -390,10 +390,14 @@ la configuration (`GET /system/sync`, `POST /system/sync-token`).
 - **Seuil d'alerte (€)** : notification pour toute nouvelle dépense supérieure à ce
   montant, détectée lors d'une synchronisation. Vide = désactivé.
 - **Notifications** : un tableau type de notification × canal (push sur l'app iOS, email)
-  pour la synchronisation, les règles « Notifier » et les dépenses importantes. Chaque case
-  s'enregistre aussitôt ; les notifications sont envoyées dans la **langue** choisie
-  ci-dessus. La colonne email est grisée, avec la raison, tant qu'aucun serveur
-  SMTP n'est configuré ou que le profil n'a pas d'adresse email
+  pour la synchronisation, les règles « Notifier », les dépenses importantes et les budgets
+  dépassés (désactivés par défaut). Chaque case s'enregistre aussitôt ; les notifications
+  sont envoyées dans la **langue** choisie ci-dessus. Dessous, le **seuil d'alerte des
+  budgets (%)** : pourcentage du budget du mois d'une catégorie à partir duquel l'alerte
+  part (entier de 50 à 200, 100 par défaut), enregistré à la validation ou en quittant le
+  champ ; une valeur hors limites est signalée sous le champ et n'est pas envoyée. La
+  colonne email est grisée, avec la raison, tant qu'aucun serveur SMTP n'est configuré ou
+  que le profil n'a pas d'adresse email
   (`GET`/`PUT /user/notifications`).
 - **Mes appareils** : appareils iOS enregistrés à la connexion depuis l'app, avec la
   date de dernière connexion et le token APNs, masqué par défaut. Les boutons permettent

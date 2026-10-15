@@ -433,7 +433,7 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
 
     /**
      * Channels of each kind of notification of the authenticated user
-     * @returns {Promise<Object>} {preferences: {kind: {push, email}}, smtp, address, email_available}
+     * @returns {Promise<Object>} {preferences: {kind: {push, email}}, smtp, address, email_available, budget_threshold}
      */
     async function fetchNotifications() {
         return request(`${baseUrl}/user/notifications`, {}, 'Failed to read the notifications');
@@ -446,6 +446,15 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
      */
     async function updateNotifications(preferences) {
         return request(`${baseUrl}/user/notifications`, { method: 'PUT', body: JSON.stringify({ preferences }) }, 'Failed to save the notifications');
+    }
+
+    /**
+     * Changes the budget alert threshold of the authenticated user
+     * @param {number} threshold - Percent of a budget whose spending alerts (50 to 200)
+     * @returns {Promise<Object>} The notifications, as fetchNotifications
+     */
+    async function updateBudgetThreshold(threshold) {
+        return request(`${baseUrl}/user/notifications`, { method: 'PUT', body: JSON.stringify({ budgetThreshold: String(threshold) }) }, 'Failed to save the notifications');
     }
 
     /**
@@ -1027,6 +1036,7 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
         sendTestEmail,
         fetchNotifications,
         updateNotifications,
+        updateBudgetThreshold,
         fetchFlowTransactions,
         unlockUser,
         fetchMcpSettings,

@@ -38,6 +38,16 @@ keeps track of what was done).
       (existing `prod.ini` files have no `[smtp]` section: it is added on save), then use
       **Send a test email**. Until then nothing changes: notifications are pushed only.
 
+- [ ] **Production**: the migrations `2026-10-21_user_budget_threshold` (column
+      `users.budget_threshold`, 100 for the existing users) and `2026-10-22_budget_alert`
+      (alerts already sent) are applied at container start. Nothing changes until a user
+      turns on "Budget of the month exceeded" in **My profile → Notifications** (opt-in).
+
+- [ ] Budget alerts only check the current month (an import of past months alerts
+      nothing) and the spending as the Budgets screen computes it (absolute value of the
+      sum of the month, refunds included): if alerts on past months are wanted, add a
+      separate history check instead of widening `BudgetAlert::check()`.
+
 - [ ] Strong authentication: handle the validations by **code** (SMS OTP, woob
       `BrowserQuestion`), which wait for input on stdin (closed today by
       `tools/woob-tty.py`); and offer the interactive mode to "Find my accounts in woob" /

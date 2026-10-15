@@ -330,6 +330,7 @@ profil :
 | Après la synchronisation de chaque compte | Tout le foyer | Réussite ou échec, et nombre de transactions à vérifier |
 | Une nouvelle dépense dépasse le seuil d'alerte | Chaque utilisateur dont le seuil est dépassé | « Dépense importante à vérifier », libellé et montant |
 | Une nouvelle transaction correspond à une règle « push » | Tout le foyer | Le mot-clé, le libellé et le montant (une seule notification par transaction) |
+| Les dépenses du mois d'une catégorie budgétée atteignent le seuil des budgets | Chaque utilisateur qui a activé ces alertes | « Budget dépassé : Courses », « 312,40 € sur 300,00 € (104 %) » |
 
 Le **badge** de l'app indique le nombre de transactions à vérifier. Le seuil d'alerte se
 règle dans **Mon profil** (vide = pas d'alerte).
@@ -342,11 +343,27 @@ l'erreur d'une synchronisation en échec est reprise telle que la banque (woob) 
 Les textes du serveur sont regroupés dans `src/lib/Messages.php`.
 
 Chaque utilisateur choisit, dans **Mon profil → Notifications**, les canaux de chaque type
-de notification (résultat d'une synchronisation, règle « Notifier », dépense importante) :
-push, email, les deux ou aucun. Par défaut, tout est envoyé en push et rien par email.
+de notification (résultat d'une synchronisation, règle « Notifier », dépense importante,
+budget dépassé) : push, email, les deux ou aucun. Par défaut, tout est envoyé en push et
+rien par email, sauf les alertes de budget, désactivées tant que l'utilisateur ne les
+active pas.
 L'email n'est proposé que si un serveur SMTP est configuré (**Administration →
 Paramètres**, section `[smtp]`) et que le profil a une adresse email ; l'échec d'un canal
 n'empêche ni l'autre ni la synchronisation.
+
+### Alertes de budget
+
+- **Quand** : après chaque synchronisation et chaque import d'un relevé, pour le **mois en
+  cours** uniquement (l'import d'un relevé des mois passés n'alerte pas sur des budgets
+  anciens).
+- **Quoi** : les dépenses du mois de chaque catégorie de dépenses qui a un budget,
+  sous-catégories comprises, calculées comme l'écran **Budgets** ; une sous-catégorie qui a
+  son propre budget est vérifiée aussi.
+- **Seuil** : choisi par chacun dans **Mon profil → Notifications**, en pourcentage du
+  budget, de 50 à 200 % (100 % par défaut ; 80 % pour être prévenu avant). Sous 100 %, le
+  titre devient « Budget presque atteint ».
+- **Une fois** par catégorie, mois et utilisateur, pas à chaque synchronisation. Si le budget
+  est ensuite relevé et de nouveau atteint, l'alerte repart pour le nouveau montant.
 
 ## Agents IA
 

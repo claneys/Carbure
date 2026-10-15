@@ -443,6 +443,31 @@ final class Transaction {
         $created = self::store($data, (int)Jwt::getUserIdFromToken(), ['account_number' => $parsed['account']]);
 
         // The rules categorize the new transactions, whatever their date
+        $categorized = self::categorizeImported($created);
+        Logger::info("Import of a " . $parsed['format'] . " file (" . ($parsed['bank']['id'] ?? 'generic') . "): " . count($created) . " new transaction(s), $categorized categorized");
+
+        // Budget alerts: only the current month (an import of past months alerts nothing)
+        if ($created && self::touchesCurrentMonth($data)) {
+            BudgetAlert::check();
+        }
+
+        $dates = array_column($data, 'date');
+        return [
+            'imported' => count($created),
+            'categorized' => $categorized,
+            'from' => $dates ? min($dates) : null,
+            'to' => $dates ? max($dates) : null,
+        ];
+    }
+
+    /**
+     * Categorize imported transactions with the rules (those still without category).
+     *
+     * @param list<array{label: string, amount: float, uuid: string}> $created The new transactions
+     * @return int The number of transactions categorized
+     */
+    private static function categorizeImported(array $created): int
+    {
         $categorized = 0;
         $keywords = Category::loadKeywords();
         foreach ($created as $transaction) {
@@ -452,15 +477,24 @@ final class Transaction {
                 $categorized++;
             }
         }
-        Logger::info("Import of a " . $parsed['format'] . " file (" . ($parsed['bank']['id'] ?? 'generic') . "): " . count($created) . " new transaction(s), $categorized categorized");
+        return $categorized;
+    }
 
-        $dates = array_column($data, 'date');
-        return [
-            'imported' => count($created),
-            'categorized' => $categorized,
-            'from' => $dates ? min($dates) : null,
-            'to' => $dates ? max($dates) : null,
-        ];
+    /**
+     * Whether transactions are dated in the current month.
+     *
+     * @param array<array<string, mixed>> $transactions The transactions (date, Y-m-d)
+     * @return bool
+     */
+    private static function touchesCurrentMonth(array $transactions): bool
+    {
+        $first = date('Y-m-01');
+        foreach ($transactions as $transaction) {
+            if ((string)$transaction['date'] >= $first) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

@@ -146,6 +146,14 @@ test('axe: the notifications of the profile and the result of the test email', a
     await page.setViewportSize({ width: 320, height: 256 });
     problems.push(...await reflowProblems(page, tr('notificationsTitle')));
     await page.setViewportSize({ width: 1280, height: 720 });
+    // The budget alert threshold refused: the field invalid, its error message
+    await page.getByLabel(tr('budgetThreshold')).fill('250');
+    await page.getByLabel(tr('budgetThreshold')).press('Enter');
+    await expect(page.locator('#budget-threshold-error')).toBeVisible();
+    problems.push(...await axeViolations(page, `${tr('budgetThreshold')} (error)`));
+    await page.setViewportSize({ width: 320, height: 256 });
+    problems.push(...await reflowProblems(page, `${tr('budgetThreshold')} (error)`));
+    await page.setViewportSize({ width: 1280, height: 720 });
 
     // Settings: the test email failed (no SMTP server configured)
     await showTab(page, 'tabSettings');
