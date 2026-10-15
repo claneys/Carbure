@@ -61,7 +61,7 @@ class SettingsTest extends DatabaseTestCase
         $config = Settings::get();
 
         $this->assertTrue($config['writable']);
-        $this->assertSame(['global', 'database', 'cleansing', 'auth', 'woob', 'apns'], array_column($config['sections'], 'name'));
+        $this->assertSame(['global', 'database', 'cleansing', 'auth', 'woob', 'apns', 'smtp'], array_column($config['sections'], 'name'));
         $password = $this->setting($config, 'db_password');
         $this->assertTrue($password['secret']);
         $this->assertFalse($password['editable']);
@@ -115,6 +115,18 @@ class SettingsTest extends DatabaseTestCase
             'newline' => ['savings_category', "Epargne\nwoob_path=/bin/sh"],
             'not a url' => ['public_url', 'javascript:alert(1)'],
             'array' => ['log_level', ['debug']],
+            'smtp host with a port' => ['smtp_host', 'smtp.example.com:25'],
+            'smtp host with a space' => ['smtp_host', 'smtp example'],
+            'smtp port' => ['smtp_port', '70000'],
+            'smtp encryption' => ['smtp_encryption', 'ssl'],
+            'smtp authentication' => ['smtp_auth', 'cram-md5'],
+            'smtp sender' => ['smtp_from', 'not an address'],
+            'smtp sender with a header' => ['smtp_from', "a@example.com\nBcc: b@example.com"],
+            'smtp sender name with a newline' => ['smtp_from_name', "Carbure\nBcc: b@example.com"],
+            'smtp username' => ['smtp_username', 'user name'],
+            'smtp password with a quote' => ['smtp_password', 'pass"word'],
+            'smtp password with a dollar' => ['smtp_password', 'pa${PATH}ss'],
+            'smtp password with a newline' => ['smtp_password', "pass\nsmtp_host=evil"],
         ];
     }
 
@@ -130,6 +142,98 @@ class SettingsTest extends DatabaseTestCase
             $this->assertSame(400, $e->getCode());
         }
         $this->assertSame($before, file_get_contents($this->file));
+    }
+
+    public function testSmtpSettings()
+    {
+        $this->loginAs(self::ADMIN);
+        $config = Settings::update(['smtp_host' => 'smtp.example.com', 'smtp_port' => '465', 'smtp_encryption' => 'tls',
+            'smtp_auth' => 'login', 'smtp_username' => 'carbure@example.com', 'smtp_password' => "yes p@ss;w=rd!{x}&(y)'#",
+            'smtp_from' => 'carbure@example.com', 'smtp_from_name' => "Carbure (Famille Martin)"]);
+
+        // Read back as the configuration of the instance is
+        $ini = parse_ini_file($this->file);
+        $this->assertSame('smtp.example.com', $ini['smtp_host']);
+        $this->assertSame('465', $ini['smtp_port']);
+        $this->assertSame('tls', $ini['smtp_encryption']);
+        $this->assertSame('login', $ini['smtp_auth']);
+        $this->assertSame("yes p@ss;w=rd!{x}&(y)'#", $ini['smtp_password']);
+        $this->assertSame('Carbure (Famille Martin)', $ini['smtp_from_name']);
+
+        // The password is a secret: masked, never sent back, still editable
+        $password = $this->setting($config, 'smtp_password');
+        $this->assertSame('smtp', $password['section']);
+        $this->assertTrue($password['secret']);
+        $this->assertTrue($password['editable']);
+        $this->assertSame('password', $password['kind']);
+        $this->assertTrue($password['set']);
+        $this->assertStringNotContainsString('p@ss', json_encode($config));
+        $this->assertSame(['none', 'starttls', 'tls'], $this->setting($config, 'smtp_encryption')['options']);
+
+        // Added into a new [smtp] section, then into it
+        $this->assertSame('smtp.example.com', parse_ini_file($this->file, true)['smtp']['smtp_host']);
+        file_put_contents($this->file, "[woob]\nwoob_debug=false\n[smtp]\n[apns]\napns_environment=sandbox\n");
+        Settings::update(['smtp_port' => '25', 'smtp_auth' => 'none']);
+        $sections = parse_ini_file($this->file, true, INI_SCANNER_RAW);
+        $this->assertSame(['smtp_auth' => 'none', 'smtp_port' => '25'], $sections['smtp']);
+        $this->assertSame(['apns_environment' => 'sandbox'], $sections['apns']);
+
+        // A one-word password is quoted too ("none" would be read as an empty value)
+        Settings::update(['smtp_password' => 'none', 'smtp_host' => '']);
+        $this->assertSame('none', parse_ini_file($this->file)['smtp_password']);
+        $this->assertSame('', parse_ini_file($this->file)['smtp_host']);
+    }
+
+    public function testTestEmail()
+    {
+        FakeSmtpServer::start();
+        try {
+            $this->loginAs(self::ADMIN);
+            $this->assertSame(['sent' => true, 'to' => 'admin@example.com'], Settings::testEmail());
+            $this->assertSame(['sent' => true, 'to' => 'other@example.com'], Settings::testEmail('other@example.com'));
+
+            $messages = FakeSmtpServer::messages();
+            $this->assertSame(['admin@example.com'], $messages[0]['to']);
+            $this->assertSame(['other@example.com'], $messages[1]['to']);
+            // In the language of the administrator, for an address of nobody
+            $this->assertStringContainsString('Subject: [Carbure] Email de test', $messages[0]['data']);
+            $this->assertStringContainsString('Subject: [Carbure] Email de test', $messages[1]['data']);
+            $this->assertStringNotContainsString('Mon profil', quoted_printable_decode($messages[0]['data']));
+
+            // In the language of the user of the address
+            Settings::testEmail('user@example.com');
+            $this->assertStringContainsString('Subject: [Carbure] Test email', FakeSmtpServer::messages()[2]['data']);
+
+            // The reply of the server that refused it
+            try {
+                Settings::testEmail('refused@example.com');
+                $this->fail('The refused recipient was accepted');
+            } catch (Error $e) {
+                $this->assertSame(502, $e->getCode());
+                $this->assertStringContainsString('550', $e->getMessage());
+            }
+
+            // No address in the profile and none given
+            Db::query("UPDATE users SET email = NULL WHERE id = 1");
+            try {
+                Settings::testEmail();
+                $this->fail('An email without recipient');
+            } catch (Error $e) {
+                $this->assertSame(400, $e->getCode());
+            }
+        } finally {
+            FakeSmtpServer::unconfigure();
+        }
+    }
+
+    public function testTestEmailWithoutSmtpServer()
+    {
+        FakeSmtpServer::unconfigure();
+        $this->loginAs(self::ADMIN);
+        $this->expectException(Error::class);
+        $this->expectExceptionCode(400);
+        $this->expectExceptionMessage('No SMTP server is configured');
+        Settings::testEmail();
     }
 
     public function testNothingIsWrittenWhenOneValueIsRefused()
@@ -172,7 +276,7 @@ class SettingsTest extends DatabaseTestCase
     {
         $this->loginAs(self::USER);
         foreach ([fn() => Settings::get(), fn() => Settings::update(['log_level' => 'debug']), fn() => Settings::sync(true),
-                  fn() => Settings::renewSyncToken()] as $call) {
+                  fn() => Settings::renewSyncToken(), fn() => Settings::testEmail('user@example.com')] as $call) {
             try {
                 $call();
                 $this->fail('A user is not an administrator');

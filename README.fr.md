@@ -70,8 +70,9 @@
 - ✅ **Pointage** : vérifiez vos transactions en un clic, filtrez celles qui restent à contrôler.
 - 🔁 **Opérations récurrentes** : salaire, loyer, abonnements et factures sont repérés tout
   seuls ; voyez d'un coup d'œil celles encore attendues ce mois-ci.
-- 🔔 **Alertes sur iPhone** : un push après chaque synchronisation, dès qu'une dépense dépasse
-  le seuil que vous avez choisi, ou quand une règle que vous avez désignée s'applique.
+- 🔔 **Alertes sur iPhone et par email** : après chaque synchronisation, dès qu'une dépense
+  dépasse le seuil que vous avez choisi, ou quand une règle que vous avez désignée
+  s'applique ; chacun choisit push, email ou les deux pour chaque type d'alerte.
 - 📊 **Insights** : vos propres indicateurs du mois (courses, carburant, abonnements…).
 - 👨‍👩‍👧 **Pensé pour le foyer** : plusieurs utilisateurs, des comptes et des données partagés,
   chacun sa langue et ses appareils ; un administrateur gère comptes, catégories, règles,
@@ -84,7 +85,7 @@
 - 🔒 **Tout reste chez vous** : Carbure tourne sur votre propre serveur (un NAS suffit). Pas de
   compte à créer, pas d'agrégateur, pas de cloud : vos identifiants et vos données bancaires
   restent dans votre base locale. Seules sorties réseau : votre banque (woob) et, si vous
-  l'activez, le service de notifications d'Apple.
+  les activez, le service de notifications d'Apple et votre serveur SMTP.
 
 > 🌍 **Banques couvertes** : Carbure s'appuie sur les modules [woob](https://woob.tech/), qui
 > couvrent surtout les banques françaises. Le portail existe en français et en anglais ; les

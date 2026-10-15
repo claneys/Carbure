@@ -17,10 +17,10 @@ built by the GitHub release workflow; committing/pushing is not deploying.
 |---|---|
 | `src/api.php` | HTTP entry (`/api/*`); without `conf/<env>.ini` serves only `/api/setup` |
 | `src/autoload.php` | Loads `src/lib`, `src/resources`, then `Config::load(getenv('APP_ENV') ?: 'prod')` |
-| `src/lib/` | `Config`, `Db` (mysqli), `Logger`, `Jwt`, `Webservice` (+ security headers), `ApiResolver`, `ApiRoute`, `Woob`, `Apns`, `Setup`/`Installer`, `Migrator`, `Setting` |
+| `src/lib/` | `Config`, `Db` (mysqli), `Logger`, `Jwt`, `Webservice` (+ security headers), `ApiResolver`, `ApiRoute`, `Woob`, `Apns`, `Mailer` (SMTP), `Messages` (fr/en texts of the notifications), `Setup`/`Installer`, `Migrator`, `Setting` |
 | `src/lib/import/` | Statement import behind `BankFile::parse()`: `OfxReader`, `QifReader`, `CamtReader`, `CsvReader` (+ `CsvGeneric` fallback), `BankProfiles` (schema) |
 | `src/lib/import/banks/` | One CSV profile per bank (`<id>.php` returns an array); fixtures `tests/fixtures/import/`, snapshots `…/expected/` |
-| `src/resources/` | `User`, `Bank`, `Transaction`, `Budget`, `Category`, `Insight`, `Device`, `ApiToken`, `Mcp`, `OAuth`, `System` |
+| `src/resources/` | `User`, `Bank`, `Transaction`, `Budget`, `Category`, `Insight`, `Device`, `Notification`, `ApiToken`, `Mcp`, `OAuth`, `System` |
 | `portal/` | Mixins in `modules/`, API calls in `services/apiService.js`, texts in `i18n/<locale>.json` (loader `i18n.js`) |
 | `swagger/` | OpenAPI via reflection + Swagger UI |
 | `sql/carbure.sql`, `sql/migrations/` | Full schema; dated migrations (`Migrator`, table `schema_migrations`) |

@@ -360,10 +360,16 @@ Le fichier de configuration (`data/conf/prod.ini`) section par section,
 avec une description de chaque réglage. Les secrets (`db_password`, `jwtsecret`,
 `password_salt`, `sync_token`…) ne sont jamais affichés. Seuls les réglages sans risque
 sont modifiables — `log_level`, `log_retention_days`, `savings_category`, `public_url`, `woob_transactions`,
-`woob_logging`, `woob_debug`, `woob_auto_update` et les identifiants APNs — avec des
+`woob_logging`, `woob_debug`, `woob_auto_update`, les identifiants APNs et le serveur
+SMTP des emails — avec des
 listes, des interrupteurs et des champs vérifiés par le serveur ; les autres portent un
 cadenas. Les réglages modifiés sont surlignés ; la barre du bas les enregistre ou les
 annule. Le fichier précédent est gardé en `prod.ini.bak` (`GET`/`PUT /system/config`).
+
+Le mot de passe SMTP (`smtp_password`) n'est jamais affiché : on en saisit un nouveau pour
+le remplacer. Dans la section **Emails (SMTP)**, **Envoyer un email de test** envoie un
+email avec la configuration enregistrée, à votre adresse ou à celle saisie, et affiche le
+résultat ou la réponse du serveur en cas d'échec (`POST /system/smtp-test`).
 
 ## Synchro (menu Administration)
 
@@ -379,8 +385,14 @@ la configuration (`GET /system/sync`, `POST /system/sync-token`).
   conserver). L'identifiant n'est pas modifiable.
 - **Langue** (français / anglais) : enregistrée sur le compte et appliquée à chaque
   connexion, sur tous les navigateurs.
-- **Seuil d'alerte (€)** : notification push sur l'iPhone pour toute nouvelle dépense
-  supérieure à ce montant, détectée lors d'une synchronisation. Vide = désactivé.
+- **Seuil d'alerte (€)** : notification pour toute nouvelle dépense supérieure à ce
+  montant, détectée lors d'une synchronisation. Vide = désactivé.
+- **Notifications** : un tableau type de notification × canal (push sur l'app iOS, email)
+  pour la synchronisation, les règles « Notifier » et les dépenses importantes. Chaque case
+  s'enregistre aussitôt ; les notifications sont envoyées dans la **langue** choisie
+  ci-dessus. La colonne email est grisée, avec la raison, tant qu'aucun serveur
+  SMTP n'est configuré ou que le profil n'a pas d'adresse email
+  (`GET`/`PUT /user/notifications`).
 - **Mes appareils** : appareils iOS enregistrés à la connexion depuis l'app, avec la
   date de dernière connexion et le token APNs, masqué par défaut. Les boutons permettent
   de l'afficher en entier, de le copier (HTTPS requis ; sinon le token est affiché) ou

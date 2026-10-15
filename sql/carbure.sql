@@ -202,6 +202,19 @@ CREATE TABLE `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
+-- Table `user_notification`: channels of each kind of notification chosen by each user
+-- (no row for a kind: push on, email off)
+
+CREATE TABLE `user_notification` (
+  `user_id` int(10) unsigned NOT NULL,
+  `kind` varchar(20) NOT NULL COMMENT 'sync (synchronization result), rule (rule marked notify), expense (large expense)',
+  `push` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Push to the devices of the user (iOS app)',
+  `email` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Email to the address of the user',
+  PRIMARY KEY (`user_id`, `kind`),
+  CONSTRAINT `fk_user_notification_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
 -- Table `schema_migrations`: version of this schema (base of version 1.0, then the
 -- migrations included since)
 
@@ -244,7 +257,8 @@ INSERT IGNORE INTO `schema_migrations` (`version`) VALUES
 ('2026-10-16_bank_account_label'),
 ('2026-10-17_bank_backend_label'),
 ('2026-10-18_transaction_deleted'),
-('2026-10-19_user_theme');
+('2026-10-19_user_theme'),
+('2026-10-20_user_notification');
 
 SET FOREIGN_KEY_CHECKS = 1;
 COMMIT;

@@ -61,3 +61,54 @@ test('shows, reveals then deletes a device', async ({ adminPage: page }) => {
     await expect(page.locator('.toast')).toHaveText(tr('deviceDeleted'));
     await expect(page.locator('.transactions-hint')).toHaveText(tr('noDevices'));
 });
+
+/**
+ * Checkbox of a channel of a kind of notification
+ * @param {import('@playwright/test').Page} page
+ * @param {string} kind - sync, rule or expense
+ * @param {string} channel - push or email
+ */
+function notification(page, kind, channel) {
+    const name = tr('notificationsToggle', { channel: tr(`notificationsChannel_${channel}`), kind: tr(`notificationsKind_${kind}`) });
+    return page.getByRole('table', { name: tr('notificationsTitle') }).getByRole('checkbox', { name, exact: true });
+}
+
+test('chooses the channels of each notification', async ({ userPage: page, api }) => {
+    await openProfile(page);
+
+    // Default: pushed, not emailed; no SMTP server, the email channel tells why
+    for (const kind of ['sync', 'rule', 'expense']) {
+        await expect(notification(page, kind, 'push')).toBeChecked();
+        await expect(notification(page, kind, 'email')).not.toBeChecked();
+        await expect(notification(page, kind, 'email')).toBeDisabled();
+    }
+    await expect(page.locator('#notifications-email-unavailable')).toContainText(tr('notificationsEmailNoSmtp'));
+
+    await notification(page, 'sync', 'push').uncheck();
+    await expect(page.locator('.toast')).toHaveText(tr('notificationsSaved'));
+
+    // An administrator configures the SMTP server: the email channel can be chosen
+    const response = await api.put('/api/system/config', { data: { values: { smtp_host: 'smtp.example.com', smtp_from: 'carbure@example.com' } } });
+    expect(response.ok()).toBeTruthy();
+    await page.reload();
+    await openProfile(page);
+    await expect(page.locator('#notifications-email-unavailable')).toHaveCount(0);
+    await notification(page, 'expense', 'email').check();
+    await expect(page.locator('.toast')).toHaveText(tr('notificationsSaved'));
+
+    // Saved on the server
+    await page.reload();
+    await openProfile(page);
+    await expect(notification(page, 'sync', 'push')).not.toBeChecked();
+    await expect(notification(page, 'expense', 'email')).toBeChecked();
+    await expect(notification(page, 'expense', 'push')).toBeChecked();
+    await expect(notification(page, 'rule', 'email')).not.toBeChecked();
+
+    // Without an email address in the profile, the reason changes; a channel already on
+    // can still be turned off
+    await page.getByLabel(tr('email'), { exact: true }).fill('');
+    await page.getByRole('button', { name: tr('save') }).click();
+    await expect(page.locator('#notifications-email-unavailable')).toContainText(tr('notificationsEmailNoAddress'));
+    await expect(notification(page, 'expense', 'email')).toBeEnabled();
+    await expect(notification(page, 'rule', 'email')).toBeDisabled();
+});

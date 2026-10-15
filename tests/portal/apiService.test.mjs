@@ -167,3 +167,22 @@ test('the accounts of one bank connection are asked to woob with its name', asyn
     await api.discoverBankAccounts();
     assert.equal(calls[1].url, `${BASE}/bank/discover`);
 });
+
+test('notifications and test email requests', async () => {
+    const calls = mockFetch(() => json({}));
+    const api = createApiService(BASE, 't');
+
+    await api.fetchNotifications();
+    await api.updateNotifications({ sync: { email: true } });
+    await api.sendTestEmail();
+    await api.sendTestEmail('other@example.com');
+
+    assert.equal(calls[0].url, `${BASE}/user/notifications`);
+    assert.equal(calls[1].url, `${BASE}/user/notifications`);
+    assert.equal(calls[1].options.method, 'PUT');
+    assert.deepEqual(JSON.parse(calls[1].options.body), { preferences: { sync: { email: true } } });
+    assert.equal(calls[2].url, `${BASE}/system/smtp-test`);
+    assert.equal(calls[2].options.method, 'POST');
+    assert.deepEqual(JSON.parse(calls[2].options.body), {});
+    assert.deepEqual(JSON.parse(calls[3].options.body), { to: 'other@example.com' });
+});

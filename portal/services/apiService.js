@@ -422,6 +422,33 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
     }
 
     /**
+     * Sends a test email with the SMTP server of the configuration (administrators)
+     * @param {string} to - Recipient ('' for the address of the administrator)
+     * @returns {Promise<Object>} {sent, to}
+     */
+    async function sendTestEmail(to = '') {
+        const body = to ? { to } : {};
+        return request(`${baseUrl}/system/smtp-test`, { method: 'POST', body: JSON.stringify(body) }, 'Failed to send the test email');
+    }
+
+    /**
+     * Channels of each kind of notification of the authenticated user
+     * @returns {Promise<Object>} {preferences: {kind: {push, email}}, smtp, address, email_available}
+     */
+    async function fetchNotifications() {
+        return request(`${baseUrl}/user/notifications`, {}, 'Failed to read the notifications');
+    }
+
+    /**
+     * Changes channels of kinds of notification of the authenticated user
+     * @param {Object} preferences - {kind: {push?, email?}} (booleans)
+     * @returns {Promise<Object>} The notifications, as fetchNotifications
+     */
+    async function updateNotifications(preferences) {
+        return request(`${baseUrl}/user/notifications`, { method: 'PUT', body: JSON.stringify({ preferences }) }, 'Failed to save the notifications');
+    }
+
+    /**
      * Money flow of a month (income sources, expenses, savings)
      * @param {number} month - Month (1-12)
      * @param {number} year - Year
@@ -997,6 +1024,9 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
         updateConfig,
         fetchSyncInfo,
         renewSyncToken,
+        sendTestEmail,
+        fetchNotifications,
+        updateNotifications,
         fetchFlowTransactions,
         unlockUser,
         fetchMcpSettings,

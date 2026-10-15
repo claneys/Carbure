@@ -3,8 +3,9 @@
  *
  * Settings and Sync tabs (Administration menu): the configuration file of the
  * instance by section, the secrets masked and only the safe settings editable
- * (the server checks every value); the request that starts the bank
- * synchronization for a scheduler (cron, Synology task...).
+ * (the server checks every value; the SMTP password only replaced) with a test
+ * email of the SMTP settings; the request that starts the bank synchronization
+ * for a scheduler (cron, Synology task...).
  *
  * @module configModule
  */
@@ -42,7 +43,11 @@ export function createConfigModule(getApiService) {
                 // Answer of GET /system/sync
                 syncInfo: null,
                 syncAccount: '',
-                renewingSyncToken: false
+                renewingSyncToken: false,
+                // Test email: recipient ('' for the address of the administrator), result
+                smtpTestTo: '',
+                sendingTestEmail: false,
+                smtpTestResult: null
             };
         },
 
@@ -144,6 +149,10 @@ export function createConfigModule(getApiService) {
                 if (setting.kind === 'bool') {
                     return setting.value === true;
                 }
+                // A password is never sent by the server: typed only to replace it
+                if (setting.kind === 'password') {
+                    return '';
+                }
                 return setting.value === null || setting.value === undefined ? '' : String(setting.value);
             },
 
@@ -199,6 +208,27 @@ export function createConfigModule(getApiService) {
                 const name = 'configHelp_' + key;
                 const help = this.t(name);
                 return help === name ? '' : help;
+            },
+
+            /**
+             * Sends a test email with the saved SMTP settings, to the address typed or
+             * to the one of the administrator
+             * @returns {Promise<void>}
+             */
+            async sendTestEmail() {
+                if (this.sendingTestEmail) {
+                    return;
+                }
+                this.sendingTestEmail = true;
+                this.smtpTestResult = null;
+                try {
+                    const result = await getApiService().sendTestEmail(this.smtpTestTo.trim());
+                    this.smtpTestResult = { ok: true, message: this.t('smtpTestSent', { to: result.to }) };
+                } catch (error) {
+                    this.smtpTestResult = { ok: false, message: error.message };
+                } finally {
+                    this.sendingTestEmail = false;
+                }
             },
 
             /**

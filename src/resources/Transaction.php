@@ -271,8 +271,9 @@ final class Transaction {
      *                                            their raw label to send it as a progress event
      * @param int                         $userId The user owning the transactions
      * @param array<string, string|null>  $origin bank_name and account_number of the account they come from
-     * @return list<array{label: string, amount: float, uuid: string}> The transactions that were not
-     *              known yet (label cleaned, amount, uuid); the deleted ones are skipped
+     * @return list<array{label: string, amount: float, uuid: string, date: string|null}> The transactions
+     *              that were not known yet (label cleaned, amount, uuid, real date); the deleted ones
+     *              are skipped
      */
     private static function store(array $rows, int $userId, array $origin = []): array
     {
@@ -284,7 +285,8 @@ final class Transaction {
                 Webservice::sendProgress($row['raw']);
             }
             if (!isset($deleted[$row['uuid']]) && self::create($row, $userId, $origin)) {
-                $created[] = ['label' => $row['label'], 'amount' => (float)$row['amount'], 'uuid' => $row['uuid']];
+                $created[] = ['label' => $row['label'], 'amount' => (float)$row['amount'], 'uuid' => $row['uuid'],
+                    'date' => $row['rdate'] ?? $row['date'] ?? null];
             }
         }
 

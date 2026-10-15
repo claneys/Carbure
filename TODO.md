@@ -24,6 +24,12 @@ keeps track of what was done).
       "any source"). After the next release, check on the NAS
       `gh attestation verify oci://docker.io/ltoinel/carbure:<version> --owner ltoinel`.
 
+- [ ] **Production**: the migration `2026-10-20_user_notification` (table of the
+      notification channels chosen by each user) is applied at container start. To send the
+      notifications by email, set the `[smtp]` settings in **Administration → Settings**
+      (existing `prod.ini` files have no `[smtp]` section: it is added on save), then use
+      **Send a test email**. Until then nothing changes: notifications are pushed only.
+
 - [ ] Strong authentication: handle the validations by **code** (SMS OTP, woob
       `BrowserQuestion`), which wait for input on stdin (closed today by
       `tools/woob-tty.py`); and offer the interactive mode to "Find my accounts in woob" /

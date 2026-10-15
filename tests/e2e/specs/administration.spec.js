@@ -1,6 +1,7 @@
 // Banners of the administrators: database update and weak session secret.
 // The e2e database is up to date: the state of the schema is simulated.
 const { test, expect, tr } = require('../fixtures');
+const { startFakeSmtp } = require('../fake-smtp');
 
 /**
  * Simulates a database with a pending migration and the example session secret
@@ -92,4 +93,41 @@ test('an administrator gets the request that starts the synchronization', async 
     await expect(curl).toContainText('X-Sync-Token: ••••');
     await page.locator('#sync-account').selectOption('00012345678@bnp');
     await expect(curl).toContainText('/api/bank/sync?account=00012345678%40bnp');
+});
+
+test('an administrator configures the SMTP server and sends a test email', async ({ adminPage: page }) => {
+    const smtp = await startFakeSmtp();
+    try {
+        await openAdministration(page, 'tabSettings');
+        await page.locator('#config-smtp_host').fill('127.0.0.1');
+        await page.locator('#config-smtp_port').fill(String(smtp.port));
+        await page.locator('#config-smtp_from').fill('carbure@example.com');
+        await page.locator('#config-smtp_password').fill('mail-secret');
+        // The test uses the saved configuration
+        await expect(page.locator('.smtp-test-note')).toHaveText(tr('smtpTestUnsaved'));
+        await page.getByRole('button', { name: tr('save') }).click();
+        await expect(page.locator('.toast')).toHaveText(tr('configSaved'));
+        await expect(page.locator('.smtp-test-note')).toHaveCount(0);
+
+        // The password is never sent back: only replaced
+        await expect(page.locator('#config-smtp_password')).toHaveValue('');
+        await expect(page.locator('#config-smtp_password')).toHaveAttribute('placeholder', tr('configPasswordKeep'));
+        await expect(page.locator('.tab-panel')).not.toContainText('mail-secret');
+
+        // To the address of the administrator
+        await page.getByRole('button', { name: tr('smtpTestButton') }).click();
+        await expect(page.getByRole('status').filter({ hasText: tr('smtpTestSent', { to: 'admin@example.com' }) })).toBeVisible();
+        expect(smtp.messages).toHaveLength(1);
+        expect(smtp.messages[0].from).toBe('carbure@example.com');
+        expect(smtp.messages[0].to).toEqual(['admin@example.com']);
+        expect(smtp.messages[0].data).toContain('Subject: [Carbure] Email de test');
+
+        // The reply of a server that refuses the email
+        await page.getByLabel(tr('smtpTestTitle')).fill('refused@example.com');
+        await page.getByRole('button', { name: tr('smtpTestButton') }).click();
+        await expect(page.locator('.smtp-test-result[role="alert"]')).toContainText('550 5.1.1 Mailbox unavailable');
+        expect(smtp.messages).toHaveLength(1);
+    } finally {
+        await smtp.close();
+    }
 });

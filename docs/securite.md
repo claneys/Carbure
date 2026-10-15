@@ -138,6 +138,10 @@ Seules ces routes ne demandent pas de JWT (un test unitaire le vérifie) :
   (`code`, `code_verifier`, `refresh_token`, `access_token`, `client_secret`), et le
   paramètre `token=` des URL (synchronisation, MCP). Le corps des réponses du serveur MCP et
   d'OAuth n'est pas journalisé.
+- Le mot de passe SMTP (`smtp_password`) n'est jamais renvoyé au portail ni journalisé
+  (champ masqué dans les logs) ; il n'apparaît pas dans les erreurs d'envoi. Les emails
+  sont en texte brut, les adresses et le sujet refusent les retours à la ligne (pas
+  d'injection d'en-têtes) et le certificat du serveur SMTP est vérifié en STARTTLS/TLS.
 - Les messages d'erreur ne renvoient ni hachage ni secret ; l'`uid` permet de retrouver
   le détail dans les logs serveur.
 - **Format des logs** : une entrée par ligne JSON (JSON Lines), avec l'heure ISO 8601

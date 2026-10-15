@@ -1373,7 +1373,9 @@
                                                 <span class="toggle-label">{{ configDraft[setting.key] ? t('configOn') : t('configOff') }}</span>
                                             </label>
                                             <input v-else-if="setting.kind === 'number'" type="number" :id="'config-' + setting.key" v-model="configDraft[setting.key]" :min="setting.min" :max="setting.max" />
-                                            <input v-else :type="setting.kind === 'url' ? 'url' : 'text'" :id="'config-' + setting.key" v-model.trim="configDraft[setting.key]"
+                                            <input v-else-if="setting.kind === 'password'" type="password" :id="'config-' + setting.key" v-model="configDraft[setting.key]"
+                                                   :placeholder="setting.set ? t('configPasswordKeep') : t('configPasswordUnset')" autocomplete="new-password" spellcheck="false" />
+                                            <input v-else :type="setting.kind === 'url' || setting.kind === 'email' ? setting.kind : 'text'" :id="'config-' + setting.key" v-model.trim="configDraft[setting.key]"
                                                    :placeholder="setting.kind === 'url' ? 'https://carbure.example.fr' : ''" autocomplete="off" spellcheck="false" />
                                         </template>
                                         <template v-else>
@@ -1382,6 +1384,26 @@
                                             <span class="material-icons config-lock" :title="t(setting.secret ? 'configLockedSecret' : 'configLocked')" :aria-label="t(setting.secret ? 'configLockedSecret' : 'configLocked')">{{ setting.secret ? 'key' : 'lock' }}</span>
                                         </template>
                                     </div>
+                                </div>
+                                <!-- Test email with the saved SMTP settings -->
+                                <div v-if="section.name === 'smtp'" class="config-row smtp-test">
+                                    <div class="config-label">
+                                        <label for="smtp-test-to">{{ t('smtpTestTitle') }}</label>
+                                        <span class="config-help">{{ t('smtpTestHelp') }}</span>
+                                    </div>
+                                    <div class="config-value">
+                                        <input id="smtp-test-to" type="email" v-model="smtpTestTo"
+                                               :placeholder="currentUser && currentUser.email ? currentUser.email : t('smtpTestTo')" autocomplete="off" spellcheck="false"
+                                               @keydown.enter.prevent="sendTestEmail" />
+                                        <button type="button" class="btn-secondary smtp-test-button" @click="sendTestEmail" :disabled="sendingTestEmail">
+                                            <span class="material-icons" :class="{ spin: sendingTestEmail }" aria-hidden="true">{{ sendingTestEmail ? 'autorenew' : 'send' }}</span>{{ t('smtpTestButton') }}
+                                        </button>
+                                    </div>
+                                    <p v-if="configChangeCount" class="config-help smtp-test-note">{{ t('smtpTestUnsaved') }}</p>
+                                    <p v-if="smtpTestResult && smtpTestResult.ok" class="smtp-test-result smtp-test-ok" role="status">
+                                        <span class="material-icons" aria-hidden="true">check_circle</span>{{ smtpTestResult.message }}
+                                    </p>
+                                    <p v-else-if="smtpTestResult" class="smtp-test-result sync-step-error" role="alert">{{ smtpTestResult.message }}</p>
                                 </div>
                             </fieldset>
 
@@ -1710,6 +1732,42 @@
                                 </button>
                             </div>
                         </form>
+
+                        <!-- Channels of each kind of notification -->
+                        <section class="profile-container profile-devices profile-notifications" aria-labelledby="notifications-title">
+                            <div class="users-header">
+                                <h2 id="notifications-title">{{ t('notificationsTitle') }}</h2>
+                            </div>
+                            <p class="rules-help">{{ t('notificationsHelp') }}</p>
+                            <p v-if="loadingNotifications && !notifications" class="rules-help">{{ t('loadingNotifications') }}</p>
+                            <template v-else-if="notifications">
+                                <table class="notifications-table">
+                                    <caption class="visually-hidden">{{ t('notificationsTitle') }}</caption>
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">{{ t('notificationsKind') }}</th>
+                                            <th v-for="channel in notificationChannels" :key="channel" scope="col">{{ t('notificationsChannel_' + channel) }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="kind in notificationKinds" :key="kind">
+                                            <th scope="row">{{ t('notificationsKind_' + kind) }}</th>
+                                            <td v-for="channel in notificationChannels" :key="channel">
+                                                <input type="checkbox" :id="'notification-' + kind + '-' + channel"
+                                                       :checked="notifications.preferences[kind][channel]"
+                                                       :disabled="notificationDisabled(kind, channel)"
+                                                       :aria-describedby="channel === 'email' && emailUnavailable ? 'notifications-email-unavailable' : null"
+                                                       :aria-label="t('notificationsToggle', { channel: t('notificationsChannel_' + channel), kind: t('notificationsKind_' + kind) })"
+                                                       @change="setNotification(kind, channel, $event.target.checked)" />
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <p v-if="emailUnavailable" id="notifications-email-unavailable" class="rules-help notifications-unavailable">
+                                    <span class="material-icons inline-icon" aria-hidden="true">info</span>{{ t(emailUnavailable) }}
+                                </p>
+                            </template>
+                        </section>
 
                         <div class="profile-container profile-devices">
                             <div class="users-header">

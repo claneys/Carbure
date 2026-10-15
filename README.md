@@ -69,8 +69,9 @@
 - ✅ **Check-off**: verify transactions in one click and filter those still to review.
 - 🔁 **Recurring transactions**: salary, rent, subscriptions and bills are spotted on their
   own; see at a glance those still expected this month.
-- 🔔 **iPhone alerts**: a push after each sync, as soon as an expense exceeds the threshold
-  you set, or when a rule you chose matches.
+- 🔔 **Alerts on iPhone and by email**: after each sync, as soon as an expense exceeds the
+  threshold you set, or when a rule you chose matches; each user picks push, email or both
+  for each kind of alert.
 - 📊 **Insights**: your own monthly indicators (groceries, fuel, subscriptions…).
 - 👨‍👩‍👧 **Built for households**: several users, shared accounts and data, each with their own
   language and devices; an administrator manages accounts, categories, rules, users and the
@@ -83,7 +84,7 @@
 - 🔒 **Everything stays with you**: Carbure runs on your own server (a NAS is enough). No
   account to create, no aggregator, no cloud: your bank credentials and data stay in your
   local database. The only outbound connections are to your bank (woob) and, if you enable
-  them, Apple's push notification service.
+  them, Apple's push notification service and your SMTP server.
 
 > 🌍 **Bank coverage**: Carbure relies on [woob](https://woob.tech/) modules, which mainly
 > cover French banks. The portal is available in English and French; amounts are in euros.

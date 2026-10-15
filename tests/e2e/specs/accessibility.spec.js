@@ -2,6 +2,7 @@
 // buttons at rest and on hover, on every tab and in the modals (see a11y.js)
 const { test, expect, tr, openTab, trustWoobRepository } = require('../fixtures');
 const { contrastProblems } = require('../a11y');
+const { startFakeSmtp } = require('../fake-smtp');
 const path = require('path');
 
 // Hovering every button of every screen takes time
@@ -37,6 +38,42 @@ test('every tab is readable, buttons on hover included', async ({ adminPage: pag
         await page.waitForLoadState('networkidle');
         await page.waitForTimeout(300);
         problems.push(...await contrastProblems(page, tr(tab)));
+    }
+
+    expect(problems).toEqual([]);
+});
+
+test('the notifications of the profile and the test email are readable', async ({ adminPage: page }) => {
+    const problems = [];
+
+    // Profile: the notifications without SMTP server (email disabled, its reason)
+    await page.locator('.user-menu-toggle').click();
+    await page.getByRole('menuitem', { name: tr('myProfile') }).click();
+    await expect(page.locator('#notifications-email-unavailable')).toBeVisible();
+    problems.push(...await contrastProblems(page, tr('notificationsTitle')));
+
+    // Settings: the test email failed (no SMTP server), then sent
+    const smtp = await startFakeSmtp();
+    try {
+        await page.locator('.tabs').getByRole('button', { name: tr('tabAdministration'), exact: true }).click();
+        await page.getByRole('tab', { name: tr('tabSettings'), exact: true }).click();
+        await page.getByRole('button', { name: tr('smtpTestButton') }).click();
+        await expect(page.locator('.smtp-test-result[role="alert"]')).toBeVisible();
+        problems.push(...await contrastProblems(page, `${tr('smtpTestTitle')} (error)`));
+
+        await page.locator('#config-smtp_host').fill('127.0.0.1');
+        await page.locator('#config-smtp_port').fill(String(smtp.port));
+        await page.locator('#config-smtp_from').fill('carbure@example.com');
+        // A setting changed: the note of the test email
+        await expect(page.locator('.smtp-test-note')).toBeVisible();
+        problems.push(...await contrastProblems(page, `${tr('smtpTestTitle')} (unsaved)`));
+        await page.getByRole('button', { name: tr('save') }).click();
+        await expect(page.locator('.toast')).toHaveText(tr('configSaved'));
+        await page.getByRole('button', { name: tr('smtpTestButton') }).click();
+        await expect(page.locator('.smtp-test-ok')).toBeVisible();
+        problems.push(...await contrastProblems(page, `${tr('smtpTestTitle')} (sent)`));
+    } finally {
+        await smtp.close();
     }
 
     expect(problems).toEqual([]);

@@ -16,13 +16,15 @@
 final class Settings {
 
     /** Settings whose value is never sent to the portal */
-    const SECRETS = ['db_password', 'jwtsecret', 'password_salt', 'sync_token', 'apns_certificate_password'];
+    const SECRETS = ['db_password', 'jwtsecret', 'password_salt', 'sync_token', 'apns_certificate_password', 'smtp_password'];
 
     /**
-     * Settings the portal can change: kind (select, bool, number, text, url),
-     * options or limits, and for the texts the pattern of a valid value.
+     * Settings the portal can change: kind (select, bool, number, text, url, email,
+     * password), options or limits, and for the texts the pattern of a valid value.
      * woob_logging and woob_transactions are put in the woob command line: only
-     * known values are accepted.
+     * known values are accepted. A password is a secret: never sent to the portal, only
+     * replaced (no quote, backslash, dollar nor control character: they would change
+     * its meaning in the ini file).
      */
     const EDITABLE = [
         'log_level' => ['kind' => 'select', 'options' => ['debug', 'info', 'warning', 'error']],
@@ -40,6 +42,15 @@ final class Settings {
         'apns_bundle_id' => ['kind' => 'text', 'pattern' => '/^[A-Za-z0-9.\-]{1,100}$/'],
         'apns_key_id' => ['kind' => 'text', 'pattern' => '/^[A-Z0-9]{10}$/', 'empty' => true],
         'apns_team_id' => ['kind' => 'text', 'pattern' => '/^[A-Z0-9]{10}$/', 'empty' => true],
+        // Empty smtp_host: no email is sent
+        'smtp_host' => ['kind' => 'text', 'pattern' => '/^[A-Za-z0-9.\-]{1,253}$/', 'empty' => true],
+        'smtp_port' => ['kind' => 'number', 'min' => 1, 'max' => 65535],
+        'smtp_encryption' => ['kind' => 'select', 'options' => ['none', 'starttls', 'tls']],
+        'smtp_auth' => ['kind' => 'select', 'options' => ['none', 'plain', 'login']],
+        'smtp_username' => ['kind' => 'text', 'pattern' => '/^[\p{L}\p{N}._%+@\-]{1,200}$/u', 'empty' => true],
+        'smtp_password' => ['kind' => 'password', 'pattern' => '/^[^\x00-\x1F\x7F"\\\\$]{1,200}$/u', 'empty' => true],
+        'smtp_from' => ['kind' => 'email', 'empty' => true],
+        'smtp_from_name' => ['kind' => 'text', 'pattern' => '/^[\p{L}\p{N} .,\'&()\-]{1,100}$/u', 'empty' => true],
     ];
 
     /** Section of the settings that the file may not have yet */
@@ -49,6 +60,8 @@ final class Settings {
         'woob_2fa_wait' => 'woob', 'woob_2fa_retries' => 'woob',
         'apns_environment' => 'apns', 'apns_auth_method' => 'apns', 'apns_bundle_id' => 'apns',
         'apns_key_id' => 'apns', 'apns_team_id' => 'apns',
+        'smtp_host' => 'smtp', 'smtp_port' => 'smtp', 'smtp_encryption' => 'smtp', 'smtp_auth' => 'smtp',
+        'smtp_username' => 'smtp', 'smtp_password' => 'smtp', 'smtp_from' => 'smtp', 'smtp_from_name' => 'smtp',
     ];
 
     /**
@@ -122,12 +135,34 @@ final class Settings {
         $file = self::file();
         $ini = self::read($file);
         foreach ($checked as $key => $value) {
-            $ini = Installer::setIni($ini, $key, $value);
+            // A password is always quoted: "yes", "none"... would be read as booleans
+            $ini = Installer::setIni(self::addMissing($ini, $key), $key, $value, self::EDITABLE[$key]['kind'] === 'password');
         }
         self::write($file, $ini);
         Logger::warn("Configuration changed by user " . Jwt::getUserIdFromToken() . ": " . implode(', ', array_keys($checked)));
 
         return self::get();
+    }
+
+    /**
+     * A setting missing from the file is added (empty) into its section, the section
+     * added at the end of the file if needed (a file older than the setting).
+     *
+     * @param string $ini The INI content
+     * @param string $key The setting (editable)
+     * @return string The INI content
+     */
+    private static function addMissing(string $ini, string $key): string
+    {
+        if (preg_match('/^;?\s*' . preg_quote($key, '/') . '\s*=/m', $ini)) {
+            return $ini;
+        }
+        $section = self::SECTIONS[$key];
+        $header = '/^\[' . $section . '\][^\n]*(\n|$)/m';
+        if (!preg_match($header, $ini)) {
+            return rtrim($ini) . "\n\n[$section]\n$key=\n";
+        }
+        return preg_replace_callback($header, fn($match) => rtrim($match[0], "\n") . "\n$key=\n", $ini, 1) ?? $ini;
     }
 
     /**
@@ -173,6 +208,33 @@ final class Settings {
         Config::set('sync_token', $token);
         Logger::warn("sync_token renewed by user " . Jwt::getUserIdFromToken());
         return ['token' => $token];
+    }
+
+    /**
+     * Send a test email with the SMTP server of the configuration file (administrators),
+     * to the address of the administrator or to another one; in the language of the user
+     * of that address, else of the administrator.
+     *
+     * @param string|null $to The recipient (optional, the address of the administrator by default)
+     * @return array<string, mixed> sent (true), to (the recipient)
+     * @throws Error If no SMTP server or no recipient (400), or the server refused the
+     *               email (502, with its reply)
+     */
+    #[ApiRoute('/system/smtp-test', method: 'POST')]
+    public static function testEmail(?string $to = null): array
+    {
+        User::requireAdmin();
+        $user = Db::queryOne("SELECT email, language FROM users WHERE id = ?", "i", Jwt::getUserIdFromToken());
+        $to = trim((string)($to ?: ($user['email'] ?? '')));
+        if ($to === '') {
+            throw new Error("No recipient: add an email address to your profile", 400);
+        }
+
+        $recipient = Db::queryOne("SELECT language FROM users WHERE email = ?", "s", $to);
+        $language = (string)(($recipient ?? $user)['language'] ?? '');
+        Notification::sendEmail($to, $language, Messages::t($language, 'smtp_test_title'), Messages::t($language, 'smtp_test_body'), false);
+        Logger::info("Test email sent to $to by user " . Jwt::getUserIdFromToken());
+        return ['sent' => true, 'to' => $to];
     }
 
     /**
@@ -266,6 +328,7 @@ final class Settings {
             'bool' => in_array($value, ['1', '0', 'true', 'false', ''], true),
             'number' => self::inRange($value, $rule['min'], $rule['max']),
             'url' => self::matches($value, '#^https?://[A-Za-z0-9.\-]+(:\d{1,5})?(/[A-Za-z0-9._~/\-]*)?$#', $allowEmpty),
+            'email' => ($value === '' && $allowEmpty) || (strlen($value) <= 254 && filter_var($value, FILTER_VALIDATE_EMAIL) !== false),
             default => self::matches($value, $rule['pattern'], $allowEmpty),
         };
     }

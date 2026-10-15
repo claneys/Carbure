@@ -233,11 +233,13 @@ final class Installer {
      * @param string $ini   The INI content
      * @param string $key   The key
      * @param string $value The value
+     * @param bool   $quote Always quote the value (a password: "yes", "none"... unquoted
+     *                      would be read as booleans)
      * @return string The INI content
      */
-    public static function setIni(string $ini, string $key, string $value): string
+    public static function setIni(string $ini, string $key, string $value, bool $quote = false): string
     {
-        $quoted = preg_match('/^[A-Za-z0-9_.\/:@-]*$/', $value) ? $value : '"' . str_replace('"', '', $value) . '"';
+        $quoted = !$quote && preg_match('/^[A-Za-z0-9_.\/:@-]*$/', $value) ? $value : '"' . str_replace('"', '', $value) . '"';
         $count = 0;
         $ini = preg_replace('/^;?\s*' . preg_quote($key, '/') . '\s*=.*$/m', $key . '=' . $quoted, $ini, 1, $count);
         if ($count === 0) {

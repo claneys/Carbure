@@ -16,6 +16,7 @@
 
 require_once __DIR__ . '/../src/autoload.php';
 require_once __DIR__ . '/FakeApnsServer.php';
+require_once __DIR__ . '/FakeSmtpServer.php';
 require_once __DIR__ . '/integration/DatabaseTestCase.php';
 
 // Tests log into logs/carbure_test_YYYYMMDD.log, not into the production logs

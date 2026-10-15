@@ -603,3 +603,96 @@ test('profile: the header toggle switches the theme at once and saves it in the 
         delete window.carbureTheme;
     }
 });
+
+test('config: a password is never shown, only typed to replace it', async () => {
+    const { createConfigModule } = await import('../../portal/modules/configModule.js');
+    const { methods, computed } = createConfigModule(() => null);
+    const context = { ...methods };
+    context.setConfig({ sections: [{ name: 'smtp', settings: [
+        { key: 'smtp_host', value: 'smtp.example.com', editable: true, kind: 'text' },
+        { key: 'smtp_password', value: '••••••••••••', set: true, secret: true, editable: true, kind: 'password' },
+    ] }] });
+    assert.deepEqual(context.configDraft, { smtp_host: 'smtp.example.com', smtp_password: '' });
+    assert.deepEqual(computed.configChanges.call(context), {});
+
+    context.configDraft.smtp_password = 'new-secret';
+    assert.deepEqual(computed.configChanges.call(context), { smtp_password: 'new-secret' });
+});
+
+test('config: the test email shows the recipient, or the error of the server', async () => {
+    const { createConfigModule } = await import('../../portal/modules/configModule.js');
+    let answer = () => ({ sent: true, to: 'admin@example.com' });
+    const calls = [];
+    const api = { sendTestEmail: async to => { calls.push(to); return answer(); } };
+    const { methods, data } = createConfigModule(() => api);
+    const context = { ...data(), ...methods, t: (key, params) => `${key} ${JSON.stringify(params || {})}` };
+
+    context.smtpTestTo = '  ';
+    await context.sendTestEmail();
+    assert.deepEqual(calls, ['']);
+    assert.deepEqual(context.smtpTestResult, { ok: true, message: 'smtpTestSent {"to":"admin@example.com"}' });
+    assert.equal(context.sendingTestEmail, false);
+
+    answer = () => { throw new Error('The SMTP server refused the recipient: 550'); };
+    context.smtpTestTo = 'refused@example.com';
+    await context.sendTestEmail();
+    assert.deepEqual(calls, ['', 'refused@example.com']);
+    assert.deepEqual(context.smtpTestResult, { ok: false, message: 'The SMTP server refused the recipient: 550' });
+});
+
+test('notifications: why the email channel is disabled', async () => {
+    const { emailUnavailableReason } = await import('../../portal/modules/notificationsModule.js');
+    assert.equal(emailUnavailableReason(null), '');
+    assert.equal(emailUnavailableReason({ smtp: true, address: 'a@example.com', email_available: true }), '');
+    assert.equal(emailUnavailableReason({ smtp: false, address: 'a@example.com', email_available: false }), 'notificationsEmailNoSmtp');
+    assert.equal(emailUnavailableReason({ smtp: true, address: null, email_available: false }), 'notificationsEmailNoAddress');
+});
+
+test('notifications: a change is saved at once, undone if refused', async () => {
+    const { createNotificationsModule } = await import('../../portal/modules/notificationsModule.js');
+    const preferences = () => ({ sync: { push: true, email: false }, rule: { push: true, email: false }, expense: { push: true, email: false } });
+    const sent = [];
+    let refuse = false;
+    const api = {
+        fetchNotifications: async () => ({ preferences: preferences(), smtp: false, address: 'a@example.com', email_available: false }),
+        updateNotifications: async change => {
+            sent.push(change);
+            if (refuse) {
+                throw new Error('Invalid value');
+            }
+            const result = { preferences: preferences(), smtp: true, address: 'a@example.com', email_available: true };
+            result.preferences.sync.push = false;
+            return result;
+        },
+    };
+    const { methods, computed, data } = createNotificationsModule(() => api);
+    const toasts = [];
+    const context = { ...data(), ...methods, t: key => key, showToast: message => toasts.push(message) };
+    Object.defineProperty(context, 'emailUnavailable', { get: () => computed.emailUnavailable.call(context) });
+
+    await context.loadNotifications();
+    assert.equal(context.emailUnavailable, 'notificationsEmailNoSmtp');
+    // Email off and unavailable: disabled; push always changeable
+    assert.equal(context.notificationDisabled('sync', 'email'), true);
+    assert.equal(context.notificationDisabled('sync', 'push'), false);
+    // An email channel already on stays changeable, to turn it off
+    context.notifications.preferences.rule.email = true;
+    assert.equal(context.notificationDisabled('rule', 'email'), false);
+
+    await context.setNotification('sync', 'push', false);
+    assert.deepEqual(sent, [{ sync: { push: false } }]);
+    assert.equal(context.notifications.preferences.sync.push, false);
+    assert.deepEqual(toasts, ['notificationsSaved']);
+    assert.equal(context.savingNotification, null);
+
+    refuse = true;
+    await context.setNotification('expense', 'email', true);
+    assert.equal(context.notifications.preferences.expense.email, false);
+    assert.deepEqual(toasts, ['notificationsSaved', 'Invalid value']);
+
+    // Unreadable: no table, the error shown
+    api.fetchNotifications = async () => { throw new Error('Failed to read the notifications (500)'); };
+    await context.loadNotifications();
+    assert.equal(context.notifications, null);
+    assert.equal(toasts.at(-1), 'Failed to read the notifications (500)');
+});

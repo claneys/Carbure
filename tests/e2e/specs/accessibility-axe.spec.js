@@ -134,6 +134,30 @@ test('axe: the menus and the modals', async ({ adminPage: page }) => {
     expect(problems).toEqual([]);
 });
 
+test('axe: the notifications of the profile and the result of the test email', async ({ adminPage: page }) => {
+    const problems = [];
+
+    // Profile: the notifications table, the email channel disabled with its reason
+    await page.locator('.user-menu-toggle').click();
+    await page.getByRole('menuitem', { name: tr('myProfile') }).click();
+    await expect(page.locator('#notifications-email-unavailable')).toBeVisible();
+    problems.push(...await axeViolations(page, tr('notificationsTitle')));
+    // At 320 CSS px wide too
+    await page.setViewportSize({ width: 320, height: 256 });
+    problems.push(...await reflowProblems(page, tr('notificationsTitle')));
+    await page.setViewportSize({ width: 1280, height: 720 });
+
+    // Settings: the test email failed (no SMTP server configured)
+    await showTab(page, 'tabSettings');
+    await page.getByRole('button', { name: tr('smtpTestButton') }).click();
+    await expect(page.locator('.smtp-test-result[role="alert"]')).toBeVisible();
+    problems.push(...await axeViolations(page, tr('smtpTestTitle')));
+    await page.setViewportSize({ width: 320, height: 256 });
+    problems.push(...await reflowProblems(page, tr('smtpTestTitle')));
+
+    expect(problems).toEqual([]);
+});
+
 test('reflow: every tab at 320 CSS px wide, without horizontal scrolling', async ({ adminPage: page }) => {
     // 1280 px at 400 % (WCAG 1.4.10)
     await page.setViewportSize({ width: 320, height: 256 });

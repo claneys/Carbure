@@ -934,7 +934,8 @@ final class Bank {
     }
 
     /**
-     * Send notification to all users who own a specific bank account.
+     * Notify all users of the household of the result of the synchronization of a bank
+     * account, each one in the language of his profile and on the channels he chose.
      *
      * A failure that needs a two-factor authentication asks to approve it in the portal.
      *
@@ -945,46 +946,51 @@ final class Bank {
      */
     public static function notifyBankUsers(string $bankId, bool $status, ?string $error = null): void
     {
-        // Parse bankId to extract account_number and bank_name
-        list($accountNumber, $bankName) = explode('@', $bankId, 2);
-        
         // The accounts are shared by the household: every user is notified
-        $stmt = Db::execute("SELECT id AS user_id FROM users", "");
-        $result = $stmt->get_result();
-        
-        // Send notification to each user
-        while ($row = $result->fetch_assoc()) {
-            $userId = $row['user_id'];
-            
+        $users = Db::execute("SELECT id, language FROM users", "")->get_result()->fetch_all(MYSQLI_ASSOC);
+        foreach ($users as $user) {
+            $userId = (int)$user['id'];
             try {
                 // Count unpointed transactions of the household
                 $unpointed = Transaction::countUnpointed();
-
-                // Determine notification message based on sync status
-                if ($status === false && Woob::needsTwoFactor($error)) {
-                    $message = "Strong authentication needed";
-                    $description = "Open Carbure (Accounts) to approve the connection to " . strtoupper($bankName);
-                } elseif ($status === false) {
-                    $message = "Bank synchronization failed !";
-                    $description = "$unpointed transactions to review";
-                } else {
-                    $message = "Bank synchronization successful";
-                    $description = "$unpointed transactions to review";
-                }
-                
-                // Send notification to user
-                Device::sendNotification(
-                    $userId,
-                    $message,
-                    $description,
-                    $unpointed
-                );
-
+                [$title, $body] = self::syncMessage((string)$user['language'], $bankId, $status, $error, $unpointed);
+                Notification::notify($userId, 'sync', $title, $body, $unpointed);
                 Logger::info("Notification sent to user $userId for bank $bankId with $unpointed unpointed transactions");
             } catch (Exception $e) {
                 Logger::warn("Failed to send notification to user $userId: " . $e->getMessage());
             }
         }
+    }
+
+    /**
+     * Title and text of the notification of a synchronization result, in a language:
+     * success, two-factor authentication to approve, or failure (the error of woob as
+     * is), then the number of transactions to review.
+     *
+     * @param string      $language  The language of the user
+     * @param string      $bankId    The bank ID (account_number@bank_name)
+     * @param bool        $status    The sync status
+     * @param string|null $error     The error of a failed synchronization
+     * @param int         $unpointed Transactions of the household to review
+     * @return array{0: string, 1: string} Title and text
+     */
+    public static function syncMessage(string $language, string $bankId, bool $status, ?string $error, int $unpointed): array
+    {
+        $bank = strtoupper(explode('@', $bankId, 2)[1] ?? $bankId);
+        $review = Messages::plural($language, 'sync_review', $unpointed);
+        if ($status) {
+            return [Messages::t($language, 'sync_success_title'), $review];
+        }
+        if (Woob::needsTwoFactor($error)) {
+            return [Messages::t($language, 'sync_2fa_title'), Messages::t($language, 'sync_2fa_body', ['bank' => $bank])];
+        }
+        // The error on one line, not too long for a notification
+        $error = trim((string)preg_replace('/\s+/', ' ', (string)$error));
+        if (mb_strlen($error) > 200) {
+            $error = mb_substr($error, 0, 199) . '…';
+        }
+        $body = $error === '' ? $review : Messages::t($language, 'sync_error_body', ['bank' => $bank, 'error' => $error]) . "\n" . $review;
+        return [Messages::t($language, 'sync_error_title'), $body];
     }
 
     /**
@@ -1035,12 +1041,12 @@ final class Bank {
     private static function notifyRuleMatch(array $users, array $transaction, string $keyword): int
     {
         foreach ($users as $user) {
-            $french = $user['language'] === 'fr';
-            $amount = number_format((float)$transaction['amount'], 2, $french ? ',' : '.', $french ? ' ' : ',');
-            Device::sendNotification(
-                $user['id'],
-                ($french ? "Nouvelle transaction : " : "New transaction: ") . $keyword,
-                trim($transaction['label']) . " : $amount €",
+            $language = (string)$user['language'];
+            Notification::notify(
+                (int)$user['id'],
+                'rule',
+                Messages::t($language, 'rule_title', ['keyword' => $keyword]),
+                Messages::transaction($language, (string)$transaction['label'], (float)$transaction['amount'], $transaction['date'] ?? null),
                 Transaction::countUnpointed()
             );
         }
@@ -1048,8 +1054,9 @@ final class Bank {
     }
 
     /**
-     * Push an alert to the owners of a bank account for each new expense whose
-     * amount reaches their alert threshold (users.alert_threshold, NULL = disabled).
+     * Alert the owners of a bank account of each new expense whose amount reaches
+     * their alert threshold (users.alert_threshold, NULL = disabled), on the channels
+     * each one chose (push, email).
      *
      * @param string                      $bankId       The bank ID (account_number@bank_name)
      * @param array<array<string, mixed>> $transactions The new transactions (label, amount)
@@ -1073,12 +1080,12 @@ final class Bank {
                     continue;
                 }
 
-                $french = $user['language'] === 'fr';
-                $amount = number_format($transaction['amount'], 2, $french ? ',' : '.', $french ? ' ' : ',');
-                Device::sendNotification(
-                    $user['id'],
-                    $french ? "Dépense importante à vérifier" : "Large expense to check",
-                    trim($transaction['label']) . " : $amount €",
+                $language = (string)$user['language'];
+                Notification::notify(
+                    (int)$user['id'],
+                    'expense',
+                    Messages::t($language, 'expense_title'),
+                    Messages::transaction($language, (string)$transaction['label'], (float)$transaction['amount'], $transaction['date'] ?? null),
                     Transaction::countUnpointed()
                 );
                 $sent++;
