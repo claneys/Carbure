@@ -398,6 +398,12 @@ activer :
   sont celles du système ; boutons, onglets, champs, bascules, barres de budget, cartes et
   focus gardent une bordure ou un contour visible.
 
+![Écran Transactions en thème sombre](assets/screenshot-theme-dark.png)
+
+![Écran Transactions avec le contraste augmenté du système : textes secondaires et bordures plus foncés](assets/screenshot-theme-contrast.png)
+
+![Écran Transactions en couleurs forcées (contraste élevé de Windows) : couleurs du système, chaque bouton, onglet et carte gardant une bordure](assets/screenshot-theme-forced-colors.png)
+
 Le thème sombre respecte les mêmes règles que le thème clair (4,5:1 pour un texte, 3:1
 pour une icône, au repos, au survol et au focus) : les couleurs d'accent y sont plus
 claires et le texte posé dessus foncé ; les couleurs des catégories sont éclaircies

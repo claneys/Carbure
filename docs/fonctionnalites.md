@@ -137,6 +137,8 @@ Pour une banque que woob ne couvre pas, ou pour reprendre l'historique d'avant C
    importé » comme origine), puis les **règles** les catégorisent ; la liste s'ouvre sur le
    dernier mois importé.
 
+![Aperçu de l'import d'un relevé CSV Boursorama : transactions nouvelles cochées, doublons probables décochés, avec la transaction existante correspondante](assets/screenshot-import.png)
+
 Les colonnes d'un CSV sont reconnues d'après leur en-tête (date, libellé, montant, ou débit et
 crédit), y compris les formats français (`;`, `1 234,56`, encodage Windows-1252) et les
 lignes sur le compte avant l'en-tête. Les lignes non passées des néobanques (en attente,
