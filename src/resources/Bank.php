@@ -365,11 +365,40 @@ final class Bank {
             $accounts = self::discover($backend);
         } catch (Exception $e) {
             Woob::removeBackend($backend);
-            throw new Error("The bank refused the connection, check the credentials: " . $e->getMessage(), 400);
+            throw new Error(self::refusalMessage($module, $e->getMessage()), 400);
         }
         // Replaces the name of a former connection of the same woob name, if any
         self::saveBackendLabel($backend, $label);
         return ['backend' => $backend, 'label' => $label, 'accounts' => $accounts];
+    }
+
+    /**
+     * Causes of a failed first connection to a bank (woob error => message), the first
+     * matching one wins: the credentials only when the bank says so
+     */
+    private const REFUSALS = [
+        '/BrowserIncorrectPassword|incorrect|wrong ?password/i' => 'The bank refused the credentials, check them',
+        '/\b403\b|Forbidden|Bug\(|ClientError|BrowserUnavailable|\b5\d\d Server Error/i'
+            => 'The bank blocks woob or the woob module "%s" is broken, see the known issues of this module on the woob tracker',
+    ];
+
+    /**
+     * Message of a failed first connection to a bank, by cause (wrong credentials, the
+     * bank blocking woob or a broken woob module, other failure), followed by the error
+     * of woob.
+     *
+     * @param string $module The woob module
+     * @param string $error  The error of woob
+     * @return string The message
+     */
+    private static function refusalMessage(string $module, string $error): string
+    {
+        foreach (self::REFUSALS as $pattern => $message) {
+            if (preg_match($pattern, $error)) {
+                return sprintf($message, $module) . ": $error";
+            }
+        }
+        return "The connection to the bank failed: $error";
     }
 
     /**
