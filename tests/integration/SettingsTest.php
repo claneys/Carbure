@@ -255,6 +255,9 @@ class SettingsTest extends DatabaseTestCase
         $this->assertTrue($sync['masked']);
         $this->assertNotSame('tok', $sync['token']);
         $this->assertSame(['111@bnp', 'fail@bank'], $sync['accounts']);
+        // The scheduler passes the token in a header, never in the URL
+        $this->assertSame('X-Sync-Token', $sync['header']);
+        $this->assertStringNotContainsString('token', $sync['url']);
         $this->assertSame('tok', Settings::sync(true)['token']);
 
         $token = Settings::renewSyncToken()['token'];

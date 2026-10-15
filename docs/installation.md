@@ -222,7 +222,16 @@ L'onglet **Administration → Synchro** du portail donne la commande complète �
 ```bash
 # crontab : tous les jours à 7h
 0 7 * * * curl -sN -H "X-Sync-Token: <sync_token>" https://exemple.fr/api/bank/sync > /dev/null
+# ou avec wget
+0 7 * * * wget -qO /dev/null --header="X-Sync-Token: <sync_token>" https://exemple.fr/api/bank/sync
 ```
+
+!!! warning "Migration : le jeton dans l'URL est obsolète"
+    Une tâche planifiée qui appelle encore `https://exemple.fr/api/bank/sync?token=<sync_token>`
+    fonctionne toujours, mais le jeton passé dans l'URL est **obsolète** (il finit dans les
+    logs des proxys et l'historique du shell) : un avertissement est journalisé à chaque
+    appel. Retirez `?token=…` de l'URL et passez le jeton dans l'en-tête `X-Sync-Token`,
+    comme ci-dessus.
 
 ### Mettre à jour
 

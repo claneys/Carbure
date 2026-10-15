@@ -14,6 +14,14 @@ keeps track of what was done).
       `X-Forwarded-For`). Set `log_retention_days` (missing from existing configurations:
       logs kept forever) in **Administration → Settings**.
 
+- [ ] **Production** (sync token in the URL deprecated, #149): if a scheduled task of the
+      NAS (DSM Task Scheduler, cron) calls `/api/bank/sync?token=…`, replace it by
+      `curl -fsS -H "X-Sync-Token: <sync_token>" <url>/api/bank/sync > /dev/null` (the
+      command of **Administration → Synchro**). Then check that the Logs page no longer shows
+      the warning "The sync token passed in the URL is deprecated". Later: once no
+      scheduler uses it, remove `?token=` from `GET /bank/sync` (the MCP server keeps its
+      `?token=` for the agents that cannot send a header).
+
 - [ ] **GitHub settings** (owner, after the merge of the workflow hardening, #125): in
       **Settings → Actions → General**, tick "Require actions to be pinned to a full-length
       commit SHA" and restrict the allowed actions to those of GitHub, verified creators

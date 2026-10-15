@@ -124,7 +124,8 @@ Seules ces routes ne demandent pas de JWT (un test unitaire le vérifie) :
 
 - `POST /user/login` ;
 - `GET /bank/sync`, qui exige **soit** un JWT, **soit** le `sync_token` de la
-  configuration (en-tête `X-Sync-Token` de préférence, ou `?token=`). Sans `sync_token`
+  configuration (en-tête `X-Sync-Token` ; `?token=` est encore accepté mais obsolète, voir
+  [API](api.md#bank-sync)). Sans `sync_token`
   configuré, seul un utilisateur connecté peut lancer la synchronisation ;
 - `POST /mcp` et `GET /mcp` (serveur MCP), qui exigent un jeton d'accès ou un JWT ;
 - les routes OAuth des agents IA (métadonnées `/.well-known/oauth-*`, enregistrement,
@@ -138,6 +139,14 @@ Seules ces routes ne demandent pas de JWT (un test unitaire le vérifie) :
   (`code`, `code_verifier`, `refresh_token`, `access_token`, `client_secret`), et le
   paramètre `token=` des URL (synchronisation, MCP). Le corps des réponses du serveur MCP et
   d'OAuth n'est pas journalisé.
+- Le log d'accès de nginx (image Docker, `docker logs`) remplace aussi par `***` les
+  paramètres `token=`, `access_token=` et `code=` des URL (format `carbure` de
+  `docker/nginx.conf`) : le jeton d'une tâche planifiée pas encore migrée vers l'en-tête
+  n'y apparaît pas. Un proxy placé devant (proxy inversé du NAS) peut en revanche
+  journaliser l'URL complète.
+- La pile d'appels d'une erreur est journalisée **sans les arguments** des fonctions (qui
+  contiennent les paramètres de la requête : mot de passe, jeton…), et l'image Docker
+  active `zend.exception_ignore_args`.
 - Le mot de passe SMTP (`smtp_password`) n'est jamais renvoyé au portail ni journalisé
   (champ masqué dans les logs) ; il n'apparaît pas dans les erreurs d'envoi. Les emails
   sont en texte brut, les adresses et le sujet refusent les retours à la ligne (pas
@@ -174,8 +183,9 @@ Seules ces routes ne demandent pas de JWT (un test unitaire le vérifie) :
   dans les requêtes ; la copie du token dans le portail exige HTTPS).
 - Ne pas exposer `data/`, `conf/`, `sql/`, `tests/` ni `tools/` par le serveur
   web.
-- Générer un `sync_token` long et le passer en en-tête plutôt qu'en query string (les
-  URL peuvent être journalisées).
+- Générer un `sync_token` long (l'onglet **Administration → Synchro** en crée un) et le
+  passer dans l'en-tête `X-Sync-Token`, jamais dans l'URL (`?token=`, obsolète : les URL
+  sont journalisées par les proxys et restent dans l'historique du shell).
 - Restreindre l'utilisateur MySQL à la base `carbure`.
 - Surveiller `data/logs/carbure_AAAAMMJJ.log` (erreurs de synchronisation, accès refusés : les lignes WARNING de fin de requête en 401 ou 403, avec l'IP du client). Au format JSON Lines, le fichier se lit aussi avec `jq` ou un collecteur de logs.
 

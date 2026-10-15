@@ -166,11 +166,12 @@ final class Settings {
     }
 
     /**
-     * The request that starts the bank synchronization, for a scheduler (administrators).
+     * The request that starts the bank synchronization, for a scheduler (administrators):
+     * the token goes in the X-Sync-Token header (in the URL, it is deprecated).
      *
      * @param string|bool|null $reveal Return the token itself (masked by default): "true"...
      * @return array<string, mixed> url, token (null if there is none), masked, accounts (the bank
-     *               accounts, for ?account=)
+     *               accounts, for ?account=), header (the request header of the token)
      */
     #[ApiRoute('/system/sync', method: 'GET')]
     public static function sync(string|bool|null $reveal = false): array
@@ -188,6 +189,7 @@ final class Settings {
             'token' => $token === null ? null : ($masked ? str_repeat('•', 12) : $token),
             'masked' => $masked && $token !== null,
             'accounts' => array_column($accounts, 'id'),
+            'header' => Bank::SYNC_TOKEN_HEADER,
         ];
     }
 

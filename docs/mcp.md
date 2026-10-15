@@ -68,8 +68,9 @@ depuis Internet (voir [Synology](synology.md), étape 8).
 
 !!! note "Jeton dans l'URL"
     Pour les agents qui ne savent pas envoyer d'en-tête (ChatGPT), le jeton peut être passé
-    en paramètre `?token=`. Il n'est pas écrit dans les logs de Carbure, mais peut l'être par
-    un proxy : préférez l'en-tête quand l'agent le permet.
+    en paramètre `?token=`. Il n'est pas écrit dans les logs de Carbure ni dans le log
+    d'accès de nginx de l'image Docker (masqué en `token=***`), mais peut l'être par un proxy
+    placé devant : préférez l'en-tête quand l'agent le permet.
 
 ## Outils disponibles
 

@@ -135,6 +135,27 @@ Dans le portail, onglet **Comptes** → **+** :
 La synchronisation se lance compte par compte avec le bouton de synchronisation, et
 automatiquement chaque jour grâce à `SYNC_INTERVAL`.
 
+!!! tip "Planifier la synchronisation avec le Planificateur de tâches de DSM"
+    Pour choisir l'heure de la synchronisation plutôt qu'un intervalle, laissez
+    `SYNC_INTERVAL` vide et créez une tâche dans **Panneau de configuration → Planificateur
+    de tâches → Créer → Tâche planifiée → Script défini par l'utilisateur** (utilisateur
+    `root`, programme : tous les jours à 7h). Dans **Paramètres de tâche → Exécuter la
+    commande**, collez la commande `curl` de l'onglet **Administration → Synchro** du
+    portail :
+
+    ```bash
+    curl -fsS -H "X-Sync-Token: <sync_token>" http://localhost:8080/api/bank/sync > /dev/null
+    ```
+
+!!! warning "Migration : le jeton dans l'URL est obsolète"
+    Une tâche planifiée créée avec l'ancienne forme
+    `curl "http://localhost:8080/api/bank/sync?token=<sync_token>"` (ou `wget` avec la
+    même URL) fonctionne toujours, mais elle est **obsolète** : le jeton passé dans l'URL
+    finit dans les logs et un avertissement est journalisé à chaque appel. Dans le
+    **Planificateur de tâches**, modifiez la tâche (**Modifier → Paramètres de tâche**) :
+    retirez `?token=…` de l'URL et ajoutez `-H "X-Sync-Token: <sync_token>"` (avec `wget` :
+    `--header="X-Sync-Token: <sync_token>"`), comme ci-dessus.
+
 ## 8. (Facultatif) Un accès HTTPS avec un nom de domaine
 
 Pour utiliser l'application iOS ou accéder à Carbure depuis l'extérieur, passez par le

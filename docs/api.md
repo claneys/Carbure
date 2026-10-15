@@ -266,17 +266,26 @@ prendre plusieurs secondes (connexion aux banques).
 |---|---|
 | `backend` (facultatif) | Seulement les comptes de cette connexion (backend woob, `woob bank list -b <backend>`) ; `400` si le nom est invalide |
 
-### `GET /bank/sync` — flux SSE
+### `GET /bank/sync` — flux SSE { #bank-sync }
 
 Lance la synchronisation de **tous** les comptes, ou d'un seul avec
 `?account=<account_number>@<bank_name>` (`404` s'il n'est pas suivi). La date et le résultat
 sont enregistrés pour chaque compte. Accès autorisé avec :
 
 - un JWT valide (n'importe quel utilisateur), **ou**
-- le `sync_token` de la configuration, dans l'en-tête `X-Sync-Token` ou le paramètre
-  `?token=` ;
+- le `sync_token` de la configuration, dans l'en-tête `X-Sync-Token`.
 
-`401` sinon. `?interactive=true` (avec `account`, pour un utilisateur connecté seulement,
+!!! warning "Paramètre `?token=` obsolète"
+    Le `sync_token` passé dans l'URL (`?token=`) est encore accepté pour les tâches planifiées
+    déjà configurées, mais il est **obsolète** : l'URL est écrite dans les logs du proxy, de
+    nginx et l'historique du shell. La réponse porte alors les en-têtes
+    `Deprecation: @1792108800` (obsolète depuis le 16/10/2026, [RFC 9745](https://www.rfc-editor.org/rfc/rfc9745))
+    et `Link: <https://carbure.org/api/#bank-sync>; rel="deprecation"`, et un avertissement
+    (sans le jeton) est journalisé. Remplacez-le par l'en-tête `X-Sync-Token` ; s'ils sont
+    présents tous les deux, l'en-tête l'emporte.
+
+
+Sans JWT ni jeton valide (en-tête ou URL) : `401`. `?interactive=true` (avec `account`, pour un utilisateur connecté seulement,
 `400` sinon) autorise woob à déclencher une authentification forte : woob est lancé sur un
 pseudo-terminal (`tools/woob-tty.py`) et ses messages sont relayés en
 `data: Bank message <compte>: <message>` pendant qu'il attend la validation dans
@@ -746,7 +755,9 @@ configuration comme `GET`.
 
 `reveal` (facultatif, `false` par défaut) : `url` de `/api/bank/sync`, `token` (le
 `sync_token`, masqué sauf avec `reveal=true` ; `null` s'il n'y en a pas), `masked` et
-`accounts` (les comptes suivis, pour `?account=`).
+`accounts` (les comptes suivis, pour `?account=`) et `header` (`X-Sync-Token`, l'en-tête
+qui porte le jeton). La requête à planifier est
+`curl -sN -H "<header>: <token>" "<url>"` : le jeton n'est jamais dans l'URL.
 
 ### `POST /system/smtp-test` — administrateur
 

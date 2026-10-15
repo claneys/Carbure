@@ -95,6 +95,34 @@ test('an administrator gets the request that starts the synchronization', async 
     await expect(curl).toContainText('/api/bank/sync?account=00012345678%40bnp');
 });
 
+test('the scheduler passes the sync token in a header, the URL token is deprecated', async ({ adminPage: page }) => {
+    await openAdministration(page, 'tabSync');
+    await page.getByRole('button', { name: tr('syncTokenCreate') }).click();
+    const curl = page.locator('.copy-field code').first();
+    await expect(curl).toContainText(/X-Sync-Token: [0-9a-f]{48}/);
+    // Only the header form is shown: never the token in the URL
+    await expect(curl).not.toContainText('token=');
+    const token = (await curl.textContent()).match(/X-Sync-Token: ([0-9a-f]{48})/)[1];
+
+    // An account that is not followed: the access is checked, then 404 (no synchronization)
+    const sync = '/api/bank/sync?account=unknown%40bank';
+
+    // The header: no deprecation
+    let response = await page.request.get(sync, { headers: { 'X-Sync-Token': token } });
+    expect(response.status()).toBe(404);
+    expect(response.headers()['deprecation']).toBeUndefined();
+
+    // The query parameter still works, with the Deprecation and Link headers (RFC 9745)
+    response = await page.request.get(`${sync}&token=${token}`);
+    expect(response.status()).toBe(404);
+    expect(response.headers()['deprecation']).toBe('@1792108800');
+    expect(response.headers()['link']).toBe('<https://carbure.org/api/#bank-sync>; rel="deprecation"; type="text/html"');
+
+    // A wrong token: refused, in the header or in the URL
+    expect((await page.request.get(sync, { headers: { 'X-Sync-Token': 'wrong' } })).status()).toBe(401);
+    expect((await page.request.get(`${sync}&token=wrong`)).status()).toBe(401);
+});
+
 test('an administrator configures the SMTP server and sends a test email', async ({ adminPage: page }) => {
     const smtp = await startFakeSmtp();
     try {

@@ -839,17 +839,53 @@ class BankTest extends DatabaseTestCase
         $this->assertSame(0, Bank::alertLargeExpenses('111@bnp', [['label' => 'CB SHOP', 'amount' => -500]]));
     }
 
+    /**
+     * Entries of the log of the tests containing a text
+     */
+    private function logEntries(string $text): array
+    {
+        Logger::flush();
+        $file = Config::get('data_dir') . '/logs/carbure_test_' . date('Ymd') . '.log';
+        return array_values(array_filter(is_file($file) ? file($file) : [], fn($line) => str_contains($line, $text)));
+    }
+
     public function testSyncWithToken()
     {
+        $deprecated = 'The sync token passed in the URL is deprecated';
         Config::set('sync_token', 'scheduler-secret');
         try {
-            $this->assertStringContainsString('Synchronization complete', $this->sync('scheduler-secret'));
-
+            // The header: no deprecation warning
+            $before = count($this->logEntries($deprecated));
             $_SERVER['HTTP_X_SYNC_TOKEN'] = 'scheduler-secret';
             $this->assertStringContainsString('Synchronization complete', $this->sync());
+            $this->assertCount($before, $this->logEntries($deprecated));
+
+            // The header wins over the query parameter
+            $this->assertStringContainsString('Synchronization complete', $this->sync('wrong'));
+            $this->assertCount($before, $this->logEntries($deprecated));
+            unset($_SERVER['HTTP_X_SYNC_TOKEN']);
+
+            // The query parameter still works (schedulers already configured), with one
+            // warning that never contains the token
+            $this->assertStringContainsString('Synchronization complete', $this->sync('scheduler-secret'));
+            $entries = $this->logEntries($deprecated);
+            $this->assertCount($before + 1, $entries);
+            $entry = json_decode(end($entries), true);
+            $this->assertSame('WARNING', $entry['level']);
+            $this->assertSame('The sync token passed in the URL is deprecated, use the X-Sync-Token header', $entry['message']);
+            $this->assertStringNotContainsString('scheduler-secret', end($entries));
         } finally {
+            unset($_SERVER['HTTP_X_SYNC_TOKEN']);
             Config::set('sync_token', '');
         }
+    }
+
+    public function testDeprecationHeadersOfTheTokenInTheUrl()
+    {
+        // RFC 9745: a date (@ + Unix time) and the page of the header to use instead
+        $this->assertSame(['Deprecation: @1792108800', 'Link: <https://carbure.org/api/#bank-sync>; rel="deprecation"; type="text/html"'],
+            Bank::TOKEN_IN_URL_HEADERS);
+        $this->assertSame('2026-10-16T00:00:00+00:00', gmdate('c', 1792108800));
     }
 
     public function testSyncRefusedWithoutCredentials()
@@ -861,6 +897,37 @@ class BankTest extends DatabaseTestCase
             $this->sync('wrong');
         } finally {
             Config::set('sync_token', '');
+        }
+    }
+
+    public function testSyncRefusedWithAWrongHeader()
+    {
+        Config::set('sync_token', 'scheduler-secret');
+        $_SERVER['HTTP_X_SYNC_TOKEN'] = 'wrong';
+        try {
+            // Same error as a wrong token in the URL, and the right token in the URL does
+            // not replace a wrong header
+            $this->expectException(Error::class);
+            $this->expectExceptionCode(401);
+            $this->expectExceptionMessage('Unauthorized - Invalid or missing JWT token or sync token');
+            $this->sync('scheduler-secret');
+        } finally {
+            unset($_SERVER['HTTP_X_SYNC_TOKEN']);
+            Config::set('sync_token', '');
+        }
+    }
+
+    public function testSyncRefusedWithAnEmptyToken()
+    {
+        // No token configured: an empty token never matches
+        Config::set('sync_token', '');
+        $_SERVER['HTTP_X_SYNC_TOKEN'] = '';
+        try {
+            $this->expectException(Error::class);
+            $this->expectExceptionCode(401);
+            $this->sync('');
+        } finally {
+            unset($_SERVER['HTTP_X_SYNC_TOKEN']);
         }
     }
 

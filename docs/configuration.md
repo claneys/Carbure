@@ -80,7 +80,7 @@ transaction importée.
 |---|---|
 | `jwtsecret` | Secret HMAC des JWT (durée de validité : 30 jours), généré par l'assistant d'installation. Un administrateur le renouvelle depuis le portail (bandeau affiché si le secret est faible) ; le changer déconnecte tous les clients. |
 | `password_salt` | Sel des anciens mots de passe SHA-256, utilisé seulement pour les migrer vers bcrypt à la connexion |
-| `sync_token` | Secret permettant au planificateur d'appeler `/api/bank/sync` sans JWT. Vide = seul un utilisateur connecté peut lancer la synchro. |
+| `sync_token` | Secret permettant au planificateur d'appeler `/api/bank/sync` sans JWT, dans l'en-tête `X-Sync-Token` (`?token=` dans l'URL : obsolète). Vide = seul un utilisateur connecté peut lancer la synchro. |
 
 ## `[woob]`
 

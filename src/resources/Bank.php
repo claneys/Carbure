@@ -16,6 +16,19 @@ final class Bank {
     /** Pause of the waits between two attempts, in seconds (null: sleep(); replaced by the tests) */
     public static ?Closure $sleep = null;
 
+    /** Header of the sync token (the scheduler) */
+    public const SYNC_TOKEN_HEADER = 'X-Sync-Token';
+
+    /**
+     * Response headers when the sync token is passed in the URL (?token=, deprecated: the
+     * URL is written in the access logs of nginx, proxies and shell histories). RFC 9745:
+     * deprecated since 2026-10-16, and the page that explains the header to use instead.
+     */
+    public const TOKEN_IN_URL_HEADERS = [
+        'Deprecation: @1792108800',
+        'Link: <https://carbure.org/api/#bank-sync>; rel="deprecation"; type="text/html"',
+    ];
+
     /**
      * Get the bank accounts of the household (every user sees all of them).
      * Each bank account is returned with bankId = account_number@bank_name
@@ -605,15 +618,15 @@ final class Bank {
     /**
      * Check that the caller may start a synchronization:
      * either an authenticated user (JWT) or the scheduler with the sync_token
-     * (X-Sync-Token header or ?token= parameter).
+     * (X-Sync-Token header, or the deprecated ?token= parameter).
      *
-     * @param string|null $token The sync token passed as query parameter
+     * @param string|null $token The sync token passed as query parameter (deprecated)
      * @return bool True for an authenticated user, false for the scheduler
      * @throws Error If the caller is not allowed
      */
     private static function checkSyncAccess(?string $token): bool
     {
-        $token = Webservice::getHeader('X-Sync-Token') ?? $token;
+        $token = self::syncToken($token);
 
         if ($token !== null && Config::has('sync_token') && hash_equals((string)Config::get('sync_token'), $token)) {
             return false;
@@ -624,6 +637,33 @@ final class Bank {
         }
 
         throw new Error("Unauthorized - Invalid or missing JWT token or sync token", 401);
+    }
+
+    /**
+     * The sync token of the request: the X-Sync-Token header, else the ?token= parameter,
+     * still accepted (schedulers already configured) but deprecated: a warning is logged
+     * (never the token) and the response has the Deprecation and Link headers.
+     *
+     * @param string|null $token The sync token passed as query parameter
+     * @return string|null The token, null if there is none
+     */
+    private static function syncToken(?string $token): ?string
+    {
+        $header = Webservice::getHeader(self::SYNC_TOKEN_HEADER);
+        if ($header !== null) {
+            return $header;
+        }
+        if ($token === null || $token === '') {
+            return null;
+        }
+
+        Logger::warn("The sync token passed in the URL is deprecated, use the " . self::SYNC_TOKEN_HEADER . " header");
+        if (!headers_sent()) {
+            foreach (self::TOKEN_IN_URL_HEADERS as $header) {
+                header($header);
+            }
+        }
+        return $token;
     }
 
     /**
@@ -645,7 +685,8 @@ final class Bank {
      * The missing categories are only updated when at least one account was synchronized:
      * after a failure, only the users are notified of the error.
      *
-     * @param string|null $token       The sync token (for the scheduler)
+     * @param string|null $token       The sync token (for the scheduler), deprecated: the
+     *                                  X-Sync-Token header is preferred (never in the logs)
      * @param string|null $account     Synchronize only this account (account_number@bank_name)
      * @param bool|string|null $interactive "true": allow a two-factor authentication (needs
      *                                      $account); parsed as a boolean ("false" is false)
