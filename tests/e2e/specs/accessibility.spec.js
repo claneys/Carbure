@@ -46,11 +46,22 @@ test('every tab is readable, buttons on hover included', async ({ adminPage: pag
 test('the notifications of the profile and the test email are readable', async ({ adminPage: page }) => {
     const problems = [];
 
-    // Profile: the notifications without SMTP server (email disabled, its reason)
+    // Profile: its sub-tabs, the notifications without SMTP server (email disabled, its
+    // reason) with the settings of the alerts under their label
     await page.locator('.user-menu-toggle').click();
     await page.getByRole('menuitem', { name: tr('myProfile') }).click();
+    problems.push(...await contrastProblems(page, tr('profileTabProfile')));
+    await page.getByRole('tab', { name: tr('myDevices'), exact: true }).click();
+    await expect(page.getByRole('heading', { name: tr('myDevices') })).toBeVisible();
+    problems.push(...await contrastProblems(page, tr('myDevices')));
+    await page.getByRole('tab', { name: tr('notificationsTitle'), exact: true }).click();
     await expect(page.locator('#notifications-email-unavailable')).toBeVisible();
     problems.push(...await contrastProblems(page, tr('notificationsTitle')));
+    // The large expense threshold refused: its error message
+    await page.getByLabel(tr('alertThreshold')).fill('-1');
+    await page.getByLabel(tr('alertThreshold')).press('Enter');
+    await expect(page.locator('#alert-threshold-error')).toBeVisible();
+    problems.push(...await contrastProblems(page, `${tr('alertThreshold')} (error)`));
     // The budget alert threshold refused: its error message
     await page.getByLabel(tr('budgetThreshold')).fill('20');
     await page.getByLabel(tr('budgetThreshold')).press('Enter');

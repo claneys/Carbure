@@ -137,9 +137,15 @@ test('axe: the menus and the modals', async ({ adminPage: page }) => {
 test('axe: the notifications of the profile and the result of the test email', async ({ adminPage: page }) => {
     const problems = [];
 
-    // Profile: the notifications table, the email channel disabled with its reason
+    // Profile: its sub-tabs; the notifications table, the email channel disabled with
+    // its reason, the settings of the alerts under their label
     await page.locator('.user-menu-toggle').click();
     await page.getByRole('menuitem', { name: tr('myProfile') }).click();
+    problems.push(...await axeViolations(page, tr('profileTabProfile')));
+    await page.getByRole('tab', { name: tr('myDevices'), exact: true }).click();
+    await expect(page.getByRole('heading', { name: tr('myDevices') })).toBeVisible();
+    problems.push(...await axeViolations(page, tr('myDevices')));
+    await page.getByRole('tab', { name: tr('notificationsTitle'), exact: true }).click();
     await expect(page.locator('#notifications-email-unavailable')).toBeVisible();
     problems.push(...await axeViolations(page, tr('notificationsTitle')));
     // At 320 CSS px wide too

@@ -550,7 +550,7 @@ final class User {
      * @return float|null The threshold rounded to cents, null when disabled
      * @throws Error If the threshold is not a positive amount
      */
-    private static function alertThresholdValue(float|int|string $alertThreshold): ?float
+    public static function alertThresholdValue(float|int|string $alertThreshold): ?float
     {
         if ($alertThreshold !== '' && (!is_numeric($alertThreshold) || $alertThreshold < 0)) {
             throw new Error("The alert threshold must be a positive amount", 400);

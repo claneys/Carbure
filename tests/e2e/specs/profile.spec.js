@@ -1,23 +1,62 @@
-// Profile page: personal information, language, devices
+// Profile page, in three sub-tabs: personal information and language, notifications
+// (channels, large expense threshold, budget watched and its threshold), devices
 const { test, expect, tr } = require('../fixtures');
 const { startFakeSmtp } = require('../fake-smtp');
 
+/** Heading of each sub-tab of the profile page */
+const HEADINGS = { profileTabProfile: 'myProfile', notificationsTitle: 'notificationsTitle', myDevices: 'myDevices' };
+
 /**
- * Opens the profile page from the user menu
+ * Opens the profile page from the user menu, on one of its sub-tabs
  * @param {import('@playwright/test').Page} page
+ * @param {string} [tab] - Label of the sub-tab: profileTabProfile (shown first), notificationsTitle or myDevices
  */
-async function openProfile(page) {
+async function openProfile(page, tab = 'profileTabProfile') {
     await page.locator('.user-menu-toggle').click();
     await page.getByRole('menuitem', { name: tr('myProfile') }).click();
     await expect(page.getByRole('heading', { name: tr('myProfile') })).toBeVisible();
+    if (tab !== 'profileTabProfile') {
+        await showProfileTab(page, tab);
+    }
 }
+
+/**
+ * Shows a sub-tab of the profile page
+ * @param {import('@playwright/test').Page} page
+ * @param {string} tab - Label of the sub-tab
+ */
+async function showProfileTab(page, tab) {
+    await page.getByRole('tab', { name: tr(tab), exact: true }).click();
+    await expect(page.getByRole('tab', { name: tr(tab), exact: true })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('heading', { name: tr(HEADINGS[tab]), exact: true })).toBeVisible();
+}
+
+test('splits the profile into profile, notifications and devices sub-tabs', async ({ userPage: page }) => {
+    await openProfile(page);
+
+    // The profile first, without the notification settings
+    await expect(page.getByRole('tab', { name: tr('profileTabProfile'), exact: true })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByLabel(tr('firstname'))).toBeVisible();
+    await expect(page.getByLabel(tr('alertThreshold'))).toHaveCount(0);
+    await expect(page.getByRole('table', { name: tr('notificationsTitle') })).toHaveCount(0);
+
+    await showProfileTab(page, 'notificationsTitle');
+    await expect(page.getByRole('table', { name: tr('notificationsTitle') })).toBeVisible();
+    await expect(page.getByLabel(tr('firstname'))).toHaveCount(0);
+
+    await showProfileTab(page, 'myDevices');
+    await expect(page.locator('.transactions-hint')).toHaveText(tr('noDevices'));
+
+    // Opened again from the menu: back to the profile
+    await openProfile(page);
+    await expect(page.getByRole('tab', { name: tr('profileTabProfile'), exact: true })).toHaveAttribute('aria-selected', 'true');
+});
 
 test('modifies the personal information', async ({ userPage: page }) => {
     await openProfile(page);
 
     await expect(page.getByLabel(tr('username'))).toHaveValue('marie');
     await page.getByLabel(tr('firstname')).fill('Marion');
-    await page.getByLabel(tr('alertThreshold')).fill('200');
     await page.getByRole('button', { name: tr('save') }).click();
     await expect(page.locator('.toast')).toHaveText(tr('profileUpdated'));
 
@@ -25,7 +64,6 @@ test('modifies the personal information', async ({ userPage: page }) => {
     await page.reload();
     await openProfile(page);
     await expect(page.getByLabel(tr('firstname'))).toHaveValue('Marion');
-    await expect(page.getByLabel(tr('alertThreshold'))).toHaveValue('200');
 });
 
 test('changes the password', async ({ userPage: page, request }) => {
@@ -50,7 +88,7 @@ test('switches the portal to English', async ({ userPage: page }) => {
 });
 
 test('shows, reveals then deletes a device', async ({ adminPage: page }) => {
-    await openProfile(page);
+    await openProfile(page, 'myDevices');
 
     const device = page.locator('.device-item').filter({ hasText: 'iPhone de Ada' });
     const token = 'ab12'.repeat(16);
@@ -75,7 +113,7 @@ function notification(page, kind, channel) {
 }
 
 test('chooses the channels of each notification', async ({ userPage: page, api }) => {
-    await openProfile(page);
+    await openProfile(page, 'notificationsTitle');
 
     // Default: pushed, not emailed; no SMTP server, the email channel tells why
     for (const kind of ['sync', 'rule', 'expense']) {
@@ -92,14 +130,14 @@ test('chooses the channels of each notification', async ({ userPage: page, api }
     const response = await api.put('/api/system/config', { data: { values: { smtp_host: 'smtp.example.com', smtp_from: 'carbure@example.com' } } });
     expect(response.ok()).toBeTruthy();
     await page.reload();
-    await openProfile(page);
+    await openProfile(page, 'notificationsTitle');
     await expect(page.locator('#notifications-email-unavailable')).toHaveCount(0);
     await notification(page, 'expense', 'email').check();
     await expect(page.locator('.toast')).toHaveText(tr('notificationsSaved'));
 
     // Saved on the server
     await page.reload();
-    await openProfile(page);
+    await openProfile(page, 'notificationsTitle');
     await expect(notification(page, 'sync', 'push')).not.toBeChecked();
     await expect(notification(page, 'expense', 'email')).toBeChecked();
     await expect(notification(page, 'expense', 'push')).toBeChecked();
@@ -107,8 +145,11 @@ test('chooses the channels of each notification', async ({ userPage: page, api }
 
     // Without an email address in the profile, the reason changes; a channel already on
     // can still be turned off
+    await showProfileTab(page, 'profileTabProfile');
     await page.getByLabel(tr('email'), { exact: true }).fill('');
     await page.getByRole('button', { name: tr('save') }).click();
+    await expect(page.locator('.toast')).toHaveText(tr('profileUpdated'));
+    await showProfileTab(page, 'notificationsTitle');
     await expect(page.locator('#notifications-email-unavailable')).toContainText(tr('notificationsEmailNoAddress'));
     await expect(notification(page, 'expense', 'email')).toBeEnabled();
     await expect(notification(page, 'rule', 'email')).toBeDisabled();
@@ -120,13 +161,21 @@ test('alerts by email when the spending of a budget reaches the threshold', asyn
         // An administrator configures the SMTP server (the fake one)
         const response = await api.put('/api/system/config', { data: { values: { smtp_host: '127.0.0.1', smtp_port: String(smtp.port), smtp_from: 'carbure@example.com' } } });
         expect(response.ok()).toBeTruthy();
-        await openProfile(page);
+        await openProfile(page, 'notificationsTitle');
 
         // Opt-in: off on every channel, 100 % by default
         await expect(notification(page, 'budget', 'push')).not.toBeChecked();
         await expect(notification(page, 'budget', 'email')).not.toBeChecked();
         const threshold = page.getByLabel(tr('budgetThreshold'));
         await expect(threshold).toHaveValue('100');
+
+        // All the budgets by default; the budgets of the Budget tab offered in its order,
+        // a sub-category after its parent
+        const watched = page.getByLabel(tr('budgetWatched'));
+        await expect(watched.locator('option:checked')).toHaveText(tr('budgetWatchedAll'));
+        await expect(watched.locator('option')).toHaveText([tr('budgetWatchedAll'), 'Logement', 'Alimentation', 'Alimentation › Supermarché', 'Alimentation › Restaurant']);
+        await watched.selectOption({ label: 'Logement' });
+        await expect(page.locator('.toast')).toHaveText(tr('notificationsSaved'));
 
         // A threshold out of range: refused, not sent
         await threshold.fill('30');
@@ -143,8 +192,9 @@ test('alerts by email when the spending of a budget reaches the threshold', asyn
 
         // Saved on the server
         await page.reload();
-        await openProfile(page);
+        await openProfile(page, 'notificationsTitle');
         await expect(page.getByLabel(tr('budgetThreshold'))).toHaveValue('90');
+        await expect(page.getByLabel(tr('budgetWatched')).locator('option:checked')).toHaveText('Logement');
         await expect(notification(page, 'budget', 'email')).toBeChecked();
 
         // An import of the current month: Logement (950 € of 1 000 €) reaches 90 %
@@ -164,4 +214,38 @@ test('alerts by email when the spending of a budget reaches the threshold', asyn
     } finally {
         await smtp.close();
     }
+});
+
+test('sets the large expense threshold under its label in the notifications', async ({ userPage: page, request }) => {
+    await openProfile(page, 'notificationsTitle');
+
+    // Off by default; refused when negative
+    const amount = page.getByLabel(tr('alertThreshold'));
+    await expect(amount).toHaveValue('');
+    await expect(amount).toHaveAttribute('placeholder', tr('alertThresholdPlaceholder'));
+    await amount.fill('-20');
+    await amount.press('Enter');
+    await expect(page.locator('#alert-threshold-error')).toHaveText(tr('alertThresholdInvalid'));
+    await expect(amount).toHaveAttribute('aria-invalid', 'true');
+
+    await amount.fill('200');
+    await amount.press('Enter');
+    await expect(page.locator('.toast')).toHaveText(tr('notificationsSaved'));
+    await expect(page.locator('#alert-threshold-error')).toHaveCount(0);
+
+    // Saved on the server, in the profile read by the iOS app too
+    await page.reload();
+    await openProfile(page, 'notificationsTitle');
+    await expect(page.getByLabel(tr('alertThreshold'))).toHaveValue('200');
+    const token = await page.evaluate(() => localStorage.getItem('authToken'));
+    const me = await request.get('/api/user/me', { headers: { Authorization: `Bearer ${token}` } });
+    expect(Number((await me.json()).alert_threshold)).toBe(200);
+
+    // Emptied: off again
+    await page.getByLabel(tr('alertThreshold')).fill('');
+    await page.getByLabel(tr('alertThreshold')).press('Enter');
+    await expect(page.locator('.toast')).toHaveText(tr('notificationsSaved'));
+    await page.reload();
+    await openProfile(page, 'notificationsTitle');
+    await expect(page.getByLabel(tr('alertThreshold'))).toHaveValue('');
 });

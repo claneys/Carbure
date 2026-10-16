@@ -1,12 +1,19 @@
 /**
  * Profile Module
  * 
- * Manages the authenticated user: header user menu and profile page
- * (email, names, password, interface language and display theme; its
- * notifications in notificationsModule).
+ * Manages the authenticated user: header user menu and profile page, in three
+ * sub-tabs: profile (email, names, password, interface language and display
+ * theme), notifications (notificationsModule) and devices.
  * 
  * @module profileModule
  */
+
+/** Sub-tabs of the profile page, in their order */
+export const PROFILE_TABS = [
+    { key: 'profile', icon: 'person', label: 'profileTabProfile' },
+    { key: 'notifications', icon: 'notifications', label: 'notificationsTitle' },
+    { key: 'devices', icon: 'smartphone', label: 'myDevices' }
+];
 
 /**
  * Applies the display theme of the profile (theme.js, loaded in the <head>)
@@ -30,6 +37,9 @@ export function createProfileModule(getApiService) {
                 currentUser: null,
                 showUserMenu: false,
                 savingProfile: false,
+                // Sub-tab of the profile page shown
+                profileTabs: PROFILE_TABS,
+                profileView: PROFILE_TABS[0].key,
                 devices: [],
                 // Database migrations to apply (administrators): {version, pending}
                 schemaStatus: null,
@@ -53,8 +63,7 @@ export function createProfileModule(getApiService) {
                     lastname: '',
                     password: '',
                     language: 'fr',
-                    theme: 'system',
-                    alertThreshold: ''
+                    theme: 'system'
                 }
             };
         },
@@ -248,9 +257,9 @@ export function createProfileModule(getApiService) {
                     lastname: user.lastname || '',
                     password: '',
                     language: user.language || this.locale,
-                    theme: user.theme || 'system',
-                    alertThreshold: user.alert_threshold ? Number(user.alert_threshold) : ''
+                    theme: user.theme || 'system'
                 };
+                this.profileView = PROFILE_TABS[0].key;
                 this.setActiveTab('profile');
                 this.loadDevices();
                 this.loadNotifications();
@@ -449,7 +458,7 @@ export function createProfileModule(getApiService) {
                         this.profileForm.lastname,
                         this.profileForm.password,
                         this.profileForm.language,
-                        this.profileForm.alertThreshold,
+                        undefined,
                         undefined,
                         this.profileForm.theme
                     );

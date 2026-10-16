@@ -190,4 +190,11 @@ test('notifications and test email requests', async () => {
     assert.equal(calls[4].url, `${BASE}/user/notifications`);
     assert.equal(calls[4].options.method, 'PUT');
     assert.deepEqual(JSON.parse(calls[4].options.body), { budgetThreshold: '80' });
+
+    // Settings of the alerts: only those sent, as strings ('' turns a setting off)
+    await api.updateAlertSettings({ alertThreshold: 150.5 });
+    await api.updateAlertSettings({ budgetCategory: '' });
+    assert.equal(calls[5].options.method, 'PUT');
+    assert.deepEqual(JSON.parse(calls[5].options.body), { alertThreshold: '150.5' });
+    assert.deepEqual(JSON.parse(calls[6].options.body), { budgetCategory: '' });
 });

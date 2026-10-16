@@ -46,12 +46,16 @@ final class Notification {
 
     /**
      * Channels of each kind of notification of the authenticated user, whether the
-     * emails can be sent to him and his budget alert threshold.
+     * emails can be sent to him and the settings of his alerts.
      *
      * @return array<string, mixed> preferences ({kind: {push, email}}), smtp (an SMTP server
      *               is configured), address (email of the profile, null if none),
      *               email_available (smtp and address), budget_threshold (percent of a
-     *               budget reached to alert, kind budget)
+     *               budget reached to alert, kind budget), alert_threshold (amount of a
+     *               large expense, kind expense, null: off), budget_category (category
+     *               watched by the budget alerts, null: all the budgets), budgets (the
+     *               expense categories with a budget this month, [{id, name}], and the one
+     *               watched)
      */
     #[ApiRoute('/user/notifications', method: 'GET')]
     public static function get(): array
@@ -60,38 +64,86 @@ final class Notification {
     }
 
     /**
-     * Change the channels of kinds of notification of the authenticated user, and his
-     * budget alert threshold; the kinds, channels and threshold not sent are kept.
+     * Change the channels of kinds of notification of the authenticated user and the
+     * settings of his alerts; the kinds, channels and settings not sent are kept.
      *
-     * @param array<mixed>         $preferences     {kind: {push?, email?}}: kind sync, rule, expense
-     *                                              or budget, each channel true, false, "true",
-     *                                              "false", 1 or 0 (optional)
+     * @param array<mixed>          $preferences     {kind: {push?, email?}}: kind sync, rule, expense
+     *                                               or budget, each channel true, false, "true",
+     *                                               "false", 1 or 0 (optional)
      * @param int|float|string|null $budgetThreshold Percent of a budget whose spending alerts
-     *                                              (kind budget): integer from 50 to 200 (optional)
+     *                                               (kind budget): integer from 50 to 200 (optional)
+     * @param int|float|string|null $alertThreshold  Amount of a large expense (kind expense): a
+     *                                               positive amount, "" or 0 turns it off (optional)
+     * @param int|string|null       $budgetCategory  Category watched by the budget alerts: an
+     *                                               expense category, 0 or "" for all the budgets
+     *                                               (optional)
      * @return array<string, mixed> The preferences, as GET /user/notifications
-     * @throws Error If a kind, a channel, a value or the threshold is not valid (400)
+     * @throws Error If a kind, a channel, a value or a setting is not valid (400), or the
+     *               budget watched is sent before its migration is applied (409)
      */
     #[ApiRoute('/user/notifications', method: 'PUT')]
-    public static function update(array $preferences = [], int|float|string|null $budgetThreshold = null): array
+    public static function update(array $preferences = [], int|float|string|null $budgetThreshold = null,
+        int|float|string|null $alertThreshold = null, int|string|null $budgetCategory = null): array
     {
         $userId = Jwt::getUserIdFromToken();
         // Checked before anything is saved
-        $threshold = $budgetThreshold === null ? null : BudgetAlert::thresholdValue($budgetThreshold);
-        if ($threshold !== null) {
-            Db::execute("UPDATE users SET budget_threshold = ? WHERE id = ?", "ii", $threshold, $userId);
-        }
-
+        $fields = self::settingFields($budgetThreshold, $alertThreshold, $budgetCategory);
         $current = self::preferences($userId);
         foreach ($preferences as $kind => $channels) {
             $current[self::checkKind((string)$kind)] = array_merge($current[$kind], self::checkChannels((string)$kind, $channels));
         }
 
+        self::saveSettings($userId, $fields);
         foreach ($current as $kind => $channels) {
             Db::execute("INSERT INTO user_notification (user_id, kind, push, email) VALUES (?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE push = VALUES(push), email = VALUES(email)", "isii",
                 $userId, $kind, (int)$channels['push'], (int)$channels['email']);
         }
         return self::describe($userId);
+    }
+
+    /**
+     * Columns of the user to update with the settings sent, checked.
+     *
+     * @param int|float|string|null $budgetThreshold Percent of a budget (null: not sent)
+     * @param int|float|string|null $alertThreshold  Amount of a large expense (null: not sent)
+     * @param int|string|null       $budgetCategory  Category watched (null: not sent)
+     * @return array<string, array{0: string, 1: int|float|null}> By column: type and value
+     * @throws Error If a setting is not valid (400)
+     */
+    private static function settingFields(int|float|string|null $budgetThreshold,
+        int|float|string|null $alertThreshold, int|string|null $budgetCategory): array
+    {
+        $fields = [];
+        if ($budgetThreshold !== null) {
+            $fields['budget_threshold'] = ['i', BudgetAlert::thresholdValue($budgetThreshold)];
+        }
+        if ($alertThreshold !== null) {
+            $fields['alert_threshold'] = ['d', User::alertThresholdValue($alertThreshold)];
+        }
+        if ($budgetCategory !== null) {
+            $fields['budget_alert_category'] = ['i', BudgetAlert::categoryValue($budgetCategory)];
+        }
+        return $fields;
+    }
+
+    /**
+     * Save the settings of the alerts of a user.
+     *
+     * @param int                                                $userId The user
+     * @param array<string, array{0: string, 1: int|float|null}> $fields By column: type and value
+     * @return void
+     * @throws Error If a column is missing: its migration is not applied yet (409)
+     */
+    private static function saveSettings(int $userId, array $fields): void
+    {
+        foreach ($fields as $column => [$type, $value]) {
+            try {
+                Db::execute("UPDATE users SET $column = ? WHERE id = ?", $type . "i", $value, $userId);
+            } catch (Exception $e) {
+                throw new Error("Apply the pending database migrations first: the settings of the alerts cannot be saved yet", 409);
+            }
+        }
     }
 
     /**
@@ -255,7 +307,8 @@ final class Notification {
      */
     private static function describe(int $userId): array
     {
-        $user = Db::queryOne("SELECT email FROM users WHERE id = ?", "i", $userId);
+        $user = Db::queryOne("SELECT email, alert_threshold FROM users WHERE id = ?", "i", $userId);
+        $category = BudgetAlert::watchedCategory($userId);
         $address = empty($user['email']) ? null : (string)$user['email'];
         $smtp = Mailer::isConfigured();
         return [
@@ -264,7 +317,27 @@ final class Notification {
             'address' => $address,
             'email_available' => $smtp && $address !== null,
             'budget_threshold' => self::budgetThreshold($userId),
+            'alert_threshold' => $user === null || $user['alert_threshold'] === null ? null : (float)$user['alert_threshold'],
+            'budget_category' => $category,
+            'budgets' => self::budgets($category),
         ];
+    }
+
+    /**
+     * Budgets that the budget alerts can watch: the expense categories with a budget
+     * this month, and the category watched when it has none.
+     *
+     * @param int|null $watched The category watched (null: all the budgets)
+     * @return list<array{id: int, name: string}>
+     */
+    private static function budgets(?int $watched): array
+    {
+        $budgets = BudgetAlert::budgets((int)date('n'), (int)date('Y'));
+        if ($watched !== null && !in_array($watched, array_column($budgets, 'id'), true)) {
+            $row = Db::queryOne("SELECT name FROM bank_transaction_category WHERE id = ?", "i", $watched);
+            $budgets[] = ['id' => $watched, 'name' => (string)($row['name'] ?? $watched)];
+        }
+        return $budgets;
     }
 
     /**

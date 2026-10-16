@@ -359,7 +359,7 @@ profil :
 | Les dépenses du mois d'une catégorie budgétée atteignent le seuil des budgets | Chaque utilisateur qui a activé ces alertes | « Budget dépassé : Courses », « 312,40 € sur 300,00 € (104 %) » |
 
 Le **badge** de l'app indique le nombre de transactions à vérifier. Le seuil d'alerte se
-règle dans **Mon profil** (vide = pas d'alerte).
+règle dans **Mon profil → Notifications**, sous « Dépense importante » (vide = pas d'alerte).
 
 Chaque notification est rédigée dans la **langue du profil** de son destinataire (français
 ou anglais ; toute autre valeur donne le français), en push comme par email : titre, texte,
@@ -385,6 +385,9 @@ n'empêche ni l'autre ni la synchronisation.
 - **Quoi** : les dépenses du mois de chaque catégorie de dépenses qui a un budget,
   sous-catégories comprises, calculées comme l'écran **Budgets** ; une sous-catégorie qui a
   son propre budget est vérifiée aussi.
+- **Budget surveillé** : tous les budgets (par défaut) ou l'un d'eux, choisi par chacun
+  dans **Mon profil → Notifications** parmi les budgets du mois de l'onglet **Budget** ;
+  la suppression de la catégorie revient à tous les budgets.
 - **Seuil** : choisi par chacun dans **Mon profil → Notifications**, en pourcentage du
   budget, de 50 à 200 % (100 % par défaut ; 80 % pour être prévenu avant). Sous 100 %, le
   titre devient « Budget presque atteint ».
@@ -417,9 +420,10 @@ dépassent leur budget ce mois-ci ? », « Comment évolue notre épargne ? ».
 
 ## Profil et sécurité des comptes
 
-- **Mon profil** : e-mail, prénom, nom, mot de passe, langue (appliquée à chaque connexion,
-  sur tous les navigateurs), thème, seuil d'alerte, canaux de chaque notification et seuil
-  des budgets, appareils iPhone enregistrés (supprimables).
+- **Mon profil**, en trois sous-onglets : **Profil** (e-mail, prénom, nom, mot de passe,
+  langue appliquée à chaque connexion sur tous les navigateurs, thème), **Notifications**
+  (canaux, seuil d'alerte, budget surveillé et son seuil) et **Appareils** (iPhone
+  enregistrés, supprimables).
 - **Mots de passe** chiffrés (bcrypt) ; session valable 30 jours.
 - **Blocage** : après 5 échecs de connexion d'affilée, le compte est bloqué 24 heures ; un
   administrateur peut le débloquer.

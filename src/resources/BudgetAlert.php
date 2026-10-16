@@ -14,6 +14,8 @@
  *   sub-categories.
  * - Sent with the kind "budget" of the notification preferences, off on every channel
  *   by default (opt-in).
+ * - Each user watches all the budgets, or one category with a budget
+ *   (users.budget_alert_category, NULL: all; all before its migration is applied).
  * - Once per user, category and month (table budget_alert); alerted again when the
  *   budget of the category is raised above the amount already alerted and the new
  *   amount is reached too.
@@ -28,6 +30,7 @@ use Carbure\Lib\Db;
 use Carbure\Lib\Logger;
 use Carbure\Lib\Messages;
 use Error;
+use Exception;
 use Throwable;
 
 final class BudgetAlert {
@@ -120,10 +123,92 @@ final class BudgetAlert {
     }
 
     /**
-     * Users who receive the budget alerts: at least one channel of the kind "budget"
-     * on, with their language and threshold.
+     * Expense categories with a budget in a month, to choose the one watched: the
+     * top-level categories, each followed by its sub-categories ("Parent › Child").
      *
-     * @return list<array{id: int, language: string, threshold: int}>
+     * @param int $month The month (1-12)
+     * @param int $year  The year
+     * @return list<array{id: int, name: string}>
+     */
+    public static function budgets(int $month, int $year): array
+    {
+        $budgets = [];
+        foreach (Budget::get($month, $year, 0) as $row) {
+            if ($row['type'] !== 'DEBIT') {
+                continue;
+            }
+            if ((float)$row['budget'] > 0) {
+                $budgets[] = ['id' => (int)$row['id'], 'name' => (string)$row['name']];
+            }
+            if ($row['children'] > 0) {
+                array_push($budgets, ...self::childBudgets($month, $year, $row));
+            }
+        }
+        return $budgets;
+    }
+
+    /**
+     * Sub-categories with a budget of a category, named after it.
+     *
+     * @param int                  $month  The month (1-12)
+     * @param int                  $year   The year
+     * @param array<string, mixed> $parent The category (row of Budget::get())
+     * @return list<array{id: int, name: string}>
+     */
+    private static function childBudgets(int $month, int $year, array $parent): array
+    {
+        $budgets = [];
+        foreach (Budget::get($month, $year, (int)$parent['id']) as $row) {
+            if ($row['type'] === 'DEBIT' && (float)$row['budget'] > 0) {
+                $budgets[] = ['id' => (int)$row['id'], 'name' => $parent['name'] . ' › ' . $row['name']];
+            }
+        }
+        return $budgets;
+    }
+
+    /**
+     * Category watched by the budget alerts of a user: null for all the budgets, also
+     * before the migration 2026-10-23_user_budget_alert_category is applied.
+     *
+     * @param int $userId The user
+     * @return int|null
+     */
+    public static function watchedCategory(int $userId): ?int
+    {
+        try {
+            $row = Db::queryOne("SELECT budget_alert_category FROM users WHERE id = ?", "i", $userId);
+        } catch (Exception $e) {
+            return null;
+        }
+        return empty($row['budget_alert_category']) ? null : (int)$row['budget_alert_category'];
+    }
+
+    /**
+     * Stored value of the category watched sent by a user: null (all the budgets) for
+     * 0, "" or null, otherwise an existing expense category.
+     *
+     * @param int|string|null $category The category sent
+     * @return int|null
+     * @throws Error If it is not an expense category (400)
+     */
+    public static function categoryValue(int|string|null $category): ?int
+    {
+        if ($category === null || $category === '' || $category === 0 || $category === '0') {
+            return null;
+        }
+        $id = filter_var($category, FILTER_VALIDATE_INT);
+        $row = $id === false ? null : Db::queryOne("SELECT type FROM bank_transaction_category WHERE id = ?", "i", $id);
+        if ($row === null || $row['type'] !== 'DEBIT') {
+            throw new Error("The budget watched must be an expense category (or 0 for all the budgets)", 400);
+        }
+        return $id;
+    }
+
+    /**
+     * Users who receive the budget alerts: at least one channel of the kind "budget"
+     * on, with their language, threshold and category watched (null: all).
+     *
+     * @return list<array{id: int, language: string, threshold: int, category: int|null}>
      */
     private static function subscribers(): array
     {
@@ -136,6 +221,7 @@ final class BudgetAlert {
                     'id' => (int)$user['id'],
                     'language' => (string)$user['language'],
                     'threshold' => (int)$user['budget_threshold'],
+                    'category' => self::watchedCategory((int)$user['id']),
                 ];
             }
         }
@@ -143,16 +229,19 @@ final class BudgetAlert {
     }
 
     /**
-     * Alert a user for a category when his threshold is reached and he was not alerted
-     * yet for this month (or for a lower budget).
+     * Alert a user for a category he watches when his threshold is reached and he was
+     * not alerted yet for this month (or for a lower budget).
      *
-     * @param array{id: int, language: string, threshold: int}         $user     The user
-     * @param array{id: int, name: string, budget: float, spent: float} $category The category
-     * @param string                                                    $month    First day of the month (Y-m-d)
+     * @param array{id: int, language: string, threshold: int, category: int|null} $user     The user
+     * @param array{id: int, name: string, budget: float, spent: float}             $category The category
+     * @param string                                                                $month    First day of the month (Y-m-d)
      * @return bool Whether the user was alerted
      */
     private static function alert(array $user, array $category, string $month): bool
     {
+        if ($user['category'] !== null && $user['category'] !== $category['id']) {
+            return false;
+        }
         $percent = self::percent($category['spent'], $category['budget']);
         if ($percent < $user['threshold'] || self::alreadySent($user['id'], $category['id'], $month, $category['budget'])) {
             return false;

@@ -241,6 +241,109 @@ class BudgetAlertTest extends DatabaseTestCase
         }
     }
 
+    public function testOnlyTheBudgetWatched()
+    {
+        // Both reached at 50 %: the administrator watches Énergie only
+        $this->subscribe(self::ADMIN, true, false);
+        Db::query("UPDATE users SET budget_threshold = 50, budget_alert_category = 3 WHERE id = 1");
+
+        $this->assertSame(1, BudgetAlert::check());
+        $requests = FakeApnsServer::requests();
+        $this->assertCount(1, $requests);
+        $this->assertSame('Budget presque atteint : Énergie', $requests[0]['payload']['aps']['alert']['title']);
+        $this->assertSame(3, (int)Db::queryOne("SELECT category FROM budget_alert", "")['category']);
+    }
+
+    public function testBudgetsThatCanBeWatched()
+    {
+        // The expense categories with a budget this month, a sub-category after its parent
+        Db::execute("INSERT INTO budget (category, amount, date) VALUES (2, 60, ?), (4, 1000, ?)", "ss", $this->day(0), $this->day(0));
+        $this->assertSame([
+            ['id' => 1, 'name' => 'Alimentation'],
+            ['id' => 2, 'name' => 'Alimentation › Supermarché'],
+            ['id' => 3, 'name' => 'Énergie'],
+        ], BudgetAlert::budgets((int)date('n'), (int)date('Y')));
+    }
+
+    public function testBudgetWatchedSavedWithThePreferences()
+    {
+        $this->loginAs(self::USER);
+        $notifications = Notification::get();
+        $this->assertNull($notifications['budget_category']);
+        $this->assertSame([['id' => 1, 'name' => 'Alimentation'], ['id' => 3, 'name' => 'Énergie']], $notifications['budgets']);
+
+        $notifications = Notification::update([], null, null, '3');
+        $this->assertSame(3, $notifications['budget_category']);
+        $this->assertSame(3, (int)Db::queryOne("SELECT budget_alert_category FROM users WHERE id = 2", "")['budget_alert_category']);
+
+        // A category without a budget this month stays listed while it is watched
+        Notification::update([], null, null, 2);
+        $this->assertSame(['id' => 2, 'name' => 'Supermarché'], Notification::get()['budgets'][2]);
+
+        // 0 or "": back to all the budgets
+        $this->assertNull(Notification::update([], null, null, '')['budget_category']);
+        Notification::update([], null, null, 3);
+        $this->assertNull(Notification::update([], null, null, 0)['budget_category']);
+    }
+
+    /**
+     * @return array Budgets watched refused: an income category, unknown, not a number
+     */
+    public static function refusedCategories(): array
+    {
+        return ['income' => [4], 'unknown' => ['99'], 'not a number' => ['abc']];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('refusedCategories')]
+    public function testRefusedCategories($category)
+    {
+        $this->loginAs(self::USER);
+        try {
+            Notification::update(['budget' => ['push' => true]], 80, null, $category);
+            $this->fail('Invalid category accepted');
+        } catch (Error $e) {
+            $this->assertSame(400, $e->getCode());
+        }
+        // Nothing saved
+        $user = Db::queryOne("SELECT budget_threshold, budget_alert_category FROM users WHERE id = 2", "");
+        $this->assertSame(['budget_threshold' => 100, 'budget_alert_category' => null], $user);
+        $this->assertSame(0, (int)Db::queryOne("SELECT COUNT(*) AS n FROM user_notification", "")['n']);
+    }
+
+    public function testBackToAllTheBudgetsWhenTheCategoryIsDeleted()
+    {
+        Db::query("UPDATE users SET budget_alert_category = 3 WHERE id = 2");
+        Db::query("DELETE FROM budget WHERE category = 3");
+        Db::query("DELETE FROM bank_transaction WHERE category = 3");
+        Db::query("DELETE FROM bank_transaction_category WHERE id = 3");
+        $this->assertNull(BudgetAlert::watchedCategory(self::USER));
+    }
+
+    public function testAllTheBudgetsBeforeTheMigration()
+    {
+        $this->loginAs(self::USER);
+        $this->subscribe(self::USER, true, false);
+        Db::query("UPDATE users SET budget_threshold = 40");
+        Db::query("ALTER TABLE users DROP FOREIGN KEY fk_users_budget_alert_category");
+        Db::query("ALTER TABLE users DROP COLUMN budget_alert_category");
+        try {
+            $notifications = Notification::get();
+            $sent = BudgetAlert::check();
+            try {
+                Notification::update([], null, null, 3);
+                $this->fail('Budget watched saved without its column');
+            } catch (Error $e) {
+                $this->assertSame(409, $e->getCode());
+            }
+        } finally {
+            Db::query("ALTER TABLE users ADD COLUMN budget_alert_category tinyint(3) unsigned DEFAULT NULL AFTER budget_threshold,
+                ADD CONSTRAINT fk_users_budget_alert_category FOREIGN KEY (budget_alert_category) REFERENCES bank_transaction_category (id) ON DELETE SET NULL");
+        }
+        $this->assertNull($notifications['budget_category']);
+        // Alimentation (40 %) and Énergie (50 %), both reached at 40 %
+        $this->assertSame(2, $sent);
+    }
+
     public function testAlertsDeletedWithTheUser()
     {
         $this->subscribe(self::ADMIN, true, false);

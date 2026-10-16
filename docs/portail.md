@@ -386,25 +386,30 @@ la configuration (`GET /system/sync`, `POST /system/sync-token`).
 
 ## Mon profil
 
-- Modification de l'e-mail, du prénom, du nom et du mot de passe (laisser vide pour le
-  conserver). L'identifiant n'est pas modifiable.
-- **Langue** (français / anglais) : enregistrée sur le compte et appliquée à chaque
-  connexion, sur tous les navigateurs.
-- **Thème** (*Comme le système*, *Clair*, *Sombre*) : enregistré sur le compte, comme le
-  choix fait avec l'icône de l'en-tête (voir [Thèmes](#themes-et-preferences-du-systeme)).
-- **Seuil d'alerte (€)** : notification pour toute nouvelle dépense supérieure à ce
-  montant, détectée lors d'une synchronisation. Vide = désactivé.
+Trois sous-onglets, comme l'administration : **Profil**, **Notifications** et **Appareils**
+(ouvert sur **Profil** depuis le menu utilisateur).
+
+- **Profil** : modification de l'e-mail, du prénom, du nom et du mot de passe (laisser
+  vide pour le conserver). L'identifiant n'est pas modifiable. **Langue** (français /
+  anglais) : enregistrée sur le compte et appliquée à chaque connexion, sur tous les
+  navigateurs. **Thème** (*Comme le système*, *Clair*, *Sombre*), comme le choix fait avec
+  l'icône de l'en-tête (voir [Thèmes](#themes-et-preferences-du-systeme)).
 - **Notifications** : un tableau type de notification × canal (push sur l'app iOS, email)
   pour la synchronisation, les règles « Notifier », les dépenses importantes et les budgets
   dépassés (désactivés par défaut). Chaque case s'enregistre aussitôt ; les notifications
-  sont envoyées dans la **langue** choisie ci-dessus. Dessous, le **seuil d'alerte des
-  budgets (%)** : pourcentage du budget du mois d'une catégorie à partir duquel l'alerte
-  part (entier de 50 à 200, 100 par défaut), enregistré à la validation ou en quittant le
-  champ ; une valeur hors limites est signalée sous le champ et n'est pas envoyée. La
-  colonne email est grisée, avec la raison, tant qu'aucun serveur SMTP n'est configuré ou
-  que le profil n'a pas d'adresse email
-  (`GET`/`PUT /user/notifications`).
-- **Mes appareils** : appareils iOS enregistrés à la connexion depuis l'app, avec la
+  sont envoyées dans la **langue** du profil. Les réglages d'une alerte sont sous son
+  libellé, dans le tableau, et s'enregistrent à la validation ou en quittant le champ (une
+  valeur invalide est signalée sous le champ et n'est pas envoyée) :
+  - **Dépense importante** : montant **à partir duquel** une nouvelle dépense, détectée
+    lors d'une synchronisation, est notifiée (vide = désactivé) ;
+  - **Budget dépassé** : le **budget surveillé**, *Tous les budgets* (par défaut) ou l'un
+    des budgets du mois définis dans l'onglet **Budget**, dans son ordre (une sous-catégorie est présentée
+    « Catégorie › Sous-catégorie »), et le pourcentage de ce budget auquel **alerter**
+    (entier de 50 à 200, 100 par défaut).
+
+  La colonne email est grisée, avec la raison, tant qu'aucun serveur SMTP n'est configuré
+  ou que le profil n'a pas d'adresse email (`GET`/`PUT /user/notifications`).
+- **Appareils** : appareils iOS enregistrés à la connexion depuis l'app, avec la
   date de dernière connexion et le token APNs, masqué par défaut. Les boutons permettent
   de l'afficher en entier, de le copier (HTTPS requis ; sinon le token est affiché) ou
   de **supprimer** un ancien appareil.

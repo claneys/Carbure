@@ -133,7 +133,10 @@ Canaux de chaque type de notification de l'utilisateur connecté :
   "smtp": true,
   "address": "alice@example.com",
   "email_available": true,
-  "budget_threshold": 100
+  "budget_threshold": 100,
+  "alert_threshold": 200.0,
+  "budget_category": null,
+  "budgets": [{"id": 1, "name": "Alimentation"}, {"id": 2, "name": "Alimentation › Supermarché"}]
 }
 ```
 
@@ -143,7 +146,12 @@ catégorie budgétée au-delà du seuil des budgets). Sans choix de l'utilisateu
 envoyé en push et pas par email, sauf `budget`, désactivé sur tous les canaux (à activer).
 `smtp` indique qu'un serveur SMTP est configuré, `address` l'adresse du profil (`null` si
 aucune), `email_available` que les emails peuvent partir (les deux) et `budget_threshold`
-le seuil des alertes de budget, en pourcentage du budget (100 par défaut). Les notifications (push et email) sont
+le seuil des alertes de budget, en pourcentage du budget (100 par défaut). `alert_threshold`
+est le montant d'une dépense importante (type `expense`, `null` : désactivé, le même que
+`GET /user/me`), `budget_category` la catégorie dont le budget est surveillé par les alertes
+de budget (`null` : tous les budgets) et `budgets` les catégories de dépenses qui ont un
+budget ce mois-ci (une sous-catégorie nommée « Catégorie › Sous-catégorie »), plus celle
+surveillée si elle n'en a pas. Les notifications (push et email) sont
 rédigées dans la langue du profil (`language`, `fr` par défaut).
 
 ### `PUT /user/notifications`
@@ -152,9 +160,12 @@ rédigées dans la langue du profil (`language`, `fr` par défaut).
 |---|---|---|
 | `preferences` | non | `{type: {push?, email?}}`, chaque canal `true`/`false` (ou `"true"`, `"false"`, `1`, `0`) |
 | `budgetThreshold` | non | Seuil des alertes de budget (type `budget`) en pourcentage du budget : entier de 50 à 200 (nombre ou chaîne) |
+| `alertThreshold` | non | Montant d'une dépense importante (type `expense`) en euros ; `""` ou `0` désactive l'alerte |
+| `budgetCategory` | non | Catégorie de dépenses dont le budget est surveillé (type `budget`) ; `0` ou `""` : tous les budgets |
 
-Les types, canaux et seuil absents sont conservés ; type, canal, valeur ou seuil invalides :
-`400`, sans rien enregistrer. Renvoie le résultat de `GET /user/notifications`.
+Les types, canaux et réglages absents sont conservés ; type, canal, valeur ou réglage
+invalides (dont une catégorie inconnue ou de revenus) : `400`, sans rien enregistrer ;
+`budgetCategory` avant la migration `2026-10-23_user_budget_alert_category` : `409`. Renvoie le résultat de `GET /user/notifications`.
 
 ```bash
 curl -X PUT "https://exemple.fr/api/user/notifications" -H "Authorization: Bearer $TOKEN" \
@@ -163,6 +174,10 @@ curl -X PUT "https://exemple.fr/api/user/notifications" -H "Authorization: Beare
 # Alertes de budget par email, dès 90 % du budget
 curl -X PUT "https://exemple.fr/api/user/notifications" -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' -d '{"preferences":{"budget":{"email":true}},"budgetThreshold":"90"}'
+
+# Seulement le budget de la catégorie 4, et les dépenses à partir de 150 €
+curl -X PUT "https://exemple.fr/api/user/notifications" -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' -d '{"budgetCategory":"4","alertThreshold":"150"}'
 ```
 
 ### `DELETE /user` — administrateur

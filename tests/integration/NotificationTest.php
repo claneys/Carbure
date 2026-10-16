@@ -32,6 +32,8 @@ class NotificationTest extends DatabaseTestCase
         $off = ['push' => false, 'email' => false];
         $this->assertSame(['sync' => $default, 'rule' => $default, 'expense' => $default, 'budget' => $off], $notifications['preferences']);
         $this->assertSame(100, $notifications['budget_threshold']);
+        $this->assertNull($notifications['alert_threshold']);
+        $this->assertNull($notifications['budget_category']);
         $this->assertTrue($notifications['smtp']);
         $this->assertSame('admin@example.com', $notifications['address']);
         $this->assertTrue($notifications['email_available']);
@@ -103,6 +105,28 @@ class NotificationTest extends DatabaseTestCase
             $this->assertSame(400, $e->getCode());
         }
         $this->assertSame(0, (int)Db::queryOne("SELECT COUNT(*) AS n FROM user_notification", "")['n']);
+    }
+
+    public function testLargeExpenseThresholdSavedWithThePreferences()
+    {
+        $this->loginAs(self::USER);
+        $notifications = Notification::update(['expense' => ['email' => true]], null, '250.5');
+        $this->assertSame(250.5, $notifications['alert_threshold']);
+        $this->assertTrue($notifications['preferences']['expense']['email']);
+        $this->assertSame('250.50', Db::queryOne("SELECT alert_threshold FROM users WHERE id = 2", "")['alert_threshold']);
+
+        // Kept when not sent; "" turns it off
+        $this->assertSame(250.5, Notification::update([], 80)['alert_threshold']);
+        $this->assertNull(Notification::update([], null, '')['alert_threshold']);
+
+        try {
+            Notification::update([], 90, '-10');
+            $this->fail('Negative threshold accepted');
+        } catch (Error $e) {
+            $this->assertSame(400, $e->getCode());
+        }
+        // Nothing saved, not even the valid budget threshold
+        $this->assertSame(80, Notification::get()['budget_threshold']);
     }
 
     public function testRowsDeletedWithTheUser()

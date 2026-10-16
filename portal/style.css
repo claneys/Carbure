@@ -2217,10 +2217,6 @@ button .material-icons {
 }
 
 /* Profile devices */
-.profile-devices {
-    margin-top: 32px;
-}
-
 .device-list {
     list-style: none;
     padding: 0;
@@ -6355,23 +6351,112 @@ textarea:focus-visible,
     margin-top: 12px;
 }
 
-/* Threshold of the budget alerts, under the notifications table */
-.budget-threshold {
-    margin-top: 16px;
+/* Label of a kind of notification, its settings under it (large expense, budget) */
+.notifications-table tbody th {
+    width: 100%;
 }
 
-.budget-threshold-field {
+.notification-kind {
+    display: block;
+}
+
+.notification-settings {
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: var(--border-radius-md);
+    background: var(--background);
+    font-weight: 400;
+}
+
+.notification-setting-row {
     display: flex;
-    align-items: center;
-    gap: 8px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.notification-setting {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.notification-setting-grow {
+    flex: 1 1 180px;
+}
+
+.notification-setting label {
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.notification-setting select,
+.input-unit {
+    height: 40px;
+    border: 1px solid var(--text-secondary);
+    border-radius: var(--border-radius-md);
+    background: var(--surface);
     color: var(--text-primary);
 }
 
-.budget-threshold-field input {
-    width: 7em;
+.notification-setting select {
+    width: 100%;
+    padding: 0 10px;
+    font: inherit;
 }
 
-.budget-threshold .sync-step-error {
+/* A number with its unit (€, %) in one box */
+.input-unit {
+    display: inline-flex;
+    align-self: flex-start;
+    align-items: stretch;
+    overflow: hidden;
+}
+
+.input-unit input {
+    width: 8em;
+    padding: 0 10px;
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    text-align: right;
+}
+
+.input-unit-suffix {
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    border-left: 1px solid var(--text-secondary);
+    background: var(--background);
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.input-unit:focus-within,
+.notification-setting select:focus-visible {
+    outline: 2px solid var(--primary-dark);
+    outline-offset: 1px;
+}
+
+.input-unit input:focus {
+    outline: none;
+}
+
+.input-unit:has(input[aria-invalid="true"]) {
+    border-color: var(--error-color);
+}
+
+.notification-settings small {
+    display: block;
+    margin-top: 8px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.notification-settings .sync-step-error {
     margin: 6px 0 0;
 }
 

@@ -43,6 +43,11 @@ keeps track of what was done).
       (alerts already sent) are applied at container start. Nothing changes until a user
       turns on "Budget of the month exceeded" in **My profile → Notifications** (opt-in).
 
+- [ ] **Production**: the migration `2026-10-23_user_budget_alert_category` (column
+      `users.budget_alert_category`, NULL = all the budgets for the existing users) is
+      applied at container start. Until then the budget alerts watch every budget and
+      choosing one in **My profile → Notifications** answers 409.
+
 - [ ] Budget alerts only check the current month (an import of past months alerts
       nothing) and the spending as the Budgets screen computes it (absolute value of the
       sum of the month, refunds included): if alerts on past months are wanted, add a

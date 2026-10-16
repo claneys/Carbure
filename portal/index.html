@@ -416,6 +416,14 @@
                     <span class="material-icons" aria-hidden="true">{{ tab.icon }}</span>{{ t(tab.label) }}
                 </button>
             </div>
+            <!-- Sub-tabs of the profile page, at the same place as those of the administration -->
+            <div v-if="activeTab === 'profile'" class="sub-tabs" role="tablist" :aria-label="t('myProfile')">
+                <button v-for="tab in profileTabs" :key="tab.key" type="button" role="tab" class="sub-tab"
+                        :class="{ active: profileView === tab.key }" :aria-selected="profileView === tab.key ? 'true' : 'false'"
+                        @click="profileView = tab.key">
+                    <span class="material-icons" aria-hidden="true">{{ tab.icon }}</span>{{ t(tab.label) }}
+                </button>
+            </div>
             <!-- Transactions Tab -->
             <transition name="fade" mode="out-in">
                 <div v-if="activeTab === 'transactions'" key="transactions" class="tab-panel">
@@ -1682,10 +1690,10 @@
                     </div>
                 </div>
 
-                <!-- Profile Page -->
+                <!-- Profile Page: profile, notifications and devices sub-tabs -->
                 <div v-else-if="activeTab === 'profile'" key="profile" class="tab-panel">
                     <div class="content-wrapper">
-                        <form class="profile-container" @submit.prevent="saveProfile">
+                        <form v-if="profileView === 'profile'" class="profile-container" @submit.prevent="saveProfile">
                             <div class="users-header">
                                 <h2>{{ t('myProfile') }}</h2>
                             </div>
@@ -1723,12 +1731,6 @@
                                     <small id="profile-theme-help">{{ t('themeHelp') }}</small>
                                 </div>
                                 <div class="form-group">
-                                    <label for="profile-alert">{{ t('alertThreshold') }}</label>
-                                    <input id="profile-alert" type="number" min="0" step="1" inputmode="decimal"
-                                           v-model="profileForm.alertThreshold" :placeholder="t('alertThresholdPlaceholder')" />
-                                    <small>{{ t('alertThresholdHelp') }}</small>
-                                </div>
-                                <div class="form-group">
                                     <label for="profile-password">{{ t('password') }}</label>
                                     <input id="profile-password" type="password" v-model="profileForm.password" autocomplete="new-password" />
                                     <small>{{ t('leaveBlankPassword') }}</small>
@@ -1742,8 +1744,8 @@
                             </div>
                         </form>
 
-                        <!-- Channels of each kind of notification -->
-                        <section class="profile-container profile-devices profile-notifications" aria-labelledby="notifications-title">
+                        <!-- Channels of each kind of notification, the settings of an alert under its label -->
+                        <section v-else-if="profileView === 'notifications'" class="profile-container profile-notifications" aria-labelledby="notifications-title">
                             <div class="users-header">
                                 <h2 id="notifications-title">{{ t('notificationsTitle') }}</h2>
                             </div>
@@ -1760,7 +1762,53 @@
                                     </thead>
                                     <tbody>
                                         <tr v-for="kind in notificationKinds" :key="kind">
-                                            <th scope="row">{{ t('notificationsKind_' + kind) }}</th>
+                                            <th scope="row">
+                                                <span class="notification-kind">{{ t('notificationsKind_' + kind) }}</span>
+                                                <!-- Large expense: the amount from which an expense alerts -->
+                                                <div v-if="kind === 'expense'" class="notification-settings">
+                                                    <div class="notification-setting">
+                                                        <label for="alert-threshold">{{ t('alertThreshold') }}</label>
+                                                        <div class="input-unit">
+                                                            <input id="alert-threshold" type="number" min="0" step="1" inputmode="decimal"
+                                                                   v-model="alertThreshold" :placeholder="t('alertThresholdPlaceholder')"
+                                                                   :aria-invalid="alertThresholdErrorKey ? 'true' : null"
+                                                                   :aria-describedby="alertThresholdErrorKey ? 'alert-threshold-error alert-threshold-help' : 'alert-threshold-help'"
+                                                                   :disabled="savingAlertThreshold"
+                                                                   @change="saveAlertThreshold" @keydown.enter.prevent="saveAlertThreshold" />
+                                                            <span class="input-unit-suffix" aria-hidden="true">€</span>
+                                                        </div>
+                                                    </div>
+                                                    <p v-if="alertThresholdErrorKey" id="alert-threshold-error" class="sync-step-error" role="alert">{{ t(alertThresholdErrorKey) }}</p>
+                                                    <small id="alert-threshold-help">{{ t('alertThresholdHelp') }}</small>
+                                                </div>
+                                                <!-- Budget exceeded: the budget watched and the percent of it that alerts -->
+                                                <div v-else-if="kind === 'budget'" class="notification-settings">
+                                                    <div class="notification-setting-row">
+                                                        <div class="notification-setting notification-setting-grow">
+                                                            <label for="budget-category">{{ t('budgetWatched') }}</label>
+                                                            <select id="budget-category" v-model="budgetCategory" :disabled="savingBudgetCategory"
+                                                                    aria-describedby="budget-threshold-help" @change="saveBudgetCategory">
+                                                                <option value="">{{ t('budgetWatchedAll') }}</option>
+                                                                <option v-for="budget in notifications.budgets || []" :key="budget.id" :value="String(budget.id)">{{ budget.name }}</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="notification-setting">
+                                                            <label for="budget-threshold">{{ t('budgetThreshold') }}</label>
+                                                            <div class="input-unit">
+                                                                <input id="budget-threshold" type="number" inputmode="numeric" step="1"
+                                                                       :min="budgetThresholdMin" :max="budgetThresholdMax" v-model="budgetThreshold"
+                                                                       :aria-invalid="budgetThresholdErrorKey ? 'true' : null"
+                                                                       :aria-describedby="budgetThresholdErrorKey ? 'budget-threshold-error budget-threshold-help' : 'budget-threshold-help'"
+                                                                       :disabled="savingBudgetThreshold"
+                                                                       @change="saveBudgetThreshold" @keydown.enter.prevent="saveBudgetThreshold" />
+                                                                <span class="input-unit-suffix" aria-hidden="true">%</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <p v-if="budgetThresholdErrorKey" id="budget-threshold-error" class="sync-step-error" role="alert">{{ t(budgetThresholdErrorKey) }}</p>
+                                                    <small id="budget-threshold-help">{{ t((notifications.budgets || []).length ? 'budgetThresholdHelp' : 'budgetWatchedNone') }}</small>
+                                                </div>
+                                            </th>
                                             <td v-for="channel in notificationChannels" :key="channel">
                                                 <input type="checkbox" :id="'notification-' + kind + '-' + channel"
                                                        :checked="notifications.preferences[kind][channel]"
@@ -1772,28 +1820,13 @@
                                         </tr>
                                     </tbody>
                                 </table>
-                                <!-- Threshold of the budget alerts (kind budget) -->
-                                <div class="form-group budget-threshold">
-                                    <label for="budget-threshold">{{ t('budgetThreshold') }}</label>
-                                    <div class="budget-threshold-field">
-                                        <input id="budget-threshold" type="number" inputmode="numeric" step="1"
-                                               :min="budgetThresholdMin" :max="budgetThresholdMax" v-model="budgetThreshold"
-                                               :aria-invalid="budgetThresholdErrorKey ? 'true' : null"
-                                               :aria-describedby="budgetThresholdErrorKey ? 'budget-threshold-error budget-threshold-help' : 'budget-threshold-help'"
-                                               :disabled="savingBudgetThreshold"
-                                               @change="saveBudgetThreshold" @keydown.enter.prevent="saveBudgetThreshold" />
-                                        <span aria-hidden="true">%</span>
-                                    </div>
-                                    <p v-if="budgetThresholdErrorKey" id="budget-threshold-error" class="sync-step-error" role="alert">{{ t(budgetThresholdErrorKey) }}</p>
-                                    <small id="budget-threshold-help">{{ t('budgetThresholdHelp') }}</small>
-                                </div>
                                 <p v-if="emailUnavailable" id="notifications-email-unavailable" class="rules-help notifications-unavailable">
                                     <span class="material-icons inline-icon" aria-hidden="true">info</span>{{ t(emailUnavailable) }}
                                 </p>
                             </template>
                         </section>
 
-                        <div class="profile-container profile-devices">
+                        <section v-else-if="profileView === 'devices'" class="profile-container profile-devices">
                             <div class="users-header">
                                 <h2>{{ t('myDevices') }}</h2>
                             </div>
@@ -1821,8 +1854,7 @@
                                     </div>
                                 </li>
                             </ul>
-                        </div>
-
+                        </section>
                     </div>
                 </div>
             </transition>

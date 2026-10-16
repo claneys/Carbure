@@ -701,6 +701,76 @@ test('notifications: the budget alert threshold is loaded, checked and saved', a
     assert.equal(context.savingBudgetThreshold, false);
 });
 
+test('notifications: the large expense threshold is empty or a positive amount', async () => {
+    const { alertThresholdError } = await import('../../portal/modules/notificationsModule.js');
+    for (const value of ['', null, undefined, 0, '150', 99.5, ' 20 ']) {
+        assert.equal(alertThresholdError(value), '', String(value));
+    }
+    for (const value of [-1, 'abc', '-0.5']) {
+        assert.equal(alertThresholdError(value), 'alertThresholdInvalid', String(value));
+    }
+});
+
+test('notifications: the large expense threshold and the budget watched are saved at once', async () => {
+    const { createNotificationsModule } = await import('../../portal/modules/notificationsModule.js');
+    const sent = [];
+    let refuse = false;
+    let stored = { alert_threshold: 150, budget_category: null };
+    const answer = () => ({ preferences: {}, smtp: true, address: 'a@example.com', email_available: true, budget_threshold: 100, budgets: [{ id: 3, name: 'Logement' }], ...stored });
+    const api = {
+        fetchNotifications: async () => answer(),
+        updateAlertSettings: async settings => {
+            sent.push(settings);
+            if (refuse) {
+                throw new Error('Refused');
+            }
+            stored = {
+                alert_threshold: 'alertThreshold' in settings ? (Number(settings.alertThreshold) || null) : stored.alert_threshold,
+                budget_category: 'budgetCategory' in settings ? (Number(settings.budgetCategory) || null) : stored.budget_category,
+            };
+            return answer();
+        },
+    };
+    const { methods, data } = createNotificationsModule(() => api);
+    const toasts = [];
+    const context = { ...data(), ...methods, t: key => key, showToast: message => toasts.push(message) };
+
+    await context.loadNotifications();
+    assert.equal(context.alertThreshold, '150');
+    assert.equal(context.budgetCategory, '');
+
+    // Invalid amount: not sent
+    context.alertThreshold = '-5';
+    await context.saveAlertThreshold();
+    assert.deepEqual(sent, []);
+    assert.equal(context.alertThresholdErrorKey, 'alertThresholdInvalid');
+
+    // Emptied: turned off
+    context.alertThreshold = '';
+    await context.saveAlertThreshold();
+    assert.deepEqual(sent, [{ alertThreshold: '' }]);
+    assert.equal(context.alertThreshold, '');
+    assert.equal(context.alertThresholdErrorKey, '');
+
+    context.budgetCategory = '3';
+    await context.saveBudgetCategory();
+    assert.deepEqual(sent.at(-1), { budgetCategory: '3' });
+    assert.equal(context.budgetCategory, '3');
+    assert.deepEqual(toasts, ['notificationsSaved', 'notificationsSaved']);
+
+    // Refused: back to the budget saved
+    refuse = true;
+    context.budgetCategory = '';
+    await context.saveBudgetCategory();
+    assert.equal(context.budgetCategory, '3');
+    assert.equal(toasts.at(-1), 'Refused');
+    assert.equal(context.savingBudgetCategory, false);
+    context.alertThreshold = '80';
+    await context.saveAlertThreshold();
+    assert.equal(toasts.at(-1), 'Refused');
+    assert.equal(context.savingAlertThreshold, false);
+});
+
 test('notifications: a change is saved at once, undone if refused', async () => {
     const { createNotificationsModule } = await import('../../portal/modules/notificationsModule.js');
     const preferences = () => ({ sync: { push: true, email: false }, rule: { push: true, email: false }, expense: { push: true, email: false } });
