@@ -18,6 +18,7 @@ use Carbure\Lib\Db;
 use Carbure\Lib\Installer;
 use Carbure\Lib\Logger;
 use Carbure\Lib\Migrator;
+use Carbure\Lib\MobileApp;
 use Error;
 use Exception;
 use RuntimeException;
@@ -64,17 +65,19 @@ final class System {
     }
 
     /**
-     * Health of the instance, for the Docker HEALTHCHECK and supervision tools
-     * (no authentication, no data): the database answers.
+     * Health of the instance, for the Docker HEALTHCHECK, supervision tools and the
+     * mobile app (no authentication, no data): the database answers.
      *
-     * @return array<string, string|null> status (ok), version (of Carbure), database (ok), schema (version)
+     * @return array<string, string|null> status (ok), version (of Carbure), database (ok), schema (version),
+     *               min_mobile_version (lowest version of the mobile app supported, MobileApp::MIN_VERSION)
      * @throws Exception If the database does not answer (HTTP 500)
      */
     #[ApiRoute('/health', method: 'GET', public: true)]
     public static function health(): array
     {
         Db::query("SELECT 1");
-        return ['status' => 'ok', 'version' => self::version(), 'database' => 'ok', 'schema' => (new Migrator(Db::getConnection()))->version()];
+        return ['status' => 'ok', 'version' => self::version(), 'database' => 'ok', 'schema' => (new Migrator(Db::getConnection()))->version(),
+            'min_mobile_version' => MobileApp::MIN_VERSION];
     }
 
     /**

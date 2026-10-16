@@ -157,6 +157,7 @@ class SetupTest extends TestCase
         $this->assertSame(200, $status);
         $this->assertSame('setup', $body['status']);
         $this->assertNotEmpty($body['version']);
+        $this->assertSame(\Carbure\Lib\MobileApp::MIN_VERSION, $body['min_mobile_version']);
 
         // Any other route: not installed
         [$status, $body] = $this->setup->handle('GET', '/transaction', []);

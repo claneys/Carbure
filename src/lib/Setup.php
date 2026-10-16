@@ -146,15 +146,17 @@ final class Setup {
     }
 
     /**
-     * Health while waiting for the installation, with the version of Carbure.
+     * Health while waiting for the installation, with the version of Carbure and the
+     * lowest version of the mobile app supported.
      *
-     * @return array{status: string, version: string} status (setup) and version
+     * @return array{status: string, version: string, min_mobile_version: string} status (setup), version, min_mobile_version
      */
     private function health(): array
     {
         $file = "$this->root/VERSION";
         $version = is_file($file) ? trim((string)file_get_contents($file)) : 'dev';
-        return ['status' => 'setup', 'version' => preg_match('/^[0-9A-Za-z.+-]{1,40}$/', $version) ? $version : 'dev'];
+        return ['status' => 'setup', 'version' => preg_match('/^[0-9A-Za-z.+-]{1,40}$/', $version) ? $version : 'dev',
+            'min_mobile_version' => MobileApp::MIN_VERSION];
     }
 
     /**

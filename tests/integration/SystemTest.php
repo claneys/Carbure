@@ -24,6 +24,9 @@ class SystemTest extends DatabaseTestCase
         $this->assertSame('ok', $health['status']);
         $this->assertSame('ok', $health['database']);
         $this->assertArrayHasKey('schema', $health);
+        // Lowest version of the mobile app supported: a version number the app compares to its own
+        $this->assertSame(\Carbure\Lib\MobileApp::MIN_VERSION, $health['min_mobile_version']);
+        $this->assertMatchesRegularExpression('/^\d+(\.\d+){0,2}$/', $health['min_mobile_version']);
         $this->assertSame(trim(file_get_contents(dirname(__DIR__, 2) . '/VERSION')), $health['version']);
     }
 

@@ -122,6 +122,9 @@ git config core.hooksPath .githooks   # pre-commit lint, pre-push unit tests
 
 - **Backward compatibility**: iOS app isn't updated with the server. Only add routes or
   optional params; never rename/remove or change an existing response format.
+  `GET /health` publishes `min_mobile_version` (`Carbure\Lib\MobileApp::MIN_VERSION`): the
+  oldest app still supported. Raise it only for an unavoidable break, once the new app is
+  on the App Store.
 - **Schema**: change via `sql/migrations/YYYY-MM-DD_name.sql` (mandatory
   `-- applied-if: …` line, test-checked) **and** `sql/carbure.sql`. Applied at container
   start, by setup wizard, or portal admin banner. Code must not depend on an unapplied
