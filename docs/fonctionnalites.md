@@ -22,8 +22,8 @@ qui consultent les mêmes données.
   insights sont communs à tous les utilisateurs. Une transaction appartient techniquement au
   premier utilisateur qui suit le compte, mais tous la voient et la pointent.
 - **Données personnelles** : chaque utilisateur a son identifiant, son mot de passe, sa
-  langue (français ou anglais), son seuil d'alerte, ses appareils iPhone et ses jetons d'accès
-  pour les agents IA.
+  langue (français ou anglais), son thème d'affichage, ses seuils d'alerte, les canaux de ses
+  notifications (push, email), ses appareils iPhone et ses jetons d'accès pour les agents IA.
 - **Deux profils** :
 
 | | Utilisateur | Administrateur |
@@ -34,10 +34,10 @@ qui consultent les mêmes données.
 | Gérer son profil, ses appareils, ses jetons d'accès | ✅ | ✅ |
 | Créer et modifier les règles de catégorisation | ➖ | ✅ |
 | Créer et modifier les catégories | ➖ | ✅ |
-| Suivre des comptes bancaires, configurer les banques, synchroniser depuis le portail | ➖ | ✅ |
+| Suivre des comptes bancaires, configurer les banques, synchroniser depuis le portail, mettre à jour les modules woob | ➖ | ✅ |
 | Créer et modifier les insights (requêtes SQL) | ➖ | ✅ |
 | Activer le serveur MCP pour les agents IA | ➖ | ✅ |
-| Gérer les utilisateurs, consulter les logs, mettre à jour la base | ➖ | ✅ |
+| Gérer les utilisateurs, les paramètres du serveur (dont les emails), consulter les logs, mettre à jour la base | ➖ | ✅ |
 
 Le dernier administrateur ne peut pas perdre son rôle.
 
@@ -58,6 +58,14 @@ bancaire tiers, pas de cloud. Les modules woob couvrent surtout les **banques fr
   **ajouter des comptes** parmi ceux que woob liste (`woob bank list -b <banque>`, avec leur
   libellé et leur solde) : on coche ceux à suivre et ils sont ajoutés d'un coup. Seul un
   compte trouvé par woob peut être suivi.
+- **Plusieurs connexions** à une même banque (compte joint, professionnel…), chacune avec
+  ses identifiants ; une connexion et un compte suivi peuvent recevoir un **nom lisible**
+  (« Compte joint »). **Supprimer une connexion** fait oublier ses identifiants à woob et ne
+  suit plus ses comptes ; leurs transactions sont conservées.
+- **Modules bancaires** : quand le site d'une banque change, woob publie un correctif de son
+  module ; un administrateur met à jour les modules depuis l'onglet Comptes (aussi proposé
+  sous le journal d'une synchronisation en échec), après avoir approuvé la clé du dépôt de
+  woob la première fois (voir [Sécurité](securite.md)).
 - Les **comptes suivis** sont communs au foyer : chacun indique qui l'a ajouté, la date et le
   résultat de sa dernière synchronisation (Synchronisé, Échec avec le message, ou Jamais
   synchronisé). Ne plus suivre un compte conserve ses transactions déjà importées.
@@ -89,8 +97,8 @@ transactions du dernier mois restées sans catégorie.
 
 - **Quand** : chaque jour avec Docker (`SYNC_INTERVAL`), par une tâche planifiée (cron avec
   le `sync_token` : l'onglet **Administration → Synchro** donne la commande `curl` et
-  la ligne crontab toutes prêtes), ou à la demande depuis l'onglet Comptes, pour un compte à
-  la fois.
+  la ligne crontab toutes prêtes), ou à la demande depuis l'onglet Comptes, pour tous les
+  comptes ou un seul.
 - **Sans synchronisation** (banque non couverte par woob, reprise de l'historique) : les
   relevés téléchargés depuis la banque s'**importent** depuis l'onglet Transactions (voir
   plus bas).
@@ -114,7 +122,11 @@ transactions du dernier mois restées sans catégorie.
   transactions trouvées.
 - **Détail** : montant, libellé complet, date et date réelle, type (carte, virement,
   prélèvement…), carte, banque d'origine, date d'import ; la catégorie et le pointage s'y
-  modifient.
+  modifient. **Transactions similaires** y lance la recherche sur le nom du commerçant
+  (« PRLV SEPA EDF MDT/123 » cherche « EDF »).
+- **Supprimer** une transaction (depuis son détail, après confirmation) : elle disparaît
+  pour tout le foyer et n'est plus réimportée, ni par la synchronisation ni par l'import
+  d'un relevé.
 - **Catégoriser à la main** une transaction sans catégorie : un sélecteur avec recherche,
   icônes et couleurs. Pour un administrateur, Carbure propose ensuite de **créer la règle**
   correspondante, pour que les prochaines soient classées toutes seules.
@@ -406,10 +418,25 @@ dépassent leur budget ce mois-ci ? », « Comment évolue notre épargne ? ».
 ## Profil et sécurité des comptes
 
 - **Mon profil** : e-mail, prénom, nom, mot de passe, langue (appliquée à chaque connexion,
-  sur tous les navigateurs), seuil d'alerte, appareils iPhone enregistrés (supprimables).
+  sur tous les navigateurs), thème, seuil d'alerte, canaux de chaque notification et seuil
+  des budgets, appareils iPhone enregistrés (supprimables).
 - **Mots de passe** chiffrés (bcrypt) ; session valable 30 jours.
 - **Blocage** : après 5 échecs de connexion d'affilée, le compte est bloqué 24 heures ; un
   administrateur peut le débloquer.
+
+## Affichage et accessibilité
+
+- **Thème clair ou sombre** : par défaut, celui du système ; l'icône de l'en-tête passe d'un
+  clic à l'autre thème, et le choix est enregistré dans le profil (retrouvé sur un autre
+  navigateur).
+- **Préférences du système** respectées : contraste augmenté (macOS, iOS) et couleurs forcées
+  (contraste élevé de Windows), animations réduites.
+- **Accessibilité** au niveau AA des WCAG, vérifiée par des tests automatiques sur chaque
+  écran, en thème clair et en thème sombre.
+- **Application installée** : le portail s'installe comme une application (Chrome, Edge,
+  Safari, Android), en HTTPS, sans mode hors ligne.
+
+Détails : [Portail web](portail.md#accessibilite).
 
 ## Administration
 
@@ -425,8 +452,8 @@ utilisateurs ouvrent **Agent IA** depuis leur menu.
   y sont masqués.
 - **Paramètres** : le fichier de configuration du serveur, section par section, les secrets
   masqués. Les réglages sans risque (niveau de log, catégorie d'épargne, adresse publique,
-  options de woob, notifications iOS) se modifient dans le portail, chaque valeur étant
-  vérifiée ; la base, les secrets, la commande woob et le nettoyage des libellés restent en
+  options de woob, notifications iOS, serveur SMTP des emails, avec un **email de test**)
+  se modifient dans le portail, chaque valeur étant vérifiée ; la base, les secrets, la commande woob et le nettoyage des libellés restent en
   lecture seule.
 - **Synchro** : la commande `curl` (pour tous les comptes ou un seul) et la ligne crontab qui
   lancent la synchronisation, avec le jeton masqué jusqu'à « Afficher » ; l'onglet crée ou

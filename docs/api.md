@@ -19,7 +19,8 @@ icon: material/api
   méthode PHP. Une clé inconnue renvoie une erreur 400.
 - **Profils** : un **utilisateur** consulte et pointe les transactions, les budgets, les
   insights et les tendances. Un **administrateur** gère en plus les règles, les
-  catégories, les comptes, les insights, le serveur MCP et les utilisateurs : les routes
+  catégories, les comptes, les insights, le serveur MCP, les utilisateurs, la configuration
+  et les logs : les routes
   marquées « administrateur » renvoient `403` aux autres. Elles sont déclarées dans leur
   attribut (`#[ApiRoute(..., admin: true)]`) et vérifiées avant l'appel de la méthode ;
   un test unitaire fixe le niveau d'accès (public, utilisateur, administrateur) de chaque
@@ -335,13 +336,18 @@ data: Syncing 12345678@bnp (history)...
 data: Done 12345678@bnp (history): 100 received, 4 new
 data: Notifying users of 12345678@bnp...
 data: Updating missing categories...
+data: Checking the budgets...
 data: Synchronization complete
 ```
 
 Après chaque compte, **tous les utilisateurs** du foyer reçoivent une notification (succès
-ou échec, nombre de transactions à vérifier), et chaque **nouvelle** dépense (transaction
+ou échec, nombre de transactions à vérifier), chaque **nouvelle** dépense (transaction
 absente jusque-là) dont le montant atteint le seuil `alert_threshold` d'un utilisateur lui
-envoie une notification « Dépense importante à vérifier » (dans sa langue).
+envoie une notification « Dépense importante à vérifier », et chaque nouvelle transaction
+d'une règle `notify` est signalée au foyer. Une fois les transactions catégorisées, les
+**budgets du mois en cours** sont vérifiés (alerte `budget`, aussi après un import). Chaque
+notification part dans la langue de son destinataire, sur les canaux (push, email) qu'il a
+choisis (voir [`GET /user/notifications`](#get-usernotifications)).
 
 ## Transactions
 

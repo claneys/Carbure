@@ -70,9 +70,12 @@
 - 🔁 **Recurring transactions**: salary, rent, subscriptions and bills are spotted on their
   own; see at a glance those still expected this month.
 - 🔔 **Alerts on iPhone and by email**: after each sync, as soon as an expense exceeds the
-  threshold you set, or when a rule you chose matches; each user picks push, email or both
-  for each kind of alert.
+  threshold you set, when a rule you chose matches, or when the spending of a budget
+  reaches the percentage you chose; each user picks push, email or both for each kind of
+  alert.
 - 📊 **Insights**: your own monthly indicators (groceries, fuel, subscriptions…).
+- 🌗 **Light or dark, accessible**: the portal follows the theme of your system or switches
+  in one click, respects its high contrast settings and aims at WCAG 2.2 AA.
 - 👨‍👩‍👧 **Built for households**: several users, shared accounts and data, each with their own
   language and devices; an administrator manages accounts, categories, rules, users and the
   configuration, and copies the ready-made command that schedules the sync.

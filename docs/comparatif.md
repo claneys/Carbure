@@ -56,8 +56,8 @@ seul utilisateur (Kresus).
 |---|---|---|---|---|
 | Plusieurs utilisateurs sur les mêmes données | ✅ administrateur et utilisateurs | ⚠️ utilisateurs séparés | ✅ | ➖ |
 | iPhone | ✅ app native | ⚠️ apps tierces | ⚠️ application web (PWA) | ⚠️ interface web |
-| Android | ⚠️ portail web | ⚠️ apps tierces | ⚠️ application web (PWA) | ⚠️ interface web |
-| Alertes | ✅ push iPhone : synchro, grosse dépense, règle | ⚠️ e-mail, webhooks | ➖ | ⚠️ e-mail : montant, solde |
+| Android | ⚠️ portail web installable (PWA) | ⚠️ apps tierces | ⚠️ application web (PWA) | ⚠️ interface web |
+| Alertes | ✅ push iPhone et e-mail, au choix : synchro, grosse dépense, règle, budget atteint | ⚠️ e-mail, webhooks | ➖ | ⚠️ e-mail : montant, solde |
 
 ## Ouvert et extensible
 

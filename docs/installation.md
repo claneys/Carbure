@@ -40,8 +40,8 @@ choisissez la banque, saisissez les identifiants demandés, puis les comptes à 
 identifiants sont confiés à woob, qui les conserve sur votre serveur ; Carbure ne les
 enregistre pas.
 
-Les réglages de l'instance (niveau et conservation des logs, woob, notifications iOS…) se
-consultent et se modifient ensuite dans le portail, onglet **Administration →
+Les réglages de l'instance (niveau et conservation des logs, woob, notifications iOS, serveur
+SMTP des emails…) se consultent et se modifient ensuite dans le portail, onglet **Administration →
 Paramètres** : voir [Configuration](configuration.md).
 
 Pour choisir vous-même le mot de passe de la base, créez un fichier `docker/.env` à côté de
@@ -133,6 +133,15 @@ docker compose exec carbure vi /data/conf/prod.ini   # apns_key_path=conf/certs/
 docker compose restart carbure
 ```
 
+### Notifications par email (SMTP)
+
+Pour envoyer aussi les notifications par email, renseignez le serveur SMTP (hôte, port,
+chiffrement, identifiants, expéditeur) dans **Administration → Paramètres**, section
+**Emails (SMTP)**, puis vérifiez-le avec **Envoyer un email de test** (voir
+[Configuration](configuration.md#smtp)). Chaque utilisateur choisit ensuite, dans **Mon
+profil → Notifications**, les notifications qu'il reçoit par email ; son profil doit avoir
+une adresse email.
+
 ### Maintenance
 
 ```bash
@@ -159,7 +168,8 @@ docker compose exec -u www-data carbure php tools/migrate.php --status # version
   sensibles est à configurer dans le serveur.
 - [woob](https://woob.tech/) installé pour l'utilisateur du serveur web. Le module BNP
   récent nécessite `curl_cffi` (`pip install "curl_cffi>=0.7"`).
-- Facultatif : une clé APNs `.p8` (Apple Developer) pour les notifications iOS.
+- Facultatif : une clé APNs `.p8` (Apple Developer) pour les notifications iOS, et un
+  serveur SMTP pour les notifications par email.
 
 ### 1. Copier Carbure
 

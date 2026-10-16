@@ -109,8 +109,8 @@ Si l'assistant affiche une erreur de connexion à la base, vérifiez l'adresse I
 l'option **Activer la connexion TCP/IP** de MariaDB 10 et l'hôte (`172.17.%`) de
 l'utilisateur `carbure`, puis corrigez la saisie et réessayez.
 
-Les réglages de Carbure (niveau et conservation des logs, woob, notifications iOS…) se
-consultent et se modifient ensuite dans le portail, onglet **Administration →
+Les réglages de Carbure (niveau et conservation des logs, woob, notifications iOS, serveur
+SMTP des emails…) se consultent et se modifient ensuite dans le portail, onglet **Administration →
 Paramètres**, sans ouvrir de fichier sur le NAS : voir [Configuration](configuration.md).
 
 ## 7. Ajouter vos comptes bancaires

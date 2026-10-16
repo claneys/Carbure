@@ -83,7 +83,8 @@ tâches ou l'écran d'accueil.
 - Le titre **Carbure** ramène à l'accueil : transactions du mois en cours.
 - En haut à droite, le bouton affiche le **login** de l'utilisateur connecté ; son menu
   donne accès à **Mon profil**, à **Agent IA** (utilisateurs non administrateurs) et à
-  **Déconnexion**.
+  **Déconnexion**. Juste avant, l'icône de **thème** passe au thème clair ou sombre (voir
+  [Thèmes](#themes-et-preferences-du-systeme)).
 - Dans la barre du haut, le sélecteur de **mois** et d'**année** et le bouton rond
   **Actualiser** (icône seule) s'appliquent aux onglets Transactions, Budget et Insights.
   Ils ne proposent que les mois qui ont des transactions, plus le mois en cours ; une autre
@@ -256,8 +257,9 @@ ou importés depuis un fichier, sont regroupés à la fin sous **Autres comptes*
   déjà importées sont conservées). Un compte s'affiche « BANQUE ···1234 » (banque et fin
   de l'identifiant), ou sous le **nom** qui lui a été donné (facultatif, ex. « Compte
   joint »), aussi dans la synchronisation et le détail d'une transaction.
-- **Synchroniser tous les comptes** (en haut de la page) : lance la synchronisation de
-  tous les comptes suivis, avec le même suivi en direct qu'un compte seul.
+- **Synchroniser tous les comptes** (icône de synchronisation en haut de la page) : lance
+  la synchronisation de tous les comptes suivis, avec le même suivi en direct qu'un compte
+  seul.
 - **Ajout en deux étapes** :
     1. **Connecter une banque** (fenêtre modale) : choisir la banque parmi celles que
        woob supporte ; le formulaire demande les identifiants attendus par son module woob
@@ -388,6 +390,8 @@ la configuration (`GET /system/sync`, `POST /system/sync-token`).
   conserver). L'identifiant n'est pas modifiable.
 - **Langue** (français / anglais) : enregistrée sur le compte et appliquée à chaque
   connexion, sur tous les navigateurs.
+- **Thème** (*Comme le système*, *Clair*, *Sombre*) : enregistré sur le compte, comme le
+  choix fait avec l'icône de l'en-tête (voir [Thèmes](#themes-et-preferences-du-systeme)).
 - **Seuil d'alerte (€)** : notification pour toute nouvelle dépense supérieure à ce
   montant, détectée lors d'une synchronisation. Vide = désactivé.
 - **Notifications** : un tableau type de notification × canal (push sur l'app iOS, email)
@@ -407,8 +411,8 @@ la configuration (`GET /system/sync`, `POST /system/sync-token`).
 
 ## Pied de page
 
-Lien vers le dépôt GitHub de Carbure et **version** de l'instance (`v1.2.0`, ou `dev` hors
-release), lue dans `GET /api/health`.
+Lien vers le site de Carbure ([carbure.org](https://carbure.org/)), licence et **version**
+de l'instance (`v1.2.0`, ou `dev` hors release), lue dans `GET /api/health`.
 
 ## Accessibilité
 
@@ -480,7 +484,7 @@ des logs dans la console du navigateur.
 |---|---|
 | `index.html` | Gabarit Vue (tous les écrans, dont l'assistant d'installation) |
 | `app.js` | Application racine : authentification, onglets (onglets d'administration réservés), initialisation |
-| `modules/*.js` | Mixins par domaine : `setup` (assistant), `transaction`, `budget`, `insights`, `trends`, `rules`, `categories`, `accounts`, `sync`, `agents`, `oauth` (consentement des agents IA), `logs`, `user`, `profile` (profil, appareils, mise à jour de la base) |
+| `modules/*.js` | Mixins par domaine : `setup` (assistant), `transaction`, `import` (import de relevés), `budget`, `insights`, `trends`, `rules`, `categories`, `accounts`, `sync`, `agents`, `oauth` (consentement des agents IA), `logs`, `config` (Paramètres, email de test, Synchro), `user`, `profile` (profil, appareils, mise à jour de la base), `notifications` (canaux des notifications du profil), `confirm` (fenêtre de confirmation) |
 | `services/apiService.js` | Appels HTTP vers l'API |
 | `stores/budgetStore.js` | Navigation dans l'arborescence des budgets |
 | `components/*.js` | Composants : diagramme de flux (`FlowChart`), sélecteur de catégorie (`CategoryPicker`, compact dans les listes), éditeur SQL (`SqlEditor`) |
@@ -488,4 +492,5 @@ des logs dans la console du navigateur.
 | `utils/formatters.js`, `utils/categoryIcons.js` | Formatage des montants, dates, icônes ; icônes et couleurs des catégories |
 | `vendor/` | Vue, CodeMirror (éditeur SQL) et polices, servis localement |
 | `manifest.webmanifest`, `icons/` | Manifeste et icônes de l'application installée |
-| `style.css` | Styles (variables CSS dans `:root`) |
+| `theme.js` | Thème clair ou sombre appliqué avant l'affichage de la page |
+| `style.css` | Styles (variables CSS dans `:root`, thème sombre, contraste augmenté, couleurs forcées) |

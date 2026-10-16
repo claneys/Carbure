@@ -20,7 +20,7 @@ icon: material/shield-lock-outline
 | Rôle | Droits |
 |---|---|
 | Utilisateur | Données du foyer (comptes, transactions, budgets, insights, tendances), pointage et catégorie des transactions, montants des budgets, synchronisation par l'API, son profil, ses appareils, ses jetons d'accès MCP |
-| Administrateur (`users.is_admin = 1`) | En plus : règles de catégorisation, catégories, comptes bancaires suivis (et leur synchronisation depuis le portail), insights (requêtes SQL), activation du serveur MCP, mise à jour de la base de données, utilisateurs (profil, déblocage) |
+| Administrateur (`users.is_admin = 1`) | En plus : règles de catégorisation, catégories, connexions bancaires et comptes suivis (et leur synchronisation depuis le portail), mise à jour des modules woob, insights (requêtes SQL), activation du serveur MCP, paramètres du serveur (dont SMTP) et logs, mise à jour de la base de données, utilisateurs (profil, déblocage) |
 
 Les routes réservées sont déclarées dans leur attribut (`#[ApiRoute(..., admin: true)]`) et
 renvoient `403` avant l'appel de la méthode ; un test unitaire fixe le niveau d'accès de
