@@ -329,6 +329,11 @@ renvoie un montant pour le mois affiché.
   sans accès aux comptes utilisateurs ni aux jetons (voir [Sécurité](securite.md)).
 - L'historique de chaque insight mois par mois est disponible par l'API, pour l'app iPhone.
 
+Des **recettes prêtes à l'emploi** (une catégorie et ses sous-catégories, abonnements,
+comparaison avec l'an dernier, taux d'épargne, matelas de sécurité, budget restant,
+doublons…) sont rassemblées dans [Recettes d'insights](insights.md), avec la requête et la
+lecture du résultat de chacune.
+
 ### Matelas de sécurité
 
 Le pack de départ comprend l'insight **Matelas de sécurité** : les dépenses des **6 mois

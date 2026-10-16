@@ -190,6 +190,7 @@ remplacés par le mois affiché. L'éditeur colore la syntaxe SQL et fait vérif
 par le serveur pendant la saisie : erreur (mot-clé interdit, syntaxe MariaDB…) ou résultat
 pour le mois affiché. La requête est exécutée en lecture seule et ne peut pas lire les
 tables `users`, `api_tokens` et `devices` (voir [Sécurité](securite.md#insights-sql-stocke)).
+Des exemples de requêtes sont dans [Recettes d'insights](insights.md).
 
 ## Tendances
 
