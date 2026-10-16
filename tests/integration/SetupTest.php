@@ -249,6 +249,22 @@ class SetupTest extends TestCase
         $this->assertEquals(-30, $amounts['Over budget']);
         $this->assertEquals(-80, $amounts['Largest expense']);
         $this->assertEquals(-40, $amounts['Cash withdrawals']);
+        // The spending of this month is not in the safety cushion (6 complete months before)
+        $this->assertNull($amounts['Safety cushion']);
+
+        // Safety cushion: the expenses of the 6 complete months before the month shown,
+        // without the off-budget categories (savings) nor the income
+        $first = date('Y-m-01');
+        $at = fn(int $months, int $day = 1) => date('Y-m-d', strtotime("$first -$months month +" . ($day - 1) . " day"));
+        $db->query("INSERT INTO bank_transaction (uuid, date, rdate, type, label, category, amount, user) VALUES
+            ('c1', '{$at(1, 28)}', '{$at(1, 28)}', 7, 'CB CARREFOUR', 2, -100.00, 1),
+            ('c2', '{$at(6)}', '{$at(6)}', 7, 'CB CARREFOUR', 2, -50.00, 1),
+            ('c3', '{$at(7, 28)}', '{$at(7, 28)}', 7, 'CB CARREFOUR', 2, -1000.00, 1),
+            ('c4', '{$at(3)}', '{$at(3)}', 1, 'VIR LIVRET A', 32, -500.00, 1),
+            ('c5', '{$at(3)}', '{$at(3)}', 1, 'VIR SALAIRE', 28, 2000.00, 1)");
+        $cushion = $db->query("SELECT `sql` FROM budget_insight WHERE name = 'Safety cushion'")->fetch_row()[0];
+        $sql = str_replace(['{month}', '{year}'], [$month, $year], $cushion);
+        $this->assertEquals(150, $db->query($sql)->fetch_assoc()['amount']);
     }
 
     public function testInstallWithTheStarterCategoriesOnly()

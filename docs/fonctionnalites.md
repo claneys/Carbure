@@ -317,6 +317,19 @@ renvoie un montant pour le mois affiché.
   sans accès aux comptes utilisateurs ni aux jetons (voir [Sécurité](securite.md)).
 - L'historique de chaque insight mois par mois est disponible par l'API, pour l'app iPhone.
 
+### Matelas de sécurité
+
+Le pack de départ comprend l'insight **Matelas de sécurité** : les dépenses des **6 mois
+complets précédant le mois affiché** (débits, hors catégories « hors budget » comme
+l'épargne), en montant positif. C'est l'ordre de grandeur de l'épargne de précaution à
+garder de côté pour faire face à 6 mois de dépenses ; le mois en cours n'est pas compté,
+pour que la valeur ne bouge pas au fil du mois. Sur une instance existante, un
+administrateur l'ajoute depuis l'écran **Insights** avec cette requête :
+
+```sql
+SELECT -SUM(amount) AS amount FROM bank_transaction WHERE amount < 0 AND category NOT IN (SELECT id FROM bank_transaction_category WHERE type = 'HORS-BUDGET' AND id <> 0) AND date >= MAKEDATE({year}, 1) + INTERVAL {month} - 7 MONTH AND date < MAKEDATE({year}, 1) + INTERVAL {month} - 1 MONTH
+```
+
 ## Notifications
 
 Les notifications sont envoyées en **push** sur l'**app iPhone** (Apple Push Notification
@@ -429,7 +442,8 @@ utilisateurs ouvrent **Agent IA** depuis leur menu.
   tables (ou mise à jour d'une base existante), compte administrateur, langue. Sur une base
   neuve, il propose un **pack de départ** : une trentaine de catégories, une centaine de
   règles (enseignes, fournisseurs d'énergie, opérateurs…) et des insights (dépenses,
-  revenus, reste du mois, épargne, dépassement du budget, frais bancaires…). Exposé sur
+  revenus, reste du mois, épargne, matelas de sécurité, dépassement du budget, frais
+  bancaires…). Exposé sur
   Internet, il demande en plus un code d'installation.
 - **Image Docker** tout compris (nginx, PHP, woob), avec MariaDB : voir
   [Installation](installation.md) et le [tutoriel Synology](synology.md).
