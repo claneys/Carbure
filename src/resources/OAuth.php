@@ -22,6 +22,16 @@
  * @copyright  2026 Carbure App
  */
 
+namespace Carbure\Resources;
+
+use Carbure\Lib\ApiRoute;
+use Carbure\Lib\Config;
+use Carbure\Lib\Db;
+use Carbure\Lib\Jwt;
+use Carbure\Lib\Webservice;
+use Error;
+use InvalidArgumentException;
+
 final class OAuth {
 
     /** Prefix of the client ids */

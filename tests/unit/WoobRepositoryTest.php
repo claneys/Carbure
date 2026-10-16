@@ -1,5 +1,8 @@
 <?php
 
+use Carbure\Lib\Config;
+use Carbure\Lib\Woob;
+use Carbure\Lib\WoobRepository;
 use PHPUnit\Framework\TestCase;
 
 class WoobRepositoryTest extends TestCase

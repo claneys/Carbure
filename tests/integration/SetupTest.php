@@ -1,5 +1,8 @@
 <?php
 
+use Carbure\Lib\Installer;
+use Carbure\Lib\Migrator;
+use Carbure\Lib\Setup;
 use PHPUnit\Framework\TestCase;
 
 /**

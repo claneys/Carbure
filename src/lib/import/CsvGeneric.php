@@ -12,6 +12,11 @@
  * @copyright  2026 Carbure App
  */
 
+namespace Carbure\Lib\Import;
+
+use Carbure\Lib\BankFile;
+use Error;
+
 /**
  * @phpstan-import-type CsvLayout from CsvReader
  */

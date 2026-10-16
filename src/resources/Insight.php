@@ -13,6 +13,15 @@
  * @copyright  2026 Carbure App
  */
 
+namespace Carbure\Resources;
+
+use Carbure\Lib\ApiRoute;
+use Carbure\Lib\Db;
+use Carbure\Lib\Logger;
+use Carbure\Lib\Month;
+use Error;
+use Throwable;
+
 final class Insight {
 
     /**

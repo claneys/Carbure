@@ -1,5 +1,8 @@
 <?php
 
+use Carbure\Lib\ApiResolver;
+use Carbure\Lib\ApiRoute;
+
 /**
  * Access control of the routes through Webservice::exec(): the administrator routes
  * (admin: true in their ApiRoute attribute) and the conditional checks of User::update.
@@ -13,7 +16,7 @@ class AccessTest extends DatabaseTestCase
     {
         $routes = [];
         foreach (glob(__DIR__ . '/../../src/resources/*.php') as $file) {
-            $class = new ReflectionClass(basename($file, '.php'));
+            $class = new ReflectionClass(ApiResolver::RESOURCES_NAMESPACE . basename($file, '.php'));
             foreach ($class->getMethods() as $method) {
                 foreach ($method->getAttributes(ApiRoute::class) as $attribute) {
                     $route = $attribute->newInstance();

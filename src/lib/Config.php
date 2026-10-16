@@ -9,6 +9,10 @@
  * @copyright  2026 Carbure App
  */
 
+namespace Carbure\Lib;
+
+use Exception;
+
 final class Config {
 
     /**

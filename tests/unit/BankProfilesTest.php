@@ -1,5 +1,8 @@
 <?php
 
+use Carbure\Lib\BankFile;
+use Carbure\Lib\Import\BankProfiles;
+use Carbure\Lib\Import\CsvReader;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 

@@ -1,5 +1,6 @@
 <?php
 
+use Carbure\Resources\BudgetAlert;
 use PHPUnit\Framework\TestCase;
 
 /**

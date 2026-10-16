@@ -13,6 +13,19 @@
  * @copyright  2026 Carbure App
  */
 
+namespace Carbure\Resources;
+
+use Carbure\Lib\ApiRoute;
+use Carbure\Lib\Config;
+use Carbure\Lib\Db;
+use Carbure\Lib\Jwt;
+use Carbure\Lib\Logger;
+use Carbure\Lib\Mailer;
+use Carbure\Lib\Messages;
+use Error;
+use Exception;
+use Throwable;
+
 final class Notification {
 
     /**

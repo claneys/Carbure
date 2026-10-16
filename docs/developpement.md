@@ -10,9 +10,9 @@ icon: material/code-braces
 
 | Chemin | Contenu |
 |---|---|
-| `src/lib/` | Socle technique (configuration, base, logs, JWT, routage, woob, APNs, assistant d'installation, migrations, réglages) |
-| `src/lib/import/`, `src/lib/import/banks/` | Lecture des relevés importés (OFX, QIF, CAMT, CSV) et profils CSV des banques |
-| `src/resources/` | Ressources de l'API |
+| `src/lib/` | Espace de noms `Carbure\Lib` : socle technique (configuration, base, logs, JWT, routage, woob, APNs, assistant d'installation, migrations, réglages) |
+| `src/lib/import/`, `src/lib/import/banks/` | Espace de noms `Carbure\Lib\Import` : lecture des relevés importés (OFX, QIF, CAMT, CSV) et profils CSV des banques |
+| `src/resources/` | Espace de noms `Carbure\Resources` : ressources de l'API |
 | `portal/` | Portail web Vue 3 |
 | `swagger/` | Générateur OpenAPI et Swagger UI |
 | `sql/` | Schéma et migrations |
@@ -82,6 +82,10 @@ livré. Reconstruire l'image (`--build`) n'est utile qu'après une modification 
 ## Ajouter une route
 
 ```php
+namespace Carbure\Resources;
+
+use Carbure\Lib\ApiRoute;
+
 final class Transaction {
 
     /**
@@ -100,7 +104,13 @@ final class Transaction {
 ```
 
 - La méthode doit être **publique et statique**, dans une classe de `src/resources/`
-  (nom de fichier = nom de classe).
+  (espace de noms `Carbure\Resources`, nom de fichier = nom de classe, casse comprise) :
+  rien d'autre à déclarer, `ApiResolver` parcourt le dossier.
+- Les classes sont chargées à la demande (PSR-4) par `Carbure\Lib\ClassLoader`, enregistré
+  par `src/autoload.php`, sans Composer : pas de `require_once` entre classes, mais un
+  `use` en tête de fichier pour chaque classe d'un autre espace de noms, y compris les
+  classes globales de PHP (`use Error;`, `use mysqli;`). Un sous-espace de noms
+  (`Carbure\Lib\Import`) correspond à un sous-dossier en minuscules (`src/lib/import/`).
 - Les clés de la requête sont passées **par nom** : le nom des paramètres fait partie
   du contrat d'API.
 - `public: true` désactive le contrôle du JWT ; `stream: true` produit une réponse SSE ;

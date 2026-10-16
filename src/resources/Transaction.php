@@ -9,6 +9,18 @@
  * @copyright  2026 Carbure App
  */
 
+namespace Carbure\Resources;
+
+use Carbure\Lib\ApiRoute;
+use Carbure\Lib\BankFile;
+use Carbure\Lib\Config;
+use Carbure\Lib\Db;
+use Carbure\Lib\Jwt;
+use Carbure\Lib\Logger;
+use Carbure\Lib\Month;
+use Carbure\Lib\Webservice;
+use Error;
+
 // Credit or Debit
 // 1 : VIREMENT
 // 2 : PRELEVEMENT
@@ -20,8 +32,6 @@
 // 8 : DEPENSE
 // 9 : COMMISSIONS
 // 12 : EN COURS CARTE  
-
-require_once "Category.php";
 
 final class Transaction {
 

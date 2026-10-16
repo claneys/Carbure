@@ -17,6 +17,11 @@
  * @copyright  2026 Carbure App
  */
 
+namespace Carbure\Lib;
+
+use Error;
+use Exception;
+
 final class WoobRepository {
 
     /** Repository of the bank modules of woob 3 */

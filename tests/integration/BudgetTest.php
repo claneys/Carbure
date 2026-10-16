@@ -1,5 +1,8 @@
 <?php
 
+use Carbure\Lib\Db;
+use Carbure\Resources\Budget;
+
 class BudgetTest extends DatabaseTestCase
 {
     private function byName($rows)

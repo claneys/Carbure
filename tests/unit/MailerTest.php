@@ -1,5 +1,7 @@
 <?php
 
+use Carbure\Lib\Config;
+use Carbure\Lib\Mailer;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 

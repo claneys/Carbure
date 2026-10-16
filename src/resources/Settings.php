@@ -13,6 +13,18 @@
  * @copyright  2026 Carbure App
  */
 
+namespace Carbure\Resources;
+
+use Carbure\Lib\ApiRoute;
+use Carbure\Lib\Config;
+use Carbure\Lib\Db;
+use Carbure\Lib\Installer;
+use Carbure\Lib\Jwt;
+use Carbure\Lib\Logger;
+use Carbure\Lib\Messages;
+use Error;
+use Exception;
+
 final class Settings {
 
     /** Settings whose value is never sent to the portal */

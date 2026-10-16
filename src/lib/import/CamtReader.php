@@ -10,6 +10,12 @@
  * @copyright  2026 Carbure App
  */
 
+namespace Carbure\Lib\Import;
+
+use Carbure\Lib\BankFile;
+use Error;
+use SimpleXMLElement;
+
 /**
  * @phpstan-import-type BankRead from BankFile
  * @phpstan-import-type BankRow from BankFile
@@ -44,10 +50,10 @@ final class CamtReader
      * Load a CAMT file, without its namespace (it changes with the version of the standard).
      *
      * @param string $content The content
-     * @return \SimpleXMLElement The document
+     * @return SimpleXMLElement The document
      * @throws Error If the XML is not valid
      */
-    private static function loadXml(string $content): \SimpleXMLElement
+    private static function loadXml(string $content): SimpleXMLElement
     {
         $content = preg_replace('/\sxmlns(:\w+)?="[^"]*"/', '', $content);
         $previous = libxml_use_internal_errors(true);
@@ -63,7 +69,7 @@ final class CamtReader
     /**
      * Text of the first node found by an XPath query ('' if none).
      *
-     * @param array<\SimpleXMLElement>|false|null $nodes The nodes found
+     * @param array<SimpleXMLElement>|false|null $nodes The nodes found
      * @return string
      */
     private static function text(array|false|null $nodes): string
@@ -74,10 +80,10 @@ final class CamtReader
     /**
      * Row of an entry (Ntry).
      *
-     * @param \SimpleXMLElement $entry The entry
+     * @param SimpleXMLElement $entry The entry
      * @return BankRow
      */
-    private static function row(\SimpleXMLElement $entry): array
+    private static function row(SimpleXMLElement $entry): array
     {
         $date = self::text($entry->xpath('BookgDt/Dt')) ?: substr(self::text($entry->xpath('BookgDt/DtTm')), 0, 10);
         $operation = substr(self::text($entry->xpath('.//RltdDts/TxDtTm')) ?: self::text($entry->xpath('.//RltdDts/AccptncDtTm')), 0, 10);
@@ -97,10 +103,10 @@ final class CamtReader
      * Label of an entry: its additional information, else its remittance information,
      * else the name of the creditor or the debtor.
      *
-     * @param \SimpleXMLElement $entry The entry
+     * @param SimpleXMLElement $entry The entry
      * @return string
      */
-    private static function label(\SimpleXMLElement $entry): string
+    private static function label(SimpleXMLElement $entry): string
     {
         $label = self::text($entry->xpath('AddtlNtryInf'));
         if ($label === '') {

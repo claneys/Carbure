@@ -1,5 +1,8 @@
 <?php
 
+use Carbure\Lib\Config;
+use Carbure\Resources\System;
+
 class SystemTest extends DatabaseTestCase
 {
     public function testSchemaAndMigrate()

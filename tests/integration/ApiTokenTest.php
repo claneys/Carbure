@@ -1,5 +1,8 @@
 <?php
 
+use Carbure\Lib\Db;
+use Carbure\Resources\ApiToken;
+
 class ApiTokenTest extends DatabaseTestCase
 {
     public function testCreateListAuthenticateDelete()

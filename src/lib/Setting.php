@@ -10,6 +10,8 @@
  * @copyright  2026 Carbure App
  */
 
+namespace Carbure\Lib;
+
 final class Setting {
 
     /**

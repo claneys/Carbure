@@ -14,6 +14,9 @@
  * @copyright  2026 Carbure App
  */
 
+use Carbure\Lib\Config;
+use Carbure\Lib\WoobRepository;
+
 require_once __DIR__ . '/../src/autoload.php';
 require_once __DIR__ . '/FakeApnsServer.php';
 require_once __DIR__ . '/FakeSmtpServer.php';

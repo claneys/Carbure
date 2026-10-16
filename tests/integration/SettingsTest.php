@@ -1,5 +1,9 @@
 <?php
 
+use Carbure\Lib\Db;
+use Carbure\Resources\Settings;
+use Carbure\Resources\System;
+
 /**
  * Configuration file in the portal and request of the synchronization
  */

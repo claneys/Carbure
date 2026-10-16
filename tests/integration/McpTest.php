@@ -1,5 +1,11 @@
 <?php
 
+use Carbure\Lib\Db;
+use Carbure\Lib\Jwt;
+use Carbure\Lib\Setting;
+use Carbure\Resources\ApiToken;
+use Carbure\Resources\Mcp;
+
 class McpTest extends DatabaseTestCase
 {
     private string $token;

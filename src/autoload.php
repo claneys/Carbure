@@ -3,25 +3,24 @@
 /**
  * autoload.php
  *
- * Carbure autoload file
+ * Carbure autoload file: registers the class loader, then loads the configuration.
+ *
+ * The classes are loaded on demand (PSR-4, see ClassLoader), without Composer (the API
+ * has no dependency):
+ *   Carbure\Lib\<Class>          => src/lib/<Class>.php
+ *   Carbure\Lib\Import\<Class>   => src/lib/import/<Class>.php
+ *   Carbure\Resources\<Class>    => src/resources/<Class>.php
+ * The bank profiles of src/lib/import/banks are loaded by BankProfiles.
  *
  * @author     Ludovic Toinel
  * @copyright  2026 Carbure App
  */
 
-// Load all the PHP files in the lib directory
-foreach (glob(__DIR__ . '/lib/*.php') as $filename) {
-    require_once $filename;
-}
+use Carbure\Lib\ClassLoader;
+use Carbure\Lib\Config;
 
-// Readers of the statement files (the bank profiles of import/banks are loaded by BankProfiles)
-foreach (glob(__DIR__ . '/lib/import/*.php') as $filename) {
-    require_once $filename;
-}
+require_once __DIR__ . '/lib/ClassLoader.php';
 
-// Load all resource classes
-foreach (glob(__DIR__ . '/resources/*.php') as $filename) {
-    require_once $filename;
-}
+ClassLoader::register();
 
 Config::load(getenv('APP_ENV') ?: 'prod');

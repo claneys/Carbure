@@ -1,5 +1,9 @@
 <?php
 
+use Carbure\Lib\Config;
+use Carbure\Lib\Db;
+use Carbure\Lib\Jwt;
+use Carbure\Lib\Webservice;
 use PHPUnit\Framework\TestCase;
 
 /**

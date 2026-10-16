@@ -16,11 +16,11 @@ built by the GitHub release workflow; committing/pushing is not deploying.
 | Path | Content |
 |---|---|
 | `src/api.php` | HTTP entry (`/api/*`); without `conf/<env>.ini` serves only `/api/setup` |
-| `src/autoload.php` | Loads `src/lib`, `src/resources`, then `Config::load(getenv('APP_ENV') ?: 'prod')` |
-| `src/lib/` | `Config`, `Db` (mysqli), `Logger`, `Jwt`, `Webservice` (+ security headers), `ApiResolver`, `ApiRoute`, `Woob`, `Apns`, `Mailer` (SMTP), `Messages` (fr/en texts of the notifications), `Setup`/`Installer`, `Migrator`, `Setting` |
-| `src/lib/import/` | Statement import behind `BankFile::parse()`: `OfxReader`, `QifReader`, `CamtReader`, `CsvReader` (+ `CsvGeneric` fallback), `BankProfiles` (schema) |
-| `src/lib/import/banks/` | One CSV profile per bank (`<id>.php` returns an array); fixtures `tests/fixtures/import/`, snapshots `…/expected/` |
-| `src/resources/` | `User`, `Bank`, `Transaction`, `Budget`, `Category`, `Insight`, `Device`, `Notification`, `ApiToken`, `Mcp`, `OAuth`, `System` |
+| `src/autoload.php` | Registers `ClassLoader` (PSR-4, on demand, no Composer), then `Config::load(getenv('APP_ENV') ?: 'prod')` |
+| `src/lib/` | Namespace `Carbure\Lib`: `ClassLoader`, `Config`, `Db` (mysqli), `Logger`, `Jwt`, `Webservice` (+ security headers), `ApiResolver`, `ApiRoute`, `Woob`, `Apns`, `Mailer` (SMTP), `Messages` (fr/en texts of the notifications), `Setup`/`Installer`, `Migrator`, `Setting` |
+| `src/lib/import/` | Namespace `Carbure\Lib\Import`: statement import behind `BankFile::parse()`: `OfxReader`, `QifReader`, `CamtReader`, `CsvReader` (+ `CsvGeneric` fallback), `BankProfiles` (schema) |
+| `src/lib/import/banks/` | One CSV profile per bank (`<id>.php` returns an array, no class: loaded by path by `BankProfiles`); fixtures `tests/fixtures/import/`, snapshots `…/expected/` |
+| `src/resources/` | Namespace `Carbure\Resources`: `User`, `Bank`, `Transaction`, `Budget`, `Category`, `Insight`, `Device`, `Notification`, `ApiToken`, `Mcp`, `OAuth`, `System` |
 | `portal/` | Mixins in `modules/`, API calls in `services/apiService.js`, texts in `i18n/<locale>.json` (loader `i18n.js`) |
 | `swagger/` | OpenAPI via reflection + Swagger UI |
 | `sql/carbure.sql`, `sql/migrations/` | Full schema; dated migrations (`Migrator`, table `schema_migrations`) |
@@ -62,8 +62,20 @@ git config core.hooksPath .githooks   # pre-commit lint, pre-push unit tests
 ## API conventions
 
 - Flow: `api.php` → `Webservice::exec()` → `ApiResolver::findRoute()` → static method in
-  `src/resources/`. Route cache in APCu, auto-invalidated on file mtime changes (key
-  versioned: bump it when the cached `ApiRoute` changes).
+  `src/resources/`. Route cache in APCu (fully qualified class names), auto-invalidated
+  on file mtime changes (key versioned: bump it when the cached `ApiRoute` or class
+  names change).
+- **Namespaces**: `src/lib/X.php` = `Carbure\Lib\X`, `src/lib/import/X.php` =
+  `Carbure\Lib\Import\X`, `src/resources/X.php` = `Carbure\Resources\X` (PSR-4: class name
+  = file name, case-exact for Linux; a StudlyCase sub-namespace = a lowercase
+  sub-directory). Classes are loaded on demand by `Carbure\Lib\ClassLoader`
+  (`spl_autoload_register`, never Composer at runtime): no `require_once` between classes.
+  Import every other class with `use` at the top, PHP's global ones included (`use Error;`,
+  `use mysqli;`, `use Throwable;`); scripts outside `src/` (tests, `tools/`, `swagger/`)
+  `use` the classes and load `src/autoload.php`.
+- New resource: `src/resources/Foo.php` with `namespace Carbure\Resources;`, `final class Foo`
+  and its routes: nothing to register (`ApiResolver` scans the directory). Swagger tags
+  and logs use the short class name.
 - Route = **public static** method with
   `#[ApiRoute('/path', method: 'GET', public: false, stream: false, raw: false, admin: false)]`.
   `public: true` = no JWT; `stream: true` = SSE (`Webservice::sendProgress()`/`sendHeartbeat()`);

@@ -12,6 +12,10 @@
  * @copyright  2026 Carbure App
  */
 
+namespace Carbure\Lib;
+
+use Exception;
+
 final class Messages {
 
     /** Languages of the messages; the first one is the default */

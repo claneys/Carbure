@@ -9,6 +9,11 @@
  * @copyright  2026 Carbure App
  */
 
+namespace Carbure\Lib;
+
+use DateTime;
+use Error;
+
 final class Jwt {
 
     /**

@@ -1,5 +1,9 @@
 <?php
 
+use Carbure\Lib\Db;
+use Carbure\Lib\Webservice;
+use Carbure\Resources\Transaction;
+
 /**
  * Import of the statement files downloaded from the banks
  */

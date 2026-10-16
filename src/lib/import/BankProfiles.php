@@ -13,6 +13,11 @@
  * @copyright  2026 Carbure App
  */
 
+namespace Carbure\Lib\Import;
+
+use Carbure\Lib\BankFile;
+use Exception;
+
 /**
  * Schema of a profile (src/lib/import/banks/<id>.php returns a BankProfile):
  *

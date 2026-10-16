@@ -1,5 +1,8 @@
 <?php
 
+use Carbure\Resources\Device;
+use Carbure\Resources\User;
+
 class DeviceTest extends DatabaseTestCase
 {
     public function testGetMine()

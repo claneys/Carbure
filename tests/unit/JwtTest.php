@@ -1,5 +1,7 @@
 <?php
 
+use Carbure\Lib\Config;
+use Carbure\Lib\Jwt;
 use PHPUnit\Framework\TestCase;
 
 class JwtTest extends TestCase

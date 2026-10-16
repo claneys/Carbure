@@ -18,6 +18,12 @@
  * @copyright  2026 Carbure App
  */
 
+namespace Carbure\Lib;
+
+use RuntimeException;
+use Throwable;
+use mysqli;
+
 final class Migrator {
 
     private mysqli $db;

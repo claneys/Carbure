@@ -1,5 +1,8 @@
 <?php
 
+use Carbure\Lib\Db;
+use Carbure\Lib\Migrator;
+
 class MigratorTest extends DatabaseTestCase
 {
     private string $dir;

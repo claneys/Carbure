@@ -10,6 +10,11 @@
  * @copyright  2026 Carbure App
  */
 
+namespace Carbure\Lib;
+
+use Error;
+use OpenSSLAsymmetricKey;
+
 final class Apns {
 
     /**

@@ -9,6 +9,11 @@
  * @copyright  2026 Carbure App
  */
 
+namespace Carbure\Lib;
+
+use Attribute;
+use LogicException;
+
 #[Attribute(Attribute::TARGET_METHOD)]
 class ApiRoute {
     public string $path;

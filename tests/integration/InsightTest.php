@@ -1,5 +1,9 @@
 <?php
 
+use Carbure\Lib\Db;
+use Carbure\Resources\Budget;
+use Carbure\Resources\Insight;
+
 class InsightTest extends DatabaseTestCase
 {
     private const SQL = 'SELECT SUM(amount) AS amount FROM bank_transaction WHERE amount > 0 AND MONTH(date)={month} AND YEAR(date)={year}';

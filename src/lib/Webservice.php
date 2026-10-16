@@ -11,6 +11,13 @@
  * @copyright  2026 Carbure App
  */
 
+namespace Carbure\Lib;
+
+use Carbure\Resources\User;
+use Error;
+use Exception;
+use Throwable;
+
 final class Webservice {
 
     /**
@@ -245,7 +252,7 @@ final class Webservice {
     /**
      * Call the service.
      *
-     * @param string $resource The resource class name
+     * @param string $resource The resource class name (fully qualified)
      * @param string $method   The method name to call
      * @param array<mixed> $data The request data
      * @param bool   $raw      True if the method returns the response body itself
@@ -254,7 +261,9 @@ final class Webservice {
      */
     public static function callService(string $resource, string $method, array $data, bool $raw = false): string
     {
-        Logger::info("Calling : $resource.$method", $data ? self::maskSensitive($data) : null);
+        // Logged with the short class name (Bank.get), as before the namespaces
+        $name = substr((string)strrchr('\\' . $resource, '\\'), 1);
+        Logger::info("Calling : $name.$method", $data ? self::maskSensitive($data) : null);
 
         // Merge GET parameters with payload data
         $data = array_merge($_GET, $data);
@@ -281,7 +290,7 @@ final class Webservice {
         if ($json === false) {
             // E.g. text that is not UTF-8 (charset of the database connection): an error,
             // not an empty answer that the clients would take for no data
-            Logger::error("The response of $resource.$method cannot be encoded in JSON: " . json_last_error_msg());
+            Logger::error("The response of $name.$method cannot be encoded in JSON: " . json_last_error_msg());
             throw new Exception("The response cannot be encoded in JSON");
         }
         return $json;

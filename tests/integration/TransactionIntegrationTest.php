@@ -1,5 +1,8 @@
 <?php
 
+use Carbure\Lib\Db;
+use Carbure\Resources\Transaction;
+
 class TransactionIntegrationTest extends DatabaseTestCase
 {
     private function transaction($uuid)

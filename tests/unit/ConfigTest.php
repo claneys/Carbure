@@ -1,5 +1,6 @@
 <?php
 
+use Carbure\Lib\Config;
 use PHPUnit\Framework\TestCase;
 
 class ConfigTest extends TestCase

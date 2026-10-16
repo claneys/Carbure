@@ -25,6 +25,8 @@
  * @copyright  2026 Carbure App
  */
 
+use Carbure\Lib\Config;
+
 /** Users of the data set: username => [password, is_admin, firstname, lastname] */
 const E2E_USERS = [
     'admin' => ['admin-password', 1, 'Ada', 'Admin'],

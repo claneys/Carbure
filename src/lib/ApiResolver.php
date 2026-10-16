@@ -10,10 +10,17 @@
  * @copyright  2026 Carbure App
  */
 
+namespace Carbure\Lib;
+
+use ReflectionClass;
+use ReflectionException;
+use ReflectionMethod;
+
 final class ApiResolver {
 
     /**
-     * Cache for registered API routes (in-memory), by "METHOD:path"
+     * Cache for registered API routes (in-memory), by "METHOD:path" (class: fully
+     * qualified name of the resource class)
      * @var array<string, array{class: string, method: string, apiRoute: ApiRoute}>|null
      */
     private static ?array $routeCache = null;
@@ -21,9 +28,16 @@ final class ApiResolver {
     /**
      * APCu cache key, versioned with the format of the cached routes: v2 carries the
      * admin flag of ApiRoute, so a route cached by an older version (without the flag,
-     * read as false) cannot open an administrator route to every user
+     * read as false) cannot open an administrator route to every user; v3 carries the
+     * fully qualified class names (namespaces): the global names cached by an older
+     * version would not be found
      */
-    private const APCU_CACHE_KEY = 'carbure_routes_cache_v2';
+    private const APCU_CACHE_KEY = 'carbure_routes_cache_v3';
+
+    /**
+     * Namespace of the resource classes (src/resources)
+     */
+    public const RESOURCES_NAMESPACE = 'Carbure\\Resources\\';
     
     /**
      * Check if APCu is available
@@ -89,8 +103,8 @@ final class ApiResolver {
         $resourceFiles = glob($resourcesDir . '/*.php') ?: [];
         
         foreach ($resourceFiles as $file) {
-            require_once $file;
-            $className = basename($file, '.php');
+            // Loaded by the class loader (class name = file name)
+            $className = self::RESOURCES_NAMESPACE . basename($file, '.php');
             
             // Get all methods of the class
             try {

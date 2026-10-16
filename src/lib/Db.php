@@ -9,6 +9,13 @@
  * @copyright  2026 Carbure App
  */
 
+namespace Carbure\Lib;
+
+use Exception;
+use mysqli;
+use mysqli_result;
+use mysqli_stmt;
+
 final class Db {
     
     // Static connection to the database

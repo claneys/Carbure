@@ -9,6 +9,14 @@
  * @copyright  2026 Carbure App
  */
 
+namespace Carbure\Resources;
+
+use Carbure\Lib\ApiRoute;
+use Carbure\Lib\Config;
+use Carbure\Lib\Db;
+use Carbure\Lib\Month;
+use Error;
+
 final class Budget {
     
     /**

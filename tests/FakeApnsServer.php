@@ -1,5 +1,7 @@
 <?php
 
+use Carbure\Lib\Config;
+
 /**
  * FakeApnsServer.php
  *

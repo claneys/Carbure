@@ -11,6 +11,10 @@
  * @copyright  2026 Carbure App
  */
 
+namespace Carbure\Lib;
+
+use DateTimeImmutable;
+
 final class Logger {
 
     // Unique ID of the request (or of the script)
@@ -278,7 +282,8 @@ final class Logger {
         $caller = $trace[3] ?? $trace[2] ?? [];
         $file = isset($caller['file']) ? basename($caller['file']) : '?';
         $function = $caller['function'] ?? '?';
-        $class = isset($caller['class']) ? $caller['class'] . '::' : '';
+        // Short class name (Bank::get): the namespace adds nothing to the file name
+        $class = isset($caller['class']) ? substr((string)strrchr('\\' . $caller['class'], '\\'), 1) . '::' : '';
 
         return $file . "->" . $class . $function;
     }

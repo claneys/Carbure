@@ -1,5 +1,6 @@
 <?php
 
+use Carbure\Resources\Transaction;
 use PHPUnit\Framework\TestCase;
 
 class TransactionTest extends TestCase

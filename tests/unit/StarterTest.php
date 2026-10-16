@@ -1,5 +1,6 @@
 <?php
 
+use Carbure\Resources\Insight;
 use PHPUnit\Framework\TestCase;
 
 /**

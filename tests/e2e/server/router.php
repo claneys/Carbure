@@ -23,6 +23,10 @@
  * @copyright  2026 Carbure App
  */
 
+use Carbure\Lib\Config;
+use Carbure\Lib\WoobRepository;
+use Carbure\Resources\System;
+
 if (getenv('APP_ENV') !== 'e2e') {
     http_response_code(500);
     echo "The e2e router only runs with APP_ENV=e2e\n";

@@ -10,6 +10,18 @@
  * @copyright  2026 Carbure App
  */
 
+namespace Carbure\Resources;
+
+use Carbure\Lib\ApiRoute;
+use Carbure\Lib\Config;
+use Carbure\Lib\Db;
+use Carbure\Lib\Installer;
+use Carbure\Lib\Logger;
+use Carbure\Lib\Migrator;
+use Error;
+use Exception;
+use RuntimeException;
+
 final class System {
 
     /**

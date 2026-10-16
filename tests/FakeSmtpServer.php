@@ -1,5 +1,8 @@
 <?php
 
+use Carbure\Lib\Config;
+use Carbure\Lib\Mailer;
+
 /**
  * FakeSmtpServer.php
  *

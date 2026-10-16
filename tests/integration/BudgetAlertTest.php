@@ -1,5 +1,13 @@
 <?php
 
+use Carbure\Lib\Db;
+use Carbure\Lib\Mailer;
+use Carbure\Resources\Bank;
+use Carbure\Resources\Budget;
+use Carbure\Resources\BudgetAlert;
+use Carbure\Resources\Notification;
+use Carbure\Resources\Transaction;
+
 /**
  * Alerts when the spending of the month of a budget reaches the threshold of a user
  * (data set: Alimentation 200 € with its sub-category Supermarché at -80 €, Énergie

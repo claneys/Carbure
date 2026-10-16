@@ -1,5 +1,8 @@
 <?php
 
+use Carbure\Lib\Config;
+use Carbure\Lib\Logger;
+use Carbure\Lib\Webservice;
 use PHPUnit\Framework\TestCase;
 
 /**

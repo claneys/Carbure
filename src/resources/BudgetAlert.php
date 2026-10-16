@@ -22,6 +22,14 @@
  * @copyright  2026 Carbure App
  */
 
+namespace Carbure\Resources;
+
+use Carbure\Lib\Db;
+use Carbure\Lib\Logger;
+use Carbure\Lib\Messages;
+use Error;
+use Throwable;
+
 final class BudgetAlert {
 
     /** Kind of notification of the alerts */

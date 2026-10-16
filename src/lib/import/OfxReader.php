@@ -9,6 +9,10 @@
  * @copyright  2026 Carbure App
  */
 
+namespace Carbure\Lib\Import;
+
+use Carbure\Lib\BankFile;
+
 /**
  * @phpstan-import-type BankRead from BankFile
  */

@@ -1,5 +1,8 @@
 <?php
 
+use Carbure\Lib\ApiResolver;
+use Carbure\Lib\ApiRoute;
+use Carbure\Resources\User;
 use PHPUnit\Framework\TestCase;
 
 class ApiResolverTest extends TestCase
@@ -8,7 +11,7 @@ class ApiResolverTest extends TestCase
     {
         $route = ApiResolver::findRoute('/user/login', 'POST');
 
-        $this->assertSame('User', $route['class']);
+        $this->assertSame(User::class, $route['class']);
         $this->assertSame('login', $route['method']);
         $this->assertTrue($route['apiRoute']->public);
     }
@@ -37,7 +40,7 @@ class ApiResolverTest extends TestCase
     {
         $public = [];
         foreach (glob(__DIR__ . '/../../src/resources/*.php') as $file) {
-            $class = new ReflectionClass(basename($file, '.php'));
+            $class = new ReflectionClass(ApiResolver::RESOURCES_NAMESPACE . basename($file, '.php'));
             foreach ($class->getMethods() as $method) {
                 foreach ($method->getAttributes(ApiRoute::class) as $attribute) {
                     $route = $attribute->newInstance();
@@ -157,7 +160,7 @@ class ApiResolverTest extends TestCase
     {
         $access = [];
         foreach (glob(__DIR__ . '/../../src/resources/*.php') as $file) {
-            $class = new ReflectionClass(basename($file, '.php'));
+            $class = new ReflectionClass(ApiResolver::RESOURCES_NAMESPACE . basename($file, '.php'));
             foreach ($class->getMethods() as $method) {
                 foreach ($method->getAttributes(ApiRoute::class) as $attribute) {
                     $route = $attribute->newInstance();
@@ -198,7 +201,7 @@ class ApiResolverTest extends TestCase
     {
         $problems = [];
         foreach (glob(__DIR__ . '/../../src/resources/*.php') as $file) {
-            $class = new ReflectionClass(basename($file, '.php'));
+            $class = new ReflectionClass(ApiResolver::RESOURCES_NAMESPACE . basename($file, '.php'));
             foreach ($class->getMethods() as $method) {
                 if (!$method->getAttributes(ApiRoute::class)) {
                     continue;

@@ -1,5 +1,8 @@
 <?php
 
+use Carbure\Lib\Db;
+use Carbure\Resources\Category;
+
 class CategoryTest extends DatabaseTestCase
 {
     protected function setUp(): void

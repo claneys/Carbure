@@ -15,6 +15,14 @@
  * @copyright  2026 Carbure App
  */
 
+namespace Carbure\Lib;
+
+use Carbure\Lib\Import\CamtReader;
+use Carbure\Lib\Import\CsvReader;
+use Carbure\Lib\Import\OfxReader;
+use Carbure\Lib\Import\QifReader;
+use Error;
+
 /**
  * Types shared by the readers: BankRow (a row as written in the file: date, rdate,
  * amount, raw label, hint = type given by the file), BankId (the bank whose profile read

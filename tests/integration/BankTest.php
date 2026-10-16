@@ -1,5 +1,15 @@
 <?php
 
+use Carbure\Lib\Config;
+use Carbure\Lib\Db;
+use Carbure\Lib\Logger;
+use Carbure\Lib\Messages;
+use Carbure\Lib\Webservice;
+use Carbure\Lib\Woob;
+use Carbure\Lib\WoobRepository;
+use Carbure\Resources\Bank;
+use Carbure\Resources\Transaction;
+
 class BankTest extends DatabaseTestCase
 {
     /**

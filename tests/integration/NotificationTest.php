@@ -1,5 +1,10 @@
 <?php
 
+use Carbure\Lib\Config;
+use Carbure\Lib\Db;
+use Carbure\Resources\Bank;
+use Carbure\Resources\Notification;
+
 /**
  * Channels of the notifications chosen by each user (push, email) and their dispatch
  */

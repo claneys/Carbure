@@ -13,6 +13,11 @@
  * @copyright  2026 Carbure App
  */
 
+namespace Carbure\Lib\Import;
+
+use Carbure\Lib\BankFile;
+use Error;
+
 /**
  * CsvLayout: how to read the rows of a CSV file: columns (column => index), start (index
  * of the first line after the header), delimiter, encoding (of the file when it is not

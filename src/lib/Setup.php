@@ -20,6 +20,13 @@
  * @copyright  2026 Carbure App
  */
 
+namespace Carbure\Lib;
+
+use InvalidArgumentException;
+use RuntimeException;
+use mysqli;
+use mysqli_sql_exception;
+
 final class Setup {
 
     private string $root;

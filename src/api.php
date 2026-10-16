@@ -1,16 +1,20 @@
 <?php
 
+use Carbure\Lib\ClassLoader;
+use Carbure\Lib\Logger;
+use Carbure\Lib\Setup;
+use Carbure\Lib\Webservice;
+
 // Not installed yet: only the installation wizard of the portal answers (/api/setup)
 $env = preg_replace('/[^a-z0-9_-]/i', '', getenv('APP_ENV') ?: 'prod');
 if (!is_file(dirname(__DIR__) . "/data/conf/$env.ini") && !is_file(dirname(__DIR__) . "/conf/$env.ini")) {
-    foreach (['Migrator', 'Installer', 'Setup'] as $class) {
-        require_once __DIR__ . "/lib/$class.php";
-    }
+    require_once __DIR__ . '/lib/ClassLoader.php';
+    ClassLoader::register();
     Setup::serve(dirname(__DIR__), $env);
     return;
 }
 
-require_once 'autoload.php';
+require_once __DIR__ . '/autoload.php';
 
 try {
 

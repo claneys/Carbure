@@ -1,5 +1,6 @@
 <?php
 
+use Carbure\Lib\BankFile;
 use PHPUnit\Framework\TestCase;
 
 class BankFileTest extends TestCase

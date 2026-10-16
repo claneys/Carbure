@@ -1,5 +1,10 @@
 <?php
 
+use Carbure\Lib\Db;
+use Carbure\Lib\Jwt;
+use Carbure\Resources\Device;
+use Carbure\Resources\User;
+
 class UserTest extends DatabaseTestCase
 {
     public function testLogin()

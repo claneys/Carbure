@@ -1,5 +1,14 @@
 <?php
 
+use Carbure\Lib\Config;
+use Carbure\Lib\Db;
+use Carbure\Lib\Jwt;
+use Carbure\Lib\Setting;
+use Carbure\Lib\Webservice;
+use Carbure\Resources\ApiToken;
+use Carbure\Resources\Mcp;
+use Carbure\Resources\OAuth;
+
 class OAuthTest extends DatabaseTestCase
 {
     private const REDIRECT = 'https://claude.ai/api/mcp/auth_callback';

@@ -10,6 +10,9 @@
  * @copyright  2026 Carbure App
  */
 
+use Carbure\Lib\ApiResolver;
+use Carbure\Lib\ApiRoute;
+
 require_once __DIR__ . '/../src/autoload.php';
 
 class SwaggerGenerator {
@@ -71,10 +74,9 @@ class SwaggerGenerator {
      * @return void
      */
     private function processResourceFile(string $file): void {
-        require_once $file;
-
+        // Tags and summaries name the class without its namespace (User, not Carbure\Resources\User)
         $resourceName = basename($file, '.php');
-        $class = new ReflectionClass($resourceName);
+        $class = new ReflectionClass(ApiResolver::RESOURCES_NAMESPACE . $resourceName);
 
         // Get all public static methods
         $methods = $class->getMethods(ReflectionMethod::IS_PUBLIC | ReflectionMethod::IS_STATIC);
@@ -87,7 +89,7 @@ class SwaggerGenerator {
     /**
      * Process a method and add it to the OpenAPI spec
      *
-     * @param string           $resourceName Name of the resource class
+     * @param string           $resourceName Short name of the resource class
      * @param ReflectionMethod $method       The method
      * @return void
      */

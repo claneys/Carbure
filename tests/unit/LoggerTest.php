@@ -1,5 +1,7 @@
 <?php
 
+use Carbure\Lib\Config;
+use Carbure\Lib\Logger;
 use PHPUnit\Framework\TestCase;
 
 class LoggerTest extends TestCase

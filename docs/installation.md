@@ -244,7 +244,7 @@ En ligne de commande, `php tools/migrate.php --status` affiche la version du sch
 `php tools/migrate.php` applique les migrations.
 
 Après un déploiement qui modifie les routes, le cache APCu est invalidé automatiquement
-(signature des fichiers de `src/resources/`).
+(signature des fichiers de `src/resources/`, version de la clé du cache).
 
 ## En cas d'échec de la synchronisation
 

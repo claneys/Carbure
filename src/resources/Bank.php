@@ -9,7 +9,21 @@
  * @copyright  2026 Carbure App
  */
 
-require_once "Transaction.php";
+namespace Carbure\Resources;
+
+use Carbure\Lib\ApiRoute;
+use Carbure\Lib\Config;
+use Carbure\Lib\Db;
+use Carbure\Lib\Jwt;
+use Carbure\Lib\Logger;
+use Carbure\Lib\Messages;
+use Carbure\Lib\Webservice;
+use Carbure\Lib\Woob;
+use Carbure\Lib\WoobRepository;
+use Closure;
+use Error;
+use Exception;
+use Throwable;
 
 final class Bank {
 

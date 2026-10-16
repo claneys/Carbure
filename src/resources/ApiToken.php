@@ -11,6 +11,13 @@
  * @copyright  2026 Carbure App
  */
 
+namespace Carbure\Resources;
+
+use Carbure\Lib\ApiRoute;
+use Carbure\Lib\Db;
+use Carbure\Lib\Jwt;
+use Error;
+
 final class ApiToken {
 
     /**

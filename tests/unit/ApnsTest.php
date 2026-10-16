@@ -1,5 +1,7 @@
 <?php
 
+use Carbure\Lib\Apns;
+use Carbure\Lib\Config;
 use PHPUnit\Framework\TestCase;
 
 class ApnsTest extends TestCase

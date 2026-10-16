@@ -12,6 +12,10 @@
  * @copyright  2026 Carbure App
  */
 
+namespace Carbure\Lib;
+
+use Error;
+
 final class Mailer {
 
     /** Seconds to wait for the server (connection and each reply) */
