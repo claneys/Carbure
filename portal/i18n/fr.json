@@ -11,7 +11,7 @@
     "mainNavigation": "Navigation principale",
     "editRule": "Modifier la règle",
     "ruleNotify": "Notification à chaque nouvelle transaction",
-    "ruleNotifyLabel": "Envoyer un push notification",
+    "ruleNotifyLabel": "Envoyer une notification",
     "ruleCount_one": "{count} transaction contient ce mot-clé, dont {categorized} dans cette catégorie",
     "ruleCount_other": "{count} transactions contiennent ce mot-clé, dont {categorized} dans cette catégorie",
     "transactionDetail": "Détail de la transaction",

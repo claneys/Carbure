@@ -230,9 +230,10 @@ Une règle associe un **mot-clé** à une catégorie : toute transaction dont le
 - À chaque synchronisation, les règles classent les nouvelles transactions sans catégorie.
 - **Resynchroniser** applique toutes les règles à toute la base et indique le nombre de
   transactions recatégorisées.
-- **Envoyer un push notification** sur une règle : chaque nouvelle transaction qui
-  correspond est signalée à tout le foyer (une cloche marque ces règles). Utile pour un loyer,
-  un remboursement ou un abonnement à surveiller.
+- **Envoyer une notification** sur une règle : chaque nouvelle transaction qui
+  correspond est signalée à tout le foyer, en push ou par email selon les préférences de
+  chacun (voir [Notifications](#notifications) ; une cloche marque ces règles). Utile pour
+  un loyer, un remboursement ou un abonnement à surveiller.
 
 ## Budgets
 
@@ -329,7 +330,7 @@ profil :
 |---|---|---|
 | Après la synchronisation de chaque compte | Tout le foyer | Réussite ou échec, et nombre de transactions à vérifier |
 | Une nouvelle dépense dépasse le seuil d'alerte | Chaque utilisateur dont le seuil est dépassé | « Dépense importante à vérifier », libellé et montant |
-| Une nouvelle transaction correspond à une règle « push » | Tout le foyer | Le mot-clé, le libellé et le montant (une seule notification par transaction) |
+| Une nouvelle transaction correspond à une règle « Envoyer une notification » | Tout le foyer | Le mot-clé, le libellé et le montant (une seule notification par transaction) |
 | Les dépenses du mois d'une catégorie budgétée atteignent le seuil des budgets | Chaque utilisateur qui a activé ces alertes | « Budget dépassé : Courses », « 312,40 € sur 300,00 € (104 %) » |
 
 Le **badge** de l'app indique le nombre de transactions à vérifier. Le seuil d'alerte se

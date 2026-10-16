@@ -226,9 +226,10 @@ la catégorie choisie.
   sont catégorisées à chaque synchronisation.
 - Un clic sur une règle ouvre sa fenêtre : modifier le mot-clé et la catégorie, voir combien
   de transactions contiennent le mot-clé (et combien sont déjà dans la catégorie), la
-  supprimer (corbeille), et cocher **Notifier le foyer** : chaque nouvelle transaction
-  synchronisée qui correspond à la règle envoie une notification à tous les utilisateurs du
-  foyer (cloche sur la règle).
+  supprimer (corbeille), et cocher **Envoyer une notification** : chaque nouvelle
+  transaction synchronisée qui correspond à la règle envoie une notification à tous les
+  utilisateurs du foyer (cloche sur la règle), en push ou par email selon les
+  **Notifications** du profil de chacun.
 
 ## Catégories (administrateurs)
 

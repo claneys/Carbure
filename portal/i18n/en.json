@@ -11,7 +11,7 @@
     "mainNavigation": "Main navigation",
     "editRule": "Edit the rule",
     "ruleNotify": "Notification for each new transaction",
-    "ruleNotifyLabel": "Send a push notification",
+    "ruleNotifyLabel": "Send a notification",
     "ruleCount_one": "{count} transaction contains this keyword, {categorized} of them in this category",
     "ruleCount_other": "{count} transactions contain this keyword, {categorized} of them in this category",
     "transactionDetail": "Transaction detail",

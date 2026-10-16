@@ -51,6 +51,8 @@ test('modifies a rule, showing the transactions it matches', async ({ adminPage:
     const modal = page.getByRole('dialog', { name: tr('editRule') });
     await expect(modal.locator('.rule-count')).toContainText(tr('ruleCount', { count: 3, categorized: 3 }));
     await expect(modal.getByLabel(tr('ruleNotifyLabel'))).toBeChecked();
+    // Push or email, as the user chose: the option does not say push only
+    await expect(modal.getByLabel('Envoyer une notification', { exact: true })).toBeVisible();
 
     await modal.getByLabel(tr('ruleNotifyLabel')).uncheck();
     await modal.getByRole('button', { name: tr('save') }).click();
