@@ -190,6 +190,35 @@ test('searches the transactions similar to the one of the detail', async ({ admi
     await expect(page.locator('.transaction-item')).toHaveCount(6);
 });
 
+test('keeps the search of the similar transactions compact, down to 320 px', async ({ adminPage: page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await row(page, 'PRLV LOYER AGENCE').getByRole('button', { name: new RegExp(tr('transactionDetail')) }).click();
+    const modal = page.getByRole('dialog', { name: tr('transactionDetail') });
+    const similar = modal.getByRole('button', { name: tr('searchSimilarTransactions') });
+    const body = modal.locator('.modal-body');
+
+    for (const width of [1280, 320]) {
+        await page.setViewportSize({ width, height: 800 });
+        await expect(similar).toBeVisible();
+
+        // A small button (not a full-size action), still a target of 24 x 24 px at least
+        const box = await similar.boundingBox();
+        expect(box.height).toBeGreaterThanOrEqual(24);
+        expect(box.height).toBeLessThanOrEqual(32);
+        expect(box.width).toBeGreaterThanOrEqual(24);
+        // Inside the modal, without a horizontal scroll
+        const area = await body.boundingBox();
+        expect(box.x + box.width).toBeLessThanOrEqual(area.x + area.width);
+        expect(await body.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+
+        // Reached with the keyboard, its focus visible
+        await modal.getByRole('button', { name: tr('close') }).focus();
+        await page.keyboard.press('Tab');
+        await expect(similar).toBeFocused();
+        await expect(similar).toHaveCSS('outline-style', 'solid');
+    }
+});
+
 test('closes the detail modal with Escape', async ({ adminPage: page }) => {
     await row(page, 'PRLV LOYER AGENCE').getByRole('button', { name: new RegExp(tr('transactionDetail')) }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
