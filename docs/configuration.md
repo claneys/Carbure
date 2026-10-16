@@ -63,7 +63,6 @@ ce fichier (voir [Réglages en base](#reglages-en-base)).
 
 ```ini
 regex_label["/FACTURE CARTE DU \d{6}\s*/"]="CB "
-regex_label["/\s(CARTE.*|CARTE|CART|CAR|CA|C)$/"]=""
 regex_label["/(PRLV SEPA.*)(ECH.*|MDT.*)$/"]="$1"
 ```
 
@@ -73,6 +72,9 @@ transaction importée.
 !!! warning "Ne pas modifier sans migration"
     Le libellé nettoyé entre dans l'UUID des transactions. Changer ces règles fait
     réimporter les transactions existantes sous un autre UUID (doublons).
+    Les instances installées avant la 1.5.0 peuvent encore avoir la règle
+    `regex_label["/\s(CARTE.*|CARTE|CART|CAR|CA|C)$/"]=""` (fin des libellés de carte),
+    retirée de l'exemple : la garder sur une instance qui a déjà des transactions.
 
 ## `[auth]`
 

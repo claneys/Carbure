@@ -99,7 +99,6 @@ db_name=carbure_dev
 
 [cleansing]
 regex_label["/FACTURE CARTE DU \d{6}\s*/"]="CB "
-regex_label["/\s(CARTE.*|CARTE|CART|CAR|CA|C)$/"]=""
 regex_label["/(PRLV SEPA.*)(ECH.*|MDT.*)$/"]="\$1"
 
 [auth]
