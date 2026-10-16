@@ -2,7 +2,8 @@
 // of axe-core on every screen, the reflow at 320 CSS px (1.4.10), the zoom at 200 %
 // (1.4.4) and the text spacing (1.4.12)
 const { test, expect, tr, openTab, trustWoobRepository } = require('../fixtures');
-const { axeViolations, reflowProblems, clippedTexts, TEXT_SPACING } = require('../axe');
+const { axeViolations, reflowProblems, clippedTexts, TEXT_SPACING, WCAG_TAGS } = require('../axe');
+const { AxeBuilder } = require('@axe-core/playwright');
 
 test.describe.configure({ timeout: 180_000 });
 
@@ -203,4 +204,46 @@ test('reflow: a failed synchronization at 320 CSS px, its update of the bank mod
     await expect(update).toBeVisible();
     expect([...await reflowProblems(page, 'sync'), ...await clippedTexts(page, 'sync')]).toEqual([]);
     expect(await axeViolations(page, 'sync 320')).toEqual([]);
+});
+
+/**
+ * Contrast violations inside Swagger UI, framed by the API tab. Its other rules are not
+ * run: the markup of Swagger UI (a third-party bundle, swagger/vendor) nests buttons and
+ * has small targets, which Carbure cannot change; its colors are fixed by swagger/carbure.css.
+ * @param {import('@playwright/test').Page} page
+ * @param {string} where - Name of the screen (for the report)
+ * @returns {Promise<string[]>}
+ */
+async function swaggerContrastProblems(page, where) {
+    const results = await new AxeBuilder({ page }).include('iframe.api-docs-frame').withRules(['color-contrast']).analyze();
+    return results.violations.flatMap(v => v.nodes.map(n => `${where}: ${v.id} ${n.target.join(' ')}: ${n.failureSummary.split('\n').slice(1).join(' ').trim()}`));
+}
+
+test('the API tab: axe, reflow at 320 CSS px, zoom at 200 % and text spacing', async ({ adminPage: page }) => {
+    // A test of its own: Swagger UI, framed by the tab, is long to load and to analyze
+    await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+    await page.locator('.tabs').getByRole('button', { name: tr('tabAdministration'), exact: true }).click();
+    await page.getByRole('tab', { name: tr('tabApi'), exact: true }).click();
+    const swagger = page.frameLocator('iframe.api-docs-frame');
+    await expect(swagger.locator('.opblock').first()).toBeVisible({ timeout: 15_000 });
+    const where = tr('tabApi');
+    // The portal (the name of the frame checked apart), then the colors of Swagger UI
+    // in both themes of the portal
+    const results = await new AxeBuilder({ page }).withTags(WCAG_TAGS).exclude('iframe.api-docs-frame').analyze();
+    await expect(page.locator('iframe.api-docs-frame')).toHaveAccessibleName(tr('apiDocsFrameTitle'));
+    const problems = results.violations.flatMap(v => v.nodes.map(n => `${where}: ${v.id} ${n.target.join(' ')}`));
+    problems.push(...await swaggerContrastProblems(page, `${where} light`));
+    await page.locator('.header-user > button').first().click();
+    await expect(swagger.locator('html')).toHaveClass(/dark-mode/);
+    problems.push(...await swaggerContrastProblems(page, `${where} dark`));
+
+    await page.setViewportSize({ width: 320, height: 256 });
+    problems.push(...await reflowProblems(page, `${where} 320`), ...await clippedTexts(page, `${where} 320`));
+    await page.setViewportSize({ width: 640, height: 400 });
+    problems.push(...await reflowProblems(page, `${where} 200 %`), ...await clippedTexts(page, `${where} 200 %`));
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.addStyleTag({ content: TEXT_SPACING });
+    problems.push(...await clippedTexts(page, `${where} spacing`));
+
+    expect(problems).toEqual([]);
 });

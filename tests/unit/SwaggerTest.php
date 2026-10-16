@@ -10,6 +10,9 @@ class SwaggerTest extends TestCase
         include __DIR__ . '/../../swagger/swagger.php';
         $spec = json_decode(ob_get_clean(), true);
 
+        // The paths start with /api, so the server is the root (no /api/api/...)
+        $this->assertSame('/', $spec['servers'][0]['url']);
+
         $login = $spec['paths']['/api/user/login']['post'];
         $this->assertSame('public', $login['x-carbure-access']);
         $this->assertArrayNotHasKey('security', $login);

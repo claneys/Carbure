@@ -1561,6 +1561,23 @@
                 </div>
 
                 <!-- Logs Tab (administrators) -->
+                <!-- API Tab (admin only): Swagger UI of the API, same origin (/swagger/) -->
+                <div v-else-if="activeTab === 'api'" key="api" class="tab-panel">
+                    <section class="trends-card api-docs">
+                        <div class="panel-header">
+                            <div>
+                                <h2>{{ t('apiDocsTitle') }}</h2>
+                                <p class="rules-help">{{ t('apiDocsHelp') }}</p>
+                            </div>
+                            <a class="api-docs-open" href="../swagger/" target="_blank" rel="noopener">
+                                <span class="material-icons" aria-hidden="true">open_in_new</span>
+                                {{ t('apiDocsOpen') }}<span class="visually-hidden"> ({{ t('opensInNewTab') }})</span>
+                            </a>
+                        </div>
+                        <iframe class="api-docs-frame" src="../swagger/" :title="t('apiDocsFrameTitle')"></iframe>
+                    </section>
+                </div>
+
                 <div v-else-if="activeTab === 'logs'" key="logs" class="tab-panel">
                     <div class="trends-view">
                         <section class="trends-card">

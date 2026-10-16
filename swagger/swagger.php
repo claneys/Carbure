@@ -33,9 +33,10 @@ class SwaggerGenerator {
                 'description' => 'Backend API',
                 'version' => '1.0.0',
             ],
+            // The paths already start with /api: "Try it out" calls /api/... of this server
             'servers' => [
                 [
-                    'url' => '/api',
+                    'url' => '/',
                     'description' => 'API Server'
                 ]
             ],

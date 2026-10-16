@@ -6,12 +6,16 @@
     <title>Carbure API Documentation</title>
     <!-- Swagger UI is served with the project (vendor/README.md): no external CDN -->
     <link rel="stylesheet" type="text/css" href="vendor/swagger-ui/swagger-ui.css" />
+    <!-- Contrasts of its light theme (WCAG AA) -->
+    <link rel="stylesheet" type="text/css" href="carbure.css" />
     <style>
         body {
             margin: 0;
             padding: 0;
         }
-        .topbar {
+        /* The bar of Swagger UI (URL of the description, its own theme toggle) is hidden:
+           a <header>, shown by the normalize rules of swagger-ui.css without this selector */
+        .swagger-ui .topbar {
             display: none;
         }
     </style>

@@ -38,7 +38,7 @@ import { createNotificationsModule } from './modules/notificationsModule.js';
 const API_BASE_URL = new URL('../api', new URL('.', window.location.href)).href;
 
 /** Tabs reserved to administrators */
-const ADMIN_TABS = ['rules', 'categories', 'accounts', 'users', 'logs', 'config', 'sync'];
+const ADMIN_TABS = ['rules', 'categories', 'accounts', 'users', 'logs', 'config', 'sync', 'api'];
 
 /**
  * Tabs grouped under "Administration" in the navigation of the administrators (the
@@ -49,7 +49,9 @@ const ADMINISTRATION_TABS = [
     { key: 'sync', icon: 'sync', label: 'tabSync' },
     { key: 'agents', icon: 'smart_toy', label: 'tabAgents' },
     { key: 'logs', icon: 'receipt_long', label: 'tabLogs' },
-    { key: 'config', icon: 'tune', label: 'tabSettings' }
+    { key: 'config', icon: 'tune', label: 'tabSettings' },
+    // Swagger UI of the API (/swagger/), framed by the portal
+    { key: 'api', icon: 'api', label: 'tabApi' }
 ];
 import * as formatters from './utils/formatters.js';
 import { badgeStyle } from './utils/categoryIcons.js';

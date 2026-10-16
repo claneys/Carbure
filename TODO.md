@@ -22,6 +22,11 @@ keeps track of what was done).
       scheduler uses it, remove `?token=` from `GET /bank/sync` (the MCP server keeps its
       `?token=` for the agents that cannot send a header).
 
+- [ ] **Production** (API sub-tab, #163): after the deployment, open **Administration → API**
+      and check that Swagger UI is shown. A blank frame means the DSM reverse proxy adds its
+      own `X-Frame-Options: DENY` (or `frame-ancestors 'none'`) to `/swagger/`: let it pass
+      the headers of the container (`SAMEORIGIN`, `frame-ancestors 'self'`).
+
 - [ ] **GitHub settings** (owner, after the merge of the workflow hardening, #125): in
       **Settings → Actions → General**, tick "Require actions to be pinned to a full-length
       commit SHA" and restrict the allowed actions to those of GitHub, verified creators

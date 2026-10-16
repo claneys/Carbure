@@ -51,6 +51,13 @@ Les en-têtes de l'API sont posés par PHP (`Webservice::securityHeaders`, et l'
 d'installation), quel que soit le serveur web. Ceux du portail et de Swagger UI sont posés
 par nginx (`docker/nginx.conf`) ; Carbure ne fournit pas de `.htaccess`.
 
+Swagger UI (`/swagger/`) a les mêmes en-têtes que le portail, sauf l'affichage dans un
+cadre : `frame-ancestors 'self'` et `X-Frame-Options: SAMEORIGIN`, pour l'onglet
+**Administration → API** du portail ; aucun autre site ne peut l'afficher dans un cadre, et
+le portail lui-même garde `frame-ancestors 'none'` / `DENY`. Swagger UI lit le jeton de
+session du portail dans le stockage du navigateur (même origine) et ne l'envoie que dans
+l'en-tête `Authorization` des appels à `/api`.
+
 **Aucun CDN externe** : le portail et Swagger UI ne chargent rien depuis un autre site.
 Vue, CodeMirror, les polices (`portal/vendor/`) et Swagger UI (`swagger/vendor/`) sont
 servis avec Carbure ; leurs versions et licences sont listées dans le `README.md` de chaque

@@ -95,6 +95,15 @@ test('the notifications of the profile and the test email are readable', async (
     expect(problems).toEqual([]);
 });
 
+test('the API tab is readable, its link on hover included', async ({ adminPage: page }) => {
+    // A test of its own: Swagger UI, framed by the tab, is long to load
+    await page.locator('.tabs').getByRole('button', { name: tr('tabAdministration'), exact: true }).click();
+    await page.getByRole('tab', { name: tr('tabApi'), exact: true }).click();
+    await expect(page.getByRole('tab', { name: tr('tabApi'), exact: true })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.frameLocator('iframe.api-docs-frame').locator('.opblock').first()).toBeVisible({ timeout: 15_000 });
+    expect(await contrastProblems(page, tr('tabApi'))).toEqual([]);
+});
+
 test('the accounts grouped under their bank are readable', async ({ adminPage: page }) => {
     await openTab(page, tr('tabAccounts'));
     // A bank with an account, a bank without (its hint), the other accounts

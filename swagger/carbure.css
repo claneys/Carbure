@@ -1,0 +1,19 @@
+/*
+ * Contrasts of Swagger UI in its light theme (WCAG 2.2 AA, 4.5:1): the colors of
+ * swagger-ui.css (white on light blue, green, orange...) are darkened, the hues kept.
+ * Its dark theme (html.dark-mode, dark text on bright colors) is readable as is.
+ */
+html:not(.dark-mode) .swagger-ui .opblock.opblock-get .opblock-summary-method { background: #1565c0; }
+html:not(.dark-mode) .swagger-ui .opblock.opblock-post .opblock-summary-method { background: #1b7a4b; }
+html:not(.dark-mode) .swagger-ui .opblock.opblock-put .opblock-summary-method { background: #a34f00; }
+html:not(.dark-mode) .swagger-ui .opblock.opblock-delete .opblock-summary-method { background: #c62828; }
+html:not(.dark-mode) .swagger-ui .opblock.opblock-patch .opblock-summary-method { background: #00796b; }
+html:not(.dark-mode) .swagger-ui .opblock.opblock-head .opblock-summary-method { background: #6a3fb5; }
+html:not(.dark-mode) .swagger-ui .opblock.opblock-deprecated .opblock-summary-method { background: #5b616d; }
+
+/* Authorize button, version badges and link of the description */
+html:not(.dark-mode) .swagger-ui .btn.authorize { color: #1b7a4b; border-color: #1b7a4b; }
+html:not(.dark-mode) .swagger-ui .btn.authorize svg { fill: #1b7a4b; }
+html:not(.dark-mode) .swagger-ui .info .title small { background: #5b616d; }
+html:not(.dark-mode) .swagger-ui .info .title small.version-stamp { background: #4d7a00; }
+html:not(.dark-mode) .swagger-ui .info .url { color: #1f5fa8; }

@@ -103,6 +103,18 @@ test('the scripts of the portal load no script, style, font or image from anothe
     }
 });
 
+test('only the portal frames Swagger UI, and nothing frames the portal', () => {
+    const conf = readFileSync(join(ROOT, 'docker', 'nginx.conf'), 'utf8');
+    const portal = conf.match(/set \$csp_portal "([^"]+)"/)[1];
+    assert.deepEqual(cspSources(portal, 'frame-ancestors'), ["'none'"]);
+    const swagger = conf.match(/location \/swagger\/ \{[^}]*\}/)[0];
+    const csp = swagger.match(/Content-Security-Policy "([^"]+)"/)[1];
+    // Administration > API: the same origin only, never another site
+    assert.deepEqual(cspSources(csp, 'frame-ancestors'), ["'self'"]);
+    assert.match(swagger, /add_header X-Frame-Options "SAMEORIGIN" always;/);
+    assert.match(conf, /location \/portal\/ \{[^}]*add_header X-Frame-Options "DENY" always;/);
+});
+
 test('the CSP of nginx allows the resources of the project only', () => {
     const conf = readFileSync(join(ROOT, 'docker', 'nginx.conf'), 'utf8');
     const policies = [...conf.matchAll(/(?:set \$csp_portal|Content-Security-Policy) "([^"]+)"/g)].map(m => m[1]);

@@ -831,4 +831,9 @@ Depuis Internet, ou si `data/conf/setup.code` existe, les requêtes `POST` exige
 ## Spécification OpenAPI
 
 `swagger/swagger.php` génère une spécification OpenAPI 3 par réflexion sur les
-attributs `#[ApiRoute]` ; `swagger/index.html` l'affiche avec Swagger UI.
+attributs `#[ApiRoute]` ; `swagger/index.html` l'affiche avec Swagger UI, aussi dans le
+portail (**Administration → API**), authentifié avec la session de l'administrateur. Les
+chemins de la spécification commencent par `/api` (serveur `/`) : **Try it out** appelle
+`/api/...` sur le serveur qui sert Swagger UI. `swagger/carbure.css` fonce les couleurs du
+thème clair de Swagger UI (contraste WCAG AA) ; son thème sombre suit celui du portail, ou
+la préférence du système quand Swagger UI est ouvert seul.

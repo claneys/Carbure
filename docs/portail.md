@@ -44,7 +44,7 @@ Deux profils existent :
 | Profil | Onglets |
 |---|---|
 | **Utilisateur** | Transactions, Budget, Insights, Tendances ; **Agent IA** et **Mon profil** dans le menu utilisateur |
-| **Administrateur** | En plus : Règles, Catégories, Comptes, et le menu **Administration** (Utilisateurs, Synchro, Agent IA, Logs, Paramètres) ; ajout et modification des insights ; activation du serveur MCP ; mise à jour de la base de données |
+| **Administrateur** | En plus : Règles, Catégories, Comptes, et le menu **Administration** (Utilisateurs, Synchro, Agent IA, Logs, Paramètres, API) ; ajout et modification des insights ; activation du serveur MCP ; mise à jour de la base de données |
 
 Les pages d'administration (Règles, Catégories, Comptes, Utilisateurs) et les onglets
 Insights et Agent IA suivent la même présentation : un en-tête avec le titre et l'aide, et
@@ -384,6 +384,15 @@ ligne crontab correspondante, à copier pour une tâche planifiée (cron, tâche
 Synology). Le `sync_token` y est masqué jusqu'à **Afficher** ; le bouton copier copie
 toujours la commande complète. **Créer un jeton** / **Renouveler** en écrit un nouveau dans
 la configuration (`GET /system/sync`, `POST /system/sync-token`).
+
+## API (menu Administration)
+
+La documentation de l'API REST (Swagger UI de `/swagger/`, décrite par
+`swagger/swagger.php`) affichée dans le portail, dans le thème clair ou sombre de celui-ci.
+Swagger UI reprend la session de l'administrateur connecté : **Try it out** appelle
+l'API (`/api/...`) avec son jeton dans l'en-tête `Authorization`, jamais dans l'URL ; les
+requêtes s'exécutent réellement (une route `POST`/`PUT`/`DELETE` modifie les données).
+**Ouvrir Swagger UI** l'ouvre dans un nouvel onglet.
 
 ## Mon profil
 
