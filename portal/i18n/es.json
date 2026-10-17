@@ -482,6 +482,7 @@
     "apiDocsHelp": "Las rutas de la API REST de Carbure, descritas por Swagger UI. «Try it out» llama a la API con tu sesión: las peticiones modifican realmente los datos.",
     "apiDocsOpen": "Abrir Swagger UI",
     "apiDocsFrameTitle": "Documentación de la API (Swagger UI)",
+    "apiDocsBlocked": "Swagger UI no se puede mostrar aquí: el servidor HTTP (a menudo el proxy inverso delante de Carbure) prohíbe mostrarlo en un marco (cabecera X-Frame-Options: DENY o frame-ancestors 'none'). Ábrelo en una pestaña nueva, o deja pasar para /swagger/ las cabeceras del contenedor (X-Frame-Options: SAMEORIGIN, frame-ancestors 'self').",
     "opensInNewTab": "se abre en una pestaña nueva",
     "configTitle": "Archivo de configuración",
     "configIntro": "Contenido de {file}. Aquí solo se modifican los ajustes seguros, y el servidor comprueba cada valor; el archivo anterior se conserva como .bak. Los secretos (salvo la contraseña SMTP, que se sustituye sin mostrarse nunca), la base de datos, el comando woob y la limpieza de los conceptos se modifican en el servidor.",

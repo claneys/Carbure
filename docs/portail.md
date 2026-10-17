@@ -426,6 +426,10 @@ Swagger UI reprend la session de l'administrateur connecté : **Try it out** app
 l'API (`/api/...`) avec son jeton dans l'en-tête `Authorization`, jamais dans l'URL ; les
 requêtes s'exécutent réellement (une route `POST`/`PUT`/`DELETE` modifie les données).
 **Ouvrir Swagger UI** l'ouvre dans un nouvel onglet.
+Si un proxy inverse interdit d'afficher `/swagger/` dans un cadre (en-tête
+`X-Frame-Options: DENY` ou `frame-ancestors 'none'`), l'onglet le signale à la place du cadre
+vide : laissez passer `X-Frame-Options: SAMEORIGIN` / `frame-ancestors 'self'`, ou utilisez
+**Ouvrir Swagger UI**.
 
 ## Mon profil
 

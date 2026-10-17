@@ -59,6 +59,7 @@ const ADMINISTRATION_TABS = [
 ];
 import * as formatters from './utils/formatters.js';
 import { badgeStyle } from './utils/categoryIcons.js';
+import { swaggerFramed } from './utils/apiDocs.js';
 
 const { createApp } = Vue;
 
@@ -129,6 +130,8 @@ const app = createApp({
             // Tabs of the Administration menu, and the last one opened
             administrationTabs: ADMINISTRATION_TABS,
             administrationTab: ADMINISTRATION_TABS[0].key,
+            // API sub-tab: Swagger UI refused in a frame (by a reverse proxy)
+            apiDocsBlocked: false,
             
             // Authentication state
             isAuthenticated: false,
@@ -235,6 +238,18 @@ const app = createApp({
     },
 
     methods: {
+        /**
+         * API sub-tab: tells when the frame does not show Swagger UI (refused by the
+         * X-Frame-Options or frame-ancestors header of a reverse proxy)
+         * @param {Event} event - load of the frame
+         */
+        onApiDocsLoad(event) {
+            const framed = swaggerFramed(event.target);
+            if (framed !== null) {
+                this.apiDocsBlocked = !framed;
+            }
+        },
+
         // === Localization Methods ===
         
         /**

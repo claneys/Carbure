@@ -80,3 +80,25 @@ test('a user who is not an administrator has no API tab', async ({ userPage: pag
     await expect(page.locator('.tabs').getByRole('button', { name: tr('tabAdministration'), exact: true })).toHaveCount(0);
     await expect(page.locator('iframe.api-docs-frame')).toHaveCount(0);
 });
+
+test('tells why Swagger UI is missing when a reverse proxy forbids framing it', async ({ adminPage: page }) => {
+    // Like a reverse proxy that adds its own X-Frame-Options: DENY to /swagger/
+    await page.route(/\/swagger\/(index\.html)?$/, route => route.fulfill({
+        contentType: 'text/html',
+        headers: { 'x-frame-options': 'DENY' },
+        body: '<!doctype html><title>Swagger UI</title><div id="swagger-ui"></div>',
+    }));
+    await openApiDocs(page);
+
+    await expect(page.getByRole('alert')).toContainText(tr('apiDocsBlocked'));
+    await expect(page.locator('iframe.api-docs-frame')).toBeHidden();
+    // Swagger UI stays reachable in a new tab
+    await expect(page.getByRole('link', { name: new RegExp(tr('apiDocsOpen')) })).toBeVisible();
+});
+
+test('shows no warning when Swagger UI is framed', async ({ adminPage: page }) => {
+    const swagger = await openApiDocs(page);
+    await expect(swagger.locator('#swagger-ui')).toBeAttached({ timeout: 15_000 });
+    await expect(page.locator('.api-docs-blocked')).toHaveCount(0);
+    await expect(page.locator('iframe.api-docs-frame')).toBeVisible();
+});

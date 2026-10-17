@@ -75,3 +75,16 @@ test('the colors and icons offered for the categories are understood by the port
     assert.ok(CATEGORY_ICONS.length > 20);
     assert.equal(new Set(CATEGORY_ICONS).size, CATEGORY_ICONS.length);
 });
+
+test('swaggerFramed: Swagger UI shown, blocked by a proxy, or a frame being created', async () => {
+    const { swaggerFramed } = await import('../../portal/utils/apiDocs.js');
+    const page = (url, swagger) => ({ contentDocument: { URL: url, getElementById: id => (swagger && id === 'swagger-ui' ? {} : null) } });
+    assert.equal(swaggerFramed(page('https://nas/swagger/', true)), true);
+    // X-Frame-Options: DENY: an error page of another origin, unreadable
+    assert.equal(swaggerFramed({ contentDocument: null }), false);
+    assert.equal(swaggerFramed({ get contentDocument() { throw new Error('SecurityError'); } }), false);
+    // Same origin, but not Swagger UI (an error page of the server)
+    assert.equal(swaggerFramed(page('https://nas/swagger/', false)), false);
+    // Empty page of the frame before its first navigation: no verdict yet
+    assert.equal(swaggerFramed(page('about:blank', false)), null);
+});

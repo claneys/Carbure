@@ -1755,7 +1755,11 @@
                                 {{ t('apiDocsOpen') }}<span class="visually-hidden"> ({{ t('opensInNewTab') }})</span>
                             </a>
                         </div>
-                        <iframe class="api-docs-frame" src="../swagger/" :title="t('apiDocsFrameTitle')"></iframe>
+                        <p v-if="apiDocsBlocked" class="api-docs-blocked" role="alert">
+                            <span class="material-icons" aria-hidden="true">block</span>
+                            <span>{{ t('apiDocsBlocked') }}</span>
+                        </p>
+                        <iframe v-show="!apiDocsBlocked" class="api-docs-frame" src="../swagger/" :title="t('apiDocsFrameTitle')" @load="onApiDocsLoad"></iframe>
                     </section>
                 </div>
 

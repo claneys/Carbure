@@ -142,9 +142,9 @@ fixez-la dans `docker/docker-compose.yml` (`image: mariadb:11`).
       budget (tous les budgets pour les utilisateurs existants) ;
     - `2026-10-24_user_mfa` : authentification à deux facteurs (tables vides).
 4. **Vérifiez** :
-    - **Administration → API** affiche Swagger UI : si le cadre reste vide derrière le
-      proxy inverse de DSM, celui-ci ajoute sans doute son propre en-tête
-      `X-Frame-Options: DENY` (à retirer pour `/swagger/`) ;
+    - **Administration → API** affiche Swagger UI : si un message signale que le cadre est
+      bloqué, le proxy inverse de DSM ajoute son propre en-tête `X-Frame-Options: DENY`
+      (à retirer pour `/swagger/`) ;
     - **Mon profil → Notifications** : le seuil des dépenses importantes y est désormais,
       avec le budget surveillé et son seuil.
 

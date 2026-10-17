@@ -56,6 +56,10 @@ async function apiLogin(request, user) {
  */
 async function openPortal(page, token, username) {
     await page.addInitScript(([token, username]) => {
+        // Runs in every frame too: a framed page blocked by X-Frame-Options has no storage
+        if (window !== window.top) {
+            return;
+        }
         if (!sessionStorage.getItem('e2e-init')) {
             sessionStorage.setItem('e2e-init', '1');
             localStorage.setItem('authToken', token);
