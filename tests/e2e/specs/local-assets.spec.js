@@ -44,3 +44,7 @@ test('the Carbure link of the footer opens the site of the project', async ({ ad
     await expect(link).toHaveAttribute('target', '_blank');
     await expect(link).toHaveAttribute('rel', 'noopener');
 });
+
+test('the copyright of the footer runs from 2023 to the current year', async ({ adminPage: page }) => {
+    await expect(page.locator('.footer-copy')).toContainText(`© 2023–${new Date().getFullYear()} ·`);
+});
