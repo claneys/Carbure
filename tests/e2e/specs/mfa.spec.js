@@ -65,6 +65,17 @@ test('a user registers his app at login, then trusts the browser for 6 months', 
     // QR code drawn in the page, and the secret in text
     await expect(page.getByRole('heading', { name: tr('mfaEnrollTitle') })).toBeVisible();
     await expect(page.getByRole('img', { name: tr('mfaQrLabel') })).toBeVisible();
+    // Large enough to be scanned (its modules drawn over the whole square, not in a
+    // corner), never wider than a phone screen
+    await expect(page.locator('.mfa-qr')).toHaveAttribute('viewBox', /^0 0 \d+ \d+$/);
+    const box = await page.locator('.mfa-qr').boundingBox();
+    expect(box.width).toBeGreaterThanOrEqual(240);
+    expect((await page.locator('.mfa-qr path').boundingBox()).width).toBeGreaterThan(box.width * 0.6);
+    await page.setViewportSize({ width: 320, height: 640 });
+    const small = await page.locator('.mfa-qr').boundingBox();
+    expect(small.x).toBeGreaterThanOrEqual(0);
+    expect(small.x + small.width).toBeLessThanOrEqual(320);
+    await page.setViewportSize({ width: 1280, height: 720 });
     const secret = (await page.locator('.mfa-secret').textContent()).trim();
     expect(secret.replace(/\s/g, '')).toMatch(/^[A-Z2-7]{32}$/);
     await expect(page.getByLabel(tr('mfaCode'))).toBeFocused();
@@ -90,15 +101,16 @@ test('a user registers his app at login, then trusts the browser for 6 months', 
     await typePassword(page, 'marie');
     await expect(page.locator('.user-menu-name')).toHaveText('marie');
 
-    // The profile lists the trusted browser; revoked, the code is asked again
+    // The devices of the profile list the trusted browser; revoked, the code is asked again
     await page.locator('.user-menu-toggle').click();
     await page.getByRole('menuitem', { name: tr('myProfile') }).click();
-    const browsers = page.locator('.profile-mfa .device-item');
+    await page.getByRole('tab', { name: tr('myDevices'), exact: true }).click();
+    const browsers = page.getByRole('list', { name: tr('mfaBrowsersTitle') }).locator('.device-item');
     await expect(browsers).toHaveCount(1);
     await expect(browsers.first()).toContainText('Chrome');
     await browsers.first().getByRole('button', { name: new RegExp(tr('mfaRevokeBrowser')) }).click();
     await expect(page.locator('.toast')).toHaveText(tr('mfaBrowserRevoked'));
-    await expect(page.locator('.profile-mfa')).toContainText(tr('mfaNoBrowsers'));
+    await expect(page.locator('.mfa-no-browsers')).toHaveText(tr('mfaNoBrowsers'));
 
     await page.locator('.user-menu-toggle').click();
     await page.getByRole('menuitem', { name: tr('logout') }).click();
@@ -139,12 +151,15 @@ test('back to the password from the second step', async ({ page, request }) => {
 test('a user sets up, renews and disables his app from his profile', async ({ userPage: page }) => {
     await page.locator('.user-menu-toggle').click();
     await page.getByRole('menuitem', { name: tr('myProfile') }).click();
+    await page.getByRole('tab', { name: tr('mfaTitle'), exact: true }).click();
     const block = page.locator('.profile-mfa');
     await expect(block.getByRole('heading', { name: tr('mfaTitle') })).toBeVisible();
     await expect(block).toContainText(tr('mfaOff'));
 
     await block.getByRole('button', { name: tr('mfaSetupButton') }).click();
     await expect(block.getByRole('img', { name: tr('mfaQrLabel') })).toBeVisible();
+    // Large enough to be scanned
+    expect((await block.locator('.mfa-qr').boundingBox()).width).toBeGreaterThanOrEqual(240);
     const secret = (await block.locator('.mfa-secret').textContent()).trim();
     await block.getByLabel(tr('mfaCode')).fill(totp(secret));
     await block.getByRole('button', { name: tr('mfaEnable') }).click();

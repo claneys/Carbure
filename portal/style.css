@@ -4621,6 +4621,12 @@ a.footer-brand:hover {
     margin: 4px 0 0;
 }
 
+/* Platform of a mobile device (iOS, Android), before its last login */
+.device-platform {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
 /* ===== Insights administration ===== */
 .insight-card {
     position: relative;
@@ -6395,8 +6401,14 @@ textarea:focus-visible,
     cursor: pointer;
 }
 
+/* A channel that cannot be used (push not configured by the administrator, email
+   without SMTP server or address): the checkbox greyed (a disabled control has no
+   contrast requirement); the reason under the table keeps its readable text */
 .notifications-table input[type="checkbox"]:disabled {
     cursor: not-allowed;
+    accent-color: var(--text-secondary);
+    filter: grayscale(1);
+    opacity: 0.45;
 }
 
 .notifications-table input[type="checkbox"]:focus-visible {
@@ -6406,6 +6418,13 @@ textarea:focus-visible,
 
 .notifications-unavailable {
     margin-top: 12px;
+}
+
+/* Space under the last line of the notifications, devices and two-factor sub-tabs,
+   off the border of the panel */
+.profile-notifications,
+.profile-devices {
+    padding-bottom: 24px;
 }
 
 /* Label of a kind of notification, its settings under it (large expense, budget) */
@@ -6805,13 +6824,21 @@ button.is-busy:not(.btn-confirm-danger):hover {
     line-height: 1.5;
 }
 
-/* The QR code keeps its white background and black modules in the dark theme too */
+/* The QR code keeps its white background and black modules in the dark theme too
+   (its quiet zone of 4 modules included), large enough to be scanned by a phone at
+   arm's length; never wider than the screen */
 .mfa-qr {
     display: block;
-    width: 200px;
-    height: 200px;
-    margin: 8px auto;
+    width: 256px;
+    max-width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    margin: 12px auto;
+    padding: 8px;
+    background: #ffffff;
+    border: 1px solid var(--divider);
     border-radius: var(--border-radius-md);
+    box-sizing: border-box;
 }
 
 .mfa-secret {

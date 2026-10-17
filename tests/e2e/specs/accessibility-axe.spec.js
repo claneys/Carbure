@@ -149,6 +149,15 @@ test('axe: the notifications of the profile and the result of the test email', a
     await page.locator('.user-menu-toggle').click();
     await page.getByRole('menuitem', { name: tr('myProfile') }).click();
     problems.push(...await axeViolations(page, tr('profileTabProfile')));
+    await page.getByRole('tab', { name: tr('mfaTitle'), exact: true }).click();
+    await expect(page.getByRole('heading', { name: tr('mfaTitle') })).toBeVisible();
+    problems.push(...await axeViolations(page, tr('mfaTitle')));
+    await page.getByRole('button', { name: tr('mfaSetupButton') }).click();
+    await expect(page.getByRole('img', { name: tr('mfaQrLabel') })).toBeVisible();
+    problems.push(...await axeViolations(page, `${tr('mfaTitle')} (${tr('mfaQrLabel')})`));
+    await page.setViewportSize({ width: 320, height: 256 });
+    problems.push(...await reflowProblems(page, `${tr('mfaTitle')} (${tr('mfaQrLabel')})`));
+    await page.setViewportSize({ width: 1280, height: 720 });
     await page.getByRole('tab', { name: tr('myDevices'), exact: true }).click();
     await expect(page.getByRole('heading', { name: tr('myDevices') })).toBeVisible();
     problems.push(...await axeViolations(page, tr('myDevices')));

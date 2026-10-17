@@ -157,15 +157,18 @@ export function createNotificationsModule(getApiService) {
             },
 
             /**
-             * Whether a channel can be changed: only when it can be sent (a channel on
-             * stays changeable, to turn it off)
+             * Whether a channel can be changed: push only when the administrator configured
+             * the push service; email only when it can be sent (an email channel on stays
+             * changeable, to turn it off)
              * @param {string} kind - Kind of notification
              * @param {string} channel - push or email
              * @returns {boolean}
              */
             notificationDisabled(kind, channel) {
-                const unavailable = channel === 'email' ? this.emailUnavailable : this.pushUnavailable;
-                return !!unavailable && !this.notifications.preferences[kind][channel];
+                if (channel === 'push') {
+                    return !!this.pushUnavailable;
+                }
+                return !!this.emailUnavailable && !this.notifications.preferences[kind][channel];
             },
 
             /**

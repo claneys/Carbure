@@ -1,15 +1,16 @@
-// Profile page, in three sub-tabs: personal information and language, notifications
-// (channels, large expense threshold, budget watched and its threshold), devices
+// Profile page, in four sub-tabs: personal information and language, two-factor
+// authentication, notifications (channels, large expense threshold, budget watched and
+// its threshold), devices (mobile apps and trusted web browsers)
 const { test, expect, tr } = require('../fixtures');
 const { startFakeSmtp } = require('../fake-smtp');
 
 /** Heading of each sub-tab of the profile page */
-const HEADINGS = { profileTabProfile: 'myProfile', notificationsTitle: 'notificationsTitle', myDevices: 'myDevices' };
+const HEADINGS = { profileTabProfile: 'myProfile', mfaTitle: 'mfaTitle', notificationsTitle: 'notificationsTitle', myDevices: 'myDevices' };
 
 /**
  * Opens the profile page from the user menu, on one of its sub-tabs
  * @param {import('@playwright/test').Page} page
- * @param {string} [tab] - Label of the sub-tab: profileTabProfile (shown first), notificationsTitle or myDevices
+ * @param {string} [tab] - Label of the sub-tab: profileTabProfile (shown first), mfaTitle, notificationsTitle or myDevices
  */
 async function openProfile(page, tab = 'profileTabProfile') {
     await page.locator('.user-menu-toggle').click();
@@ -31,14 +32,23 @@ async function showProfileTab(page, tab) {
     await expect(page.getByRole('heading', { name: tr(HEADINGS[tab]), exact: true })).toBeVisible();
 }
 
-test('splits the profile into profile, notifications and devices sub-tabs', async ({ userPage: page }) => {
+test('splits the profile into profile, two-factor authentication, notifications and devices sub-tabs', async ({ userPage: page }) => {
     await openProfile(page);
+    // In this order, the icon of each before its label
+    await expect(page.getByRole('tablist', { name: tr('myProfile') }).getByRole('tab'))
+        .toHaveText(['profileTabProfile', 'mfaTitle', 'notificationsTitle', 'myDevices'].map(key => new RegExp(`${tr(key)}$`)));
 
     // The profile first, without the notification settings
     await expect(page.getByRole('tab', { name: tr('profileTabProfile'), exact: true })).toHaveAttribute('aria-selected', 'true');
     await expect(page.getByLabel(tr('firstname'))).toBeVisible();
     await expect(page.getByLabel(tr('alertThreshold'))).toHaveCount(0);
     await expect(page.getByRole('table', { name: tr('notificationsTitle') })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: tr('mfaTitle') })).toHaveCount(0);
+
+    // The two-factor authentication in its own sub-tab
+    await showProfileTab(page, 'mfaTitle');
+    await expect(page.getByRole('button', { name: tr('mfaSetupButton') })).toBeVisible();
+    await expect(page.getByLabel(tr('firstname'))).toHaveCount(0);
 
     await showProfileTab(page, 'notificationsTitle');
     await expect(page.getByRole('table', { name: tr('notificationsTitle') })).toBeVisible();
@@ -46,6 +56,7 @@ test('splits the profile into profile, notifications and devices sub-tabs', asyn
 
     await showProfileTab(page, 'myDevices');
     await expect(page.locator('.transactions-hint')).toHaveText(tr('noDevices'));
+    await expect(page.locator('.mfa-no-browsers')).toHaveText(tr('mfaNoBrowsers'));
 
     // Opened again from the menu: back to the profile
     await openProfile(page);
@@ -91,6 +102,8 @@ test('shows, reveals then deletes a device', async ({ adminPage: page }) => {
     await openProfile(page, 'myDevices');
 
     const device = page.locator('.device-item').filter({ hasText: 'iPhone de Ada' });
+    await expect(device.locator('.device-platform')).toHaveText(tr('devicePlatform_ios'));
+    await expect(device.locator('.device-icon')).toHaveText('phone_iphone');
     const token = 'ab12'.repeat(16);
     await expect(device.locator('.device-token')).toHaveText(`${token.slice(0, 6)}…${token.slice(-6)}`);
     await device.getByRole('button', { name: tr('showToken') }).click();
@@ -99,6 +112,45 @@ test('shows, reveals then deletes a device', async ({ adminPage: page }) => {
     await device.getByRole('button', { name: tr('deleteDevice') }).click();
     await expect(page.locator('.toast')).toHaveText(tr('deviceDeleted'));
     await expect(page.locator('.transactions-hint')).toHaveText(tr('noDevices'));
+});
+
+test('shows the platform of the mobile apps and the trusted web browsers', async ({ adminPage: page, request }) => {
+    // An Android phone of the administrator, and a browser trusted at the second step
+    const login = await request.post('/api/user/login', { data: {
+        username: 'admin', password: 'admin-password', device: { name: 'Pixel de Ada', token: 'cd34'.repeat(16), platform: 'android' },
+    } });
+    expect(login.ok(), await login.text()).toBeTruthy();
+    const token = (await login.json()).token;
+    const headers = { Authorization: `Bearer ${token}` };
+    const { secret } = await (await request.post('/api/user/mfa/setup', { headers })).json();
+    const { totp } = require('../totp');
+    expect((await request.post('/api/user/mfa/enable', { headers, data: { code: totp(secret) } })).ok()).toBeTruthy();
+    const challenge = await (await request.post('/api/user/login', {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0' },
+        data: { username: 'admin', password: 'admin-password', mfa: true },
+    })).json();
+    const trusted = await request.post('/api/user/login/mfa', {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0' },
+        data: { mfa_token: challenge.mfa_token, code: totp(secret, 30), trust: true },
+    });
+    expect(trusted.ok(), await trusted.text()).toBeTruthy();
+
+    await openProfile(page, 'myDevices');
+    const apps = page.getByRole('list', { name: tr('mobileDevicesTitle') });
+    await expect(apps.locator('.device-item').filter({ hasText: 'iPhone de Ada' }).locator('.device-platform')).toHaveText(tr('devicePlatform_ios'));
+    const pixel = apps.locator('.device-item').filter({ hasText: 'Pixel de Ada' });
+    await expect(pixel.locator('.device-platform')).toHaveText(tr('devicePlatform_android'));
+    await expect(pixel.locator('.device-icon')).toHaveText('android');
+
+    // The browser by its readable name, its last use and the end of its trust; revoked
+    const browsers = page.getByRole('list', { name: tr('mfaBrowsersTitle') }).locator('.device-item');
+    await expect(browsers).toHaveCount(1);
+    const name = tr('browserOnSystem', { browser: 'Firefox', system: 'Windows' });
+    await expect(browsers.first().locator('.device-name')).toHaveText(name);
+    await expect(browsers.first()).toContainText(tr('mfaBrowserLastUsed', { date: '' }).trim());
+    await browsers.first().getByRole('button', { name: `${tr('mfaRevokeBrowser')} ${name}` }).click();
+    await expect(page.locator('.toast')).toHaveText(tr('mfaBrowserRevoked'));
+    await expect(page.locator('.mfa-no-browsers')).toHaveText(tr('mfaNoBrowsers'));
 });
 
 /**
@@ -122,14 +174,23 @@ test('chooses the channels of each notification', async ({ userPage: page, api }
         await expect(notification(page, kind, 'email')).toBeDisabled();
     }
     await expect(page.locator('#notifications-email-unavailable')).toContainText(tr('notificationsEmailNoSmtp'));
-    // No API key of the push service (e2e configuration): push unavailable, the kinds
-    // on stay changeable (to turn them off), the opt-in one cannot be turned on
+    // No API key of the push service (e2e configuration): push unavailable, every push
+    // checkbox disabled and greyed, the reason readable under the table
+    await expect(page.getByRole('columnheader', { name: tr('notificationsChannel_push') })).toBeVisible();
     await expect(page.locator('#notifications-push-unavailable')).toContainText(tr('notificationsPushUnavailable'));
-    await expect(notification(page, 'sync', 'push')).toBeEnabled();
-    await expect(notification(page, 'budget', 'push')).toBeDisabled();
-
-    await notification(page, 'sync', 'push').uncheck();
-    await expect(page.locator('.toast')).toHaveText(tr('notificationsSaved'));
+    for (const kind of ['sync', 'rule', 'expense', 'budget']) {
+        await expect(notification(page, kind, 'push')).toBeDisabled();
+    }
+    await expect(notification(page, 'sync', 'push')).toBeChecked();
+    const pushOpacity = await notification(page, 'sync', 'push').evaluate(el => Number(getComputedStyle(el).opacity));
+    expect(pushOpacity).toBeLessThan(1);
+    expect(await page.locator('#notifications-push-unavailable').evaluate(el => Number(getComputedStyle(el).opacity))).toBe(1);
+    // The last message is not stuck to the border of the panel
+    const gap = await page.locator('.profile-notifications').evaluate(section => {
+        const last = section.querySelector('.notifications-unavailable:last-of-type');
+        return section.getBoundingClientRect().bottom - last.getBoundingClientRect().bottom;
+    });
+    expect(gap).toBeGreaterThanOrEqual(16);
 
     // An administrator configures the SMTP server: the email channel can be chosen
     const response = await api.put('/api/system/config', { data: { values: { smtp_host: 'smtp.example.com', smtp_from: 'carbure@example.com' } } });
@@ -143,7 +204,7 @@ test('chooses the channels of each notification', async ({ userPage: page, api }
     // Saved on the server
     await page.reload();
     await openProfile(page, 'notificationsTitle');
-    await expect(notification(page, 'sync', 'push')).not.toBeChecked();
+    await expect(notification(page, 'sync', 'push')).toBeChecked();
     await expect(notification(page, 'expense', 'email')).toBeChecked();
     await expect(notification(page, 'expense', 'push')).toBeChecked();
     await expect(notification(page, 'rule', 'email')).not.toBeChecked();

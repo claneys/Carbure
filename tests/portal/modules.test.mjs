@@ -546,6 +546,22 @@ test('accountsByBank: the followed accounts under their bank, then the others', 
     assert.deepEqual(accountsByBank(undefined, [{ id: 9, bank_name: 'x' }]).map(g => g.key), ['others']);
 });
 
+test('profile: sub-tabs, the two-factor one hidden before its migration; platform of a device', async () => {
+    const { createProfileModule, PROFILE_TABS } = await import('../../portal/modules/profileModule.js');
+    assert.deepEqual(PROFILE_TABS.map(tab => tab.key), ['profile', 'security', 'notifications', 'devices']);
+    const module = createProfileModule(() => null);
+    const tabs = mfaStatus => module.computed.visibleProfileTabs.call({ profileTabs: PROFILE_TABS, mfaStatus }).map(tab => tab.key);
+    assert.deepEqual(tabs(null), ['profile', 'security', 'notifications', 'devices']);
+    assert.deepEqual(tabs({ available: true }), ['profile', 'security', 'notifications', 'devices']);
+    assert.deepEqual(tabs({ available: false }), ['profile', 'notifications', 'devices']);
+
+    const { devicePlatform } = module.methods;
+    assert.deepEqual(devicePlatform({ platform: 'android' }), { icon: 'android', label: 'devicePlatform_android' });
+    assert.deepEqual(devicePlatform({ platform: 'ios' }), { icon: 'phone_iphone', label: 'devicePlatform_ios' });
+    // A server older than the platform column: iOS
+    assert.deepEqual(devicePlatform({}), { icon: 'phone_iphone', label: 'devicePlatform_ios' });
+});
+
 test('profile: the header toggle switches the theme at once and saves it in the profile', async () => {
     const { createProfileModule } = await import('../../portal/modules/profileModule.js');
     let choice = 'system';
@@ -744,8 +760,8 @@ test('notifications: why the push channel is disabled', async () => {
     const { methods } = createNotificationsModule(() => null);
     const context = { ...methods, pushUnavailable: 'notificationsPushUnavailable', emailUnavailable: '',
         notifications: { preferences: { sync: { push: true, email: false }, rule: { push: false, email: false } } } };
-    // A channel on stays changeable (to turn it off)
-    assert.equal(context.notificationDisabled('sync', 'push'), false);
+    // Push unavailable: every push channel disabled, on or off
+    assert.equal(context.notificationDisabled('sync', 'push'), true);
     assert.equal(context.notificationDisabled('rule', 'push'), true);
     assert.equal(context.notificationDisabled('rule', 'email'), false);
     assert.equal(context.notificationUnavailableId('push'), 'notifications-push-unavailable');

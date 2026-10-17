@@ -234,7 +234,7 @@
                     <template v-if="mfaLogin.mode === 'enroll'">
                         <h2 class="mfa-title">{{ t('mfaEnrollTitle') }}</h2>
                         <p class="mfa-help">{{ t('mfaEnrollHelp') }}</p>
-                        <svg v-if="mfaQr" class="mfa-qr" :viewBox="'0 0 ' + mfaQr.size + ' ' + mfaQr.size" role="img" :aria-label="t('mfaQrLabel')" shape-rendering="crispEdges">
+                        <svg v-if="mfaQr" class="mfa-qr" :view-box.camel="'0 0 ' + mfaQr.size + ' ' + mfaQr.size" role="img" :aria-label="t('mfaQrLabel')" shape-rendering="crispEdges">
                             <rect :width="mfaQr.size" :height="mfaQr.size" fill="#ffffff" />
                             <path :d="mfaQr.path" fill="#000000" />
                         </svg>
@@ -472,7 +472,7 @@
             </div>
             <!-- Sub-tabs of the profile page, at the same place as those of the administration -->
             <div v-if="activeTab === 'profile'" class="sub-tabs" role="tablist" :aria-label="t('myProfile')">
-                <button v-for="tab in profileTabs" :key="tab.key" type="button" role="tab" class="sub-tab"
+                <button v-for="tab in visibleProfileTabs" :key="tab.key" type="button" role="tab" class="sub-tab"
                         :class="{ active: profileView === tab.key }" :aria-selected="profileView === tab.key ? 'true' : 'false'"
                         @click="profileView = tab.key">
                     <span class="material-icons" aria-hidden="true">{{ tab.icon }}</span>{{ t(tab.label) }}
@@ -1891,12 +1891,11 @@
                     </div>
                 </div>
 
-                <!-- Profile Page: profile, notifications and devices sub-tabs -->
+                <!-- Profile Page: profile, two-factor authentication, notifications and devices sub-tabs -->
                 <div v-else-if="activeTab === 'profile'" key="profile" class="tab-panel">
                     <div class="content-wrapper">
-                        <!-- Profile sub-tab: the profile form, then the two-factor authentication -->
-                        <template v-if="profileView === 'profile'">
-                        <form class="profile-container" @submit.prevent="saveProfile">
+                        <!-- Profile sub-tab: the profile form -->
+                        <form v-if="profileView === 'profile'" class="profile-container" @submit.prevent="saveProfile">
                             <div class="users-header">
                                 <h2>{{ t('myProfile') }}</h2>
                             </div>
@@ -1951,8 +1950,12 @@
                             </div>
                         </form>
 
-                        <!-- Two-factor authentication: authenticator app, recovery codes, trusted browsers (mfaModule) -->
-                        <section v-if="mfaStatus && mfaStatus.available" class="profile-container profile-devices profile-mfa" aria-labelledby="mfa-title">
+                        <!-- Two-factor authentication sub-tab: authenticator app, recovery codes (mfaModule) -->
+                        <section v-else-if="profileView === 'security'" class="profile-container profile-devices profile-mfa" aria-labelledby="mfa-title">
+                            <div v-if="!mfaStatus" class="users-header">
+                                <h2 id="mfa-title">{{ t('mfaTitle') }}</h2>
+                            </div>
+                            <template v-else>
                             <div class="users-header">
                                 <h2 id="mfa-title">{{ t('mfaTitle') }}</h2>
                                 <span class="category-chip" :class="{ 'role-admin': mfaStatus.enabled }">{{ t(mfaStatus.enabled ? 'mfaOn' : 'mfaOff') }}</span>
@@ -1976,7 +1979,7 @@
                             <!-- Registration of an authenticator app in progress -->
                             <form v-if="mfaSetup" class="mfa-setup" @submit.prevent="confirmMfaSetup">
                                 <p class="rules-help">{{ t('mfaEnrollHelp') }}</p>
-                                <svg v-if="mfaQr" class="mfa-qr" :viewBox="'0 0 ' + mfaQr.size + ' ' + mfaQr.size" role="img" :aria-label="t('mfaQrLabel')" shape-rendering="crispEdges">
+                                <svg v-if="mfaQr" class="mfa-qr" :view-box.camel="'0 0 ' + mfaQr.size + ' ' + mfaQr.size" role="img" :aria-label="t('mfaQrLabel')" shape-rendering="crispEdges">
                                     <rect :width="mfaQr.size" :height="mfaQr.size" fill="#ffffff" />
                                     <path :d="mfaQr.path" fill="#000000" />
                                 </svg>
@@ -2021,26 +2024,9 @@
                                 </div>
                             </template>
 
-                            <!-- Browsers trusted for 6 months at the second step of a login -->
-                            <h3 class="mfa-subtitle">{{ t('mfaBrowsersTitle') }}</h3>
-                            <p v-if="!mfaStatus.trusted_browsers.length" class="rules-help mfa-no-browsers">{{ t('mfaNoBrowsers') }}</p>
-                            <ul v-else class="device-list">
-                                <li v-for="browser in mfaStatus.trusted_browsers" :key="browser.id" class="device-item">
-                                    <span class="material-icons device-icon" aria-hidden="true">web</span>
-                                    <div class="device-details">
-                                        <div class="device-name" :title="browser.label">{{ browserLabel(browser.label) || t('mfaUnknownBrowser') }}</div>
-                                        <div class="device-meta">{{ t('mfaBrowserUntil', { date: formatDate(browser.expires_at) }) }}</div>
-                                    </div>
-                                    <div class="device-actions">
-                                        <button type="button" class="btn-icon btn-icon-delete" @click="revokeTrustedBrowser(browser)" :disabled="mfaBusy"
-                                                :title="t('mfaRevokeBrowser')" :aria-label="t('mfaRevokeBrowser') + ' ' + (browserLabel(browser.label) || t('mfaUnknownBrowser'))">
-                                            <span class="material-icons" aria-hidden="true">delete</span>
-                                        </button>
-                                    </div>
-                                </li>
-                            </ul>
+                            <p class="rules-help mfa-browsers-hint">{{ t('mfaBrowsersHint') }}</p>
+                            </template>
                         </section>
-                        </template>
 
                         <!-- Channels of each kind of notification, the settings of an alert under its label -->
                         <section v-else-if="profileView === 'notifications'" class="profile-container profile-notifications" aria-labelledby="notifications-title">
@@ -2127,18 +2113,22 @@
                             </template>
                         </section>
 
-                        <section v-else-if="profileView === 'devices'" class="profile-container profile-devices">
+                        <!-- Devices sub-tab: the mobile apps (iOS, Android), then the browsers trusted for 6 months at the second step of a login -->
+                        <section v-else-if="profileView === 'devices'" class="profile-container profile-devices" aria-labelledby="devices-title">
                             <div class="users-header">
-                                <h2>{{ t('myDevices') }}</h2>
+                                <h2 id="devices-title">{{ t('myDevices') }}</h2>
                             </div>
+                            <h3 class="mfa-subtitle">{{ t('mobileDevicesTitle') }}</h3>
                             <div v-if="loadingDevices" class="transactions-hint">{{ t('loadingDevices') }}</div>
                             <div v-else-if="devices.length === 0" class="transactions-hint">{{ t('noDevices') }}</div>
-                            <ul v-else class="device-list">
+                            <ul v-else class="device-list" :aria-label="t('mobileDevicesTitle')">
                                 <li v-for="device in devices" :key="device.id" class="device-item">
-                                    <span class="material-icons device-icon" aria-hidden="true">smartphone</span>
+                                    <span class="material-icons device-icon" aria-hidden="true">{{ devicePlatform(device).icon }}</span>
                                     <div class="device-details">
                                         <div class="device-name">{{ device.name || t('unnamedDevice') }}</div>
-                                        <div class="device-meta">{{ t('lastLogin') }} : {{ formatDate(device.lastLogin) }}</div>
+                                        <div class="device-meta">
+                                            <span class="device-platform">{{ t(devicePlatform(device).label) }}</span> · {{ t('lastLogin') }} : {{ formatDate(device.lastLogin) }}
+                                        </div>
                                         <code class="device-token" :class="{ revealed: revealedTokens[device.id] }">{{ displayToken(device) }}</code>
                                     </div>
                                     <div class="device-actions">
@@ -2155,6 +2145,30 @@
                                     </div>
                                 </li>
                             </ul>
+
+                            <!-- Web browsers trusted for 6 months at the second step of a login (mfaModule) -->
+                            <template v-if="mfaStatus && mfaStatus.available">
+                                <h3 class="mfa-subtitle">{{ t('mfaBrowsersTitle') }}</h3>
+                                <p class="rules-help">{{ t('mfaBrowsersHelp') }}</p>
+                                <p v-if="mfaError" class="sync-step-error" role="alert">{{ mfaError }}</p>
+                                <p v-if="!mfaStatus.trusted_browsers.length" class="rules-help mfa-no-browsers">{{ t('mfaNoBrowsers') }}</p>
+                                <ul v-else class="device-list trusted-browsers" :aria-label="t('mfaBrowsersTitle')">
+                                    <li v-for="browser in mfaStatus.trusted_browsers" :key="browser.id" class="device-item">
+                                        <span class="material-icons device-icon" aria-hidden="true">language</span>
+                                        <div class="device-details">
+                                            <div class="device-name" :title="browser.label">{{ browserName(browser.label) }}</div>
+                                            <div class="device-meta">{{ t('mfaBrowserLastUsed', { date: formatDate(browser.last_used_at || browser.created_at) }) }}</div>
+                                            <div class="device-meta">{{ t('mfaBrowserUntil', { date: formatDate(browser.expires_at) }) }}</div>
+                                        </div>
+                                        <div class="device-actions">
+                                            <button type="button" class="btn-icon btn-icon-delete" @click="revokeTrustedBrowser(browser)" :disabled="mfaBusy"
+                                                    :title="t('mfaRevokeBrowser')" :aria-label="t('mfaRevokeBrowser') + ' ' + browserName(browser.label)">
+                                                <span class="material-icons" aria-hidden="true">delete</span>
+                                            </button>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </template>
                         </section>
                     </div>
                 </div>

@@ -99,7 +99,7 @@ keeps track of what was done).
       container start; until it is, the second factor is never asked. Nothing changes until
       an administrator turns on `mfa_required` in **Administration → Settings** (off by
       default; existing `prod.ini` files get the line on save). Before turning it on: set up
-      your own authenticator app from **My profile** and keep the recovery codes (an
+      your own authenticator app from **My profile → Two-factor authentication** and keep the recovery codes (an
       administrator who loses both sets `mfa_required=false` in `data/conf/prod.ini`), and
       make sure every iPhone of the household has logged in once (a known device skips the
       code; a new one is refused, see the iOS item below).

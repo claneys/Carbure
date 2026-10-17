@@ -5,8 +5,8 @@
  * - the second step of the login screen: the code (or a recovery code), the choice to
  *   trust this browser for 6 months, the registration of the app (QR code) when the
  *   administrator enforces it and the user has none yet, then his recovery codes;
- * - the "Two-factor authentication" block of the profile: registration, recovery codes,
- *   disabling, trusted browsers;
+ * - the "Two-factor authentication" sub-tab of the profile: registration, recovery codes,
+ *   disabling; the trusted browsers are listed (and revoked) in the "My devices" sub-tab;
  * - the reset of the second factor of a user by an administrator (Users tab).
  * The QR code is drawn here (vendor/qrcode-generator), never by an external service.
  *
@@ -58,17 +58,27 @@ export function groupSecret(secret) {
 }
 
 /**
- * Short name of a browser from its User-Agent: "Firefox · Windows"
+ * Browser and system of a User-Agent
  * @param {string} userAgent - User-Agent
- * @returns {string} '' if unknown
+ * @returns {{browser: string, system: string}} '' for a part not recognized
  */
-export function browserLabel(userAgent) {
+export function browserParts(userAgent) {
     const ua = userAgent || '';
     const browser = [['Edg/', 'Edge'], ['OPR/', 'Opera'], ['Firefox/', 'Firefox'], ['Chrome/', 'Chrome'], ['Safari/', 'Safari']]
         .find(([token]) => ua.includes(token));
     const system = [['iPhone', 'iOS'], ['iPad', 'iPadOS'], ['Android', 'Android'], ['Windows', 'Windows'], ['Mac OS X', 'macOS'], ['Macintosh', 'macOS'], ['Linux', 'Linux']]
         .find(([token]) => ua.includes(token));
-    return [browser && browser[1], system && system[1]].filter(Boolean).join(' · ');
+    return { browser: browser ? browser[1] : '', system: system ? system[1] : '' };
+}
+
+/**
+ * Short name of a browser from its User-Agent: "Firefox · Windows"
+ * @param {string} userAgent - User-Agent
+ * @returns {string} '' if unknown
+ */
+export function browserLabel(userAgent) {
+    const { browser, system } = browserParts(userAgent);
+    return [browser, system].filter(Boolean).join(' · ');
 }
 
 /**
@@ -112,6 +122,19 @@ export function createMfaModule(getApiService) {
         methods: {
             groupSecret,
             browserLabel,
+
+            /**
+             * Readable name of a trusted browser from its User-Agent: "Firefox sur Windows"
+             * @param {string} userAgent - User-Agent
+             * @returns {string} The name, or "Unknown browser"
+             */
+            browserName(userAgent) {
+                const { browser, system } = browserParts(userAgent);
+                if (browser && system) {
+                    return this.t('browserOnSystem', { browser, system });
+                }
+                return browser || system || this.t('mfaUnknownBrowser');
+            },
 
             /**
              * Answer of the login asking for the second factor: shows its step

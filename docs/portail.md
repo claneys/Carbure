@@ -429,15 +429,16 @@ requêtes s'exécutent réellement (une route `POST`/`PUT`/`DELETE` modifie les 
 
 ## Mon profil
 
-Trois sous-onglets, comme l'administration : **Profil**, **Notifications** et **Appareils**
-(ouvert sur **Profil** depuis le menu utilisateur).
+Quatre sous-onglets, comme l'administration : **Profil**, **Double authentification**,
+**Notifications** et **Mes appareils** (ouvert sur **Profil** depuis le menu utilisateur).
 
 - **Profil** : modification de l'e-mail, du prénom, du nom et du mot de passe (laisser
   vide pour le conserver). L'identifiant n'est pas modifiable. **Langue** (Français,
   English, Español, Italiano, Deutsch, Português ; chacune écrite dans sa langue) : enregistrée sur le compte et appliquée à chaque connexion, sur tous les
   navigateurs. **Thème** (*Comme le système*, *Clair*, *Sombre*), comme le choix fait avec
   l'icône de l'en-tête (voir [Thèmes](#themes-et-preferences-du-systeme)).
-- **Notifications** : un tableau type de notification × canal (push sur l'app iOS, email)
+- **Notifications** : un tableau type de notification × canal (**Push app mobile**, sur
+  l'app iOS ou Android via le relais Carbure Push, et email)
   pour la synchronisation, les règles « Notifier », les dépenses importantes et les budgets
   dépassés (désactivés par défaut). Chaque case s'enregistre aussitôt ; les notifications
   sont envoyées dans la **langue** du profil. Les réglages d'une alerte sont sous son
@@ -450,21 +451,29 @@ Trois sous-onglets, comme l'administration : **Profil**, **Notifications** et **
     « Catégorie › Sous-catégorie »), et le pourcentage de ce budget auquel **alerter**
     (entier de 50 à 200, 100 par défaut).
 
-  La colonne push est grisée, avec la raison, tant que l'administrateur n'a pas inscrit
-  l'instance au service Carbure Push (pas de `push_api_key`) ; la colonne email, tant
-  qu'aucun serveur SMTP n'est configuré ou que le profil n'a pas d'adresse email
-  (`GET`/`PUT /user/notifications`).
-- **Double authentification** (sous le formulaire du sous-onglet **Profil**) : état (activée ou non, imposée ou non par
-  l'administrateur). **Configurer une application** affiche le QR code et la clé, à
+  Toutes les cases de la colonne push sont désactivées et grisées, avec la raison sous le
+  tableau, tant que l'administrateur n'a pas inscrit l'instance au service Carbure Push
+  (pas de `push_api_key`). Les cases email non cochées sont grisées tant qu'aucun serveur
+  SMTP n'est configuré ou que le profil n'a pas d'adresse email (une case cochée reste
+  modifiable, pour la décocher) (`GET`/`PUT /user/notifications`).
+- **Double authentification** (sous-onglet dédié, absent tant que la migration n'est pas
+  appliquée) : état (activée ou non, imposée ou non par
+  l'administrateur). **Configurer une application** affiche le QR code (grand, sur fond
+  blanc, adapté à la largeur d'un téléphone) et la clé, à
   confirmer par un premier code ; les 10 codes de secours s'affichent alors une seule
   fois. Une fois activée, un code de l'application permet d'obtenir de **nouveaux codes de
   secours**, et un code de l'application ou de secours de la **désactiver** (après
-  confirmation). Dessous, les **navigateurs de confiance** (navigateur, système, échéance)
-  et leur bouton **Révoquer**.
-- **Appareils** : appareils mobiles enregistrés à la connexion depuis l'app, avec la
-  date de dernière connexion et le token de notification, masqué par défaut. Les boutons permettent
-  de l'afficher en entier, de le copier (HTTPS requis ; sinon le token est affiché) ou
-  de **supprimer** un ancien appareil.
+  confirmation). Les navigateurs de confiance sont dans **Mes appareils**.
+- **Mes appareils** :
+  - **Applications mobiles** : appareils enregistrés à la connexion depuis l'app, avec
+    leur plateforme (icône et libellé **iOS** ou **Android**), la date de dernière connexion
+    et le token de notification, masqué par défaut. Les boutons permettent de l'afficher en
+    entier, de le copier (HTTPS requis ; sinon le token est affiché) ou de **supprimer** un
+    ancien appareil (`GET`/`DELETE /device`) ;
+  - **Navigateurs de confiance** : navigateurs web où le code de double authentification
+    n'est pas redemandé pendant 6 mois, avec un nom lisible tiré du User-Agent (« Firefox
+    sur Windows »), la date de dernière utilisation et l'échéance, et leur bouton
+    **Révoquer** (`GET /user/mfa`, `DELETE /user/mfa/browser`).
 
 ## Pied de page
 
@@ -541,7 +550,7 @@ des logs dans la console du navigateur.
 |---|---|
 | `index.html` | Gabarit Vue (tous les écrans, dont l'assistant d'installation) |
 | `app.js` | Application racine : authentification, onglets (onglets d'administration réservés), initialisation |
-| `modules/*.js` | Mixins par domaine : `setup` (assistant), `transaction`, `import` (import de relevés), `budget`, `insights`, `trends`, `rules`, `categories`, `accounts`, `sync`, `agents`, `oauth` (consentement des agents IA), `logs`, `config` (Paramètres, email de test, Synchro), `user`, `profile` (profil, appareils, mise à jour de la base), `notifications` (canaux des notifications du profil), `confirm` (fenêtre de confirmation) |
+| `modules/*.js` | Mixins par domaine : `setup` (assistant), `transaction`, `import` (import de relevés), `budget`, `insights`, `trends`, `rules`, `categories`, `accounts`, `sync`, `agents`, `oauth` (consentement des agents IA), `logs`, `config` (Paramètres, email de test, Synchro), `user`, `profile` (profil et ses sous-onglets, appareils, mise à jour de la base), `notifications` (canaux des notifications du profil), `confirm` (fenêtre de confirmation) |
 | `services/apiService.js` | Appels HTTP vers l'API |
 | `stores/budgetStore.js` | Navigation dans l'arborescence des budgets |
 | `components/*.js` | Composants : diagramme de flux (`FlowChart`), sélecteur de catégorie (`CategoryPicker`, compact dans les listes), éditeur SQL (`SqlEditor`) |

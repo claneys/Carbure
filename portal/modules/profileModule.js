@@ -1,9 +1,10 @@
 /**
  * Profile Module
  * 
- * Manages the authenticated user: header user menu and profile page, in three
+ * Manages the authenticated user: header user menu and profile page, in four
  * sub-tabs: profile (email, names, password, interface language and display
- * theme), notifications (notificationsModule) and devices.
+ * theme), two-factor authentication (mfaModule), notifications (notificationsModule)
+ * and devices (mobile apps and trusted web browsers).
  * 
  * @module profileModule
  */
@@ -11,6 +12,7 @@
 /** Sub-tabs of the profile page, in their order */
 export const PROFILE_TABS = [
     { key: 'profile', icon: 'person', label: 'profileTabProfile' },
+    { key: 'security', icon: 'lock', label: 'mfaTitle' },
     { key: 'notifications', icon: 'notifications', label: 'notificationsTitle' },
     { key: 'devices', icon: 'smartphone', label: 'myDevices' }
 ];
@@ -69,6 +71,16 @@ export function createProfileModule(getApiService) {
         },
 
         computed: {
+            /**
+             * Sub-tabs of the profile page shown: the two-factor authentication only once
+             * its migration is applied
+             * @returns {Array<{key: string, icon: string, label: string}>}
+             */
+            visibleProfileTabs() {
+                const mfaUnavailable = this.mfaStatus && !this.mfaStatus.available;
+                return this.profileTabs.filter(tab => tab.key !== 'security' || !mfaUnavailable);
+            },
+
             /**
              * Checks if the authenticated user is an administrator
              * @returns {boolean}
@@ -267,7 +279,18 @@ export function createProfileModule(getApiService) {
             },
 
             /**
-             * Loads the devices (iOS app installations) of the authenticated user
+             * Platform of a device: icon and translation key of its name
+             * @param {Object} device - Device ({platform: ios|android}, ios when absent)
+             * @returns {{icon: string, label: string}}
+             */
+            devicePlatform(device) {
+                return device && device.platform === 'android'
+                    ? { icon: 'android', label: 'devicePlatform_android' }
+                    : { icon: 'phone_iphone', label: 'devicePlatform_ios' };
+            },
+
+            /**
+             * Loads the devices (mobile app installations: iOS, Android) of the authenticated user
              * @returns {Promise<void>}
              */
             async loadDevices() {

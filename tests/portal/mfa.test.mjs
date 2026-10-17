@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { mockFetch } from './setup.mjs';
-import { qrPath, qrCodeOf, groupSecret, browserLabel, createMfaModule } from '../../portal/modules/mfaModule.js';
+import { qrPath, qrCodeOf, groupSecret, browserLabel, browserParts, createMfaModule } from '../../portal/modules/mfaModule.js';
 
 const require = createRequire(import.meta.url);
 const qrcode = require('../../portal/vendor/qrcode-generator/qrcode.js');
@@ -50,6 +50,18 @@ test('browserLabel: browser and system of a User-Agent', () => {
     assert.equal(browserLabel('Mozilla/5.0 (Windows NT 10.0) Chrome/140.0 Safari/537.36 Edg/140.0'), 'Edge · Windows');
     assert.equal(browserLabel('curl/8.0'), '');
     assert.equal(browserLabel(null), '');
+});
+
+test('browserParts and browserName: readable name of a trusted browser', () => {
+    assert.deepEqual(browserParts('Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0'), { browser: 'Firefox', system: 'Linux' });
+    assert.deepEqual(browserParts(''), { browser: '', system: '' });
+    const { methods } = createMfaModule(() => null);
+    const context = { t: (key, params) => key === 'browserOnSystem' ? `${params.browser} on ${params.system}` : key };
+    const browserName = methods.browserName.bind(context);
+    assert.equal(browserName('Mozilla/5.0 (Windows NT 10.0) Gecko/20100101 Firefox/140.0'), 'Firefox on Windows');
+    assert.equal(browserName('SomeBot (Android)'), 'Android');
+    assert.equal(browserName('Mozilla/5.0 Chrome/140.0'), 'Chrome');
+    assert.equal(browserName('curl/8.0'), 'mfaUnknownBrowser');
 });
 
 /** `this` of the portal for the second step of the login */

@@ -77,6 +77,9 @@ test('the notifications of the profile and the test email are readable', async (
     await page.locator('.user-menu-toggle').click();
     await page.getByRole('menuitem', { name: tr('myProfile') }).click();
     problems.push(...await contrastProblems(page, tr('profileTabProfile')));
+    await page.getByRole('tab', { name: tr('mfaTitle'), exact: true }).click();
+    await expect(page.getByRole('heading', { name: tr('mfaTitle') })).toBeVisible();
+    problems.push(...await contrastProblems(page, tr('mfaTitle')));
     await page.getByRole('tab', { name: tr('myDevices'), exact: true }).click();
     await expect(page.getByRole('heading', { name: tr('myDevices') })).toBeVisible();
     problems.push(...await contrastProblems(page, tr('myDevices')));
@@ -361,12 +364,17 @@ test('the two-factor authentication is readable: login steps and profile', async
     await page.getByRole('button', { name: tr('mfaRecoveryContinue') }).click();
     await page.locator('.user-menu-toggle').click();
     await page.getByRole('menuitem', { name: tr('myProfile') }).click();
-    await expect(page.locator('.profile-mfa .device-item')).toHaveCount(1);
+    await page.getByRole('tab', { name: tr('mfaTitle'), exact: true }).click();
+    await expect(page.locator('.profile-mfa')).toContainText(tr('mfaOn'));
     problems.push(...await contrastProblems(page, tr('mfaTitle')));
+    await page.getByRole('tab', { name: tr('myDevices'), exact: true }).click();
+    const browser = page.getByRole('list', { name: tr('mfaBrowsersTitle') }).locator('.device-item');
+    await expect(browser).toHaveCount(1);
+    problems.push(...await contrastProblems(page, `${tr('myDevices')} (${tr('mfaBrowsersTitle')})`));
 
     // Verification step of a later login (trusted browser revoked)
-    await page.locator('.profile-mfa .device-item').getByRole('button').click();
-    await expect(page.locator('.profile-mfa')).toContainText(tr('mfaNoBrowsers'));
+    await browser.getByRole('button').click();
+    await expect(page.locator('.mfa-no-browsers')).toHaveText(tr('mfaNoBrowsers'));
     await page.locator('.user-menu-toggle').click();
     await page.getByRole('menuitem', { name: tr('logout') }).click();
     await page.getByLabel(tr('username')).fill('marie');
@@ -381,6 +389,7 @@ test('the two-factor authentication is readable: login steps and profile', async
 test('the registration of an app in the profile is readable', async ({ userPage: page }) => {
     await page.locator('.user-menu-toggle').click();
     await page.getByRole('menuitem', { name: tr('myProfile') }).click();
+    await page.getByRole('tab', { name: tr('mfaTitle'), exact: true }).click();
     await page.locator('.profile-mfa').getByRole('button', { name: tr('mfaSetupButton') }).click();
     await expect(page.locator('.profile-mfa').getByRole('img', { name: tr('mfaQrLabel') })).toBeVisible();
 
