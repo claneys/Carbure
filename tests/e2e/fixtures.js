@@ -181,6 +181,18 @@ function woobFile(name) {
 }
 
 /**
+ * The portal as served by the demonstration Docker image (docker/Dockerfile.demo): GET
+ * /api/health says demo, the rest is the real API
+ * @param {import('@playwright/test').Page} page
+ */
+async function asDemoInstance(page) {
+    await page.route('**/api/health', async route => {
+        const response = await route.fetch();
+        await route.fulfill({ response, json: { ...await response.json(), demo: true } });
+    });
+}
+
+/**
  * The repository of the fake woob trusted, as after an update confirmed by an
  * administrator (the keyrings of the fake woob are in the temporary directory of the run,
  * CARBURE_TEST_TMP set by playwright.config.js and shared with the server; the reset of the
@@ -206,4 +218,4 @@ async function chooseLanguage(page, from, to) {
     await base.expect(page.locator('.tabs').getByRole('button', { name: tr('tabTransactions', {}, to), exact: true })).toBeVisible();
 }
 
-module.exports = { test, expect: base.expect, USERS, openTab, tr, pickCategory, euros, currentMonth, escapeRegExp, woobFile, trustWoobRepository, chooseLanguage };
+module.exports = { test, expect: base.expect, USERS, openTab, tr, pickCategory, euros, currentMonth, escapeRegExp, woobFile, trustWoobRepository, chooseLanguage, asDemoInstance };

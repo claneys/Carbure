@@ -207,6 +207,16 @@
                     <p class="login-subtitle">{{ t('loginSubtitle') }}</p>
                 </div>
 
+                <!-- Demonstration instance (Docker image carbure:demo): its public account -->
+                <div v-if="demoAccount" class="login-demo">
+                    <span class="material-icons" aria-hidden="true">info</span>
+                    <div>
+                        <p class="login-demo-title">{{ t('loginDemoTitle') }}</p>
+                        <p>{{ t('loginDemoAccount', demoAccount) }}</p>
+                        <p>{{ t('loginDemoWarning') }}</p>
+                    </div>
+                </div>
+
                 <div v-if="loginError" class="login-error" role="alert">
                     <span class="material-icons" aria-hidden="true">error</span>
                     {{ loginError }}

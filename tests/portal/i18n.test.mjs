@@ -283,6 +283,16 @@ test('loadLocale: without the version of the server, the cache is revalidated', 
     assert.equal(request.url, 'https://carbure.example.com/portal/i18n/fr.json?v=dev');
     assert.equal(request.options.cache, 'no-cache');
     assert.equal(page.i18n.serverVersion(), null);
+    assert.equal(page.i18n.serverDemo(), false);
+});
+
+test('loadLocale: a demonstration server is told by GET /api/health', async () => {
+    const page = load({ health: { version: '1.6.0', demo: true } });
+    await page.i18n.loadLocale();
+    assert.equal(page.i18n.serverDemo(), true);
+    const regular = load();
+    await regular.i18n.loadLocale();
+    assert.equal(regular.i18n.serverDemo(), false);
 });
 
 test('loadLocale: a language that cannot be loaded falls back to the reference one', async () => {

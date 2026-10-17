@@ -18,6 +18,35 @@ compte administrateur. Aucune commande n'est nécessaire.
 Avant d'installer, découvrez les [fonctionnalités](fonctionnalites.md) de Carbure et son
 [comparatif](comparatif.md) avec les autres gestionnaires de budget à héberger soi-même.
 
+## Essayer Carbure (démo)
+
+Pour découvrir Carbure en une commande, sans base de données à préparer ni installation :
+
+```bash
+docker run --rm -p 8080:80 ltoinel/carbure:demo
+```
+
+Ouvrez `http://localhost:8080/portal/` et connectez-vous avec `admin` / `admin-password`
+(administrateur) ou `marie` / `marie-password` (utilisateur). Ces identifiants sont rappelés
+sur l'écran de connexion et dans les journaux du conteneur. Un foyer fictif y vit depuis un
+an : deux salaires, une vingtaine de catégories avec leurs budgets et leurs règles, des
+dépenses saisonnières, de l'épargne.
+
+L'image de démonstration est l'image habituelle avec MariaDB et les données de démonstration
+à l'intérieur : à chaque démarrage, la base est recréée, la configuration est écrite avec des
+secrets aléatoires et les données sont rechargées. `Ctrl+C` (ou `docker stop`) l'arrête.
+
+!!! warning "Uniquement pour essayer"
+    **Toutes les données sont effacées à chaque démarrage** et le mot de passe est public :
+    n'y saisissez aucune donnée réelle et ne l'exposez pas sur Internet. La synchronisation
+    bancaire et les notifications ne sont pas configurées. Pour votre budget, installez
+    Carbure avec l'image `ltoinel/carbure` (ci-dessous). Par sécurité, l'image de démonstration
+    refuse de démarrer sur un volume `/data` d'une installation réelle.
+
+Les utilisateurs de la démonstration sont en français ; `-e LANGUAGE=en` (ou `es`, `it`,
+`de`, `pt`) choisit une autre langue. Chaque version a aussi son image de démonstration :
+`ltoinel/carbure:<version>-demo` (par exemple `1.6.0-demo`).
+
 ## Avec Docker (recommandé)
 
 ```bash

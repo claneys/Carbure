@@ -5,7 +5,8 @@
  *
  * Data set of the end-to-end tests and of the development stack: the database is
  * dropped, recreated from sql/carbure.sql, then filled with a household whose dates
- * follow the current month. Only for a database named *_e2e or *_dev.
+ * follow the current month. Only for a database named *_e2e, *_dev or *_demo (the
+ * demonstration Docker image, docker/Dockerfile.demo, loads it with --demo at each start).
  *
  * From the command line (development stack, see start.sh):
  *   php tests/e2e/server/seed.php           the data set of the tests
@@ -43,8 +44,8 @@ const E2E_USERS = [
 function carbure_e2e_seed($demo = false)
 {
     $name = Config::get('db_name');
-    if (!preg_match('/_(e2e|dev)$/', $name)) {
-        throw new Exception("Refusing to reset the database $name: not an e2e or dev database");
+    if (!preg_match('/_(e2e|dev|demo)$/', $name)) {
+        throw new Exception("Refusing to reset the database $name: not an e2e, dev or demo database");
     }
 
     $conn = new mysqli(Config::get('db_hostname'), Config::get('db_username'), Config::get('db_password'), null, (int)Config::get('db_port'));

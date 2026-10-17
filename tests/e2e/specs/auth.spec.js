@@ -1,5 +1,5 @@
 // Login screen, logout, expired session and the tabs of each role
-const { test, expect, tr } = require('../fixtures');
+const { test, expect, tr, asDemoInstance } = require('../fixtures');
 
 const ADMIN_TABS = ['tabRules', 'tabAccounts', 'tabAdministration'];
 const USER_TABS = ['tabTransactions', 'tabBudget', 'tabInsights', 'tabTrends'];
@@ -21,6 +21,27 @@ test('logs in and out from the login screen', async ({ page }) => {
     await page.getByRole('menuitem', { name: tr('logout') }).click();
     await expect(page.getByRole('button', { name: tr('loginButton') })).toBeVisible();
     expect(await page.evaluate(() => localStorage.getItem('authToken'))).toBeNull();
+});
+
+test('a demonstration instance shows its public account on the login screen', async ({ page }) => {
+    // A regular instance: no notice
+    await page.goto('/portal/');
+    await expect(page.getByRole('button', { name: tr('loginButton') })).toBeVisible();
+    await expect(page.locator('.login-demo')).toHaveCount(0);
+
+    // The Docker image carbure:demo (GET /api/health: demo)
+    await asDemoInstance(page);
+    await page.reload();
+    const notice = page.locator('.login-demo');
+    await expect(notice).toContainText(tr('loginDemoTitle'));
+    await expect(notice).toContainText(tr('loginDemoAccount', { username: 'admin', password: 'admin-password' }));
+    await expect(notice).toContainText(tr('loginDemoWarning'));
+
+    // The account shown logs in
+    await page.getByLabel(tr('username')).fill('admin');
+    await page.getByLabel(tr('password')).fill('admin-password');
+    await page.getByRole('button', { name: tr('loginButton') }).click();
+    await expect(page.locator('.user-menu-name')).toHaveText('admin');
 });
 
 test('refuses a wrong password', async ({ page }) => {

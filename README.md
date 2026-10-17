@@ -131,7 +131,16 @@ flowchart LR
 
 ## Quick start
 
-With Docker (nginx, PHP and woob included):
+To just try it, the demo image runs Carbure with its database and a sample household
+(wiped at each start, never for real data):
+
+```bash
+docker run --rm -p 8080:80 ltoinel/carbure:demo
+```
+
+Then open `http://localhost:8080/portal/` and log in as `admin` / `admin-password`.
+
+To install it for real, with Docker (nginx, PHP and woob included):
 
 ```bash
 git clone https://github.com/ltoinel/Carbure.git && cd Carbure/docker

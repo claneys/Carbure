@@ -203,6 +203,12 @@ jobs:
           dockerfile: docker/Dockerfile
           failure-threshold: error
 
+      - name: Lint the Dockerfile of the demo image
+        uses: hadolint/hadolint-action@06be81baf89a55ffd0e24b8f04a4185738dd3387 # v3.5.0
+        with:
+          dockerfile: docker/Dockerfile.demo
+          failure-threshold: error
+
       - name: Build the image
         run: docker compose -f docker/docker-compose.yml build carbure
 
@@ -315,7 +321,33 @@ jobs:
           docker compose -f docker/docker-compose.yml exec -T carbure woob --version
           docker compose -f docker/docker-compose.yml exec -T carbure /opt/woob/bin/python -c 'import curl_cffi'
 
+      # Demo image (docker/Dockerfile.demo) on top of the image just built: MariaDB and the
+      # demonstration data inside, the public account printed in the logs
+      - name: Demo image
+        run: |
+          set -e
+          docker build -f docker/Dockerfile.demo --build-arg BASE=ltoinel/carbure:latest -t ltoinel/carbure:demo .
+          docker run -d --name carbure-demo -p 8081:80 ltoinel/carbure:demo
+          for i in $(seq 1 60); do
+            curl -fsS http://localhost:8081/api/health > /dev/null 2>&1 && break
+            sleep 2
+          done
+          curl -fsS http://localhost:8081/api/health | tee /dev/stderr | grep -q '"demo":true'
+          docker logs carbure-demo 2>&1 | grep -q 'admin / admin-password'
+          # Login with the public account, the demonstration data is there
+          token=$(curl -fsS -X POST http://localhost:8081/api/user/login \
+            -H 'Content-Type: application/json' \
+            -d '{"username":"admin","password":"admin-password"}' | python3 -c 'import sys,json; print(json.load(sys.stdin)["token"])')
+          count=$(curl -fsS -H "Authorization: Bearer $token" http://localhost:8081/api/transaction | python3 -c 'import sys,json; print(len(json.load(sys.stdin)))')
+          echo "Transactions of the month: $count"
+          test "$count" -gt 0
+          # docker stop stops nginx, PHP-FPM and MariaDB cleanly
+          docker stop carbure-demo
+          test "$(docker inspect -f '{{.State.ExitCode}}' carbure-demo)" = 0
+
       - name: Logs
         if: failure()
-        run: docker compose -f docker/docker-compose.yml logs
+        run: |
+          docker compose -f docker/docker-compose.yml logs
+          docker logs carbure-demo 2>&1 || true
 

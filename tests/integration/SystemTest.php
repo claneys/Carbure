@@ -28,6 +28,18 @@ class SystemTest extends DatabaseTestCase
         $this->assertSame(\Carbure\Lib\MobileApp::MIN_VERSION, $health['min_mobile_version']);
         $this->assertMatchesRegularExpression('/^\d+(\.\d+){0,2}$/', $health['min_mobile_version']);
         $this->assertSame(trim(file_get_contents(dirname(__DIR__, 2) . '/VERSION')), $health['version']);
+        // Not a demonstration instance: no demo field
+        $this->assertArrayNotHasKey('demo', $health);
+    }
+
+    public function testHealthOfADemoInstance()
+    {
+        Config::set('demo', '1');
+        try {
+            $this->assertTrue(System::health()['demo']);
+        } finally {
+            Config::set('demo', '');
+        }
     }
 
     public function testRotateJwtSecret()

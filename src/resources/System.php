@@ -68,16 +68,19 @@ final class System {
      * Health of the instance, for the Docker HEALTHCHECK, supervision tools and the
      * mobile app (no authentication, no data): the database answers.
      *
-     * @return array<string, string|null> status (ok), version (of Carbure), database (ok), schema (version),
-     *               min_mobile_version (lowest version of the mobile app supported, MobileApp::MIN_VERSION)
+     * @return array<string, string|bool|null> status (ok), version (of Carbure), database (ok), schema (version),
+     *               min_mobile_version (lowest version of the mobile app supported, MobileApp::MIN_VERSION),
+     *               demo (true, only on a demonstration instance: setting demo, Docker image carbure:demo)
      * @throws Exception If the database does not answer (HTTP 500)
      */
     #[ApiRoute('/health', method: 'GET', public: true)]
     public static function health(): array
     {
         Db::query("SELECT 1");
-        return ['status' => 'ok', 'version' => self::version(), 'database' => 'ok', 'schema' => (new Migrator(Db::getConnection()))->version(),
+        $health = ['status' => 'ok', 'version' => self::version(), 'database' => 'ok', 'schema' => (new Migrator(Db::getConnection()))->version(),
             'min_mobile_version' => MobileApp::MIN_VERSION];
+        // Demonstration instance: the portal shows its public credentials on the login screen
+        return Config::has('demo') ? $health + ['demo' => true] : $health;
     }
 
     /**

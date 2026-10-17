@@ -837,6 +837,9 @@ que le serveur prend en charge : une app plus ancienne invite son utilisateur à
 à jour. Elle est fixée dans le code (`Carbure\Lib\MobileApp::MIN_VERSION`) et n'est relevée
 que lorsqu'une évolution de l'API ne peut plus être lue par les anciennes versions de l'app,
 une fois la nouvelle version publiée sur l'App Store.
+Sur une instance de démonstration (réglage `demo`, image `ltoinel/carbure:demo`), la réponse
+contient en plus `"demo":true` : le portail affiche alors le compte public sur l'écran de
+connexion. Le champ est absent sur une instance normale.
 
 ### `GET /system/logs` — administrateur
 

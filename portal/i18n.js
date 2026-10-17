@@ -22,7 +22,7 @@ const REFERENCE_LOCALE = 'fr';
 const i18n = {};
 
 /** State of the loader: active language, version of the server, keys already reported */
-const i18nState = { locale: null, version: null, debug: false, reported: new Set(), pluralRules: {} };
+const i18nState = { locale: null, version: null, demo: false, debug: false, reported: new Set(), pluralRules: {} };
 
 /**
  * Language before login: the browser one (the profile language applies after login)
@@ -70,6 +70,15 @@ function currentLocale() {
  */
 function serverVersion() {
     return i18nState.version;
+}
+
+/**
+ * Demonstration instance (GET /api/health: demo, Docker image carbure:demo): the login
+ * screen shows its public credentials
+ * @returns {boolean}
+ */
+function serverDemo() {
+    return i18nState.demo;
 }
 
 /**
@@ -229,15 +238,16 @@ function setLocale(locale) {
 }
 
 /**
- * Version of Carbure (GET /api/health), to fetch the texts of this version and not those
- * kept in the cache of the browser; null if the server does not answer (installation)
- * @returns {Promise<string|null>}
+ * Health of the server (GET /api/health): its version, to fetch the texts of this version
+ * and not those kept in the cache of the browser, and whether it is a demonstration;
+ * null if the server does not answer (installation)
+ * @returns {Promise<Object|null>}
  */
-async function fetchServerVersion() {
+async function fetchServerHealth() {
     try {
         const response = await fetch(new URL('../api/health', location.href).href);
         const health = response.ok ? await response.json() : null;
-        return health && typeof health.version === 'string' ? health.version : null;
+        return health && typeof health === 'object' ? health : null;
     } catch (e) {
         return null;
     }
@@ -274,7 +284,9 @@ async function fetchTexts(locale, version) {
 async function loadLocale() {
     const wanted = storedLocale();
     i18nState.debug = i18nDebug();
-    i18nState.version = await fetchServerVersion();
+    const health = await fetchServerHealth();
+    i18nState.version = health && typeof health.version === 'string' ? health.version : null;
+    i18nState.demo = Boolean(health && health.demo === true);
     const locales = fallbackChain(wanted);
     const results = await Promise.allSettled(locales.map(locale => fetchTexts(locale, i18nState.version)));
     results.forEach((result, index) => {
@@ -307,5 +319,5 @@ function showLocaleError() {
 
 // Export for the tests run by Node
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { i18n, t, setLocale, loadLocale, translate, resolveText, currentLocale, defaultLocale, intlLocale, serverVersion, showLocaleError, LOCALES, REFERENCE_LOCALE };
+    module.exports = { i18n, t, setLocale, loadLocale, translate, resolveText, currentLocale, defaultLocale, intlLocale, serverVersion, serverDemo, showLocaleError, LOCALES, REFERENCE_LOCALE };
 }

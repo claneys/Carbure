@@ -39,6 +39,12 @@ import { createBackupModule } from './modules/backupModule.js';
  */
 const API_BASE_URL = new URL('../api', new URL('.', window.location.href)).href;
 
+/**
+ * Public account of the demonstration instance (Docker image carbure:demo, data of
+ * tests/e2e/server/seed.php --demo), shown on its login screen
+ */
+const DEMO_ACCOUNT = { username: 'admin', password: 'admin-password' };
+
 /** Tabs reserved to administrators */
 const ADMIN_TABS = ['rules', 'categories', 'accounts', 'users', 'logs', 'config', 'sync', 'backup', 'api'];
 
@@ -118,6 +124,8 @@ const app = createApp({
             apiBaseUrl: API_BASE_URL,
             // Version of Carbure (GET /api/health, asked by loadLocale()), shown in the footer
             appVersion: serverVersion(),
+            // Demonstration instance (GET /api/health): its public account, null otherwise
+            demoAccount: serverDemo() ? DEMO_ACCOUNT : null,
             // Money flow of the selected month (Budget tab)
             budgetFlow: null,
             // Node of the flow diagram whose transactions are shown, and these transactions

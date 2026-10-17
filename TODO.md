@@ -21,6 +21,12 @@ keeps track of what was done).
       5. remove the `[apns]` section and `data/conf/certs/*.p8` from the NAS (no longer used);
       6. later: a release workflow publishing the image of Carbure Push to a registry.
 
+- [ ] **Demo image (#219)**: `ltoinel/carbure:demo` and `ltoinel/carbure:<version>-demo` are
+      pushed by the release workflow from the next release (1.6.0): until then the
+      `docker run … ltoinel/carbure:demo` command of the README and of the docs fails. After
+      the release, check `docker run --rm -p 8080:80 ltoinel/carbure:demo` on amd64 and
+      arm64, and mention the demo tag in the overview of the Docker Hub repository.
+
 - [ ] **Push relay — release the device bindings**: Carbure never calls
       `DELETE /v1/devices/{token}` of the relay. A device deleted from an instance (or
       moved to another instance) stays bound to the key of the first instance, so a second

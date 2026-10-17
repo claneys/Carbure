@@ -1,6 +1,6 @@
 // Accessibility: every text of the portal is readable (WCAG 2.2 AA contrast), the
 // buttons at rest and on hover, on every tab and in the modals (see a11y.js)
-const { test, expect, tr, openTab, trustWoobRepository } = require('../fixtures');
+const { test, expect, tr, openTab, trustWoobRepository, asDemoInstance } = require('../fixtures');
 const { contrastProblems } = require('../a11y');
 const { startFakeSmtp } = require('../fake-smtp');
 const { startFakePushRelay } = require('../fake-push-relay');
@@ -18,6 +18,13 @@ test('the login screen is readable', async ({ page }) => {
     await page.goto('/portal/');
     await expect(page.getByRole('button', { name: tr('loginButton') })).toBeVisible();
     expect(await contrastProblems(page, 'login')).toEqual([]);
+});
+
+test('the login screen of a demonstration instance is readable', async ({ page }) => {
+    await asDemoInstance(page);
+    await page.goto('/portal/');
+    await expect(page.locator('.login-demo')).toBeVisible();
+    expect(await contrastProblems(page, 'login demo')).toEqual([]);
 });
 
 test('every tab is readable, buttons on hover included', async ({ adminPage: page }) => {

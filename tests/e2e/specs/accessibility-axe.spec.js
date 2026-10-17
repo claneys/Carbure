@@ -1,7 +1,7 @@
 // Accessibility beyond the contrasts (see accessibility.spec.js): the WCAG 2.2 A/AA rules
 // of axe-core on every screen, the reflow at 320 CSS px (1.4.10), the zoom at 200 %
 // (1.4.4) and the text spacing (1.4.12)
-const { test, expect, tr, openTab, trustWoobRepository, chooseLanguage } = require('../fixtures');
+const { test, expect, tr, openTab, trustWoobRepository, chooseLanguage, asDemoInstance } = require('../fixtures');
 const { axeViolations, reflowProblems, clippedTexts, TEXT_SPACING, WCAG_TAGS } = require('../axe');
 const { AxeBuilder } = require('@axe-core/playwright');
 
@@ -62,6 +62,13 @@ test('axe: the login screen', async ({ page }) => {
     await page.goto('/portal/');
     await expect(page.getByRole('button', { name: tr('loginButton') })).toBeVisible();
     expect(await axeViolations(page, 'login')).toEqual([]);
+});
+
+test('axe: the login screen of a demonstration instance', async ({ page }) => {
+    await asDemoInstance(page);
+    await page.goto('/portal/');
+    await expect(page.locator('.login-demo')).toBeVisible();
+    expect(await axeViolations(page, 'login demo')).toEqual([]);
 });
 
 test('axe: every tab of an administrator', async ({ adminPage: page }) => {
