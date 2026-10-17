@@ -9,11 +9,13 @@ import vm from 'node:vm';
 
 const source = readFileSync(new URL('../../portal/i18n.js', import.meta.url), 'utf8');
 
+/** Languages that have a file in portal/i18n/ */
+const FILES = readdirSync(new URL('../../portal/i18n/', import.meta.url)).filter(name => name.endsWith('.json')).map(name => name.slice(0, -5));
+
 /** Texts of the languages, read from the JSON files */
-const TEXTS = {
-    fr: JSON.parse(readFileSync(new URL('../../portal/i18n/fr.json', import.meta.url), 'utf8')),
-    en: JSON.parse(readFileSync(new URL('../../portal/i18n/en.json', import.meta.url), 'utf8'))
-};
+const TEXTS = Object.fromEntries(FILES.map(locale => [
+    locale, JSON.parse(readFileSync(new URL(`../../portal/i18n/${locale}.json`, import.meta.url), 'utf8'))
+]));
 
 /**
  * Runs i18n.js in a fake page
@@ -152,6 +154,17 @@ test('the JSON files keep one format: 4-space indentation, final newline', () =>
 
 test('every language of the loader has its file', () => {
     assert.deepEqual([...load().i18n.LOCALES].sort(), Object.keys(TEXTS).sort());
+    assert.deepEqual([...load().i18n.LOCALES].sort(), ['de', 'en', 'es', 'fr', 'it', 'pt']);
+});
+
+test('the language selectors offer every language, named in its own language', () => {
+    const html = readFileSync(new URL('../../portal/index.html', import.meta.url), 'utf8');
+    const names = { fr: 'Français', en: 'English', es: 'Español', it: 'Italiano', de: 'Deutsch', pt: 'Português' };
+    for (const id of ['setupLanguage', 'profile-language']) {
+        const select = html.match(new RegExp(`<select id="${id}"[^>]*>([\\s\\S]*?)</select>`))[1];
+        const options = [...select.matchAll(/<option value="(\w+)" lang="(\w+)">([^<]+)<\/option>/g)].map(m => [m[1], m[2], m[3]]);
+        assert.deepEqual(options, Object.entries(names).map(([locale, name]) => [locale, locale, name]), id);
+    }
 });
 
 // --- t(): fallback, plurals, parameters ---
@@ -200,6 +213,20 @@ test('the texts of the portal with a count: singular and plural', () => {
     assert.equal(translate(TEXTS, ['fr'], 'transactionCount', { count: 6 }), '6 transactions');
     assert.equal(translate(TEXTS, ['en'], 'rulesCount', { count: 0 }), '0 rules');
     assert.equal(translate(TEXTS, ['en'], 'rulesCount', { count: 1 }), '1 rule');
+    // Only 1 is singular in Spanish, Italian, German and European Portuguese (Intl pt-PT)
+    for (const locale of ['es', 'it', 'de', 'pt']) {
+        assert.notEqual(translate(TEXTS, [locale], 'transactionCount', { count: 1 }), translate(TEXTS, [locale], 'transactionCount', { count: 2 }).replace('2', '1'), locale);
+        assert.equal(translate(TEXTS, [locale], 'transactionCount', { count: 0 }), translate(TEXTS, [locale], 'transactionCount', { count: 2 }).replace('2', '0'), locale);
+    }
+    assert.equal(translate(TEXTS, ['pt'], 'transactionCount', { count: 0 }), '0 transações');
+    assert.equal(translate(TEXTS, ['de'], 'transactionCount', { count: 1 }), '1 Transaktion');
+});
+
+test('intlLocale: the locale of Intl of a language, European Portuguese for pt', () => {
+    const { intlLocale } = load().i18n;
+    assert.equal(intlLocale('pt'), 'pt-PT');
+    assert.equal(intlLocale('de'), 'de');
+    assert.equal(intlLocale('fr'), 'fr');
 });
 
 // --- loadLocale(), t(), setLocale() in the page ---
@@ -228,6 +255,25 @@ test('loadLocale: only the reference language when it is the active one (browser
 test('loadLocale: an English browser without a stored choice is in English', async () => {
     const page = load({ language: 'en-US' });
     assert.equal(await page.i18n.loadLocale(), 'en');
+});
+
+test('loadLocale: the browser language when the portal has it, French otherwise', async () => {
+    for (const [language, locale] of [['es-ES', 'es'], ['it-IT', 'it'], ['de-AT', 'de'], ['pt-BR', 'pt'], ['PT', 'pt'], ['nl-NL', 'fr'], ['', 'fr']]) {
+        const page = load({ language });
+        assert.equal(await page.i18n.loadLocale(), locale, language);
+    }
+});
+
+test('loadLocale: <html lang> of European Portuguese is pt-PT', async () => {
+    const page = load({ stored: 'pt' });
+    assert.equal(await page.i18n.loadLocale(), 'pt');
+    assert.equal(page.html.lang, 'pt-PT');
+    assert.equal(page.i18n.t('transactionCount', { count: 0 }), '0 transações');
+    assert.equal(page.i18n.t('transactionCount', { count: 1 }), '1 transação');
+    const page2 = load({ stored: 'de' });
+    assert.equal(await page2.i18n.loadLocale(), 'de');
+    assert.equal(page2.html.lang, 'de');
+    assert.equal(page2.i18n.t('tabAccounts'), 'Konten');
 });
 
 test('loadLocale: without the version of the server, the cache is revalidated', async () => {

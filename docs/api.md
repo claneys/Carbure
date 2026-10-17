@@ -165,7 +165,7 @@ profil utilisateur par défaut). `400` si l'identifiant ou l'e-mail existe déj�
 | `id` | oui | Utilisateur à modifier (soi-même, ou n'importe qui pour un administrateur) |
 | `email`, `firstname`, `lastname` | non | Nouvelles valeurs |
 | `password` | non | Nouveau mot de passe (ignoré si vide) |
-| `language` | non | `fr` ou `en` |
+| `language` | non | `fr`, `en`, `es`, `it`, `de` ou `pt` (portugais du Portugal) ; `400` pour une autre valeur |
 | `theme` | non | Thème du portail : `system` (suit la préférence clair/sombre du système, par défaut), `light` ou `dark` ; `400` pour une autre valeur |
 | `alertThreshold` | non | Seuil d'alerte en euros pour les nouvelles dépenses ; `""` ou `0` désactive les alertes |
 | `is_admin` | non | Profil administrateur (`true`) ou utilisateur (`false`) ; administrateurs seulement, `409` pour retirer le rôle au dernier administrateur |

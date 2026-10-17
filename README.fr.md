@@ -92,8 +92,8 @@
   les activez, le service de notifications d'Apple et votre serveur SMTP.
 
 > 🌍 **Banques couvertes** : Carbure s'appuie sur les modules [woob](https://woob.tech/), qui
-> couvrent surtout les banques françaises. Le portail existe en français et en anglais ; les
-> montants sont en euros.
+> couvrent surtout les banques françaises. Le portail existe en français, anglais, espagnol,
+> italien, allemand et portugais ; les montants sont en euros.
 
 > 📱 **App iPhone** : l'application iOS Carbure sera prochainement disponible sur l'App Store. En
 > attendant, le portail web s'installe comme une application sur ordinateur ou téléphone

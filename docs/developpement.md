@@ -367,9 +367,11 @@ voir `sql/migrations/README.md`).
 ## Traductions du portail
 
 Les textes du portail sont dans un fichier JSON par langue : `portal/i18n/fr.json`
-(langue de référence, complète) et `portal/i18n/en.json`. `portal/i18n.js` les charge
-avant d'afficher le portail : la langue active (choisie dans le profil, sinon celle du
-navigateur) et le français, qui sert de repli pour une clé manquante (puis la clé
+(langue de référence, complète), `en.json`, `es.json`, `it.json`, `de.json` et `pt.json`
+(portugais du Portugal : `Intl` y utilise `pt-PT` pour les pluriels, les nombres, les dates
+et `<html lang>`). `portal/i18n.js` les charge avant d'afficher le portail : la langue
+active (choisie dans le profil, sinon celle du navigateur si le portail l'a, le français
+sinon) et le français, qui sert de repli pour une clé manquante (puis la clé
 elle-même). Les fichiers sont demandés en `i18n/<langue>.json?v=<version>` (version
 donnée par `/api/health`) pour ne pas garder ceux d'une version précédente en cache.
 Avec `?debug=true`, une clé manquante est signalée une fois dans la console.
@@ -387,7 +389,7 @@ Avec `?debug=true`, une clé manquante est signalée une fois dans la console.
 
   `t('rulesCount', { count: rules.length })` choisit `rulesCount_one` ou
   `rulesCount_other` (`_other` si la catégorie de la langue manque : `many`, `few`…).
-  En français 0 et 1 sont au singulier, en anglais seul 1 l'est.
+  En français 0 et 1 sont au singulier, dans les autres langues seul 1 l'est.
 - Chaque clé existe dans **toutes** les langues, avec les mêmes `{paramètres}`, sans
   texte vide ; chaque clé utilisée par le portail existe et aucune clé n'est inutilisée.
   `tests/portal/i18n.test.mjs` le vérifie (les clés construites par le code,
@@ -401,11 +403,15 @@ Avec `?debug=true`, une clé manquante est signalée une fois dans la console.
    `es`…) et traduire chaque texte ; écrire les formes de pluriel de la langue
    (`_one`, `_few`, `_many`, `_other`… selon `Intl.PluralRules`), `_other` étant
    obligatoire.
-2. Déclarer la langue dans `LOCALES` de `portal/i18n.js`, ajouter son `<option>` aux
-   listes de langue de `portal/index.html` (profil et assistant d'installation) et
-   l'accepter côté API (`User::LANGUAGES`).
-3. Ajouter la langue au test de parité (`TEXTS` de `tests/portal/i18n.test.mjs`) et le
-   lancer : `node --test 'tests/portal/*.test.mjs'`.
+2. Déclarer la langue dans `LOCALES` de `portal/i18n.js` (et dans `INTL_LOCALES` si sa
+   locale `Intl` diffère, comme `pt` → `pt-PT`), ajouter son `<option>` (nom écrit dans
+   la langue, avec `lang`) aux listes de langue de `portal/index.html` (profil et
+   assistant d'installation).
+3. Côté serveur, l'ajouter à `Messages::LANGUAGES` (accepté par `PUT /user` et
+   l'installation) avec ses textes, ses séparateurs de montant et son format de date dans
+   `src/lib/Messages.php`, et ses noms de catégories et d'insights dans `sql/starter.json`.
+4. Lancer les tests : `node --test 'tests/portal/*.test.mjs'` (les fichiers de
+   `portal/i18n/` sont tous vérifiés) et `composer test` (`MessagesTest`, `StarterTest`).
 
 ### Branches commencées avant le découpage
 

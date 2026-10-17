@@ -10,7 +10,10 @@
 // loaded by Node for the tests (module.exports at the end).
 
 /** Languages of the portal (each one has its file i18n/<locale>.json) */
-const LOCALES = ['fr', 'en'];
+const LOCALES = ['fr', 'en', 'es', 'it', 'de', 'pt'];
+
+/** Locale of Intl (plurals, numbers, dates) when it is not the language itself: European Portuguese */
+const INTL_LOCALES = { pt: 'pt-PT' };
 
 /** Reference language: complete, fallback of the missing keys */
 const REFERENCE_LOCALE = 'fr';
@@ -26,8 +29,17 @@ const i18nState = { locale: null, version: null, debug: false, reported: new Set
  * @returns {string}
  */
 function defaultLocale() {
-    const language = (typeof navigator !== 'undefined' && navigator.language) || '';
-    return language.toLowerCase().startsWith('en') ? 'en' : 'fr';
+    const language = ((typeof navigator !== 'undefined' && navigator.language) || '').toLowerCase().split('-')[0];
+    return LOCALES.includes(language) ? language : REFERENCE_LOCALE;
+}
+
+/**
+ * Locale of Intl for a language of the portal (pt: pt-PT)
+ * @param {string} locale - Language of the portal
+ * @returns {string}
+ */
+function intlLocale(locale) {
+    return INTL_LOCALES[locale] || locale;
 }
 
 /**
@@ -102,7 +114,7 @@ function pluralCount(params) {
 function pluralCategory(locale, count) {
     try {
         if (!i18nState.pluralRules[locale]) {
-            i18nState.pluralRules[locale] = new Intl.PluralRules(locale);
+            i18nState.pluralRules[locale] = new Intl.PluralRules(intlLocale(locale));
         }
         return i18nState.pluralRules[locale].select(count);
     } catch (e) {
@@ -277,7 +289,7 @@ async function loadLocale() {
         throw new Error('No translation could be loaded');
     }
     i18nState.locale = loaded;
-    document.documentElement.lang = loaded;
+    document.documentElement.lang = intlLocale(loaded);
     return loaded;
 }
 
@@ -295,5 +307,5 @@ function showLocaleError() {
 
 // Export for the tests run by Node
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { i18n, t, setLocale, loadLocale, translate, resolveText, currentLocale, defaultLocale, serverVersion, showLocaleError, LOCALES, REFERENCE_LOCALE };
+    module.exports = { i18n, t, setLocale, loadLocale, translate, resolveText, currentLocale, defaultLocale, intlLocale, serverVersion, showLocaleError, LOCALES, REFERENCE_LOCALE };
 }

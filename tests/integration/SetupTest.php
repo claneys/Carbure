@@ -267,6 +267,17 @@ class SetupTest extends TestCase
         $this->assertEquals(150, $db->query($sql)->fetch_assoc()['amount']);
     }
 
+    public function testInstallInGerman()
+    {
+        [$status] = $this->setup->handle('POST', '/setup/install', $this->fields(['starter_categories' => true, 'starter_insights' => true, 'language' => 'de']));
+        $this->assertSame(200, $status);
+
+        $db = $this->db();
+        $this->assertSame('de', $db->query("SELECT language FROM users WHERE username = 'boss'")->fetch_row()[0]);
+        $this->assertSame('Einkäufe', $db->query("SELECT name FROM bank_transaction_category WHERE id = 2")->fetch_row()[0]);
+        $this->assertSame('Ausgaben', $db->query("SELECT name FROM budget_insight ORDER BY id LIMIT 1")->fetch_row()[0]);
+    }
+
     public function testInstallWithTheStarterCategoriesOnly()
     {
         [$status] = $this->setup->handle('POST', '/setup/install', $this->fields(['starter_categories' => true, 'starter_insights' => false, 'language' => 'fr']));

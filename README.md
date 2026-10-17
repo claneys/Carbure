@@ -91,7 +91,8 @@
   them, Apple's push notification service and your SMTP server.
 
 > 🌍 **Bank coverage**: Carbure relies on [woob](https://woob.tech/) modules, which mainly
-> cover French banks. The portal is available in English and French; amounts are in euros.
+> cover French banks. The portal is available in French, English, Spanish,
+> Italian, German and Portuguese; amounts are in euros.
 
 > 📱 **iPhone app**: the Carbure iOS app will soon be available on the App Store. Meanwhile, the web
 > portal installs as an app on a computer or a phone (Chrome/Edge "Install", Safari "Add to

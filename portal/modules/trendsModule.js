@@ -428,7 +428,7 @@ export function createTrendsModule(getApiService) {
              */
             formatMonth(month) {
                 const [year, m] = month.split('-').map(Number);
-                return new Intl.DateTimeFormat(this.locale, { month: 'short', year: '2-digit' })
+                return new Intl.DateTimeFormat(this.intlLocale, { month: 'short', year: '2-digit' })
                     .format(new Date(year, m - 1, 1));
             },
 
@@ -438,7 +438,7 @@ export function createTrendsModule(getApiService) {
              * @returns {string}
              */
             formatCompact(value) {
-                return new Intl.NumberFormat(this.locale, { notation: 'compact', maximumFractionDigits: 1 }).format(value);
+                return new Intl.NumberFormat(this.intlLocale, { notation: 'compact', maximumFractionDigits: 1 }).format(value);
             }
         }
     };

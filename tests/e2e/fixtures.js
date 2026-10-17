@@ -20,7 +20,7 @@ const i18n = Object.fromEntries(LOCALES.map(locale => [
  * same {placeholders} and plural forms (count chooses <key>_one / <key>_other)
  * @param {string} key - Key (nested keys with dots)
  * @param {Object} params - Values of the {placeholders}
- * @param {string} locale - fr or en
+ * @param {string} locale - Language of the portal (fr, en, es, it, de, pt)
  * @returns {string}
  */
 function tr(key, params = {}, locale = 'fr') {
@@ -178,4 +178,18 @@ function trustWoobRepository() {
     fs.copyFileSync(path.join(__dirname, '../fixtures/woob-repository/trusted.gpg'), path.join(keyrings, 'https___updates_woob_tech_3_main_.gpg'));
 }
 
-module.exports = { test, expect: base.expect, USERS, openTab, tr, pickCategory, euros, currentMonth, escapeRegExp, trustWoobRepository };
+/**
+ * Chooses the language of the profile and saves it: the page reloads in that language
+ * @param {import('@playwright/test').Page} page
+ * @param {string} from - Language shown
+ * @param {string} to - Language chosen
+ */
+async function chooseLanguage(page, from, to) {
+    await page.locator('.user-menu-toggle').click();
+    await page.getByRole('menuitem', { name: tr('myProfile', {}, from) }).click();
+    await page.getByLabel(tr('language', {}, from)).selectOption(to);
+    await page.getByRole('button', { name: tr('save', {}, from) }).click();
+    await base.expect(page.locator('.tabs').getByRole('button', { name: tr('tabTransactions', {}, to), exact: true })).toBeVisible();
+}
+
+module.exports = { test, expect: base.expect, USERS, openTab, tr, pickCategory, euros, currentMonth, escapeRegExp, trustWoobRepository, chooseLanguage };

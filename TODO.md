@@ -168,6 +168,17 @@ keeps track of what was done).
 - [ ] The PHP notifications and emails (push notifications, e-mails) read the same translation files
       as the portal (`portal/i18n/<locale>.json`) instead of their `$french ? … : …` strings
       (separate issue to create).
+- [ ] Spanish, Italian, German and Portuguese (#167): the branches that add portal keys
+      to `fr.json`/`en.json` (profile sub-tabs, backup/restore, admin API tab, MFA…) must
+      also add them to `es.json`, `it.json`, `de.json` and `pt.json` (parity test of
+      `tests/portal/i18n.test.mjs`). Have the four translations proofread by native
+      speakers.
+- [ ] iOS app: check that a profile language `es`, `it`, `de` or `pt` (returned by
+      `GET /user/me`) is handled (the app only knew `fr`/`en`).
+- [ ] Savings of the Trends tab: the default `savings_category` is `Epargne`, which matches
+      only the French starter category; an installation in another language (`Savings`,
+      `Ahorro`, `Risparmio`, `Sparen`, `Poupança`) has to set it in Settings. Use the
+      starter category id (31) or a default per language.
 - [ ] Once the branches started before the split of the translations (#139) are merged
       (email notifications, theme toggle, budget alerts, PWA), remove
       `tools/i18n-split.mjs` (conversion of the old `portal/i18n.js`, see

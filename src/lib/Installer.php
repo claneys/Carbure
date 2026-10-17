@@ -125,7 +125,8 @@ final class Installer {
      *
      * @param mysqli $db       The connection
      * @param string $root     Root of the project
-     * @param mixed  $language Language of the names: fr or en (anything else gives fr)
+     * @param mixed  $language Language of the names: one of Messages::LANGUAGES (anything
+     *                         else gives fr)
      * @param bool   $insights Also add the insights
      * @return array{categories: int, rules: int, insights: int} Numbers added
      */
@@ -162,14 +163,14 @@ final class Installer {
     }
 
     /**
-     * A language of Carbure: fr or en (fr by default).
+     * A language of Carbure: one of Messages::LANGUAGES (fr by default).
      *
      * @param mixed $language The language asked (any value of a JSON request)
-     * @return string fr or en
+     * @return string The language
      */
     private static function language(mixed $language): string
     {
-        return in_array($language, ['fr', 'en'], true) ? $language : 'fr';
+        return is_string($language) && in_array($language, Messages::LANGUAGES, true) ? $language : 'fr';
     }
 
     /**
@@ -190,7 +191,7 @@ final class Installer {
      * @param string      $username Login
      * @param string      $password Password (8 characters minimum)
      * @param string|null $email    Email
-     * @param mixed       $language fr or en (anything else gives fr)
+     * @param mixed       $language One of Messages::LANGUAGES (anything else gives fr)
      * @return void
      * @throws InvalidArgumentException If the login or the password is invalid
      */

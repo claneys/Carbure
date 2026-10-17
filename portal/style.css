@@ -2807,6 +2807,8 @@ button .material-icons {
 
 .trends-period {
     display: flex;
+    flex-wrap: wrap;
+    max-width: 100%;
     gap: 4px;
     padding: 4px;
     border-radius: 20px;

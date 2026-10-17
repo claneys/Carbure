@@ -143,12 +143,13 @@ export function createBudgetModule(getBudgetStore, getApiService) {
             },
 
             /**
-             * Localized name of the month the copy button copies from (lowercase in French)
+             * Localized name of the month the copy button copies from (lowercase inside a
+             * sentence, except in English and German)
              * @returns {string}
              */
             copySourceName() {
                 const name = String(this.t(`months.${this.copySource.month}`));
-                return (this.locale || 'fr') === 'fr' ? name.toLowerCase() : name;
+                return ['en', 'de'].includes(this.locale) ? name : name.toLowerCase();
             },
 
             /**

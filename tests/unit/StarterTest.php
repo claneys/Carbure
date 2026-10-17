@@ -1,5 +1,6 @@
 <?php
 
+use Carbure\Lib\Messages;
 use Carbure\Resources\Insight;
 use PHPUnit\Framework\TestCase;
 
@@ -28,7 +29,7 @@ class StarterTest extends TestCase
             $this->assertContains($category['type'], ['DEBIT', 'CREDIT', 'HORS-BUDGET']);
             $this->assertContains($category['color'], self::CATEGORY_COLORS, $category['fr']);
             $this->assertMatchesRegularExpression('/^[a-z_]+$/', $category['icon']);
-            foreach (['fr', 'en'] as $language) {
+            foreach (Messages::LANGUAGES as $language) {
                 $this->assertNotSame('', $category[$language]);
                 $this->assertLessThanOrEqual(50, mb_strlen($category[$language]));
             }
@@ -64,7 +65,7 @@ class StarterTest extends TestCase
     public function testInsights()
     {
         foreach (self::starter()['insights'] as $insight) {
-            foreach (['fr', 'en'] as $language) {
+            foreach (Messages::LANGUAGES as $language) {
                 [$name, $color, $sql] = Insight::validate($insight[$language], $insight['color'], $insight['sql']);
                 $this->assertSame($insight[$language], $name);
                 $this->assertSame($insight['sql'], $sql);

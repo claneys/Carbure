@@ -67,7 +67,7 @@ export function createRulesModule(getApiService) {
                 }
                 return [...groups]
                     .map(([category, rules]) => ({ category, rules }))
-                    .sort((a, b) => a.category.localeCompare(b.category, this.locale));
+                    .sort((a, b) => a.category.localeCompare(b.category, this.intlLocale));
             }
         },
 

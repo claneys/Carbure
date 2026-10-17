@@ -556,11 +556,11 @@ export function createAccountsModule(getApiService) {
                 if (isNaN(date)) {
                     return value;
                 }
-                const time = date.toLocaleTimeString(this.locale, { hour: '2-digit', minute: '2-digit' });
+                const time = date.toLocaleTimeString(this.intlLocale, { hour: '2-digit', minute: '2-digit' });
                 if (date.toDateString() === new Date().toDateString()) {
                     return this.t('todayAt', { time });
                 }
-                return `${date.toLocaleDateString(this.locale, { day: 'numeric', month: 'short', year: 'numeric' })} ${time}`;
+                return `${date.toLocaleDateString(this.intlLocale, { day: 'numeric', month: 'short', year: 'numeric' })} ${time}`;
             },
 
             /**

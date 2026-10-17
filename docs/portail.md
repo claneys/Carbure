@@ -433,8 +433,8 @@ Trois sous-onglets, comme l'administration : **Profil**, **Notifications** et **
 (ouvert sur **Profil** depuis le menu utilisateur).
 
 - **Profil** : modification de l'e-mail, du prénom, du nom et du mot de passe (laisser
-  vide pour le conserver). L'identifiant n'est pas modifiable. **Langue** (français /
-  anglais) : enregistrée sur le compte et appliquée à chaque connexion, sur tous les
+  vide pour le conserver). L'identifiant n'est pas modifiable. **Langue** (Français,
+  English, Español, Italiano, Deutsch, Português ; chacune écrite dans sa langue) : enregistrée sur le compte et appliquée à chaque connexion, sur tous les
   navigateurs. **Thème** (*Comme le système*, *Clair*, *Sombre*), comme le choix fait avec
   l'icône de l'en-tête (voir [Thèmes](#themes-et-preferences-du-systeme)).
 - **Notifications** : un tableau type de notification × canal (push sur l'app iOS, email)
@@ -545,7 +545,7 @@ des logs dans la console du navigateur.
 | `services/apiService.js` | Appels HTTP vers l'API |
 | `stores/budgetStore.js` | Navigation dans l'arborescence des budgets |
 | `components/*.js` | Composants : diagramme de flux (`FlowChart`), sélecteur de catégorie (`CategoryPicker`, compact dans les listes), éditeur SQL (`SqlEditor`) |
-| `i18n.js`, `i18n/*.json` | Chargement des traductions, et un fichier JSON par langue (`fr` de référence, `en`) |
+| `i18n.js`, `i18n/*.json` | Chargement des traductions, et un fichier JSON par langue (`fr` de référence, `en`, `es`, `it`, `de`, `pt`) |
 | `utils/formatters.js`, `utils/categoryIcons.js` | Formatage des montants, dates, icônes ; icônes et couleurs des catégories |
 | `vendor/` | Vue, CodeMirror (éditeur SQL) et polices, servis localement |
 | `manifest.webmanifest`, `icons/` | Manifeste et icônes de l'application installée |

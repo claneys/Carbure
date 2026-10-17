@@ -1,7 +1,7 @@
 // Accessibility beyond the contrasts (see accessibility.spec.js): the WCAG 2.2 A/AA rules
 // of axe-core on every screen, the reflow at 320 CSS px (1.4.10), the zoom at 200 %
 // (1.4.4) and the text spacing (1.4.12)
-const { test, expect, tr, openTab, trustWoobRepository } = require('../fixtures');
+const { test, expect, tr, openTab, trustWoobRepository, chooseLanguage } = require('../fixtures');
 const { axeViolations, reflowProblems, clippedTexts, TEXT_SPACING, WCAG_TAGS } = require('../axe');
 const { AxeBuilder } = require('@axe-core/playwright');
 
@@ -21,15 +21,20 @@ const USER_TABS = ['tabTransactions', 'tabBudget', 'tabInsights', 'tabTrends'];
  * Opens a tab and waits for its data
  * @param {import('@playwright/test').Page} page
  * @param {string} key - Translation key of the tab
+ * @param {string} locale - Language of the portal
  */
-async function showTab(page, key) {
+async function showTab(page, key, locale = 'fr') {
+    const name = tr(key, {}, locale);
     if (ADMIN_TABS.includes(key)) {
-        await page.locator('.tabs').getByRole('button', { name: tr('tabAdministration'), exact: true }).click();
-        await page.getByRole('tab', { name: tr(key), exact: true }).click();
-        await expect(page.getByRole('tab', { name: tr(key), exact: true })).toHaveAttribute('aria-selected', 'true');
+        await page.locator('.tabs').getByRole('button', { name: tr('tabAdministration', {}, locale), exact: true }).click();
+        await page.getByRole('tab', { name, exact: true }).click();
+        await expect(page.getByRole('tab', { name, exact: true })).toHaveAttribute('aria-selected', 'true');
+    } else if (locale === 'fr') {
+        await openTab(page, name);
+        await expect(page.locator('.tab-button.active')).toContainText(name);
     } else {
-        await openTab(page, tr(key));
-        await expect(page.locator('.tab-button.active')).toContainText(tr(key));
+        await page.locator('.tabs').getByRole('button', { name, exact: true }).click();
+        await expect(page.locator('.tab-button.active')).toContainText(name);
     }
     await page.waitForLoadState('networkidle');
     // The tabs are drawn again once the data is loaded
@@ -41,13 +46,14 @@ async function showTab(page, key) {
  * @param {import('@playwright/test').Page} page
  * @param {string[]} tabs - Translation keys of the tabs
  * @param {(page, where: string) => Promise<string[]>} check
+ * @param {string} locale - Language of the portal
  * @returns {Promise<string[]>} The problems of every tab
  */
-async function everyTab(page, tabs, check) {
+async function everyTab(page, tabs, check, locale = 'fr') {
     const problems = [];
     for (const key of tabs) {
-        await showTab(page, key);
-        problems.push(...await check(page, tr(key)));
+        await showTab(page, key, locale);
+        problems.push(...await check(page, `${tr(key, {}, locale)} (${locale})`));
     }
     return problems;
 }
@@ -265,5 +271,30 @@ test('the API tab: axe, reflow at 320 CSS px, zoom at 200 % and text spacing', a
     await page.addStyleTag({ content: TEXT_SPACING });
     problems.push(...await clippedTexts(page, `${where} spacing`));
 
+    expect(problems).toEqual([]);
+});
+
+test('German, the longest texts: every tab at 320 CSS px and at 200 %, nothing cut', async ({ adminPage: page }) => {
+    await chooseLanguage(page, 'fr', 'de');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'de');
+    const tabs = [...MAIN_TABS, ...ADMIN_TABS];
+    await page.setViewportSize({ width: 320, height: 256 });
+    const problems = await everyTab(page, tabs, reflowProblems, 'de');
+    await page.setViewportSize({ width: 640, height: 400 });
+    const check = async (page, where) => [...await reflowProblems(page, where), ...await clippedTexts(page, where)];
+    problems.push(...await everyTab(page, tabs, check, 'de'));
+    await page.setViewportSize({ width: 1280, height: 720 });
+    problems.push(...await everyTab(page, tabs, clippedTexts, 'de'));
+    expect(problems).toEqual([]);
+});
+
+test('axe: every tab in Spanish, Italian and Portuguese', async ({ adminPage: page }) => {
+    const problems = [];
+    let from = 'fr';
+    for (const locale of ['es', 'it', 'pt']) {
+        await chooseLanguage(page, from, locale);
+        problems.push(...await everyTab(page, MAIN_TABS, axeViolations, locale));
+        from = locale;
+    }
     expect(problems).toEqual([]);
 });

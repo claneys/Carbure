@@ -156,6 +156,14 @@ const app = createApp({
 
     computed: {
         /**
+         * Locale of the number and date formats (Intl) of the language: pt -> pt-PT
+         * @returns {string}
+         */
+        intlLocale() {
+            return intlLocale(this.locale);
+        },
+
+        /**
          * Sum of the transactions of the node selected in the flow diagram
          * @returns {number}
          */
@@ -240,13 +248,13 @@ const app = createApp({
 
         /**
          * Changes the application locale
-         * @param {string} newLocale - New locale code (e.g., 'fr', 'en')
+         * @param {string} newLocale - New locale code (one of LOCALES, i18n.js)
          */
         changeLocale(newLocale) {
             setLocale(newLocale);
             this.locale = newLocale;
             // Screen readers pronounce the page in its language
-            document.documentElement.lang = newLocale;
+            document.documentElement.lang = intlLocale(newLocale);
         },
 
         /**
@@ -448,11 +456,11 @@ const app = createApp({
         // === Formatting Methods (delegated to utils) ===
         
         formatAmount(amount) {
-            return formatters.formatAmount(amount, this.locale);
+            return formatters.formatAmount(amount, this.intlLocale);
         },
 
         formatDate(dateString) {
-            return formatters.formatDate(dateString, this.locale);
+            return formatters.formatDate(dateString, this.intlLocale);
         },
 
         getTransactionIcon(type) {
@@ -683,7 +691,7 @@ const app = createApp({
                 this.closeUserMenu();
             }
         });
-        document.documentElement.lang = this.locale;
+        document.documentElement.lang = this.intlLocale;
 
         // Check if already authenticated
         this.checkAuthentication();

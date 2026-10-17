@@ -331,12 +331,20 @@ class UserTest extends DatabaseTestCase
         $this->assertSame('user@example.com', $user['email']);
     }
 
+    public function testUpdateLanguage()
+    {
+        $this->loginAs(self::USER);
+        foreach (['es', 'it', 'de', 'pt', 'fr', 'en'] as $language) {
+            $this->assertSame($language, User::update(self::USER, language: $language)['language']);
+        }
+    }
+
     public function testUpdateInvalidLanguage()
     {
         $this->loginAs(self::USER);
         $this->expectException(Error::class);
         $this->expectExceptionCode(400);
-        User::update(self::USER, null, null, null, null, 'de');
+        User::update(self::USER, null, null, null, null, 'nl');
     }
 
     public function testUpdateDuplicateEmail()

@@ -30,13 +30,16 @@ class MessagesTest extends TestCase
         return $names;
     }
 
-    public function testBothLanguagesHaveTheSameKeysAndParameters()
+    public function testEveryLanguageHasTheSameKeysAndParameters()
     {
-        $this->assertSame(['fr', 'en'], array_keys(Messages::TEXTS));
-        $this->assertSame(array_keys(Messages::TEXTS['fr']), array_keys(Messages::TEXTS['en']));
-        foreach (Messages::TEXTS['fr'] as $key => $text) {
-            $this->assertNotSame('', trim($text), $key);
-            $this->assertSame(self::placeholders($text), self::placeholders(Messages::TEXTS['en'][$key]), "Parameters of $key");
+        $this->assertSame(['fr', 'en', 'es', 'it', 'de', 'pt'], array_keys(Messages::TEXTS));
+        $this->assertSame(Messages::LANGUAGES, array_keys(Messages::TEXTS));
+        foreach (Messages::LANGUAGES as $language) {
+            $this->assertSame(array_keys(Messages::TEXTS['fr']), array_keys(Messages::TEXTS[$language]), $language);
+            foreach (Messages::TEXTS['fr'] as $key => $text) {
+                $this->assertNotSame('', trim(Messages::TEXTS[$language][$key]), "$language: $key");
+                $this->assertSame(self::placeholders($text), self::placeholders(Messages::TEXTS[$language][$key]), "Parameters of $key in $language");
+            }
         }
         // Every plural has its two forms, with the count
         foreach (array_keys(Messages::TEXTS['fr']) as $key) {
@@ -53,10 +56,13 @@ class MessagesTest extends TestCase
         $this->assertSame('fr', Messages::language('fr'));
         $this->assertSame('en', Messages::language('en'));
         $this->assertSame('en', Messages::language(' EN '));
-        foreach (['', null, 'de', 'en-US', 'english'] as $language) {
+        foreach (['es', 'it', 'de', 'pt'] as $language) {
+            $this->assertSame($language, Messages::language(strtoupper($language)));
+        }
+        foreach (['', null, 'nl', 'en-US', 'pt-BR', 'english'] as $language) {
             $this->assertSame('fr', Messages::language($language), var_export($language, true));
         }
-        $this->assertSame('Dépense importante à vérifier', Messages::t('de', 'expense_title'));
+        $this->assertSame('Dépense importante à vérifier', Messages::t('nl', 'expense_title'));
     }
 
     public function testParametersAndUnknownKey()
@@ -77,6 +83,15 @@ class MessagesTest extends TestCase
         $this->assertSame('0 transactions to review', Messages::plural('en', 'sync_review', 0));
         $this->assertSame('1 transaction to review', Messages::plural('en', 'sync_review', 1));
         $this->assertSame('12 transactions to review', Messages::plural('en', 'sync_review', 12));
+        // Spanish, Italian, German, Portuguese: only 1 is singular
+        $this->assertSame('1 transacción por revisar', Messages::plural('es', 'sync_review', 1));
+        $this->assertSame('0 transacciones por revisar', Messages::plural('es', 'sync_review', 0));
+        $this->assertSame('1 transazione da verificare', Messages::plural('it', 'sync_review', 1));
+        $this->assertSame('2 transazioni da verificare', Messages::plural('it', 'sync_review', 2));
+        $this->assertSame('1 Transaktion zu prüfen', Messages::plural('de', 'sync_review', 1));
+        $this->assertSame('0 Transaktionen zu prüfen', Messages::plural('de', 'sync_review', 0));
+        $this->assertSame('1 transação por verificar', Messages::plural('pt', 'sync_review', 1));
+        $this->assertSame('0 transações por verificar', Messages::plural('pt', 'sync_review', 0));
     }
 
     public function testAmountsAndDates()
@@ -90,6 +105,16 @@ class MessagesTest extends TestCase
         $this->assertSame('Oct 15, 2026', Messages::date('en', '2026-10-15'));
         $this->assertSame('Jan 3, 2027', Messages::date('en', '2027-01-03 12:00:00'));
         $this->assertSame('', Messages::date('en', 'not a date'));
+
+        // es/it/de: dot for the thousands, pt: space; day first, dots in German
+        $this->assertSame('-1.234,56 €', Messages::amount('es', -1234.555));
+        $this->assertSame('1.234.567,00 €', Messages::amount('it', 1234567));
+        $this->assertSame('-1.234,56 €', Messages::amount('de', -1234.555));
+        $this->assertSame('-1 234,56 €', Messages::amount('pt', -1234.555));
+        $this->assertSame('15/10/2026', Messages::date('es', '2026-10-15'));
+        $this->assertSame('15/10/2026', Messages::date('it', '2026-10-15'));
+        $this->assertSame('15.10.2026', Messages::date('de', '2026-10-15'));
+        $this->assertSame('03/01/2027', Messages::date('pt', '2027-01-03 12:00:00'));
     }
 
     /**
@@ -121,6 +146,14 @@ class MessagesTest extends TestCase
                 ['Dépense importante à vérifier', 'CB SHOP : -1 500,00 €']],
             'expense en' => [fn() => [Messages::t('en', 'expense_title'), Messages::transaction('en', 'CB SHOP', -1500, 'bad date')],
                 ['Large expense to check', 'CB SHOP: -1,500.00 €']],
+            'sync success es' => [fn() => Bank::syncMessage('es', '111@bnp', true, null, 3),
+                ['Sincronización bancaria completada', '3 transacciones por revisar']],
+            'sync 2fa it' => [fn() => Bank::syncMessage('it', '111@bnp', false, self::TWO_FACTOR, 2),
+                ['Autenticazione forte richiesta', 'Apri Carbure (Conti) per approvare la connessione a BNP']],
+            'rule de' => [fn() => [Messages::t('de', 'rule_title', ['keyword' => 'EDF']), Messages::transaction('de', 'PRLV EDF', -1042.5, '2026-10-15')],
+                ['Neue Transaktion: EDF', 'PRLV EDF: -1.042,50 € am 15.10.2026']],
+            'expense pt' => [fn() => [Messages::t('pt', 'expense_title'), Messages::transaction('pt', 'CB SHOP', -1500, '2026-10-15')],
+                ['Despesa elevada a verificar', 'CB SHOP: -1 500,00 € em 15/10/2026']],
         ];
     }
 

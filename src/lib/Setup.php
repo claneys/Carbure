@@ -182,7 +182,7 @@ final class Setup {
                 'db_name' => getenv('DB_NAME') ?: 'carbure',
                 'db_user' => getenv('DB_USER') ?: 'carbure',
                 'admin_user' => 'admin',
-                'language' => in_array(getenv('LANGUAGE'), ['fr', 'en'], true) ? getenv('LANGUAGE') : 'fr',
+                'language' => in_array(getenv('LANGUAGE'), Messages::LANGUAGES, true) ? getenv('LANGUAGE') : 'fr',
             ],
         ];
     }

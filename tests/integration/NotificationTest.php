@@ -287,7 +287,7 @@ class NotificationTest extends DatabaseTestCase
     public function testEachUserGetsTheSyncResultInHisLanguage()
     {
         // admin: French, user: English, legacy: a language Carbure does not have (French)
-        Db::query("UPDATE users SET language = 'de' WHERE id = 3");
+        Db::query("UPDATE users SET language = 'nl' WHERE id = 3");
         Db::execute("INSERT INTO devices (name, token, user_id) VALUES ('iPad', ?, 2)", "s", str_repeat('b', 64));
         foreach ([self::ADMIN, self::USER, self::LEGACY] as $userId) {
             $this->setPreferences($userId, 'sync', true, true);

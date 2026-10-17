@@ -1,6 +1,6 @@
 // Languages of the portal: the texts of the language (portal/i18n/<locale>.json) are
 // loaded before the page is shown, <html lang> follows it, plurals by Intl.PluralRules
-const { test, expect, tr } = require('../fixtures');
+const { test, expect, tr, chooseLanguage } = require('../fixtures');
 
 /**
  * Records the translation files requested by the page
@@ -16,19 +16,6 @@ function translationRequests(page) {
         }
     });
     return requested;
-}
-
-/**
- * Chooses the language of the profile and saves it (the page reloads in that language)
- * @param {import('@playwright/test').Page} page
- * @param {string} from - Language shown
- * @param {string} to - Language chosen
- */
-async function chooseLanguage(page, from, to) {
-    await page.locator('.user-menu-toggle').click();
-    await page.getByRole('menuitem', { name: tr('myProfile', {}, from) }).click();
-    await page.getByLabel(tr('language', {}, from)).selectOption(to);
-    await page.getByRole('button', { name: tr('save', {}, from) }).click();
 }
 
 test('switches the language: the other file is loaded and <html lang> follows', async ({ userPage: page }) => {
@@ -57,6 +44,53 @@ test('switches the language: the other file is loaded and <html lang> follows', 
     expect([...new Set(requested)]).toEqual(['fr']);
 });
 
+test('Spanish, Italian, German and Portuguese: the profile switches the portal to each one', async ({ userPage: page }) => {
+    test.setTimeout(120_000);
+    const requested = translationRequests(page);
+    let from = 'fr';
+    for (const [locale, lang] of [['es', 'es'], ['it', 'it'], ['de', 'de'], ['pt', 'pt-PT']]) {
+        requested.length = 0;
+        await chooseLanguage(page, from, locale);
+        await expect(page.locator('html')).toHaveAttribute('lang', lang);
+        // The language, and French as the fallback of a missing key
+        expect([...new Set(requested)].sort()).toEqual([locale, 'fr'].sort());
+        for (const tab of ['tabBudget', 'tabInsights', 'tabTrends']) {
+            await expect(page.locator('.tabs').getByRole('button', { name: tr(tab, {}, locale), exact: true })).toBeVisible();
+        }
+        // The plural forms of the language
+        await page.locator('.tabs').getByRole('button', { name: tr('tabTransactions', {}, locale), exact: true }).click();
+        await expect(page.locator('.transaction-count')).toHaveText(tr('transactionCount', { count: 6 }, locale));
+        await page.getByRole('searchbox', { name: tr('searchPlaceholder', {}, locale) }).fill('PETIT ZINC');
+        await expect(page.locator('.transaction-count')).toHaveText(tr('transactionCount', { count: 1 }, locale));
+        await page.getByRole('button', { name: tr('clearSearch', {}, locale) }).click();
+        // The language is kept after a reload, in its own name in the selector
+        await page.reload();
+        await expect(page.locator('html')).toHaveAttribute('lang', lang);
+        await page.locator('.user-menu-toggle').click();
+        await page.getByRole('menuitem', { name: tr('myProfile', {}, locale) }).click();
+        await expect(page.getByLabel(tr('language', {}, locale))).toHaveValue(locale);
+        await page.keyboard.press('Escape');
+        from = locale;
+    }
+    expect((await page.locator('#profile-language option').allTextContents()).map(s => s.trim()))
+        .toEqual(['Français', 'English', 'Español', 'Italiano', 'Deutsch', 'Português']);
+});
+
+test('the amounts and dates follow the language: German, European Portuguese', async ({ userPage: page }) => {
+    const amounts = async locale => {
+        await page.locator('.tabs').getByRole('button', { name: tr('tabTransactions', {}, locale), exact: true }).click();
+        await expect(page.locator('.transaction-amount').first()).toBeVisible();
+        return (await page.locator('.transaction-amount').allTextContents()).join(' ');
+    };
+    await chooseLanguage(page, 'fr', 'en');
+    expect(await amounts('en')).toMatch(/\d\.\d\d/);
+    await chooseLanguage(page, 'en', 'de');
+    expect(await amounts('de')).toMatch(/\d,\d\d/);
+    await chooseLanguage(page, 'de', 'pt');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'pt-PT');
+    expect(await amounts('pt')).toMatch(/\d,\d\d/);
+});
+
 test('the translation files are versioned against stale caches', async ({ page }) => {
     const urls = [];
     page.on('request', request => {
@@ -73,7 +107,7 @@ test('the translation files are versioned against stale caches', async ({ page }
 });
 
 test('the translation files are served as JSON', async ({ request }) => {
-    for (const locale of ['fr', 'en']) {
+    for (const locale of ['fr', 'en', 'es', 'it', 'de', 'pt']) {
         const response = await request.get(`/portal/i18n/${locale}.json`);
         expect(response.ok()).toBeTruthy();
         expect(response.headers()['content-type']).toContain('application/json');

@@ -22,7 +22,7 @@ qui consultent les mêmes données.
   insights sont communs à tous les utilisateurs. Une transaction appartient techniquement au
   premier utilisateur qui suit le compte, mais tous la voient et la pointent.
 - **Données personnelles** : chaque utilisateur a son identifiant, son mot de passe, sa
-  langue (français ou anglais), son thème d'affichage, ses seuils d'alerte, les canaux de ses
+  langue (français, anglais, espagnol, italien, allemand ou portugais), son thème d'affichage, ses seuils d'alerte, les canaux de ses
   notifications (push, email), ses appareils iPhone et ses jetons d'accès pour les agents IA.
 - **Deux profils** :
 
@@ -366,10 +366,12 @@ profil :
 Le **badge** de l'app indique le nombre de transactions à vérifier. Le seuil d'alerte se
 règle dans **Mon profil → Notifications**, sous « Dépense importante » (vide = pas d'alerte).
 
-Chaque notification est rédigée dans la **langue du profil** de son destinataire (français
-ou anglais ; toute autre valeur donne le français), en push comme par email : titre, texte,
-sujet et signature de l'email. Les montants et les dates suivent cette langue
-(`-1 234,56 €` et `15/10/2026` en français, `-1,234.56 €` et `Oct 15, 2026` en anglais) ;
+Chaque notification est rédigée dans la **langue du profil** de son destinataire (français,
+anglais, espagnol, italien, allemand ou portugais ; toute autre valeur donne le français),
+en push comme par email : titre, texte, sujet et signature de l'email. Les montants et les
+dates suivent cette langue (`-1 234,56 €` et `15/10/2026` en français et en portugais,
+`-1,234.56 €` et `Oct 15, 2026` en anglais, `-1.234,56 €` et `15/10/2026` en espagnol et
+en italien, `-1.234,56 €` et `15.10.2026` en allemand) ;
 l'erreur d'une synchronisation en échec est reprise telle que la banque (woob) la renvoie.
 Les textes du serveur sont regroupés dans `src/lib/Messages.php`.
 

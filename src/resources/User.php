@@ -16,14 +16,15 @@ use Carbure\Lib\Config;
 use Carbure\Lib\Db;
 use Carbure\Lib\Jwt;
 use Carbure\Lib\Logger;
+use Carbure\Lib\Messages;
 use Error;
 
 final class User {
 
     /**
-     * Supported interface languages
+     * Supported interface languages: those of the portal and of the server messages
      */
-    private const LANGUAGES = ['fr', 'en'];
+    private const LANGUAGES = Messages::LANGUAGES;
 
     /**
      * Display themes of the portal: system (follows the system preference), light, dark
@@ -421,7 +422,7 @@ final class User {
      * @param string|null $firstname The first name (optional)
      * @param string|null $lastname  The last name (optional)
      * @param string|null $password  The new password (optional, will be hashed)
-     * @param string|null $language  The interface language (optional, fr|en)
+     * @param string|null $language  The interface language (optional, fr|en|es|it|de|pt)
      * @param float|string|null $alertThreshold Push alert threshold for new expenses
      *                                    (optional, "" or 0 disables the alerts)
      * @param bool|int|string|null $is_admin Administrator profile (optional, administrators only): true, "true", 1...
@@ -533,7 +534,7 @@ final class User {
      * @param string|null            $email          The email
      * @param string|null            $firstname      The first name
      * @param string|null            $lastname       The last name
-     * @param string|null            $language       The interface language (fr|en)
+     * @param string|null            $language       The interface language (fr|en|es|it|de|pt)
      * @param int|null               $is_admin       Administrator flag (1 or 0)
      * @param float|int|string|null  $alertThreshold Push alert threshold ("" or 0 disables)
      * @param string|null            $password       The new password (hashed here)

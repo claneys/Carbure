@@ -30,9 +30,18 @@ class BudgetAlertMessageTest extends TestCase
             BudgetAlert::message('fr', 'Loyer', 1020, 1200, 85));
         $this->assertSame(['Budget almost reached: Rent', '1,020.00 € of 1,200.00 € (85%)'],
             BudgetAlert::message('en', 'Rent', 1020, 1200, 85));
+        // Spanish, Italian, German, Portuguese: their own separators
+        $this->assertSame(['Presupuesto superado: Supermercado', '1.312,40 € de 1.300,00 € (101 %)'],
+            BudgetAlert::message('es', 'Supermercado', 1312.40, 1300, 101));
+        $this->assertSame(['Budget quasi raggiunto: Affitto', '1.020,00 € su 1.200,00 € (85%)'],
+            BudgetAlert::message('it', 'Affitto', 1020, 1200, 85));
+        $this->assertSame(['Budget überschritten: Einkäufe', '312,40 € von 300,00 € (104 %)'],
+            BudgetAlert::message('de', 'Einkäufe', 312.40, 300, 104));
+        $this->assertSame(['Orçamento quase atingido: Renda', '1 020,00 € de 1 200,00 € (85 %)'],
+            BudgetAlert::message('pt', 'Renda', 1020, 1200, 85));
         // A language not supported: French, as the other notifications
         $this->assertSame(['Budget dépassé : Courses', '312,40 € sur 300,00 € (104 %)'],
-            BudgetAlert::message('de', 'Courses', 312.40, 300, 104));
+            BudgetAlert::message('nl', 'Courses', 312.40, 300, 104));
     }
 
     public function testThresholdValue()

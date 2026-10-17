@@ -42,7 +42,7 @@ export function createCategoriesModule(getApiService) {
              * @returns {Array<{category: Object, children: Array}>}
              */
             categoryTree() {
-                const byName = (a, b) => a.name.localeCompare(b.name, this.locale);
+                const byName = (a, b) => a.name.localeCompare(b.name, this.intlLocale);
                 return this.categories
                     .filter(c => Number(c.parent_category) === 0 || Number(c.id) === 0)
                     .sort((a, b) => Number(a.id) === 0 ? -1 : Number(b.id) === 0 ? 1 : byName(a, b))
