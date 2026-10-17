@@ -48,6 +48,7 @@ const ADMIN_TABS = ['rules', 'categories', 'accounts', 'users', 'logs', 'config'
  */
 const ADMINISTRATION_TABS = [
     { key: 'users', icon: 'people', label: 'tabUsers' },
+    { key: 'categories', icon: 'category', label: 'tabCategories' },
     { key: 'sync', icon: 'sync', label: 'tabSync' },
     { key: 'agents', icon: 'smart_toy', label: 'tabAgents' },
     { key: 'logs', icon: 'receipt_long', label: 'tabLogs' },

@@ -208,6 +208,10 @@ abonnements, factures, remboursements…
 
 ## Catégories
 
+Réservées aux administrateurs : menu **Administration** → **Catégories**. L'API refuse
+la création, la modification et la suppression d'une catégorie aux autres utilisateurs
+(`403`) ; tous lisent la liste (transactions, budgets, application iOS).
+
 ![Catégories hiérarchiques de dépenses et de revenus, avec leur icône et leur couleur](assets/screenshot-categories.png)
 
 - **Deux niveaux** : des catégories (Alimentation) et leurs sous-catégories (Supermarché,
@@ -457,8 +461,8 @@ Détails : [Portail web](portail.md#accessibilite).
 
 ## Administration
 
-Les onglets **Règles**, **Catégories** et **Comptes**, et le menu **Administration**
-(**Utilisateurs**, **Logs**, **Paramètres**, **Synchro**, **Agent IA**, **Sauvegarde**, **API**) sont réservés aux administrateurs ; les autres
+Les onglets **Règles** et **Comptes**, et le menu **Administration**
+(**Utilisateurs**, **Catégories**, **Logs**, **Paramètres**, **Synchro**, **Agent IA**, **Sauvegarde**, **API**) sont réservés aux administrateurs ; les autres
 utilisateurs ouvrent **Agent IA** depuis leur menu.
 
 - **Utilisateurs** : création, modification (dont le profil), suppression, dernière

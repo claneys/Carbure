@@ -53,7 +53,7 @@ Deux profils existent :
 | Profil | Onglets |
 |---|---|
 | **Utilisateur** | Transactions, Budget, Insights, Tendances ; **Agent IA** et **Mon profil** dans le menu utilisateur |
-| **Administrateur** | En plus : Règles, Catégories, Comptes, et le menu **Administration** (Utilisateurs, Synchro, Agent IA, Logs, Paramètres, Sauvegarde, API) ; ajout et modification des insights ; activation du serveur MCP ; mise à jour de la base de données |
+| **Administrateur** | En plus : Règles, Comptes, et le menu **Administration** (Utilisateurs, Catégories, Synchro, Agent IA, Logs, Paramètres, Sauvegarde, API) ; ajout et modification des insights ; activation du serveur MCP ; mise à jour de la base de données |
 
 Les pages d'administration (Règles, Catégories, Comptes, Utilisateurs) et les onglets
 Insights et Agent IA suivent la même présentation : un en-tête avec le titre et l'aide, et

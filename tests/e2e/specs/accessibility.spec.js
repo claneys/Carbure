@@ -22,7 +22,7 @@ test('the login screen is readable', async ({ page }) => {
 
 test('every tab is readable, buttons on hover included', async ({ adminPage: page }) => {
     const problems = [];
-    const tabs = ['tabTransactions', 'tabBudget', 'tabInsights', 'tabTrends', 'tabRules', 'tabCategories', 'tabAccounts'];
+    const tabs = ['tabTransactions', 'tabBudget', 'tabInsights', 'tabTrends', 'tabRules', 'tabAccounts'];
     for (const tab of tabs) {
         await openTab(page, tr(tab));
         await expect(page.locator('.tab-button.active')).toContainText(tr(tab));
@@ -33,7 +33,7 @@ test('every tab is readable, buttons on hover included', async ({ adminPage: pag
     }
 
     await page.locator('.tabs').getByRole('button', { name: tr('tabAdministration'), exact: true }).click();
-    for (const tab of ['tabUsers', 'tabSync', 'tabAgents', 'tabLogs', 'tabSettings', 'tabBackup']) {
+    for (const tab of ['tabUsers', 'tabCategories', 'tabSync', 'tabAgents', 'tabLogs', 'tabSettings', 'tabBackup']) {
         await page.getByRole('tab', { name: tr(tab), exact: true }).click();
         await expect(page.getByRole('tab', { name: tr(tab), exact: true })).toHaveAttribute('aria-selected', 'true');
         await page.waitForLoadState('networkidle');

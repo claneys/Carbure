@@ -417,15 +417,6 @@
             <button 
                 v-if="isAdmin"
                 class="tab-button" 
-                :class="{ active: activeTab === 'categories' }"
-                :aria-current="activeTab === 'categories' ? 'page' : null" 
-                @click="setActiveTab('categories')">
-                <span class="material-icons" aria-hidden="true">category</span>
-                {{ t('tabCategories') }}
-            </button>
-            <button 
-                v-if="isAdmin"
-                class="tab-button" 
                 :class="{ active: activeTab === 'accounts' }"
                 :aria-current="activeTab === 'accounts' ? 'page' : null" 
                 @click="setActiveTab('accounts')">

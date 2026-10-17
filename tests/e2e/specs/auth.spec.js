@@ -1,7 +1,7 @@
 // Login screen, logout, expired session and the tabs of each role
 const { test, expect, tr } = require('../fixtures');
 
-const ADMIN_TABS = ['tabRules', 'tabCategories', 'tabAccounts', 'tabAdministration'];
+const ADMIN_TABS = ['tabRules', 'tabAccounts', 'tabAdministration'];
 const USER_TABS = ['tabTransactions', 'tabBudget', 'tabInsights', 'tabTrends'];
 
 test('logs in and out from the login screen', async ({ page }) => {
@@ -71,15 +71,15 @@ test('shows every tab to an administrator', async ({ adminPage: page }) => {
     }
 });
 
-test('groups the users, the logs, the settings, the sync, the AI agent and the backup under Administration', async ({ adminPage: page }) => {
+test('groups the users, the categories, the logs, the settings, the sync, the AI agent and the backup under Administration', async ({ adminPage: page }) => {
     const tabs = page.locator('.tabs');
-    for (const key of ['tabUsers', 'tabLogs', 'tabSettings', 'tabSync', 'tabAgents', 'tabBackup']) {
+    for (const key of ['tabUsers', 'tabCategories', 'tabLogs', 'tabSettings', 'tabSync', 'tabAgents', 'tabBackup']) {
         await expect(tabs.getByRole('button', { name: tr(key), exact: true })).toHaveCount(0);
     }
 
     await tabs.getByRole('button', { name: tr('tabAdministration'), exact: true }).click();
     const sections = page.getByRole('tablist', { name: tr('tabAdministration') });
-    await expect(sections.getByRole('tab')).toHaveText([tr('tabUsers'), tr('tabSync'), tr('tabAgents'), tr('tabLogs'), tr('tabSettings'), tr('tabBackup'), tr('tabApi')].map(label => new RegExp(`${label}$`)));
+    await expect(sections.getByRole('tab')).toHaveText([tr('tabUsers'), tr('tabCategories'), tr('tabSync'), tr('tabAgents'), tr('tabLogs'), tr('tabSettings'), tr('tabBackup'), tr('tabApi')].map(label => new RegExp(`${label}$`)));
     await expect(sections.getByRole('tab', { name: tr('tabUsers') })).toHaveAttribute('aria-selected', 'true');
     await expect(page.getByRole('heading', { name: tr('usersTitle') })).toBeVisible();
 

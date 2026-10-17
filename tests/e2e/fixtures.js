@@ -102,7 +102,7 @@ const test = base.test.extend({
 });
 
 /** Tabs grouped under "Administration" (see ADMINISTRATION_TABS in portal/app.js) */
-const ADMINISTRATION_TABS = ['tabUsers', 'tabLogs', 'tabAgents'];
+const ADMINISTRATION_TABS = ['tabUsers', 'tabCategories', 'tabLogs', 'tabAgents'];
 
 /**
  * Opens a tab of the main navigation; the tabs of the Administration menu through it
