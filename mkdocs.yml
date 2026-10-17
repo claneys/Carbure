@@ -79,16 +79,16 @@ nav:
   - Fonctionnalités: fonctionnalites.md
   - Recettes d'insights: insights.md
   - Comparatif: comparatif.md
-  - Architecture: architecture.md
   - Mise en route:
       - Installation: installation.md
       - NAS Synology: synology.md
       - Configuration: configuration.md
   - Utilisation:
-      - API: api.md
       - Portail web: portail.md
       - Agents IA (MCP): mcp.md
   - Technique:
+      - Architecture: architecture.md
+      - API: api.md
       - Modèle de données: modele-donnees.md
       - Développement: developpement.md
       - Sécurité: securite.md

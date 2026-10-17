@@ -15,6 +15,8 @@ page rassemble des **recettes** prêtes à copier dans la fenêtre d'ajout d'un 
 Toutes les requêtes de cette page sont vérifiées par les tests de Carbure : elles respectent
 les règles ci-dessous et s'exécutent sur une base de test, avec le résultat attendu.
 
+![Fenêtre d'ajout d'un insight remplie avec la recette « Panier moyen des courses » : nom, couleur, icône et requête SQL, vérifiée pendant la saisie avec son résultat pour le mois affiché](assets/screenshot-insight-recipe.png)
+
 ## Règles d'une requête
 
 Le serveur refuse une requête qui ne les respecte pas (la fenêtre d'ajout l'indique pendant
