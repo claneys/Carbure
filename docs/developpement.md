@@ -413,19 +413,6 @@ Avec `?debug=true`, une clé manquante est signalée une fois dans la console.
 4. Lancer les tests : `node --test 'tests/portal/*.test.mjs'` (les fichiers de
    `portal/i18n/` sont tous vérifiés) et `composer test` (`MessagesTest`, `StarterTest`).
 
-### Branches commencées avant le découpage
-
-Une branche qui ajoutait des clés dans l'ancien `portal/i18n.js` (un objet `fr` puis
-`en`) les reporte dans les fichiers JSON avec `tools/i18n-split.mjs` :
-
-```bash
-git show <branche>:portal/i18n.js > /tmp/old-i18n.js   # avant le rebase
-git rebase origin/main                                   # garder le i18n.js de main
-node tools/i18n-split.mjs --merge /tmp/old-i18n.js       # ajoute seulement les clés absentes
-```
-
-Les textes en « (s) » restants sont signalés : les écrire en `_one` / `_other`.
-
 ## Documentation
 
 ```bash

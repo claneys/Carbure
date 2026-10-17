@@ -179,7 +179,3 @@ keeps track of what was done).
       only the French starter category; an installation in another language (`Savings`,
       `Ahorro`, `Risparmio`, `Sparen`, `Poupança`) has to set it in Settings. Use the
       starter category id (31) or a default per language.
-- [ ] Once the branches started before the split of the translations (#139) are merged
-      (email notifications, theme toggle, budget alerts, PWA), remove
-      `tools/i18n-split.mjs` (conversion of the old `portal/i18n.js`, see
-      docs/developpement.md) and its section of the docs.
