@@ -150,7 +150,8 @@ automatic too. On a Synology NAS, follow the
 ## Contributing
 
 Contributions are welcome: read [AGENTS.md](AGENTS.md) (conventions, tests, definition of
-done) and the open tasks in [TODO.md](TODO.md). Found a bug or have an idea?
+done) and the open tasks in [TODO.md](TODO.md). A question? Ask it in
+[Discussions](https://github.com/ltoinel/Carbure/discussions). Found a bug?
 [Open an issue](https://github.com/ltoinel/Carbure/issues). If Carbure is useful to you,
 a ⭐ helps others find it.
 

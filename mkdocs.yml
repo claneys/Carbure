@@ -54,6 +54,13 @@ plugins:
 # No "Made with Material for MkDocs" in the footer
 extra:
   generator: false
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/ltoinel/Carbure
+      name: Code source sur GitHub
+    - icon: material/forum-outline
+      link: https://github.com/ltoinel/Carbure/discussions
+      name: "Discussions : questions et idées"
 
 extra_css:
   - stylesheets/extra.css

@@ -66,6 +66,7 @@ insights, notifications, agent IA et foyer.*
 - Comprendre le fonctionnement : [Architecture](architecture.md)
 - Intégrer un client : [Référence de l'API](api.md)
 - Contribuer : [Développement](developpement.md)
+- Poser une question, partager une idée ou une astuce : [Discussions GitHub](https://github.com/ltoinel/Carbure/discussions)
 
 !!! info "Modèle « foyer »"
     Tous les utilisateurs d'une installation partagent les mêmes comptes bancaires,

@@ -151,8 +151,8 @@ base de données sont, elles aussi, automatiques. Sur un NAS Synology, suivez le
 ## Contribuer
 
 Les contributions sont les bienvenues : lisez [AGENTS.md](AGENTS.md) (conventions, tests,
-définition de « terminé ») et la liste des tâches ouvertes dans [TODO.md](TODO.md). Un bug, une
-idée ? [Ouvrez une issue](https://github.com/ltoinel/Carbure/issues). Si Carbure vous est utile,
+définition de « terminé ») et la liste des tâches ouvertes dans [TODO.md](TODO.md). Une question ?
+Posez-la dans les [Discussions](https://github.com/ltoinel/Carbure/discussions). Un bug ? [Ouvrez une issue](https://github.com/ltoinel/Carbure/issues). Si Carbure vous est utile,
 une ⭐ aide d'autres personnes à le découvrir.
 
 Pour développer, `./start.sh` démarre l'environnement de développement avec Docker : l'image

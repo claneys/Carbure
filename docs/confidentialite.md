@@ -139,6 +139,9 @@ spécifiquement aux enfants et ne collecte sciemment aucune donnée les concerna
 
 Ludovic Toinel — [contact@carbure.org](mailto:contact@carbure.org)
 
+Pour une question sur l'application qui ne concerne pas vos données personnelles,
+vous pouvez aussi utiliser les [Discussions GitHub](https://github.com/ltoinel/Carbure/discussions).
+
 Cette politique peut évoluer avec l'application ; la date de dernière mise à jour figure
 en haut de la page.
 

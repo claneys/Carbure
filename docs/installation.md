@@ -331,3 +331,9 @@ lancé à chaque démarrage et met à jour tous les modules bancaires. L'option
 `woob_auto_update=true` ne suffit pas : woob ne propose une nouvelle version d'un module
 qu'après un plantage de ce module, et Carbure ne peut pas répondre à sa question.
 
+## Besoin d'aide ?
+
+Une question sur l'installation, la configuration ou l'utilisation ? Posez-la dans les
+[Discussions GitHub](https://github.com/ltoinel/Carbure/discussions) (catégorie **Q&A**) : la réponse profitera aux autres
+utilisateurs. Réservez les [issues](https://github.com/ltoinel/Carbure/issues) aux bugs
+avérés, et signalez une faille de sécurité en privé (voir [Sécurité](securite.md)).
