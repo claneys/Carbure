@@ -304,6 +304,20 @@ class MfaTest extends DatabaseTestCase
         $this->assertArrayHasKey('token', User::login('user', 'userpass', $device));
     }
 
+    public function testModelAndVersionsRegisteredAfterTheSecondStep()
+    {
+        $this->enforce();
+        $secret = $this->enroll(self::USER);
+        // The released Android app sends no platform: deduced from its FCM token
+        $device = ['name' => 'Google Pixel 8', 'token' => 'fcm-token:' . str_repeat('f', 40),
+            'model' => 'Google Pixel 8', 'os_version' => 'Android 15', 'app_version' => '1.0'];
+
+        $challenge = User::login('user', 'userpass', $device, true);
+        Mfa::login($challenge['mfa_token'], Totp::code($secret, time()), false, $device);
+        $this->assertSame(['platform' => 'android', 'model' => 'Google Pixel 8', 'os_version' => 'Android 15', 'app_version' => '1.0'],
+            Db::queryOne("SELECT platform, model, os_version, app_version FROM devices WHERE token = ?", "s", $device['token']));
+    }
+
     public function testAndroidDeviceRegisteredAfterTheSecondStep()
     {
         $this->enforce();

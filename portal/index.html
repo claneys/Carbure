@@ -2140,6 +2140,7 @@
                                     <span class="material-icons device-icon" aria-hidden="true">{{ devicePlatform(device).icon }}</span>
                                     <div class="device-details">
                                         <div class="device-name">{{ device.name || t('unnamedDevice') }}</div>
+                                        <div v-if="deviceDetails(device)" class="device-model">{{ deviceDetails(device) }}</div>
                                         <div class="device-meta">
                                             <span class="device-platform">{{ t(devicePlatform(device).label) }}</span> · {{ t('lastLogin') }} : {{ formatDate(device.lastLogin) }}
                                         </div>

@@ -137,6 +137,61 @@ class DeviceTest extends DatabaseTestCase
         User::login('user', 'userpass', ['name' => 'Phone', 'token' => str_repeat('c', 64), 'platform' => 'windows']);
     }
 
+    public function testPlatformDeducedFromTheToken()
+    {
+        // The released Android app sends no platform: its FCM token is not an APNs one
+        $token = 'dXk9fake-Token_01:APA91bHkFakeFirebaseCloudMessagingToken';
+        User::login('user', 'userpass', ['name' => 'Google Pixel 8', 'token' => $token]);
+        // An older iOS app sends no platform either: its APNs token is
+        User::login('user', 'userpass', ['name' => 'iPhone16,1', 'token' => str_repeat('e', 64), 'platform' => '']);
+        $this->loginAs(self::USER);
+        $this->assertEqualsCanonicalizing([[$token, 'android'], [str_repeat('e', 64), 'ios']],
+            array_map(fn($d) => [$d['token'], $d['platform']], Device::getMine()));
+
+        Device::sendNotification(self::USER, 'Title', 'Body');
+        $this->assertSame('android', array_column(FakePushRelay::requests(), 'platform', 'token')[$token]);
+    }
+
+    public function testModelAndVersionsAtLogin()
+    {
+        $token = str_repeat('e', 64);
+        User::login('user', 'userpass', ['name' => 'iPhone16,1', 'token' => $token, 'platform' => 'ios',
+            'model' => ' iPhone16,1 ', 'os_version' => 'iOS 26.0', 'app_version' => '1.2']);
+        $this->loginAs(self::USER);
+        $device = Device::getMine()[0];
+        $this->assertSame(['iPhone16,1', 'iOS 26.0', '1.2'], [$device['model'], $device['os_version'], $device['app_version']]);
+
+        // Updated at every login: an app that no longer sends one forgets it
+        User::login('user', 'userpass', ['name' => 'iPhone16,1', 'token' => $token, 'os_version' => 'iOS 26.1', 'app_version' => '1.3']);
+        $device = Device::getMine()[0];
+        $this->assertSame([null, 'iOS 26.1', '1.3', 'ios'], [$device['model'], $device['os_version'], $device['app_version'], $device['platform']]);
+
+        // A device registered by an app that sends none of them
+        $this->loginAs(self::ADMIN);
+        $device = Device::getMine()[0];
+        $this->assertSame([null, null, null], [$device['model'], $device['os_version'], $device['app_version']]);
+    }
+
+    public function testBeforeTheModelMigration()
+    {
+        $columns = new ReflectionProperty(Device::class, 'detailsColumns');
+        Db::query("ALTER TABLE devices DROP COLUMN model, DROP COLUMN os_version, DROP COLUMN app_version");
+        $columns->setValue(null, null);
+        try {
+            // The details are ignored, the login does not fail; null in the list
+            User::login('user', 'userpass', ['name' => 'Google Pixel 8', 'token' => 'fcm:APA91bBeforeMigration',
+                'model' => 'Google Pixel 8', 'os_version' => 'Android 15', 'app_version' => '1.0']);
+            $device = Device::get(self::USER)[0];
+            $this->assertSame(['android', null, null, null],
+                [$device['platform'], $device['model'], $device['os_version'], $device['app_version']]);
+        } finally {
+            Db::query("ALTER TABLE devices ADD COLUMN model varchar(100) DEFAULT NULL AFTER platform,
+                ADD COLUMN os_version varchar(50) DEFAULT NULL AFTER model,
+                ADD COLUMN app_version varchar(20) DEFAULT NULL AFTER os_version");
+            $columns->setValue(null, null);
+        }
+    }
+
     public function testBeforeThePlatformMigration()
     {
         $column = new ReflectionProperty(Device::class, 'platformColumn');

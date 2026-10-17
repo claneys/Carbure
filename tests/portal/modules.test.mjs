@@ -546,7 +546,7 @@ test('accountsByBank: the followed accounts under their bank, then the others', 
     assert.deepEqual(accountsByBank(undefined, [{ id: 9, bank_name: 'x' }]).map(g => g.key), ['others']);
 });
 
-test('profile: sub-tabs, the two-factor one hidden before its migration; platform of a device', async () => {
+test('profile: sub-tabs, the two-factor one hidden before its migration; platform, model and versions of a device', async () => {
     const { createProfileModule, PROFILE_TABS } = await import('../../portal/modules/profileModule.js');
     assert.deepEqual(PROFILE_TABS.map(tab => tab.key), ['profile', 'security', 'notifications', 'devices']);
     const module = createProfileModule(() => null);
@@ -560,6 +560,16 @@ test('profile: sub-tabs, the two-factor one hidden before its migration; platfor
     assert.deepEqual(devicePlatform({ platform: 'ios' }), { icon: 'phone_iphone', label: 'devicePlatform_ios' });
     // A server older than the platform column: iOS
     assert.deepEqual(devicePlatform({}), { icon: 'phone_iphone', label: 'devicePlatform_ios' });
+
+    // Model and versions sent by the app, only those known
+    const context = { t: (key, params) => `${key}:${params.version}` };
+    const details = device => module.methods.deviceDetails.call(context, device);
+    assert.equal(details({ model: 'iPhone16,1', os_version: 'iOS 26.0', app_version: '1.2' }), 'iPhone16,1 · iOS 26.0 · deviceAppVersion:1.2');
+    assert.equal(details({ model: 'Google Pixel 8', os_version: null, app_version: ' ' }), 'Google Pixel 8');
+    assert.equal(details({ os_version: 'Android 15', app_version: '1.0' }), 'Android 15 · deviceAppVersion:1.0');
+    // A server older than these columns, or an app that does not send them
+    assert.equal(details({ model: null, os_version: null, app_version: null }), '');
+    assert.equal(details({}), '');
 });
 
 test('profile: the header toggle switches the theme at once and saves it in the profile', async () => {

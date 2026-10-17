@@ -470,8 +470,9 @@ Quatre sous-onglets, comme l'administration : **Profil**, **Double authentificat
   confirmation). Les navigateurs de confiance sont dans **Mes appareils**.
 - **Mes appareils** :
   - **Applications mobiles** : appareils enregistrés à la connexion depuis l'app, avec
-    leur plateforme (icône et libellé **iOS** ou **Android**), la date de dernière connexion
-    et le token de notification, masqué par défaut. Les boutons permettent de l'afficher en
+    leur plateforme (icône et libellé **iOS** ou **Android**), la date de dernière connexion,
+    le modèle, la version du système et celle de l'application quand l'app les envoie
+    (« iPhone16,1 · iOS 26.0 · app 1.2 ») et le token de notification, masqué par défaut. Les boutons permettent de l'afficher en
     entier, de le copier (HTTPS requis ; sinon le token est affiché) ou de **supprimer** un
     ancien appareil (`GET`/`DELETE /device`) ;
   - **Navigateurs de confiance** : navigateurs web où le code de double authentification

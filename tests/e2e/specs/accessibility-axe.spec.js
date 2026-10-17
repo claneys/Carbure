@@ -167,6 +167,8 @@ test('axe: the notifications of the profile and the result of the test email', a
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.getByRole('tab', { name: tr('myDevices'), exact: true }).click();
     await expect(page.getByRole('heading', { name: tr('myDevices') })).toBeVisible();
+    // Model and versions of the seeded iPhone, in secondary text
+    await expect(page.locator('.device-model').first()).toBeVisible();
     problems.push(...await axeViolations(page, tr('myDevices')));
     await page.getByRole('tab', { name: tr('notificationsTitle'), exact: true }).click();
     await expect(page.locator('#notifications-email-unavailable')).toBeVisible();

@@ -127,7 +127,8 @@ function carbure_e2e_seed($demo = false)
     $conn->query("INSERT INTO budget_insight (id, name, color, `sql`) VALUES
         (1, 'Dépenses', 'red', 'SELECT SUM(amount) AS amount FROM bank_transaction WHERE amount < 0 AND MONTH(date)={month} AND YEAR(date)={year}')");
 
-    $exec("INSERT INTO devices (name, token, user_id) VALUES ('iPhone de Ada', ?, 1)", "s", str_repeat('ab12', 16));
+    $exec("INSERT INTO devices (name, token, model, os_version, app_version, user_id)
+        VALUES ('iPhone de Ada', ?, 'iPhone16,1', 'iOS 26.0', '1.2', 1)", "s", str_repeat('ab12', 16));
 
     if ($demo) {
         carbure_demo_data($exec);

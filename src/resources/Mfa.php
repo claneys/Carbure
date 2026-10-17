@@ -121,7 +121,7 @@ final class Mfa {
      * @param string                    $mfa_token The challenge given by POST /user/login
      * @param string                    $code      The code of the authenticator app (6 digits), or a recovery code
      * @param bool|int|string|null      $trust     Trust this browser for 6 months: true, "true", 1...
-     * @param array<string, mixed>|null $device    The device to register ('name', 'token', optional 'platform'), as POST /user/login
+     * @param array<string, mixed>|null $device    The device to register ('name', 'token', optional 'platform', 'model', 'os_version', 'app_version'), as POST /user/login
      * @return array<string, mixed> The session (exp, sub, iat, token, as POST /user/login), and
      *               recovery_codes when the authenticator was registered at this step
      * @throws Error If the challenge expired (403), the code is wrong (401) or the account is locked (423)

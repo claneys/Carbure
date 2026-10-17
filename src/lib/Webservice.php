@@ -30,6 +30,9 @@ final class Webservice {
      */
     private const CONTENT_TYPE_SSE = "Content-Type: text/event-stream";
 
+    /** Fields always kept as texts in the responses: versions such as "1.10" or "15" (devices) */
+    private const TEXT_FIELDS = ['model', 'os_version', 'app_version'];
+
     /**
      * The calls that led to an exception, without their arguments: they may hold
      * passwords (bank credentials, login) that the masking of Logger cannot find in a
@@ -304,7 +307,8 @@ final class Webservice {
     /**
      * Convert the numeric strings returned by MySQL (amounts, ids...) to JSON numbers,
      * like JSON_NUMERIC_CHECK, but keep as strings the identifiers that a number would
-     * alter: leading zeros ("00087654321") or more digits than a number can hold exactly.
+     * alter: leading zeros ("00087654321") or more digits than a number can hold exactly,
+     * and the fields that are always texts (TEXT_FIELDS: "1.10" is not 1.1).
      *
      * @param mixed $value The response
      * @return mixed The response with numbers
@@ -312,7 +316,12 @@ final class Webservice {
     public static function normalizeNumbers(mixed $value): mixed
     {
         if (is_array($value)) {
-            return array_map([self::class, 'normalizeNumbers'], $value);
+            foreach ($value as $key => $item) {
+                if (!in_array($key, self::TEXT_FIELDS, true)) {
+                    $value[$key] = self::normalizeNumbers($item);
+                }
+            }
+            return $value;
         }
         if (is_string($value) && preg_match('/^-?(0|[1-9][0-9]{0,14})(\.[0-9]{1,15})?$/', $value)) {
             return str_contains($value, '.') ? (float)$value : (int)$value;

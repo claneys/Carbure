@@ -74,7 +74,8 @@ final class User {
      * @param string $username The username
      * @param string $password The password
      * @param array<string, mixed>|null $device Associative array with 'name', 'token' and, optional,
-     *                                          'platform' (ios by default, or android) (mobile apps only)
+     *                                          'platform' (ios or android, by default the one of the token), 'model',
+     *                                          'os_version', 'app_version' (mobile apps only, see Device::register())
      * @param bool|int|string|null $mfa The client supports the second step of the login: true, "true", 1...
      * @return array<string, mixed> The JWT token data (exp, sub, iat, token), or the challenge
      *               of the second factor (mfa, mfa_token, exp; secret and otpauth to register it)
@@ -127,7 +128,8 @@ final class User {
      *
      * @param array<string, mixed>      $user   The user row
      * @param array<string, mixed>|null $device Associative array with 'name', 'token' and, optional,
-     *                                        'platform' (ios by default, or android) (mobile apps only)
+     *                                        'platform' (ios or android, by default the one of the token), 'model',
+     *                                        'os_version', 'app_version' (mobile apps only, see Device::register())
      * @return array{exp: int, sub: int, iat: int, token: string} The JWT token data
      */
     public static function completeLogin(array $user, ?array $device): array
@@ -137,9 +139,7 @@ final class User {
         }
 
         // Update or create the device (the web portal does not send one)
-        if (!empty($device['token'])) {
-            Device::createOrUpdate($user['id'], $device['name'] ?? '', $device['token'], strtolower(trim((string)($device['platform'] ?? 'ios'))));
-        }
+        Device::register((int)$user['id'], $device);
 
         $token = Jwt::createJwt($user['id']);
 

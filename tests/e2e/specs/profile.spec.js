@@ -104,6 +104,7 @@ test('shows, reveals then deletes a device', async ({ adminPage: page }) => {
     const device = page.locator('.device-item').filter({ hasText: 'iPhone de Ada' });
     await expect(device.locator('.device-platform')).toHaveText(tr('devicePlatform_ios'));
     await expect(device.locator('.device-icon')).toHaveText('phone_iphone');
+    await expect(device.locator('.device-model')).toHaveText(`iPhone16,1 · iOS 26.0 · ${tr('deviceAppVersion', { version: '1.2' })}`);
     const token = 'ab12'.repeat(16);
     await expect(device.locator('.device-token')).toHaveText(`${token.slice(0, 6)}…${token.slice(-6)}`);
     await device.getByRole('button', { name: tr('showToken') }).click();
@@ -117,7 +118,7 @@ test('shows, reveals then deletes a device', async ({ adminPage: page }) => {
 test('shows the platform of the mobile apps and the trusted web browsers', async ({ adminPage: page, request }) => {
     // An Android phone of the administrator, and a browser trusted at the second step
     const login = await request.post('/api/user/login', { data: {
-        username: 'admin', password: 'admin-password', device: { name: 'Pixel de Ada', token: 'cd34'.repeat(16), platform: 'android' },
+        username: 'admin', password: 'admin-password', device: { name: 'Pixel de Ada', token: 'cd34'.repeat(16), platform: 'android', model: 'Google Pixel 8', os_version: 'Android 15' },
     } });
     expect(login.ok(), await login.text()).toBeTruthy();
     const token = (await login.json()).token;
@@ -141,6 +142,7 @@ test('shows the platform of the mobile apps and the trusted web browsers', async
     const pixel = apps.locator('.device-item').filter({ hasText: 'Pixel de Ada' });
     await expect(pixel.locator('.device-platform')).toHaveText(tr('devicePlatform_android'));
     await expect(pixel.locator('.device-icon')).toHaveText('android');
+    await expect(pixel.locator('.device-model')).toHaveText('Google Pixel 8 · Android 15');
 
     // The browser by its readable name, its last use and the end of its trust; revoked
     const browsers = page.getByRole('list', { name: tr('mfaBrowsersTitle') }).locator('.device-item');

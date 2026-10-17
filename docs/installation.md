@@ -151,6 +151,13 @@ Quand `docker compose pull` apporte une nouvelle version majeure de MariaDB (par
 l'ancienne version, d'où l'importance de la sauvegarde. Pour garder une version donnée,
 fixez-la dans `docker/docker-compose.yml` (`image: mariadb:11`).
 
+### Passer à la 1.6.0
+
+La migration `2026-10-25_device_model` est appliquée au démarrage : modèle, version du
+système et version de l'application de chaque appareil mobile (inconnus pour les appareils
+existants jusqu'à leur prochaine connexion). Elle corrige aussi la plateforme des appareils
+Android déjà enregistrés, notés iOS jusque-là : leurs notifications push repartent.
+
 ### Passer à la 1.5.0
 
 À faire **dans cet ordre** :

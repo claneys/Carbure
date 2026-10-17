@@ -23,8 +23,14 @@ final class Device {
     /** Platforms of the devices: ios (APNs, the only app before Android) or android (FCM) */
     const PLATFORMS = ['ios', 'android'];
 
+    /** Optional details of a device sent by the mobile apps, and their maximum length */
+    const DETAILS = ['model' => 100, 'os_version' => 50, 'app_version' => 20];
+
     /** Whether the column devices.platform exists (null: not checked yet) */
     private static ?bool $platformColumn = null;
+
+    /** Whether the columns devices.model, os_version, app_version exist (null: not checked yet) */
+    private static ?bool $detailsColumns = null;
 
     /**
      * Get all devices of the authenticated user.
@@ -61,12 +67,15 @@ final class Device {
      *
      * @param int $userId The user ID
      * @return list<array<string, mixed>> List of all devices for the user: id, user_id, name,
-     *               token, platform (ios before the migration that adds it), lastLogin
+     *               token, platform (ios before the migration that adds it), lastLogin, model,
+     *               os_version, app_version (null when unknown or before the migration that adds them)
      */
     public static function get(int $userId): array
     {
         $platform = self::hasPlatform() ? 'platform' : "'ios' AS platform";
-        $sql = "SELECT id, user_id, name, token, $platform, lastLogin 
+        $details = self::hasDetails() ? 'model, os_version, app_version'
+            : 'NULL AS model, NULL AS os_version, NULL AS app_version';
+        $sql = "SELECT id, user_id, name, token, $platform, lastLogin, $details 
                 FROM devices 
                 WHERE user_id=? 
                 ORDER BY lastLogin DESC";
@@ -105,20 +114,81 @@ final class Device {
     }
 
     /**
+     * Register the device sent at login by a mobile app ('name', 'token' and, optional,
+     * 'platform', 'model', 'os_version', 'app_version'), nothing without a token (web portal).
+     *
+     * @param int                       $userId The user ID
+     * @param array<string, mixed>|null $device The device sent
+     * @return array<string, mixed>|null The device registered, null without token
+     * @throws Error If the platform is not known (400)
+     */
+    public static function register(int $userId, ?array $device): ?array
+    {
+        $token = is_scalar($device['token'] ?? null) ? trim((string)$device['token']) : '';
+        if ($token === '') {
+            return null;
+        }
+        $name = is_scalar($device['name'] ?? null) ? (string)$device['name'] : '';
+        return self::createOrUpdate($userId, $name, $token, self::platformOf($token, $device['platform'] ?? null),
+            self::details($device));
+    }
+
+    /**
+     * Platform of a device: the one sent (case and spaces ignored) or, when none is sent
+     * (the first apps did not), the one of its push token: 64 hexadecimal characters for
+     * APNs (ios), anything else (FCM tokens: long, with ':', '-', '_') for android.
+     *
+     * @param string $token    The push token of the device
+     * @param mixed  $platform The platform sent (null or empty: none)
+     * @return string ios or android
+     * @throws Error If the platform sent is not known (400)
+     */
+    public static function platformOf(string $token, mixed $platform = null): string
+    {
+        $platform = is_scalar($platform) ? strtolower(trim((string)$platform)) : '';
+        if ($platform === '') {
+            return preg_match('/^[0-9a-f]{64}$/i', trim($token)) === 1 ? 'ios' : 'android';
+        }
+        if (!in_array($platform, self::PLATFORMS, true)) {
+            throw new Error("Unknown device platform: $platform (" . implode(', ', self::PLATFORMS) . ")", 400);
+        }
+        return $platform;
+    }
+
+    /**
+     * Optional details of a device sent by a mobile app: model (e.g. iPhone16,1, Google
+     * Pixel 8), os_version (iOS 26.0, Android 15), app_version (1.2); trimmed, cut to their
+     * maximum length, null when missing, empty or not a text.
+     *
+     * @param array<string, mixed> $device The device sent
+     * @return array{model: ?string, os_version: ?string, app_version: ?string}
+     */
+    public static function details(array $device): array
+    {
+        $details = ['model' => null, 'os_version' => null, 'app_version' => null];
+        foreach (self::DETAILS as $field => $length) {
+            $value = is_scalar($device[$field] ?? null) ? trim((string)$device[$field]) : '';
+            $details[$field] = $value === '' ? null : mb_substr($value, 0, $length);
+        }
+        return $details;
+    }
+
+    /**
      * Create a new device or update if it already exists.
      *
      * @param int    $userId   The user ID
      * @param string $name     The device name
      * @param string $token    The unique device token
-     * @param string $platform ios (default: the iOS app sends no platform) or android
+     * @param string $platform ios or android; empty: the one of the token (see platformOf())
+     * @param array<string, mixed> $details Optional model, os_version, app_version (see details()),
+     *                                      ignored before the migration that adds them
      * @return array<string, mixed> The created or updated device data with id
      * @throws Error If the platform is not known (400)
      */
-    public static function createOrUpdate(int $userId, string $name, string $token, string $platform = 'ios'): array
+    public static function createOrUpdate(int $userId, string $name, string $token, string $platform = '', array $details = []): array
     {
-        if (!in_array($platform, self::PLATFORMS, true)) {
-            throw new Error("Unknown device platform: $platform (" . implode(', ', self::PLATFORMS) . ")", 400);
-        }
+        $platform = self::platformOf($token, $platform);
+        $details = self::details($details);
         // Check if device with this token already exists
         $existingDevice = self::getByToken($token);
 
@@ -141,6 +211,10 @@ final class Device {
         if (self::hasPlatform()) {
             Db::execute("UPDATE devices SET platform=? WHERE token=?", "ss", $platform, $token);
         }
+        if (self::hasDetails()) {
+            Db::execute("UPDATE devices SET model=?, os_version=?, app_version=? WHERE token=?", "ssss",
+                $details['model'], $details['os_version'], $details['app_version'], $token);
+        }
 
         return array(
             'id' => $deviceId,
@@ -148,7 +222,7 @@ final class Device {
             'name' => $name,
             'token' => $token,
             'platform' => $platform
-        );
+        ) + $details;
     }
 
     /**
@@ -161,6 +235,19 @@ final class Device {
     {
         return self::$platformColumn ??= (int)Db::queryOne("SELECT COUNT(*) AS n FROM information_schema.COLUMNS
             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'devices' AND COLUMN_NAME = 'platform'", "")['n'] > 0;
+    }
+
+    /**
+     * Whether the columns devices.model, os_version and app_version exist: the code runs
+     * before the migration that adds them (2026-10-25_device_model), the details being then
+     * ignored.
+     *
+     * @return bool
+     */
+    private static function hasDetails(): bool
+    {
+        return self::$detailsColumns ??= (int)Db::queryOne("SELECT COUNT(*) AS n FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'devices' AND COLUMN_NAME = 'app_version'", "")['n'] > 0;
     }
 
     /**

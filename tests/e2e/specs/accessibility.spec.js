@@ -89,6 +89,8 @@ test('the notifications of the profile and the test email are readable', async (
     problems.push(...await contrastProblems(page, tr('mfaTitle')));
     await page.getByRole('tab', { name: tr('myDevices'), exact: true }).click();
     await expect(page.getByRole('heading', { name: tr('myDevices') })).toBeVisible();
+    // Model and versions of the seeded iPhone, in secondary text
+    await expect(page.locator('.device-model').first()).toBeVisible();
     problems.push(...await contrastProblems(page, tr('myDevices')));
     await page.getByRole('tab', { name: tr('notificationsTitle'), exact: true }).click();
     await expect(page.locator('#notifications-email-unavailable')).toBeVisible();

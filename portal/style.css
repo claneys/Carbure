@@ -4658,6 +4658,14 @@ a.footer-brand:hover {
     color: var(--text-primary);
 }
 
+/* Model, system and app versions of a mobile device, under its name */
+.device-model {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+    overflow-wrap: anywhere;
+}
+
 /* ===== Insights administration ===== */
 .insight-card {
     position: relative;

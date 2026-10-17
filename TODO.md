@@ -41,6 +41,19 @@ keeps track of what was done).
       `device.platform=android`, FCM provider in Carbure Push); to do: the app itself, the
       Firebase project and its service account on the relay.
 
+- [ ] **Production** (device model, #218): the migration `2026-10-25_device_model`
+      (nullable `devices.model`, `os_version`, `app_version`) is applied at container start;
+      until it is, these fields are ignored at login and returned as `null`. It also sets
+      `platform = 'android'` on the devices whose token is not an APNs one (Android devices
+      stored as iOS before).
+- [ ] **Android app** (#218): send `platform: "android"` in the `device` object of
+      `POST /user/login` and `POST /user/login/mfa` (the server now deduces it from the FCM
+      token for the released versions that do not), plus `model` (e.g. "Google Pixel 8"),
+      `os_version` ("Android 15") and `app_version` ("1.0").
+- [ ] **iOS app** (#218): send `model` (hardware model, e.g. "iPhone16,1"), `os_version`
+      ("iOS 26.0") and `app_version` ("1.2") in the `device` object of `POST /user/login`
+      and `POST /user/login/mfa` (optional: unknown when absent).
+
 - [ ] **Production**: test the connection of Claude to the MCP server from claude.ai
       (Settings → Connectors → Add custom connector). The Docker image applies the OAuth
       migration at startup and routes `/.well-known/oauth-*`; set `public_url`

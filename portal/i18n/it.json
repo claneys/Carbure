@@ -645,6 +645,7 @@
     "mobileDevicesTitle": "App mobili",
     "devicePlatform_ios": "iOS",
     "devicePlatform_android": "Android",
+    "deviceAppVersion": "app {version}",
     "alertThreshold": "A partire da",
     "alertThresholdPlaceholder": "Disattivata",
     "alertThresholdHelp": "Qualsiasi nuova spesa di almeno questo importo. Vuoto: disattivato.",

@@ -645,6 +645,7 @@
     "mobileDevicesTitle": "Applications mobiles",
     "devicePlatform_ios": "iOS",
     "devicePlatform_android": "Android",
+    "deviceAppVersion": "app {version}",
     "alertThreshold": "À partir de",
     "alertThresholdPlaceholder": "Désactivé",
     "alertThresholdHelp": "Toute nouvelle dépense d'au moins ce montant. Vide : désactivé.",

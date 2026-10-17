@@ -645,6 +645,7 @@
     "mobileDevicesTitle": "Mobile Apps",
     "devicePlatform_ios": "iOS",
     "devicePlatform_android": "Android",
+    "deviceAppVersion": "App {version}",
     "alertThreshold": "Ab",
     "alertThresholdPlaceholder": "Deaktiviert",
     "alertThresholdHelp": "Jede neue Ausgabe ab diesem Betrag. Leer: deaktiviert.",

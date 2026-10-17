@@ -111,6 +111,12 @@ class WebserviceTest extends TestCase
         $this->assertSame('0123', $normalized['nested'][0]['account_number']);
     }
 
+    public function testVersionsOfTheDevicesStayTexts()
+    {
+        $normalized = Webservice::normalizeNumbers([['id' => '3', 'model' => '8', 'os_version' => '15', 'app_version' => '1.10']]);
+        $this->assertSame([['id' => 3, 'model' => '8', 'os_version' => '15', 'app_version' => '1.10']], $normalized);
+    }
+
     public function testSensitiveValuesAreMasked()
     {
         $method = new ReflectionMethod(Webservice::class, 'maskSensitive');

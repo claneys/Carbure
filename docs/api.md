@@ -54,14 +54,14 @@ icon: material/api
 |---|---|---|---|
 | `username` | string | oui | Identifiant |
 | `password` | string | oui | Mot de passe |
-| `device` | objet `{name, token, platform?}` | non | Appareil mobile à enregistrer pour les notifications ; `platform` : `ios` (par défaut : l'app iOS ne l'envoie pas) ou `android` (`400` sinon) |
+| `device` | objet `{name, token, platform?, model?, os_version?, app_version?}` | non | Appareil mobile à enregistrer pour les notifications (voir [l'objet `device`](#objet-device)) |
 | `mfa` | booléen | non | Le client gère la double authentification (`true` pour le portail) |
 
 ```bash
 curl -X POST https://exemple.fr/api/user/login \
   -H 'Content-Type: application/json' \
-  -d '{"username":"alice","password":"…","device":{"name":"iPhone","token":"<token APNs>"}}'
-# Android (app à venir) : "device":{"name":"Pixel","token":"<token FCM>","platform":"android"}
+  -d '{"username":"alice","password":"…","device":{"name":"iPhone16,1","token":"<token APNs>","platform":"ios","model":"iPhone16,1","os_version":"iOS 26.0","app_version":"1.2"}}'
+# Android : "device":{"name":"Google Pixel 8","token":"<token FCM>","platform":"android","model":"Google Pixel 8","os_version":"Android 15","app_version":"1.0"}
 ```
 
 ```json
@@ -90,6 +90,39 @@ reçoit `403` (message explicite) au lieu du défi ; le format de réponse ne ch
 un utilisateur sans double authentification. Un nouvel appareil n'est enregistré
 qu'après le code.
 
+#### Objet `device`
+
+Envoyé par les applications mobiles (le portail n'en envoie pas) ; l'appareil est créé ou
+mis à jour (utilisateur, nom, plateforme, modèle et versions) à chaque connexion.
+
+| Champ | Type | Requis | Description |
+|---|---|---|---|
+| `name` | string | non | Nom de l'appareil |
+| `token` | string | oui | Jeton push (APNs pour iOS, FCM pour Android) ; sans jeton, aucun appareil n'est enregistré |
+| `platform` | string | non | `ios` ou `android` (casse et espaces ignorés ; `400` pour une autre valeur). Absent ou vide : déduit du jeton — 64 caractères hexadécimaux (APNs) = `ios`, tout autre jeton (FCM : long, avec `:`, `-`, `_`) = `android` |
+| `model` | string | non | Modèle (`iPhone16,1`, `Google Pixel 8`), 100 caractères au plus |
+| `os_version` | string | non | Version du système (`iOS 26.0`, `Android 15`), 50 caractères au plus |
+| `app_version` | string | non | Version de l'application (`1.2`), 20 caractères au plus |
+
+Les textes sont débarrassés des espaces autour et tronqués à leur longueur maximale ; un
+champ absent ou vide est enregistré à `null`. Tant que la migration
+`2026-10-25_device_model` n'est pas appliquée, `model`, `os_version` et `app_version` sont
+ignorés (la connexion n'échoue pas).
+
+iOS (le jeton APNs fait 64 caractères hexadécimaux) :
+
+```json
+{ "name": "iPhone16,1", "token": "a1b2c3…", "platform": "ios",
+  "model": "iPhone16,1", "os_version": "iOS 26.0", "app_version": "1.2" }
+```
+
+Android (jeton FCM) :
+
+```json
+{ "name": "Google Pixel 8", "token": "fXk9…:APA91b…", "platform": "android",
+  "model": "Google Pixel 8", "os_version": "Android 15", "app_version": "1.0" }
+```
+
 ### `POST /user/login/mfa` — publique
 
 Seconde étape de la connexion : échange le défi et le code contre la session.
@@ -99,7 +132,7 @@ Seconde étape de la connexion : échange le défi et le code contre la session.
 | `mfa_token` | string | oui | Défi renvoyé par `POST /user/login` |
 | `code` | string | oui | Code à 6 chiffres de l'application, ou code de secours (`xxxxx-xxxxx`) |
 | `trust` | booléen | non | Faire confiance à ce navigateur 6 mois (cookie `HttpOnly`) |
-| `device` | objet `{name, token}` | non | Appareil iOS à enregistrer, comme pour `POST /user/login` |
+| `device` | objet `{name, token, platform?, model?, os_version?, app_version?}` | non | Appareil mobile à enregistrer, comme pour `POST /user/login` (voir [l'objet `device`](#objet-device)) |
 
 Réponse : la session, comme `POST /user/login` (`exp`, `sub`, `iat`, `token`), plus
 `recovery_codes` (10 codes de secours, affichés une seule fois) quand l'application vient
@@ -732,7 +765,8 @@ renvoie `applied`, le nombre de transactions recatégorisées.
 
 Appareils de l'utilisateur connecté : `id`, `user_id`, `name`, `token`, `platform` (`ios` ou
 `android` ; `ios` tant que la migration `2026-10-23_device_platform` n'est pas appliquée),
-`lastLogin`.
+`lastLogin`, `model`, `os_version`, `app_version` (`null` si l'application ne les a pas
+envoyés ou tant que la migration `2026-10-25_device_model` n'est pas appliquée).
 
 ### `DELETE /device`
 

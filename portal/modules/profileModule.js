@@ -290,6 +290,22 @@ export function createProfileModule(getApiService) {
             },
 
             /**
+             * Model, system version and app version of a device, those sent by the app
+             * (e.g. "iPhone16,1 · iOS 26.0 · app 1.2"); empty when none is known
+             * @param {Object} device - Device ({model, os_version, app_version}, null or absent when unknown)
+             * @returns {string}
+             */
+            deviceDetails(device) {
+                const text = value => (value === null || value === undefined ? '' : String(value).trim());
+                const parts = [text(device && device.model), text(device && device.os_version)];
+                const app = text(device && device.app_version);
+                if (app) {
+                    parts.push(this.t('deviceAppVersion', { version: app }));
+                }
+                return parts.filter(Boolean).join(' · ');
+            },
+
+            /**
              * Loads the devices (mobile app installations: iOS, Android) of the authenticated user
              * @returns {Promise<void>}
              */

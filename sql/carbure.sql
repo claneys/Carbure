@@ -163,6 +163,9 @@ CREATE TABLE `devices` (
   `name` varchar(50) NOT NULL,
   `token` varchar(200) NOT NULL,
   `platform` varchar(10) NOT NULL DEFAULT 'ios' COMMENT 'ios (APNs) or android (FCM)',
+  `model` varchar(100) DEFAULT NULL COMMENT 'Model of the device (e.g. iPhone16,1, Google Pixel 8)',
+  `os_version` varchar(50) DEFAULT NULL COMMENT 'Version of its system (e.g. iOS 26.0, Android 15)',
+  `app_version` varchar(20) DEFAULT NULL COMMENT 'Version of the mobile app (e.g. 1.2)',
   `lastLogin` timestamp NOT NULL DEFAULT current_timestamp(),
   `user_id` int(10) unsigned NOT NULL,
   PRIMARY KEY (`id`),
@@ -322,7 +325,8 @@ INSERT IGNORE INTO `schema_migrations` (`version`) VALUES
 ('2026-10-22_budget_alert'),
 ('2026-10-23_device_platform'),
 ('2026-10-23_user_budget_alert_category'),
-('2026-10-24_user_mfa');
+('2026-10-24_user_mfa'),
+('2026-10-25_device_model');
 
 SET FOREIGN_KEY_CHECKS = 1;
 COMMIT;
