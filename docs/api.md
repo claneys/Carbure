@@ -55,6 +55,7 @@ icon: material/api
 | `username` | string | oui | Identifiant |
 | `password` | string | oui | Mot de passe |
 | `device` | objet `{name, token, platform?}` | non | Appareil mobile à enregistrer pour les notifications ; `platform` : `ios` (par défaut : l'app iOS ne l'envoie pas) ou `android` (`400` sinon) |
+| `mfa` | booléen | non | Le client gère la double authentification (`true` pour le portail) |
 
 ```bash
 curl -X POST https://exemple.fr/api/user/login \
@@ -73,6 +74,63 @@ Le jeton est valable 30 jours. La date de connexion est enregistrée (`last_logi
 d'affilée, le compte est bloqué 24 heures, même avec le bon mot de passe (le 5e échec
 répond déjà `423`). Une connexion
 réussie remet le compteur à zéro.
+
+**Double authentification** (voir [Sécurité](securite.md#double-authentification-totp)) :
+quand elle est imposée (`mfa_required`) ou activée par l'utilisateur, et que ni l'appareil
+(`device.token` déjà enregistré pour cet utilisateur) ni le navigateur (cookie de
+confiance) ne sont connus, la réponse n'est pas la session mais un défi valable 5 minutes :
+
+```json
+{ "mfa": "verify", "mfa_token": "eyJzdWIiOjIs…", "exp": 1759400300 }
+```
+
+`mfa` vaut `enroll` quand l'utilisateur n'a pas encore d'application : la réponse ajoute
+`secret` (base32) et `otpauth` (URI du QR code). Un client qui n'envoie pas `mfa=true`
+reçoit `403` (message explicite) au lieu du défi ; le format de réponse ne change pas pour
+un utilisateur sans double authentification. Un nouvel appareil n'est enregistré
+qu'après le code.
+
+### `POST /user/login/mfa` — publique
+
+Seconde étape de la connexion : échange le défi et le code contre la session.
+
+| Paramètre | Type | Requis | Description |
+|---|---|---|---|
+| `mfa_token` | string | oui | Défi renvoyé par `POST /user/login` |
+| `code` | string | oui | Code à 6 chiffres de l'application, ou code de secours (`xxxxx-xxxxx`) |
+| `trust` | booléen | non | Faire confiance à ce navigateur 6 mois (cookie `HttpOnly`) |
+| `device` | objet `{name, token}` | non | Appareil iOS à enregistrer, comme pour `POST /user/login` |
+
+Réponse : la session, comme `POST /user/login` (`exp`, `sub`, `iat`, `token`), plus
+`recovery_codes` (10 codes de secours, affichés une seule fois) quand l'application vient
+d'être configurée. `401` si le code est faux (compté dans le blocage), `423` si le compte
+est bloqué, `403` si le défi a expiré.
+
+### `GET /user/mfa`, `POST /user/mfa/setup`, `POST /user/mfa/enable`, `POST /user/mfa/recovery-codes`, `DELETE /user/mfa`
+
+Double authentification de l'utilisateur connecté (Mon profil) :
+
+- `GET /user/mfa` : `available` (migration appliquée), `required` (imposée par
+  l'administrateur), `enabled`, `pending`, `recovery_codes_left`, `trusted_browsers`
+  (`id`, `label` = User-Agent, `created_at`, `expires_at`, `last_used_at`) ;
+- `POST /user/mfa/setup` : nouveau secret à scanner (`secret`, `otpauth`), `409` si déjà
+  activée ;
+- `POST /user/mfa/enable` (`code`) : confirme l'application, renvoie `recovery_codes` ;
+- `POST /user/mfa/recovery-codes` (`code`) : nouveaux codes de secours ;
+- `DELETE /user/mfa` (`code` de l'application ou de secours, dans le corps) : désactive
+  la double authentification et révoque les navigateurs de confiance.
+
+Un code faux répond `400` (et compte comme un échec de connexion).
+
+### `DELETE /user/mfa/browser?id=`
+
+Révoque un navigateur de confiance de l'utilisateur connecté (`404` sinon).
+
+### `POST /user/mfa/reset` — administrateur
+
+`id` : supprime l'application, les codes de secours et les navigateurs de confiance d'un
+utilisateur qui a perdu son téléphone ; il configurera une nouvelle application à sa
+prochaine connexion si la double authentification est imposée.
 
 ### `POST /user/unlock` — administrateur
 

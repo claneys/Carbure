@@ -46,6 +46,8 @@ final class Settings {
         'log_retention_days' => ['kind' => 'number', 'min' => 0, 'max' => 3650],
         'savings_category' => ['kind' => 'text', 'pattern' => '/^[\p{L}\p{N} \'\-]{1,50}$/u'],
         'public_url' => ['kind' => 'url', 'empty' => true],
+        // Two-factor authentication (authenticator app) at the login of every user
+        'mfa_required' => ['kind' => 'bool'],
         'woob_transactions' => ['kind' => 'number', 'min' => 1, 'max' => 5000],
         'woob_logging' => ['kind' => 'select', 'options' => ['debug', 'info', 'warning', 'error', 'critical']],
         'woob_debug' => ['kind' => 'bool'],
@@ -70,6 +72,7 @@ final class Settings {
     /** Section of the settings that the file may not have yet */
     const SECTIONS = [
         'log_level' => 'global', 'log_retention_days' => 'global', 'savings_category' => 'global', 'public_url' => 'global',
+        'mfa_required' => 'auth',
         'woob_transactions' => 'woob', 'woob_logging' => 'woob', 'woob_debug' => 'woob', 'woob_auto_update' => 'woob',
         'woob_2fa_wait' => 'woob', 'woob_2fa_retries' => 'woob',
         'push_url' => 'push', 'push_api_key' => 'push',

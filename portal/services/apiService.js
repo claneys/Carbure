@@ -872,6 +872,67 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
     }
 
     /**
+     * Two-factor authentication of the authenticated user
+     * @returns {Promise<Object>} {available, required, enabled, pending, recovery_codes_left, trusted_browsers}
+     */
+    async function fetchMfa() {
+        return request(`${baseUrl}/user/mfa`, {}, 'Failed to read the two-factor authentication');
+    }
+
+    /**
+     * Starts the registration of an authenticator app
+     * @returns {Promise<{secret: string, otpauth: string}>}
+     */
+    async function setupMfa() {
+        return request(`${baseUrl}/user/mfa/setup`, { method: 'POST' }, 'Failed to start the registration');
+    }
+
+    /**
+     * Confirms the authenticator app with its first code
+     * @param {string} code - Code of the app
+     * @returns {Promise<{enabled: boolean, recovery_codes: string[]}>}
+     */
+    async function enableMfa(code) {
+        return request(`${baseUrl}/user/mfa/enable`, { method: 'POST', body: JSON.stringify({ code }) }, 'Failed to enable the two-factor authentication');
+    }
+
+    /**
+     * Disables the two-factor authentication (code of the app or recovery code, in the body)
+     * @param {string} code - Code
+     * @returns {Promise<{enabled: boolean}>}
+     */
+    async function disableMfa(code) {
+        return request(`${baseUrl}/user/mfa`, { method: 'DELETE', body: JSON.stringify({ code }) }, 'Failed to disable the two-factor authentication');
+    }
+
+    /**
+     * New recovery codes (the previous ones no longer work)
+     * @param {string} code - Code of the app
+     * @returns {Promise<{recovery_codes: string[]}>}
+     */
+    async function renewRecoveryCodes(code) {
+        return request(`${baseUrl}/user/mfa/recovery-codes`, { method: 'POST', body: JSON.stringify({ code }) }, 'Failed to renew the recovery codes');
+    }
+
+    /**
+     * Revokes a trusted browser of the authenticated user
+     * @param {number} id - Trusted browser ID
+     * @returns {Promise<void>}
+     */
+    async function deleteTrustedBrowser(id) {
+        await request(`${baseUrl}/user/mfa/browser?id=${encodeURIComponent(id)}`, { method: 'DELETE' }, 'Failed to revoke the browser');
+    }
+
+    /**
+     * Resets the two-factor authentication of a user (administrators)
+     * @param {number} id - User ID
+     * @returns {Promise<void>}
+     */
+    async function resetUserMfa(id) {
+        await request(`${baseUrl}/user/mfa/reset`, { method: 'POST', body: JSON.stringify({ id }) }, 'Failed to reset the two-factor authentication');
+    }
+
+    /**
      * Agent asking for an OAuth authorization (consent page)
      * @param {string} oauthRequest - Authorization request (query string given to the portal)
      * @returns {Promise<{name: string, redirect_host: string}>}
@@ -1152,6 +1213,13 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
         applyRules,
         fetchTrends,
         deleteDevice,
+        fetchMfa,
+        setupMfa,
+        enableMfa,
+        disableMfa,
+        renewRecoveryCodes,
+        deleteTrustedBrowser,
+        resetUserMfa,
         searchTransactions,
         fetchCategoryTransactions,
         setTransactionPointed,

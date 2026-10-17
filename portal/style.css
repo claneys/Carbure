@@ -6733,6 +6733,88 @@ button.is-busy:not(.btn-confirm-danger):hover {
     background: transparent;
 }
 
+/* ===== Two-factor authentication (login screen and profile) ===== */
+.mfa-title {
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--text-primary);
+    outline: none;
+}
+
+.mfa-subtitle {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin: 20px 0 8px;
+}
+
+.mfa-help {
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* The QR code keeps its white background and black modules in the dark theme too */
+.mfa-qr {
+    display: block;
+    width: 200px;
+    height: 200px;
+    margin: 8px auto;
+    border-radius: var(--border-radius-md);
+}
+
+.mfa-secret {
+    display: block;
+    padding: 10px 12px;
+    background: var(--background);
+    color: var(--text-primary);
+    border-radius: var(--border-radius-md);
+    font-size: 15px;
+    letter-spacing: 1px;
+    text-align: center;
+    word-break: break-all;
+}
+
+.mfa-recovery-codes {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px 16px;
+}
+
+.mfa-recovery-codes code {
+    color: var(--text-primary);
+    font-size: 15px;
+    letter-spacing: 1px;
+}
+
+.mfa-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.profile-mfa .form-group {
+    margin-top: 12px;
+}
+
+.profile-mfa .form-group input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--divider);
+    border-radius: var(--border-radius-md);
+    font-size: 14px;
+    font-family: 'Roboto', sans-serif;
+}
+
+.login-form .mfa-copy,
+.login-form .mfa-back {
+    justify-content: center;
+}
+
 /* ===== Backup (Administration) ===== */
 .backup-card + .backup-card {
     margin-top: 20px;

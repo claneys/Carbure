@@ -39,6 +39,15 @@ qui sert le portail (`/api`, à côté de `/portal/`). Le JWT est conservé dans
 (`localStorage`) jusqu'à la déconnexion ou l'expiration de la session (30 jours). Après **5 échecs de connexion** d'affilée, le
 compte est bloqué 24 heures ; un administrateur peut le débloquer.
 
+Quand la **double authentification** est imposée (ou activée par l'utilisateur), un
+second écran demande ensuite le **code à 6 chiffres** de l'application
+d'authentification, ou un code de secours. À la première connexion, il affiche le
+**QR code** à scanner et la clé en texte, puis, une fois le premier code accepté, les
+**10 codes de secours** (à copier et conserver) avant d'ouvrir la session. La case
+**Faire confiance à ce navigateur pendant 6 mois** évite de redemander le code dans ce
+navigateur ; **Retour** revient au mot de passe. Un code faux est compté comme un échec
+de connexion.
+
 Deux profils existent :
 
 | Profil | Onglets |
@@ -347,7 +356,9 @@ Carbure, en lecture seule. Voir [Agents IA (MCP)](mcp.md). L'onglet est dans le 
 Liste des utilisateurs avec leur **profil** (Utilisateur ou Administrateur) et leur
 **dernière connexion** ; un compte bloqué après trop d'échecs de connexion affiche
 « Bloqué jusqu'au … » et un bouton **Débloquer**. **+** crée un utilisateur ; le crayon le
-modifie (dont son profil) ; la corbeille le supprime. Le dernier administrateur ne peut
+modifie (dont son profil) ; la corbeille le supprime. Le bouton **Réinitialiser la double
+authentification** (après confirmation) supprime l'application, les codes de secours et
+les navigateurs de confiance d'un utilisateur qui a perdu son téléphone. Le dernier administrateur ne peut
 pas perdre son rôle, et un utilisateur propriétaire de transactions ne peut pas être
 supprimé.
 
@@ -365,7 +376,7 @@ agents IA sont masqués. La durée de conservation des fichiers est rappelée en
 Le fichier de configuration (`data/conf/prod.ini`) section par section,
 avec une description de chaque réglage. Les secrets (`db_password`, `jwtsecret`,
 `password_salt`, `sync_token`…) ne sont jamais affichés. Seuls les réglages sans risque
-sont modifiables — `log_level`, `log_retention_days`, `savings_category`, `public_url`, `woob_transactions`,
+sont modifiables — `log_level`, `log_retention_days`, `savings_category`, `public_url`, `mfa_required` (double authentification imposée), `woob_transactions`,
 `woob_logging`, `woob_debug`, `woob_auto_update`, le service de notifications push
 (`push_url`, `push_api_key`) et le serveur SMTP des emails — avec des
 listes, des interrupteurs et des champs vérifiés par le serveur ; les autres portent un
@@ -443,6 +454,13 @@ Trois sous-onglets, comme l'administration : **Profil**, **Notifications** et **
   l'instance au service Carbure Push (pas de `push_api_key`) ; la colonne email, tant
   qu'aucun serveur SMTP n'est configuré ou que le profil n'a pas d'adresse email
   (`GET`/`PUT /user/notifications`).
+- **Double authentification** (sous le formulaire du sous-onglet **Profil**) : état (activée ou non, imposée ou non par
+  l'administrateur). **Configurer une application** affiche le QR code et la clé, à
+  confirmer par un premier code ; les 10 codes de secours s'affichent alors une seule
+  fois. Une fois activée, un code de l'application permet d'obtenir de **nouveaux codes de
+  secours**, et un code de l'application ou de secours de la **désactiver** (après
+  confirmation). Dessous, les **navigateurs de confiance** (navigateur, système, échéance)
+  et leur bouton **Révoquer**.
 - **Appareils** : appareils mobiles enregistrés à la connexion depuis l'app, avec la
   date de dernière connexion et le token de notification, masqué par défaut. Les boutons permettent
   de l'afficher en entier, de le copier (HTTPS requis ; sinon le token est affiché) ou

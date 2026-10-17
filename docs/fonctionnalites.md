@@ -432,6 +432,12 @@ dépassent leur budget ce mois-ci ? », « Comment évolue notre épargne ? ».
 - **Mots de passe** chiffrés (bcrypt) ; session valable 30 jours.
 - **Blocage** : après 5 échecs de connexion d'affilée, le compte est bloqué 24 heures ; un
   administrateur peut le débloquer.
+- **Double authentification** : l'administrateur peut imposer à la connexion le code
+  d'une application d'authentification (Google Authenticator…), configurée par QR code
+  à la première connexion ou depuis le profil, avec 10 codes de secours. Le code n'est
+  pas demandé depuis un iPhone déjà enregistré, ni dans un navigateur auquel
+  l'utilisateur a fait confiance pendant 6 mois. Un administrateur la réinitialise pour
+  un utilisateur qui a perdu son téléphone (voir [Sécurité](securite.md#double-authentification-totp)).
 
 ## Affichage et accessibilité
 

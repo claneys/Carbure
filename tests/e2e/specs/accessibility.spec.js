@@ -319,3 +319,56 @@ test('the update of the bank modules offered after a failed synchronization is r
     expect(border.style).not.toBe('none');
     expect(border.width).toBeGreaterThanOrEqual(1);
 });
+
+test('the two-factor authentication is readable: login steps and profile', async ({ page, api }) => {
+    const { totp } = require('../totp');
+    const problems = [];
+    await api.put('/api/system/config', { data: { values: { mfa_required: true } } });
+
+    // Second step of the login: registration of the app (QR code), wrong code
+    await page.goto('/portal/');
+    await page.getByLabel(tr('username')).fill('marie');
+    await page.getByLabel(tr('password')).fill('marie-password');
+    await page.getByRole('button', { name: tr('loginButton') }).click();
+    await expect(page.getByRole('img', { name: tr('mfaQrLabel') })).toBeVisible();
+    problems.push(...await contrastProblems(page, tr('mfaEnrollTitle')));
+    const secret = (await page.locator('.mfa-secret').textContent()).trim();
+    await page.getByLabel(tr('mfaCode')).fill('000000');
+    await page.getByRole('button', { name: tr('mfaVerifyButton') }).click();
+    await expect(page.getByRole('alert')).toContainText(tr('mfaInvalidCode'));
+    problems.push(...await contrastProblems(page, `${tr('mfaEnrollTitle')} (error)`));
+
+    // Recovery codes, then the profile block (app enabled, trusted browser)
+    await page.getByLabel(tr('mfaCode')).fill(totp(secret));
+    await page.getByLabel(tr('mfaTrustBrowser')).check();
+    await page.getByRole('button', { name: tr('mfaVerifyButton') }).click();
+    await expect(page.getByRole('heading', { name: tr('mfaRecoveryTitle') })).toBeVisible();
+    problems.push(...await contrastProblems(page, tr('mfaRecoveryTitle')));
+    await page.getByRole('button', { name: tr('mfaRecoveryContinue') }).click();
+    await page.locator('.user-menu-toggle').click();
+    await page.getByRole('menuitem', { name: tr('myProfile') }).click();
+    await expect(page.locator('.profile-mfa .device-item')).toHaveCount(1);
+    problems.push(...await contrastProblems(page, tr('mfaTitle')));
+
+    // Verification step of a later login (trusted browser revoked)
+    await page.locator('.profile-mfa .device-item').getByRole('button').click();
+    await expect(page.locator('.profile-mfa')).toContainText(tr('mfaNoBrowsers'));
+    await page.locator('.user-menu-toggle').click();
+    await page.getByRole('menuitem', { name: tr('logout') }).click();
+    await page.getByLabel(tr('username')).fill('marie');
+    await page.getByLabel(tr('password')).fill('marie-password');
+    await page.getByRole('button', { name: tr('loginButton') }).click();
+    await expect(page.getByRole('heading', { name: tr('mfaVerifyTitle') })).toBeVisible();
+    problems.push(...await contrastProblems(page, tr('mfaVerifyTitle')));
+
+    expect(problems).toEqual([]);
+});
+
+test('the registration of an app in the profile is readable', async ({ userPage: page }) => {
+    await page.locator('.user-menu-toggle').click();
+    await page.getByRole('menuitem', { name: tr('myProfile') }).click();
+    await page.locator('.profile-mfa').getByRole('button', { name: tr('mfaSetupButton') }).click();
+    await expect(page.locator('.profile-mfa').getByRole('img', { name: tr('mfaQrLabel') })).toBeVisible();
+
+    expect(await contrastProblems(page, tr('mfaSetupButton'))).toEqual([]);
+});

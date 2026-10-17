@@ -54,11 +54,13 @@ class ApiResolverTest extends TestCase
 
         // Any new public route must be a deliberate decision
         // The MCP routes authenticate with an API token themselves; the OAuth routes are
-        // the metadata, the registration, the authorization (sent to the portal) and the tokens
+        // the metadata, the registration, the authorization (sent to the portal) and the tokens;
+        // the second step of the login takes the challenge given by the first one (password)
         $this->assertSame([
             'GET /.well-known/oauth-authorization-server', 'GET /.well-known/oauth-protected-resource',
             'GET /.well-known/oauth-protected-resource/api/mcp', 'GET /bank/sync', 'GET /health', 'GET /mcp',
             'GET /oauth/authorize', 'POST /mcp', 'POST /oauth/register', 'POST /oauth/token', 'POST /user/login',
+            'POST /user/login/mfa',
         ], $public);
     }
 
@@ -77,6 +79,8 @@ class ApiResolverTest extends TestCase
         'DELETE /token' => 'user',
         'DELETE /transaction' => 'user',
         'DELETE /user' => 'admin',
+        'DELETE /user/mfa' => 'user',
+        'DELETE /user/mfa/browser' => 'user',
         'GET /.well-known/oauth-authorization-server' => 'public',
         'GET /.well-known/oauth-protected-resource' => 'public',
         'GET /.well-known/oauth-protected-resource/api/mcp' => 'public',
@@ -120,6 +124,7 @@ class ApiResolverTest extends TestCase
         'GET /transaction/search' => 'user',
         'GET /user' => 'user',
         'GET /user/me' => 'user',
+        'GET /user/mfa' => 'user',
         'GET /user/notifications' => 'user',
         'POST /backup/import' => 'admin',
         'POST /bank' => 'admin',
@@ -147,6 +152,11 @@ class ApiResolverTest extends TestCase
         'POST /transaction/import/preview' => 'user',
         'POST /user' => 'admin',
         'POST /user/login' => 'public',
+        'POST /user/login/mfa' => 'public',
+        'POST /user/mfa/enable' => 'user',
+        'POST /user/mfa/recovery-codes' => 'user',
+        'POST /user/mfa/reset' => 'admin',
+        'POST /user/mfa/setup' => 'user',
         'POST /user/unlock' => 'admin',
         'PUT /bank' => 'admin',
         'PUT /bank/backend' => 'admin',

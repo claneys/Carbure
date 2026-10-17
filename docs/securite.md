@@ -15,12 +15,78 @@ icon: material/shield-lock-outline
 - Les mots de passe sont hachés avec `password_hash()` (bcrypt). Les anciens hachages
   SHA-256 salés sont vérifiés une dernière fois puis remplacés à la connexion.
 
+### Double authentification (TOTP)
+
+Un administrateur peut **imposer** à tous les utilisateurs un second facteur à la
+connexion : le code à 6 chiffres d'une application d'authentification (Google
+Authenticator, Microsoft Authenticator, 2FAS, Aegis…), réglage `mfa_required` de
+**Administration › Paramètres** (désactivé par défaut). Un utilisateur peut aussi
+l'activer pour lui seul depuis **Mon profil**.
+
+- **TOTP** (RFC 6238) implémenté en PHP sans dépendance : HMAC-SHA1, pas de 30 s,
+  6 chiffres, secret aléatoire de 160 bits (`random_bytes`) partagé en base32 par QR code
+  (`otpauth://`, dessiné dans le navigateur par une bibliothèque embarquée, jamais par un
+  service externe). Le code du pas précédent et du suivant est accepté (décalage
+  d'horloge du téléphone), comparé en temps constant ; un code ne sert **qu'une fois**
+  (le dernier pas accepté est mémorisé).
+- **Connexion en deux étapes** : avec le bon mot de passe, `POST /user/login` renvoie,
+  au lieu de la session, un **défi** valable **5 minutes** qui ne permet que d'envoyer le
+  code à `POST /user/login/mfa`. Ce défi n'est pas un JWT (2 parties, clé de signature
+  dérivée de `jwtsecret` pour ce seul usage) : il n'ouvre aucune route. Les **codes
+  faux comptent dans le blocage** du compte (5 échecs, 24 h), et la réussite du mot de
+  passe seul ne remet pas le compteur à zéro tant que le code n'est pas donné.
+- **Enrôlement** : un utilisateur sans application configure la sienne à cette étape
+  (QR code et clé en texte, confirmés par un premier code) ou à l'avance depuis son
+  profil. Chaque défi d'enrôlement porte une **nouvelle** clé (jamais celle d'un
+  enrôlement commencé) : qui l'a obtenue plus tôt avec le mot de passe ne garde pas un
+  second facteur valable une fois l'utilisateur enrôlé, et une application déjà activée
+  n'est jamais remplacée. Il reçoit alors **10 codes de secours** à usage unique (seule leur empreinte
+  SHA-256 est stockée), qui remplacent le code si le téléphone est perdu. Un
+  administrateur **réinitialise** la double authentification d'un utilisateur (onglet
+  Utilisateurs) ; s'il perd lui-même son téléphone sans code de secours, il repasse
+  `mfa_required=false` dans `data/conf/prod.ini` sur le serveur.
+- **Navigateur de confiance (6 mois)** : la case « Faire confiance à ce navigateur
+  pendant 6 mois » de l'étape du code enregistre un jeton aléatoire de 256 bits dans un
+  cookie `HttpOnly` (illisible par les scripts du portail), `SameSite=Strict`, `Secure`
+  en HTTPS, limité aux routes de connexion (`/api/user/login`) ; la base n'en garde que
+  l'empreinte SHA-256, avec le navigateur (User-Agent) et l'échéance. L'utilisateur voit
+  et révoque ses navigateurs de confiance dans son profil ; ils sont tous révoqués quand
+  son mot de passe change, ou que sa double authentification est désactivée ou
+  réinitialisée.
+- **Appareil déjà connu** : l'app iOS envoie à la connexion le token APNs de l'appareil
+  (64 caractères hexadécimaux, attribué par Apple, non devinable). S'il est déjà
+  enregistré **pour cet utilisateur** (table `devices`), le code n'est pas demandé. C'est
+  un compromis assumé : ce token n'est pas un secret au sens strict (il est connu de
+  l'appareil, d'Apple, du serveur, et visible par l'utilisateur dans son profil) ; un
+  attaquant qui a le mot de passe doit **aussi** l'obtenir, ce qui suppose l'accès au
+  téléphone, à la base ou à une session déjà ouverte. Un nouvel appareil n'est
+  enregistré qu'**après** le second facteur : un token inventé ne contourne rien. Limites :
+  un appareil enregistré **avant** l'activation du second facteur (par exemple par un
+  attaquant qui avait déjà le mot de passe) reste connu, et la réinitialisation par
+  l'administrateur ne supprime pas les appareils : avant d'imposer la double
+  authentification, et après la perte d'un iPhone, chaque utilisateur vérifie et
+  supprime les appareils inconnus ou perdus dans son profil.
+- **Clients sans double authentification** : seuls les clients qui l'annoncent
+  (`mfa=true`, le portail) reçoivent le défi ; les autres reçoivent `403` avec un message
+  explicite, plutôt qu'une réponse d'un format qu'ils ne connaissent pas. L'**app iOS**
+  actuelle ne le gère pas : elle se connecte depuis un iPhone déjà enregistré, mais un
+  **nouvel** iPhone est refusé tant que l'app ne gère pas cette étape (voir TODO).
+- Tant que la migration `2026-10-24_user_mfa` n'est pas appliquée, le second facteur
+  n'est pas demandé (avertissement dans les logs) : l'administrateur doit pouvoir se
+  connecter pour l'appliquer depuis le bandeau du portail.
+- Le **secret TOTP** est stocké en clair dans `user_mfa` (il faut le connaître pour
+  vérifier un code) : les sauvegardes de la base sont donc aussi sensibles que le fichier
+  de configuration.
+- Non concernés (pas de connexion interactive) : le serveur MCP et ses jetons d'accès,
+  les jetons OAuth (l'autorisation d'un agent passe par la connexion au portail, donc par
+  le second facteur), et le `sync_token` du planificateur.
+
 ## Autorisations
 
 | Rôle | Droits |
 |---|---|
 | Utilisateur | Données du foyer (comptes, transactions, budgets, insights, tendances), pointage et catégorie des transactions, montants des budgets, synchronisation par l'API, son profil, ses appareils, ses jetons d'accès MCP |
-| Administrateur (`users.is_admin = 1`) | En plus : règles de catégorisation, catégories, connexions bancaires et comptes suivis (et leur synchronisation depuis le portail), mise à jour des modules woob, insights (requêtes SQL), activation du serveur MCP, paramètres du serveur (dont SMTP) et logs, mise à jour de la base de données, utilisateurs (profil, déblocage) |
+| Administrateur (`users.is_admin = 1`) | En plus : règles de catégorisation, catégories, connexions bancaires et comptes suivis (et leur synchronisation depuis le portail), mise à jour des modules woob, insights (requêtes SQL), activation du serveur MCP, paramètres du serveur (dont SMTP) et logs, mise à jour de la base de données, utilisateurs (profil, déblocage, réinitialisation de la double authentification), double authentification imposée |
 
 Les routes réservées sont déclarées dans leur attribut (`#[ApiRoute(..., admin: true)]`) et
 renvoient `403` avant l'appel de la méthode ; un test unitaire fixe le niveau d'accès de
@@ -131,7 +197,9 @@ un jour ; tout est refusé quand le serveur MCP est désactivé.
 
 Seules ces routes ne demandent pas de JWT (un test unitaire le vérifie) :
 
-- `POST /user/login` ;
+- `POST /user/login`, et `POST /user/login/mfa`, la seconde étape de la connexion, qui
+  exige le défi de 5 minutes donné par la première (mot de passe vérifié) et le code de
+  l'application ;
 - `GET /bank/sync`, qui exige **soit** un JWT, **soit** le `sync_token` de la
   configuration (en-tête `X-Sync-Token` ; `?token=` est encore accepté mais obsolète, voir
   [API](api.md#bank-sync)). Sans `sync_token`
@@ -146,8 +214,10 @@ Seules ces routes ne demandent pas de JWT (un test unitaire le vérifie) :
 
 - Les logs masquent les champs `password` et `token` des requêtes, les secrets OAuth
   (`code`, `code_verifier`, `refresh_token`, `access_token`, `client_secret`), et le
-  paramètre `token=` des URL (synchronisation, MCP). Le corps des réponses du serveur MCP et
-  d'OAuth n'est pas journalisé.
+  paramètre `token=` des URL (synchronisation, MCP), ainsi que le défi, le secret, l'URI
+  `otpauth` et les codes de secours de la double authentification (requêtes et réponses
+  journalisées en niveau `debug`). Le corps des réponses du serveur MCP et d'OAuth n'est
+  pas journalisé.
 - Le log d'accès de nginx (image Docker, `docker logs`) remplace aussi par `***` les
   paramètres `token=`, `access_token=` et `code=` des URL (format `carbure` de
   `docker/nginx.conf`) : le jeton d'une tâche planifiée pas encore migrée vers l'en-tête

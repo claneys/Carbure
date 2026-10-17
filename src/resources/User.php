@@ -65,34 +65,72 @@ final class User {
     }
 
     /**
-     * Login.
+     * Login. When the second factor is required (Mfa) and not bypassed (known device,
+     * trusted browser), a client that announces it supports it (mfa=true) gets a
+     * challenge instead of the session, to send with the code to POST /user/login/mfa;
+     * the other clients get 403. Unchanged for a user who has no second factor.
      *
      * @param string $username The username
      * @param string $password The password
      * @param array<string, mixed>|null $device Associative array with 'name', 'token' and, optional,
      *                                          'platform' (ios by default, or android) (mobile apps only)
-     * @return array{exp: int, sub: int, iat: int, token: string} The JWT token data
+     * @param bool|int|string|null $mfa The client supports the second step of the login: true, "true", 1...
+     * @return array<string, mixed> The JWT token data (exp, sub, iat, token), or the challenge
+     *               of the second factor (mfa, mfa_token, exp; secret and otpauth to register it)
      * @throws Error If the credentials are invalid
      */
     #[ApiRoute('/user/login', method: 'POST', public: true)]
-    public static function login(string $username, string $password, ?array $device = null): array {
+    public static function login(string $username, string $password, ?array $device = null, bool|int|string|null $mfa = null): array {
 
         // check if the $username and the $password are valid in database
         $sql = "SELECT * FROM users where username=?";
         $user = Db::queryOne($sql, "s", $username);
 
-        // Locked after too many failures (the password is not even checked);
-        // compared by the database, whose clock wrote the date
-        if ($user && $user['locked_until'] !== null
-            && Db::queryOne("SELECT ? > NOW() AS locked", "s", $user['locked_until'])['locked']) {
-            throw new Error("Account locked after too many failed logins, until " . $user['locked_until']
-                . ": ask an administrator to unlock it", 423);
+        if ($user) {
+            self::checkNotLocked($user);
         }
 
         if (!$user || !self::verifyPassword($user, $password)) {
             self::rejectLogin($user);
         }
 
+        // Second factor: the failures are reset only once it is given
+        $challenge = Mfa::loginStep($user, $device, filter_var($mfa, FILTER_VALIDATE_BOOLEAN));
+        if ($challenge !== null) {
+            return $challenge;
+        }
+
+        return self::completeLogin($user, $device);
+    }
+
+    /**
+     * Refuse the login of an account locked after too many failures (the password is not
+     * even checked); compared by the database, whose clock wrote the date.
+     *
+     * @param array<string, mixed> $user The user row
+     * @return void
+     * @throws Error If the account is locked (423)
+     */
+    public static function checkNotLocked(array $user): void
+    {
+        if ($user['locked_until'] !== null
+            && Db::queryOne("SELECT ? > NOW() AS locked", "s", $user['locked_until'])['locked']) {
+            throw new Error("Account locked after too many failed logins, until " . $user['locked_until']
+                . ": ask an administrator to unlock it", 423);
+        }
+    }
+
+    /**
+     * Open the session of a user whose credentials were checked: failures reset, device
+     * of the iOS app registered, date of the last login.
+     *
+     * @param array<string, mixed>      $user   The user row
+     * @param array<string, mixed>|null $device Associative array with 'name', 'token' and, optional,
+     *                                        'platform' (ios by default, or android) (mobile apps only)
+     * @return array{exp: int, sub: int, iat: int, token: string} The JWT token data
+     */
+    public static function completeLogin(array $user, ?array $device): array
+    {
         if (((int)$user['failed_logins'] > 0 || $user['locked_until'] !== null)) {
             Db::execute("UPDATE users SET failed_logins = 0, locked_until = NULL WHERE id = ?", "i", $user['id']);
         }
@@ -101,14 +139,13 @@ final class User {
         if (!empty($device['token'])) {
             Device::createOrUpdate($user['id'], $device['name'] ?? '', $device['token'], strtolower(trim((string)($device['platform'] ?? 'ios'))));
         }
-             
+
         $token = Jwt::createJwt($user['id']);
 
         // Shown to the administrators (Users tab)
         Db::execute("UPDATE users SET last_login = NOW() WHERE id = ?", "i", $user['id']);
 
         return $token;
-
     }
 
     /**
@@ -188,15 +225,17 @@ final class User {
      * @param array<string, mixed> $user The user
      * @return bool True if this failure locked the account
      */
-    private static function recordFailedLogin(array $user): bool
+    public static function recordFailedLogin(array $user): bool
     {
-        $failures = (int)$user['failed_logins'] + 1;
+        // Counted by the database: concurrent failures (codes of 6 digits tried in parallel)
+        // each count, instead of all writing the same value read before
+        Db::execute("UPDATE users SET failed_logins = failed_logins + 1 WHERE id = ?", "i", $user['id']);
+        $failures = (int)(Db::queryOne("SELECT failed_logins FROM users WHERE id = ?", "i", $user['id'])['failed_logins'] ?? 0);
         if ($failures >= self::MAX_FAILED_LOGINS) {
             Db::execute("UPDATE users SET failed_logins = 0, locked_until = NOW() + INTERVAL " . self::LOCK_HOURS . " HOUR WHERE id = ?", "i", $user['id']);
             Logger::warn("Account {$user['username']} locked after " . self::MAX_FAILED_LOGINS . " failed logins");
             return true;
         }
-        Db::execute("UPDATE users SET failed_logins = ? WHERE id = ?", "ii", $failures, $user['id']);
         return false;
     }
 
@@ -413,6 +452,11 @@ final class User {
 
             $sql = "UPDATE users SET " . implode(", ", array_map(fn($field) => "$field[0]=?", $fields)) . " WHERE id=?";
             Db::execute($sql, $types, ...$params);
+        }
+
+        // A new password revokes the browsers trusted for the second factor
+        if (in_array('password', array_column($fields, 0), true)) {
+            Mfa::passwordChanged($id);
         }
 
         // Get updated user data

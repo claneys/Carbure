@@ -30,6 +30,7 @@ import { createImportModule } from './modules/importModule.js';
 import { createConfigModule } from './modules/configModule.js';
 import { createConfirmModule } from './modules/confirmModule.js';
 import { createNotificationsModule } from './modules/notificationsModule.js';
+import { createMfaModule } from './modules/mfaModule.js';
 import { createBackupModule } from './modules/backupModule.js';
 
 /**
@@ -98,6 +99,7 @@ const app = createApp({
         createConfigModule(() => apiService),
         createConfirmModule(),
         createNotificationsModule(() => apiService),
+        createMfaModule(() => apiService),
         createBackupModule(() => apiService)
     ],
 
@@ -517,9 +519,13 @@ const app = createApp({
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    // The portal supports the second factor: a challenge may come instead of the
+                    // session; the cookie of a trusted browser is sent
+                    credentials: 'same-origin',
                     body: JSON.stringify({
                         username: this.loginForm.username,
-                        password: this.loginForm.password
+                        password: this.loginForm.password,
+                        mfa: true
                     })
                 });
 
@@ -529,31 +535,46 @@ const app = createApp({
                 }
 
                 const data = await response.json();
-                
+
+                // Second factor (mfaModule): the code of the authenticator app is asked
+                if (data && data.mfa) {
+                    this.startMfaLogin(data);
+                    return;
+                }
+
                 if (!data || !data.token) {
                     throw new Error('Token non reçu');
                 }
 
-                // Store authentication data
-                this.authToken = data.token;
-                this.isAuthenticated = true;
-                
-                // Save to localStorage
-                localStorage.setItem('authToken', data.token);
-                localStorage.setItem('username', this.loginForm.username);
-                this.username = this.loginForm.username;
-                
-                // Clear password
-                this.loginForm.password = '';
+                await this.openSession(data.token);
 
-                await this.startSession();
-                
             } catch (error) {
                 console.error('Login error:', error);
                 this.loginError = error.message || (this.t('loginError'));
             } finally {
                 this.loggingIn = false;
             }
+        },
+
+        /**
+         * Opens the session of the user of the login form with his JWT
+         * @param {string} token - JWT
+         * @returns {Promise<void>}
+         */
+        async openSession(token) {
+            // Store authentication data
+            this.authToken = token;
+            this.isAuthenticated = true;
+
+            // Save to localStorage
+            localStorage.setItem('authToken', token);
+            localStorage.setItem('username', this.loginForm.username);
+            this.username = this.loginForm.username;
+
+            // Clear password
+            this.loginForm.password = '';
+
+            await this.startSession();
         },
 
         /**
@@ -577,6 +598,7 @@ const app = createApp({
             this.currentUser = null;
             this.activeTab = 'transactions';
             this.loginForm.password = '';
+            this.mfaLogin = null;
             localStorage.removeItem('authToken');
             localStorage.removeItem('username');
             this.username = null;

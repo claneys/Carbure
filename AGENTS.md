@@ -130,7 +130,8 @@ git config core.hooksPath .githooks   # pre-commit lint, pre-push unit tests
   `-- applied-if: …` line, test-checked) **and** `sql/carbure.sql`. Applied at container
   start, by setup wizard, or portal admin banner. Code must not depend on an unapplied
   migration; flag it as a deployment action.
-- **Public routes** limited to: `POST /user/login`, `GET /bank/sync` (JWT or
+- **Public routes** limited to: `POST /user/login`, `POST /user/login/mfa` (second step:
+  needs the 5-minute challenge given by the password step), `GET /bank/sync` (JWT or
   `sync_token`), `GET|POST /mcp` (token or JWT), `GET /health`, MCP OAuth
   (`/.well-known/oauth-*`, `POST /oauth/register`, `GET /oauth/authorize`,
   `POST /oauth/token`). A unit test fails on any new public route.
