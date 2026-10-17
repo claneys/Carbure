@@ -380,7 +380,7 @@ sont enregistrés pour chaque compte. Accès autorisé avec :
 
 Sans JWT ni jeton valide (en-tête ou URL) : `401`. `?interactive=true` (avec `account`, pour un utilisateur connecté seulement,
 `400` sinon) autorise woob à déclencher une authentification forte : woob est lancé sur un
-pseudo-terminal (`tools/woob-tty.py`) et ses messages sont relayés en
+pseudo-terminal (`proc_open` de PHP) et ses messages sont relayés en
 `data: Bank message <compte>: <message>` pendant qu'il attend la validation dans
 l'application de la banque. Sans ce paramètre, une banque qui exige une authentification
 forte échoue avec `…interactive mode to perform a two-factor authentication`.

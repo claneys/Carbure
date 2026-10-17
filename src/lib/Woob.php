@@ -108,7 +108,7 @@ final class Woob {
      * Uses proc_open to send SSE heartbeats while waiting for woob to finish,
      * preventing proxy/client timeouts on long-running commands.
      *
-     * In interactive mode, woob runs on a pseudo-terminal (tools/woob-tty.py): it may then
+     * In interactive mode, the output of woob is a pseudo-terminal (proc_open "pty"): it may then
      * start a two-factor authentication and wait for its validation in the bank app,
      * and each message it writes (other than the data) is given to $onMessage.
      *
@@ -127,9 +127,6 @@ final class Woob {
     public static function getBankData(string $type, string $bankId, bool $interactive = false, ?callable $onMessage = null, ?callable $onDebug = null, ?callable $onCommand = null): ?array
     {
         $command = self::buildCommand($type, $bankId);
-        if ($interactive) {
-            $command = self::interactiveCommand($command);
-        }
         Logger::debug("Calling woob : $command");
         if ($onCommand !== null) {
             $onCommand($command);
@@ -137,7 +134,7 @@ final class Woob {
 
         $stderr = '';
         $stdout = self::executeWithHeartbeat($command, $stderr, true, $interactive ? $onMessage : null,
-            Config::get('woob_debug') ? $onDebug : null);
+            Config::get('woob_debug') ? $onDebug : null, $interactive);
         $data = self::parseOutput($type, $stdout);
         self::failOnEmptyWithError($data, $stderr, "woob returned no data");
 
@@ -488,17 +485,6 @@ final class Woob {
     }
 
     /**
-     * Command that runs a woob command on a pseudo-terminal (interactive mode).
-     *
-     * @param string $command The woob command
-     * @return string The command run through tools/woob-tty.py
-     */
-    private static function interactiveCommand(string $command): string
-    {
-        return 'python3 ' . escapeshellarg(dirname(__DIR__, 2) . '/tools/woob-tty.py') . ' ' . escapeshellarg($command);
-    }
-
-    /**
      * Give the complete lines of a woob output that are not data (JSON) to a callback,
      * without terminal colors. The incomplete last line stays in the buffer.
      *
@@ -527,14 +513,16 @@ final class Woob {
      * @param bool          $heartbeat Send SSE heartbeats while waiting (stream routes only)
      * @param callable|null $onMessage Receives each line of the output that is not data
      * @param callable|null $onError   Receives each line of the error output
+     * @param bool          $terminal  Give woob a pseudo-terminal as standard output: woob
+     *                                 only starts a two-factor authentication on a terminal
      * @return string The stdout output of the command
      * @throws Exception If the process fails to start or exits with a non-zero code
      */
-    private static function executeWithHeartbeat(string $command, string &$stderr = '', bool $heartbeat = true, ?callable $onMessage = null, ?callable $onError = null): string
+    private static function executeWithHeartbeat(string $command, string &$stderr = '', bool $heartbeat = true, ?callable $onMessage = null, ?callable $onError = null, bool $terminal = false): string
     {
         $descriptors = [
             0 => ['pipe', 'r'],
-            1 => ['pipe', 'w'],
+            1 => $terminal ? ['pty'] : ['pipe', 'w'],
             2 => ['pipe', 'w'],
         ];
 
@@ -548,7 +536,8 @@ final class Woob {
 
         $output = self::readOutputs([1 => $pipes[1], 2 => $pipes[2]], $heartbeat, [1 => $onMessage, 2 => $onError]);
 
-        $stdout = $output[1];
+        // The terminal turns each "\n" into "\r\n" (a raw "\r" never appears in JSON)
+        $stdout = $terminal ? str_replace("\r\n", "\n", $output[1]) : $output[1];
         $stderr = $output[2];
         self::checkExitCode(proc_close($process), $stdout, $stderr);
 
@@ -606,7 +595,8 @@ final class Woob {
     private static function readChunk(int $index, array &$open, array &$output, array &$pending, ?callable $callback): void
     {
         $pipe = $open[$index];
-        $chunk = fread($pipe, 8192);
+        // A pseudo-terminal ends with a read error (EIO) instead of an empty read
+        $chunk = @fread($pipe, 8192);
         if ($chunk === '' || $chunk === false) {
             fclose($pipe);
             unset($open[$index]);
