@@ -69,7 +69,8 @@ final class User {
      *
      * @param string $username The username
      * @param string $password The password
-     * @param array<string, mixed>|null $device Associative array with 'name' and 'token' (mobile app only)
+     * @param array<string, mixed>|null $device Associative array with 'name', 'token' and, optional,
+     *                                          'platform' (ios by default, or android) (mobile apps only)
      * @return array{exp: int, sub: int, iat: int, token: string} The JWT token data
      * @throws Error If the credentials are invalid
      */
@@ -98,7 +99,7 @@ final class User {
 
         // Update or create the device (the web portal does not send one)
         if (!empty($device['token'])) {
-            Device::createOrUpdate($user['id'], $device['name'] ?? '', $device['token']);
+            Device::createOrUpdate($user['id'], $device['name'] ?? '', $device['token'], strtolower(trim((string)($device['platform'] ?? 'ios'))));
         }
              
         $token = Jwt::createJwt($user['id']);

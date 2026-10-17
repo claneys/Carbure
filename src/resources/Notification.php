@@ -4,8 +4,9 @@
  * Notification.php
  *
  * The notifications of the household, sent on the channels chosen by each user for
- * each kind of notification: push to the devices of the user (iOS app) and email to
- * the address of his profile (SMTP server of the configuration file). Without a
+ * each kind of notification: push to the devices of the user (iOS app, through the push
+ * service Carbure Push: API key of the configuration file) and email to the address of
+ * his profile (SMTP server of the configuration file). Without a
  * choice, a kind is pushed and not emailed (table user_notification, no row), except
  * the budget alerts, off on every channel (opt-in).
  *
@@ -22,6 +23,7 @@ use Carbure\Lib\Jwt;
 use Carbure\Lib\Logger;
 use Carbure\Lib\Mailer;
 use Carbure\Lib\Messages;
+use Carbure\Lib\PushRelay;
 use Error;
 use Exception;
 use Throwable;
@@ -50,12 +52,12 @@ final class Notification {
      *
      * @return array<string, mixed> preferences ({kind: {push, email}}), smtp (an SMTP server
      *               is configured), address (email of the profile, null if none),
-     *               email_available (smtp and address), budget_threshold (percent of a
-     *               budget reached to alert, kind budget), alert_threshold (amount of a
-     *               large expense, kind expense, null: off), budget_category (category
-     *               watched by the budget alerts, null: all the budgets), budgets (the
-     *               expense categories with a budget this month, [{id, name}], and the one
-     *               watched)
+     *               email_available (smtp and address), push_available (an API key of the
+     *               push service is configured), budget_threshold (percent of a budget
+     *               reached to alert, kind budget), alert_threshold (amount of a large
+     *               expense, kind expense, null: off), budget_category (category watched by
+     *               the budget alerts, null: all the budgets), budgets (the expense
+     *               categories with a budget this month, [{id, name}], and the one watched)
      */
     #[ApiRoute('/user/notifications', method: 'GET')]
     public static function get(): array
@@ -223,10 +225,14 @@ final class Notification {
      * @param string $title  Title
      * @param string $body   Text
      * @param int    $badge  Badge of the app icon
-     * @return bool Whether it was pushed (false: failed, logged)
+     * @return bool Whether it was pushed (false: no API key of the push service, or failed, logged)
      */
     private static function push(int $userId, string $title, string $body, int $badge): bool
     {
+        if (!PushRelay::isConfigured()) {
+            Logger::info("Notification of user $userId not pushed: no API key of the push service (push_api_key)");
+            return false;
+        }
         try {
             Device::sendNotification($userId, $title, $body, $badge);
             return true;
@@ -316,6 +322,7 @@ final class Notification {
             'smtp' => $smtp,
             'address' => $address,
             'email_available' => $smtp && $address !== null,
+            'push_available' => PushRelay::isConfigured(),
             'budget_threshold' => self::budgetThreshold($userId),
             'alert_threshold' => $user === null || $user['alert_threshold'] === null ? null : (float)$user['alert_threshold'],
             'budget_category' => $category,

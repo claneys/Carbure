@@ -3,9 +3,10 @@
  *
  * Settings and Sync tabs (Administration menu): the configuration file of the
  * instance by section, the secrets masked and only the safe settings editable
- * (the server checks every value; the SMTP password only replaced) with a test
- * email of the SMTP settings; the request that starts the bank synchronization
- * for a scheduler (cron, Synology task...).
+ * (the server checks every value; the SMTP password and the push API key only
+ * replaced) with a test email of the SMTP settings, the registration of the instance
+ * on the push service (Carbure Push) and a test push; the request that starts the
+ * bank synchronization for a scheduler (cron, Synology task...).
  *
  * @module configModule
  */
@@ -22,6 +23,19 @@ export function syncCommand(url, token, account = '') {
     const header = token ? ` -H "X-Sync-Token: ${token}"` : '';
     // -N: the progress is streamed (Server-Sent Events)
     return `curl -sN${header} "${target}"`;
+}
+
+/**
+ * Message of a test push: how many devices were reached, or why none was
+ * @param {Object} result - Answer of POST /system/push-test {sent, devices, results}
+ * @returns {{ok: boolean, key: string, params: Object}} Translation key and its parameters
+ */
+export function pushTestOutcome(result) {
+    if (result.sent > 0) {
+        return { ok: true, key: 'pushTestSent', params: { count: result.sent, devices: result.devices } };
+    }
+    const errors = [...new Set(result.results.map(device => device.error || device.status))].join(', ');
+    return { ok: false, key: 'pushTestFailed', params: { errors } };
 }
 
 /**
@@ -47,7 +61,12 @@ export function createConfigModule(getApiService) {
                 // Test email: recipient ('' for the address of the administrator), result
                 smtpTestTo: '',
                 sendingTestEmail: false,
-                smtpTestResult: null
+                smtpTestResult: null,
+                // Push service: registration and test push in progress, their result
+                registeringPush: false,
+                pushRegisterResult: null,
+                sendingTestPush: false,
+                pushTestResult: null
             };
         },
 
@@ -74,6 +93,16 @@ export function createConfigModule(getApiService) {
              */
             configChangeCount() {
                 return Object.keys(this.configChanges).length;
+            },
+
+            /**
+             * Whether an API key of the push service is saved
+             * @returns {boolean}
+             */
+            pushKeySet() {
+                const push = this.configData ? this.configData.sections.find(section => section.name === 'push') : null;
+                const key = push ? push.settings.find(setting => setting.key === 'push_api_key') : null;
+                return !!(key && key.set);
             },
 
             /**
@@ -228,6 +257,48 @@ export function createConfigModule(getApiService) {
                     this.smtpTestResult = { ok: false, message: error.message };
                 } finally {
                     this.sendingTestEmail = false;
+                }
+            },
+
+            /**
+             * Registers the instance on the push service (or renews its key, after
+             * confirmation) and shows the saved configuration
+             * @returns {Promise<void>}
+             */
+            async registerPush() {
+                if (this.registeringPush || (this.pushKeySet && !window.confirm(this.t('pushRenewConfirm')))) {
+                    return;
+                }
+                this.registeringPush = true;
+                this.pushRegisterResult = null;
+                try {
+                    const result = await getApiService().registerPush();
+                    this.pushRegisterResult = { ok: true, message: this.t(result.renewed ? 'pushRenewed' : 'pushRegistered', { key: result.key_id }) };
+                    this.setConfig(await getApiService().fetchConfig());
+                } catch (error) {
+                    this.pushRegisterResult = { ok: false, message: error.message };
+                } finally {
+                    this.registeringPush = false;
+                }
+            },
+
+            /**
+             * Sends a test push notification to the devices of the administrator
+             * @returns {Promise<void>}
+             */
+            async sendTestPush() {
+                if (this.sendingTestPush) {
+                    return;
+                }
+                this.sendingTestPush = true;
+                this.pushTestResult = null;
+                try {
+                    const outcome = pushTestOutcome(await getApiService().sendTestPush());
+                    this.pushTestResult = { ok: outcome.ok, message: this.t(outcome.key, outcome.params) };
+                } catch (error) {
+                    this.pushTestResult = { ok: false, message: error.message };
+                } finally {
+                    this.sendingTestPush = false;
                 }
             },
 

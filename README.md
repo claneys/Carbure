@@ -125,7 +125,7 @@ flowchart LR
     portal[Web portal] <--> api
     ios[iOS app] <--> api
     ai[AI agent] <-->|MCP| api
-    sync -->|APNs| push[iPhone notifications]
+    sync -->|Carbure Push relay| push[iPhone notifications]
 ```
 
 ## Quick start

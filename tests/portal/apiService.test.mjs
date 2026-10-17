@@ -186,6 +186,14 @@ test('notifications and test email requests', async () => {
     assert.deepEqual(JSON.parse(calls[2].options.body), {});
     assert.deepEqual(JSON.parse(calls[3].options.body), { to: 'other@example.com' });
 
+    await api.registerPush();
+    await api.sendTestPush();
+    assert.equal(calls.at(-2).url, `${BASE}/system/push-register`);
+    assert.equal(calls.at(-2).options.method, 'POST');
+    assert.equal(calls.at(-1).url, `${BASE}/system/push-test`);
+    assert.equal(calls.at(-1).options.method, 'POST');
+    calls.splice(4);
+
     await api.updateBudgetThreshold(80);
     assert.equal(calls[4].url, `${BASE}/user/notifications`);
     assert.equal(calls[4].options.method, 'PUT');

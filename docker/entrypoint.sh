@@ -6,7 +6,7 @@
 set -e
 
 APP=/var/www/carbure
-mkdir -p /data/conf/certs /data/logs /data/cache /data/woob
+mkdir -p /data/conf /data/logs /data/cache /data/woob
 chown -R www-data:www-data /data
 # woob (logins and passwords of the banks, modules): readable by www-data only. woob
 # refuses to start if its file of the banks is readable by other users, as it is once

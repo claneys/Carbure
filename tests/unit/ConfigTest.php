@@ -33,10 +33,4 @@ class ConfigTest extends TestCase
         $this->expectExceptionMessage('Config file not found');
         Config::load('does-not-exist');
     }
-
-    public function testGetAbsolutePath()
-    {
-        $this->assertSame('/etc/carbure.p8', Config::getAbsolutePath('/etc/carbure.p8'));
-        $this->assertSame(Config::get('install_dir') . '/data/conf/certs/key.p8', Config::getAbsolutePath('conf/certs/key.p8'));
-    }
 }

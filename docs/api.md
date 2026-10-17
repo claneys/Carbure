@@ -37,7 +37,7 @@ icon: material/api
 | 405 | `GET /mcp` (le serveur MCP n'ouvre pas de flux) |
 | 409 | Conflit (doublon, suppression d'un utilisateur propriétaire de transactions, dernier administrateur…) |
 | 423 | Compte bloqué après trop d'échecs de connexion |
-| 500 | Erreur serveur (base de données, woob, APNs, migration…) |
+| 500 | Erreur serveur (base de données, woob, migration…) |
 | 503 | Carbure n'est pas encore installé (voir [Assistant d'installation](#assistant-dinstallation)) |
 
 ```json
@@ -54,12 +54,13 @@ icon: material/api
 |---|---|---|---|
 | `username` | string | oui | Identifiant |
 | `password` | string | oui | Mot de passe |
-| `device` | objet `{name, token}` | non | Appareil iOS à enregistrer pour les notifications |
+| `device` | objet `{name, token, platform?}` | non | Appareil mobile à enregistrer pour les notifications ; `platform` : `ios` (par défaut : l'app iOS ne l'envoie pas) ou `android` (`400` sinon) |
 
 ```bash
 curl -X POST https://exemple.fr/api/user/login \
   -H 'Content-Type: application/json' \
   -d '{"username":"alice","password":"…","device":{"name":"iPhone","token":"<token APNs>"}}'
+# Android (app à venir) : "device":{"name":"Pixel","token":"<token FCM>","platform":"android"}
 ```
 
 ```json
@@ -133,6 +134,7 @@ Canaux de chaque type de notification de l'utilisateur connecté :
   "smtp": true,
   "address": "alice@example.com",
   "email_available": true,
+  "push_available": true,
   "budget_threshold": 100,
   "alert_threshold": 200.0,
   "budget_category": null,
@@ -145,7 +147,9 @@ Types : `sync` (résultat d'une synchronisation), `rule` (nouvelle transaction d
 catégorie budgétée au-delà du seuil des budgets). Sans choix de l'utilisateur, un type est
 envoyé en push et pas par email, sauf `budget`, désactivé sur tous les canaux (à activer).
 `smtp` indique qu'un serveur SMTP est configuré, `address` l'adresse du profil (`null` si
-aucune), `email_available` que les emails peuvent partir (les deux) et `budget_threshold`
+aucune), `email_available` que les emails peuvent partir (les deux), `push_available`
+qu'une clé d'API du service de notifications push est configurée (sinon aucune
+notification push n'est envoyée) et `budget_threshold`
 le seuil des alertes de budget, en pourcentage du budget (100 par défaut). `alert_threshold`
 est le montant d'une dépense importante (type `expense`, `null` : désactivé, le même que
 `GET /user/me`), `budget_category` la catégorie dont le budget est surveillé par les alertes
@@ -668,7 +672,9 @@ renvoie `applied`, le nombre de transactions recatégorisées.
 
 ### `GET /device`
 
-Appareils de l'utilisateur connecté : `id`, `user_id`, `name`, `token`, `lastLogin`.
+Appareils de l'utilisateur connecté : `id`, `user_id`, `name`, `token`, `platform` (`ios` ou
+`android` ; `ios` tant que la migration `2026-10-23_device_platform` n'est pas appliquée),
+`lastLogin`.
 
 ### `DELETE /device`
 
@@ -677,7 +683,12 @@ notifications). 404 si l'appareil n'existe pas ou appartient à un autre utilisa
 
 ### `POST /device/push`
 
-Envoie une notification de test à tous les appareils de l'utilisateur connecté.
+Envoie une notification de test à tous les appareils de l'utilisateur connecté, par le
+service Carbure Push. Renvoie le résultat de chaque token : `success`, `http_code`,
+`status` (`sent`, `unregistered`, `invalid_token`, `forbidden`, `device_limit`, `error`),
+`response` et, s'il n'est pas envoyé, `error` (sans clé d'API : `Push service not
+configured (push_api_key)`). Un appareil `unregistered` (application supprimée, token
+expiré) est supprimé.
 
 ## Agents IA (MCP)
 
@@ -821,8 +832,7 @@ Le fichier de configuration, par section : `file` (chemin dans l'instance), `wri
 
 `values` : les nouvelles valeurs par clé, uniquement parmi les réglages modifiables
 (`log_level`, `log_retention_days`, `savings_category`, `public_url`, `woob_transactions`, `woob_logging`,
-`woob_debug`, `woob_auto_update`, `woob_2fa_wait`, `woob_2fa_retries`, `apns_environment`, `apns_auth_method`, `apns_bundle_id`,
-`apns_key_id`, `apns_team_id`, `smtp_host`, `smtp_port`, `smtp_encryption`, `smtp_auth`,
+`woob_debug`, `woob_auto_update`, `woob_2fa_wait`, `woob_2fa_retries`, `push_url`, `push_api_key`, `smtp_host`, `smtp_port`, `smtp_encryption`, `smtp_auth`,
 `smtp_username`, `smtp_password`, `smtp_from`, `smtp_from_name`). Toutes les valeurs sont vérifiées avant d'écrire quoi que
 ce soit (`400` sinon, fichier inchangé) ; l'ancien fichier est gardé en `.bak`. Renvoie la
 configuration comme `GET`.
@@ -842,6 +852,22 @@ le serveur SMTP de la configuration, dans la langue de l'utilisateur de cette ad
 celle de l'administrateur). Renvoie `{"sent": true, "to": "…"}` ; `400` sans
 serveur SMTP configuré ou sans destinataire, `502` si le serveur est injoignable ou refuse
 l'email (sa réponse est dans le message d'erreur).
+
+### `POST /system/push-register` — administrateur
+
+Inscrit l'instance sur le service de notifications push (`push_url`, le service officiel
+par défaut) : résout sa preuve de travail, obtient une clé d'API et l'écrit dans
+`push_api_key`. Avec une clé déjà configurée, la **renouvelle** (les appareils continuent
+de recevoir les notifications). La clé n'est jamais renvoyée :
+`{"registered": true, "renewed": false, "key_id": "…", "limits": {…}}`. `502` si le service
+est injoignable ou refuse, `429` au-delà de ses limites d'inscription ; le fichier de
+configuration doit être modifiable (vérifié avant l'appel).
+
+### `POST /system/push-test` — administrateur
+
+Envoie une notification de test aux appareils de l'administrateur, dans sa langue :
+`{"sent": 1, "devices": 2, "results": [{"device": "iPhone", "sent": true, "status": "sent", "error": null}, …]}`
+(sans les tokens). `400` sans clé d'API ou sans appareil.
 
 ### `POST /system/sync-token` — administrateur
 

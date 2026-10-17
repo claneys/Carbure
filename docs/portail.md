@@ -366,8 +366,8 @@ Le fichier de configuration (`data/conf/prod.ini`) section par section,
 avec une description de chaque réglage. Les secrets (`db_password`, `jwtsecret`,
 `password_salt`, `sync_token`…) ne sont jamais affichés. Seuls les réglages sans risque
 sont modifiables — `log_level`, `log_retention_days`, `savings_category`, `public_url`, `woob_transactions`,
-`woob_logging`, `woob_debug`, `woob_auto_update`, les identifiants APNs et le serveur
-SMTP des emails — avec des
+`woob_logging`, `woob_debug`, `woob_auto_update`, le service de notifications push
+(`push_url`, `push_api_key`) et le serveur SMTP des emails — avec des
 listes, des interrupteurs et des champs vérifiés par le serveur ; les autres portent un
 cadenas. Les réglages modifiés sont surlignés ; la barre du bas les enregistre ou les
 annule. Le fichier précédent est gardé en `prod.ini.bak` (`GET`/`PUT /system/config`).
@@ -439,10 +439,12 @@ Trois sous-onglets, comme l'administration : **Profil**, **Notifications** et **
     « Catégorie › Sous-catégorie »), et le pourcentage de ce budget auquel **alerter**
     (entier de 50 à 200, 100 par défaut).
 
-  La colonne email est grisée, avec la raison, tant qu'aucun serveur SMTP n'est configuré
-  ou que le profil n'a pas d'adresse email (`GET`/`PUT /user/notifications`).
-- **Appareils** : appareils iOS enregistrés à la connexion depuis l'app, avec la
-  date de dernière connexion et le token APNs, masqué par défaut. Les boutons permettent
+  La colonne push est grisée, avec la raison, tant que l'administrateur n'a pas inscrit
+  l'instance au service Carbure Push (pas de `push_api_key`) ; la colonne email, tant
+  qu'aucun serveur SMTP n'est configuré ou que le profil n'a pas d'adresse email
+  (`GET`/`PUT /user/notifications`).
+- **Appareils** : appareils mobiles enregistrés à la connexion depuis l'app, avec la
+  date de dernière connexion et le token de notification, masqué par défaut. Les boutons permettent
   de l'afficher en entier, de le copier (HTTPS requis ; sinon le token est affiché) ou
   de **supprimer** un ancien appareil.
 

@@ -12,13 +12,19 @@
 namespace Carbure\Resources;
 
 use Carbure\Lib\ApiRoute;
-use Carbure\Lib\Apns;
 use Carbure\Lib\Db;
 use Carbure\Lib\Jwt;
 use Carbure\Lib\Logger;
+use Carbure\Lib\PushRelay;
 use Error;
 
 final class Device {
+
+    /** Platforms of the devices: ios (APNs, the only app before Android) or android (FCM) */
+    const PLATFORMS = ['ios', 'android'];
+
+    /** Whether the column devices.platform exists (null: not checked yet) */
+    private static ?bool $platformColumn = null;
 
     /**
      * Get all devices of the authenticated user.
@@ -54,11 +60,13 @@ final class Device {
      * Get all devices for a user.
      *
      * @param int $userId The user ID
-     * @return list<array<string, mixed>> List of all devices for the user
+     * @return list<array<string, mixed>> List of all devices for the user: id, user_id, name,
+     *               token, platform (ios before the migration that adds it), lastLogin
      */
     public static function get(int $userId): array
     {
-        $sql = "SELECT id, user_id, name, token, lastLogin 
+        $platform = self::hasPlatform() ? 'platform' : "'ios' AS platform";
+        $sql = "SELECT id, user_id, name, token, $platform, lastLogin 
                 FROM devices 
                 WHERE user_id=? 
                 ORDER BY lastLogin DESC";
@@ -99,13 +107,18 @@ final class Device {
     /**
      * Create a new device or update if it already exists.
      *
-     * @param int    $userId The user ID
-     * @param string $name   The device name
-     * @param string $token  The unique device token
+     * @param int    $userId   The user ID
+     * @param string $name     The device name
+     * @param string $token    The unique device token
+     * @param string $platform ios (default: the iOS app sends no platform) or android
      * @return array<string, mixed> The created or updated device data with id
+     * @throws Error If the platform is not known (400)
      */
-    public static function createOrUpdate(int $userId, string $name, string $token): array
+    public static function createOrUpdate(int $userId, string $name, string $token, string $platform = 'ios'): array
     {
+        if (!in_array($platform, self::PLATFORMS, true)) {
+            throw new Error("Unknown device platform: $platform (" . implode(', ', self::PLATFORMS) . ")", 400);
+        }
         // Check if device with this token already exists
         $existingDevice = self::getByToken($token);
 
@@ -125,23 +138,42 @@ final class Device {
             
             $deviceId = $stmt->insert_id;
         }
+        if (self::hasPlatform()) {
+            Db::execute("UPDATE devices SET platform=? WHERE token=?", "ss", $platform, $token);
+        }
 
         return array(
             'id' => $deviceId,
             'user_id' => $userId,
             'name' => $name,
-            'token' => $token
+            'token' => $token,
+            'platform' => $platform
         );
     }
 
     /**
-     * Send push notification to all devices of a user
+     * Whether the column devices.platform exists: the code runs before the migration
+     * that adds it (2026-10-23_device_platform), every device being then an iOS one.
+     *
+     * @return bool
+     */
+    private static function hasPlatform(): bool
+    {
+        return self::$platformColumn ??= (int)Db::queryOne("SELECT COUNT(*) AS n FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'devices' AND COLUMN_NAME = 'platform'", "")['n'] > 0;
+    }
+
+    /**
+     * Send push notification to all devices of a user, through the push service
+     * (Carbure Push); the devices it reports unregistered (app removed, token expired)
+     * are forgotten.
+     *
      * @param int $userId The user ID
      * @param string $title Notification title
      * @param string $body Notification body
      * @param int $badge Badge number to display on the app icon (optional)
      * @param array<string, mixed> $data Optional custom data payload
-     * @return array<string, array<string, mixed>> Results for each device
+     * @return array<string, array<string, mixed>> Results for each device (see PushRelay::sendToMultiple())
      */
     public static function sendNotification(int $userId, string $title, string $body, int $badge = 0, array $data = []): array
     {
@@ -153,12 +185,19 @@ final class Device {
             return [];
         }
         
-        // Extract device tokens
-        $deviceTokens = array_column($devices, 'token');
+        // Tokens and their platform
+        $deviceTokens = array_column($devices, 'platform', 'token');
         
         // Send notifications
         Logger::info("Sending push notification to " . count($deviceTokens) . " device(s) for user $userId");
-        return Apns::sendToMultiple($deviceTokens, $title, $body, $badge, $data);
+        $results = PushRelay::sendToMultiple($deviceTokens, $title, $body, $badge, $data);
+        foreach ($results as $token => $result) {
+            if (($result['status'] ?? null) === 'unregistered') {
+                Db::execute("DELETE FROM devices WHERE token=? AND user_id=?", "si", (string)$token, $userId);
+                Logger::info("Device of user $userId removed: unregistered from the push notifications");
+            }
+        }
+        return $results;
     }
 
     /**

@@ -122,6 +122,11 @@ test('chooses the channels of each notification', async ({ userPage: page, api }
         await expect(notification(page, kind, 'email')).toBeDisabled();
     }
     await expect(page.locator('#notifications-email-unavailable')).toContainText(tr('notificationsEmailNoSmtp'));
+    // No API key of the push service (e2e configuration): push unavailable, the kinds
+    // on stay changeable (to turn them off), the opt-in one cannot be turned on
+    await expect(page.locator('#notifications-push-unavailable')).toContainText(tr('notificationsPushUnavailable'));
+    await expect(notification(page, 'sync', 'push')).toBeEnabled();
+    await expect(notification(page, 'budget', 'push')).toBeDisabled();
 
     await notification(page, 'sync', 'push').uncheck();
     await expect(page.locator('.toast')).toHaveText(tr('notificationsSaved'));

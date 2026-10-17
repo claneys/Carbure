@@ -330,7 +330,8 @@ final class Webservice {
             // file: an imported bank statement (household data, large);
             // datasets: the rows of an imported backup (household data, large)
             if (in_array(strtolower((string)$key), ['password', 'token', 'settings', 'admin_password', 'db_password',
-                    'code', 'code_verifier', 'refresh_token', 'access_token', 'client_secret', 'file', 'smtp_password', 'datasets'], true)) {
+                    'code', 'code_verifier', 'refresh_token', 'access_token', 'client_secret', 'file', 'smtp_password',
+                    'datasets', 'push_api_key', 'api_key'], true)) {
                 $data[$key] = '***';
             } elseif (is_array($value)) {
                 $data[$key] = self::maskSensitive($value);

@@ -1,6 +1,6 @@
 ---
 title: "Configuration du serveur (fichier prod.ini)"
-description: "Référence de la configuration de Carbure : base de données, jetons, woob, synchronisation planifiée, notifications push APNs, journaux et paramètres du portail."
+description: "Référence de la configuration de Carbure : base de données, jetons, woob, synchronisation planifiée, notifications push (Carbure Push), journaux et paramètres du portail."
 icon: material/cog-outline
 ---
 
@@ -25,8 +25,7 @@ relu à chaque requête), sauf le conteneur Docker pour `SYNC_INTERVAL`.
     Les clés marquées ✏️ dans les tableaux ci-dessous s'y modifient directement : `log_level`,
     `log_retention_days`, `savings_category`, `public_url`, `woob_transactions`,
     `woob_logging`, `woob_debug`, `woob_auto_update`, `woob_2fa_wait`, `woob_2fa_retries`,
-    `apns_environment`,
-    `apns_auth_method`, `apns_bundle_id`, `apns_key_id`, `apns_team_id` et les réglages
+    `push_url`, `push_api_key` et les réglages
     SMTP (`smtp_host`, `smtp_port`, `smtp_encryption`, `smtp_auth`, `smtp_username`,
     `smtp_password`, `smtp_from`, `smtp_from_name`). Chaque valeur est
     vérifiée (liste de valeurs, nombre borné, format) avant l'écriture, et le fichier
@@ -96,19 +95,27 @@ transaction importée.
 | `woob_2fa_wait` ✏️ | Synchronisation planifiée : secondes d'attente (0 à 300, 15 par défaut) avant de resynchroniser un compte dont la banque demande une validation dans son application |
 | `woob_2fa_retries` ✏️ | Synchronisation planifiée : nombre de nouvelles tentatives après cette demande (0 à 5, 1 par défaut ; 0 pour ne pas réessayer) |
 
-## `[apns]`
+## `[push]`
+
+Les notifications push des applications mobiles (iOS aujourd'hui, Android à venir) passent
+par **Carbure Push**, un service externe qui détient les identifiants des fournisseurs (clé
+APNs d'Apple, compte de service Firebase) : l'instance n'en a besoin d'aucun. Elle s'y
+inscrit une fois (bouton **Inscrire l'instance** de **Administration → Paramètres**, qui
+résout une preuve de travail et enregistre la clé obtenue ici) puis lui envoie chaque
+notification avec sa clé d'API.
 
 | Clé | Description |
 |---|---|
-| `apns_bundle_id` ✏️ | Bundle ID de l'app iOS (sujet APNs) |
-| `apns_auth_method` ✏️ | `token` (clé `.p8`, recommandé) ou `certificate` |
-| `apns_key_path` | Chemin de la clé `.p8`, absolu ou relatif au dossier `data/` (ex. `conf/certs/AuthKey_XXXX.p8`, soit `data/conf/certs/AuthKey_XXXX.p8`) |
-| `apns_key_id`, `apns_team_id` ✏️ | Identifiants Apple Developer |
-| `apns_certificate_path`, `apns_certificate_password` | Pour l'authentification par certificat |
-| `apns_environment` ✏️ | `production` ou `sandbox` |
-| `apns_endpoint` | Facultatif : URL APNs imposée (tests), à la place de celle déduite de `apns_environment` |
+| `push_url` ✏️ | Adresse du service ; vide : le service officiel `https://push.carbure.org` |
+| `push_api_key` ✏️ | Clé d'API de l'instance (`cpk_<id>_<secret>`) : un secret, jamais affiché ni journalisé ; renseignée par **Inscrire l'instance** (ou collée). Vide : **aucune notification push n'est envoyée** (journalisé en info, le profil des utilisateurs l'indique) |
 
-Les clés `.p8` placées dans `data/conf/certs/` sont ignorées par Git.
+Le bouton **Renouveler la clé** remplace une clé (fuitée par exemple) par une nouvelle,
+les appareils continuant de recevoir les notifications. **Envoyer une notification de
+test** l'envoie aux appareils de l'administrateur. Les appareils que le service déclare
+désinscrits (application supprimée, jeton expiré) sont oubliés.
+
+Une ancienne section `[apns]` est ignorée (affichée en lecture seule) : elle peut être
+supprimée, comme la clé `.p8` de `data/conf/certs/`.
 
 ## `[smtp]`
 

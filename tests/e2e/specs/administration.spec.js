@@ -2,6 +2,7 @@
 // The e2e database is up to date: the state of the schema is simulated.
 const { test, expect, tr } = require('../fixtures');
 const { startFakeSmtp } = require('../fake-smtp');
+const { startFakePushRelay } = require('../fake-push-relay');
 
 /**
  * Simulates a database with a pending migration and the example session secret
@@ -158,4 +159,53 @@ test('an administrator configures the SMTP server and sends a test email', async
     } finally {
         await smtp.close();
     }
+});
+
+test('an administrator registers the instance on the push service and sends a test push', async ({ adminPage: page }) => {
+    const relay = await startFakePushRelay();
+    try {
+        await openAdministration(page, 'tabSettings');
+        // No API key: the test push cannot be sent, the registration is offered
+        await expect(page.getByText(tr('pushUnavailableAdmin'))).toBeVisible();
+        await expect(page.getByRole('button', { name: tr('pushTestButton') })).toBeDisabled();
+
+        // The fake push service instead of the official one
+        await page.locator('#config-push_url').fill(relay.url);
+        await page.getByRole('button', { name: tr('save') }).click();
+        await expect(page.locator('.toast')).toHaveText(tr('configSaved'));
+
+        await page.getByRole('button', { name: tr('pushRegisterButton') }).click();
+        await expect.poll(() => relay.keys.length).toBe(1);
+        await expect(page.getByRole('status').filter({ hasText: tr('pushRegistered', { key: relay.keys[0].slice(4, 20) }) })).toBeVisible();
+        // The key is saved, never shown
+        await expect(page.locator('#config-push_api_key')).toHaveValue('');
+        await expect(page.locator('#config-push_api_key')).toHaveAttribute('placeholder', tr('configPasswordKeep'));
+        await expect(page.locator('.tab-panel')).not.toContainText(relay.keys[0]);
+
+        // To the iOS device of the administrator (data set)
+        await page.getByRole('button', { name: tr('pushTestButton') }).click();
+        await expect(page.getByRole('status').filter({ hasText: tr('pushTestSent', { count: 1, devices: 1 }) })).toBeVisible();
+        expect(relay.notifications).toHaveLength(1);
+        expect(relay.notifications[0].title).toBe('Notification de test');
+        expect(relay.notifications[0].key).toBe(relay.keys[0]);
+
+        // Renewed after confirmation (accepted by the fixtures): the new key is used
+        await page.getByRole('button', { name: tr('pushRenewButton') }).click();
+        await expect.poll(() => relay.keys.length).toBe(2);
+        await expect(page.getByRole('status').filter({ hasText: tr('pushRenewed', { key: relay.keys[1].slice(4, 20) }) })).toBeVisible();
+        await page.getByRole('button', { name: tr('pushTestButton') }).click();
+        await expect.poll(() => relay.notifications.length).toBe(2);
+        expect(relay.notifications[1].key).toBe(relay.keys[1]);
+    } finally {
+        await relay.close();
+    }
+});
+
+test('the push service unreachable: the registration tells why', async ({ adminPage: page }) => {
+    await openAdministration(page, 'tabSettings');
+    await page.locator('#config-push_url').fill('http://127.0.0.1:9');
+    await page.getByRole('button', { name: tr('save') }).click();
+    await expect(page.locator('.toast')).toHaveText(tr('configSaved'));
+    await page.getByRole('button', { name: tr('pushRegisterButton') }).click();
+    await expect(page.locator('.push-register .push-result[role="alert"]')).toContainText('Push service unreachable');
 });

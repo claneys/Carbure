@@ -162,6 +162,7 @@ CREATE TABLE `devices` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(50) NOT NULL,
   `token` varchar(200) NOT NULL,
+  `platform` varchar(10) NOT NULL DEFAULT 'ios' COMMENT 'ios (APNs) or android (FCM)',
   `lastLogin` timestamp NOT NULL DEFAULT current_timestamp(),
   `user_id` int(10) unsigned NOT NULL,
   PRIMARY KEY (`id`),
@@ -283,6 +284,7 @@ INSERT IGNORE INTO `schema_migrations` (`version`) VALUES
 ('2026-10-20_user_notification'),
 ('2026-10-21_user_budget_threshold'),
 ('2026-10-22_budget_alert'),
+('2026-10-23_device_platform'),
 ('2026-10-23_user_budget_alert_category');
 
 SET FOREIGN_KEY_CHECKS = 1;

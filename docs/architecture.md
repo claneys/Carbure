@@ -1,6 +1,6 @@
 ---
 title: "Architecture : portail web, API REST PHP et woob"
-description: "Comment fonctionne Carbure : portail web Vue 3, API REST PHP sans framework, MariaDB, synchronisation bancaire par woob, notifications APNs et serveur MCP."
+description: "Comment fonctionne Carbure : portail web Vue 3, API REST PHP sans framework, MariaDB, synchronisation bancaire par woob, notifications push (Carbure Push) et serveur MCP."
 icon: material/sitemap-outline
 ---
 
@@ -21,11 +21,13 @@ flowchart LR
         resolver --> res["src/resources/*"]
         res --> db[(MariaDB / MySQL)]
         res --> woob[Woob<br/>commande shell]
-        res --> apns[Apns<br/>HTTP/2]
+        res --> relay[PushRelay<br/>HTTPS + clé d'API]
         res --> mailer[Mailer<br/>SMTP]
     end
     woob --> banque[(Banque)]
-    apns --> apple[Apple Push<br/>Notification service]
+    relay --> push[Carbure Push<br/>service externe]
+    push --> apple[APNs iOS]
+    push --> fcm[FCM Android]
     mailer --> smtp[(Serveur SMTP)]
 ```
 
@@ -41,7 +43,7 @@ flowchart LR
 | `Setting` | Réglages modifiés depuis le portail (table `settings`) |
 | `Db` | Connexion `mysqli` unique, requêtes préparées |
 | `Woob` | Exécution de woob (`proc_open`) avec envoi de *heartbeats* SSE pendant l'attente |
-| `Apns` | Envoi des notifications push (authentification par clé `.p8` ou certificat) |
+| `PushRelay` | Client du service externe **Carbure Push** (dépôt privé `ltoinel/Carbure-push`), qui détient les identifiants d'Apple (APNs) et de Firebase (FCM) : inscription de l'instance (preuve de travail, clé d'API `push_api_key`), envoi des notifications avec la plateforme de chaque token (`ios`, `android`), tokens morts signalés puis supprimés ; sans clé, aucun push |
 | `Mailer` | Client SMTP intégré (sans dépendance) : envoi des notifications par email |
 | `Messages` | Textes des notifications (push et email) dans la langue du destinataire |
 | `BankFile`, `import/` | Lecture des relevés importés (OFX/QFX, QIF, CAMT.053, CSV avec un profil par banque) |
@@ -79,7 +81,7 @@ sequenceDiagram
     participant B as Bank::getSync
     participant W as Woob
     participant T as Transaction
-    participant D as Notification<br/>(Apns, Mailer)
+    participant D as Notification<br/>(PushRelay, Mailer)
     P->>B: GET /api/bank/sync (JWT ou sync_token)
     B->>B: GET_LOCK('bank_sync') — une seule synchro à la fois
     loop Pour chaque compte (numéro@banque)
@@ -181,4 +183,4 @@ l'identité de l'utilisateur du jeton. Voir [Agents IA (MCP)](mcp.md).
 | `docker/nginx.conf` | Site nginx (portail, Swagger, API, en-têtes de sécurité) |
 | `docker/php.ini`, `docker/php-fpm.conf` | Réglages PHP et PHP-FPM |
 | `docker/entrypoint.sh` | Prépare `/data`, attend la base et applique les migrations si Carbure est installé, lance la synchronisation périodique (`SYNC_INTERVAL`), puis PHP-FPM et nginx |
-| Volume `/data` (le dossier `data/` du projet) | `conf/prod.ini`, `conf/setup.code`, `conf/certs/`, `logs/`, `cache/`, configuration woob (`woob/`) |
+| Volume `/data` (le dossier `data/` du projet) | `conf/prod.ini`, `conf/setup.code`, `logs/`, `cache/`, configuration woob (`woob/`) |

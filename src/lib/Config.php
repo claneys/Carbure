@@ -109,20 +109,4 @@ final class Config {
     public static function set(string $key, mixed $value): void {
         self::$SETTINGS[$key] = $value;
     }
-    
-    /**
-     * Convert relative path to absolute path using install directory as base
-     * @param string $path Path to convert (can be relative or absolute)
-     * @return string Absolute path
-     */
-    public static function getAbsolutePath(string $path): string
-    {
-        // If already absolute (starts with / or drive letter on Windows), return as is
-        if (substr($path, 0, 1) === '/' || preg_match('/^[a-zA-Z]:\\\\/', $path)) {
-            return $path;
-        }
-        
-        // Relative paths (e.g. conf/certs/AuthKey.p8) are in the data directory
-        return self::get('data_dir') . '/' . ltrim($path, '/');
-    }
 }

@@ -3,6 +3,7 @@
 const { test, expect, tr, openTab, trustWoobRepository } = require('../fixtures');
 const { contrastProblems } = require('../a11y');
 const { startFakeSmtp } = require('../fake-smtp');
+const { startFakePushRelay } = require('../fake-push-relay');
 const path = require('path');
 
 // Hovering every button of every screen takes time
@@ -81,6 +82,7 @@ test('the notifications of the profile and the test email are readable', async (
     problems.push(...await contrastProblems(page, tr('myDevices')));
     await page.getByRole('tab', { name: tr('notificationsTitle'), exact: true }).click();
     await expect(page.locator('#notifications-email-unavailable')).toBeVisible();
+    await expect(page.locator('#notifications-push-unavailable')).toBeVisible();
     problems.push(...await contrastProblems(page, tr('notificationsTitle')));
     // The large expense threshold refused: its error message
     await page.getByLabel(tr('alertThreshold')).fill('-1');
@@ -115,6 +117,39 @@ test('the notifications of the profile and the test email are readable', async (
         problems.push(...await contrastProblems(page, `${tr('smtpTestTitle')} (sent)`));
     } finally {
         await smtp.close();
+    }
+
+    expect(problems).toEqual([]);
+});
+
+test('the registration on the push service and the test push are readable', async ({ adminPage: page }) => {
+    const problems = [];
+    const relay = await startFakePushRelay();
+    try {
+        await page.locator('.tabs').getByRole('button', { name: tr('tabAdministration'), exact: true }).click();
+        await page.getByRole('tab', { name: tr('tabSettings'), exact: true }).click();
+        // Not registered yet: the note, the disabled test button
+        await expect(page.getByText(tr('pushUnavailableAdmin'))).toBeVisible();
+        problems.push(...await contrastProblems(page, `${tr('pushRegisterTitle')} (no key)`));
+
+        await page.locator('#config-push_url').fill(relay.url);
+        await page.getByRole('button', { name: tr('save') }).click();
+        await expect(page.locator('.toast')).toHaveText(tr('configSaved'));
+        await page.getByRole('button', { name: tr('pushRegisterButton') }).click();
+        await expect(page.locator('.push-register .push-ok')).toBeVisible();
+        await page.getByRole('button', { name: tr('pushTestButton') }).click();
+        await expect(page.locator('.push-test .push-ok')).toBeVisible();
+        problems.push(...await contrastProblems(page, `${tr('pushTestTitle')} (sent)`));
+
+        // The push service unreachable: the error of the registration
+        await page.locator('#config-push_url').fill('http://127.0.0.1:9');
+        await page.getByRole('button', { name: tr('save') }).click();
+        await expect(page.locator('.toast')).toHaveText(tr('configSaved'));
+        await page.getByRole('button', { name: tr('pushRenewButton') }).click();
+        await expect(page.locator('.push-register .push-result[role="alert"]')).toBeVisible();
+        problems.push(...await contrastProblems(page, `${tr('pushRegisterTitle')} (error)`));
+    } finally {
+        await relay.close();
     }
 
     expect(problems).toEqual([]);

@@ -502,7 +502,7 @@ class BankTest extends DatabaseTestCase
 
         // The household is asked to approve the authentication in the portal (the device is
         // of the administrator: French)
-        $alerts = array_map(fn($r) => $r['payload']['aps']['alert'], FakeApnsServer::requests());
+        $alerts = array_map(fn($r) => $r['payload']['aps']['alert'], FakePushRelay::requests());
         $this->assertContains(['title' => 'Authentification forte requise', 'body' => 'Ouvrez Carbure (Comptes) pour approuver la connexion à BANK'],
             array_map(fn($a) => array_intersect_key($a, ['title' => 1, 'body' => 1]), $alerts));
 
@@ -594,7 +594,7 @@ class BankTest extends DatabaseTestCase
         $account = array_column(Bank::accounts(), null, 'bankId')['nocoming@bank'];
         $this->assertSame('OK', $account['last_sync_status']);
         $this->assertStringStartsWith('3 new (coming failed: Error while calling woob', $account['last_sync_message']);
-        $titles = array_map(fn($r) => $r['payload']['aps']['alert']['title'], FakeApnsServer::requests());
+        $titles = array_map(fn($r) => $r['payload']['aps']['alert']['title'], FakePushRelay::requests());
         $this->assertContains(Messages::t('fr', 'sync_success_title'), $titles);
         $this->assertNotContains(Messages::t('fr', 'sync_error_title'), $titles);
 
@@ -635,7 +635,7 @@ class BankTest extends DatabaseTestCase
         $this->assertSame('OK', $account['last_sync_status']);
         $this->assertSame('4 new', $account['last_sync_message']);
         // Only the result of the last attempt is notified
-        $titles = array_map(fn($r) => $r['payload']['aps']['alert']['title'], FakeApnsServer::requests());
+        $titles = array_map(fn($r) => $r['payload']['aps']['alert']['title'], FakePushRelay::requests());
         $this->assertContains(Messages::t('fr', 'sync_success_title'), $titles);
         $this->assertNotContains(Messages::t('fr', 'sync_2fa_title'), $titles);
     }
@@ -655,7 +655,7 @@ class BankTest extends DatabaseTestCase
         $account = array_column(Bank::accounts(), null, 'bankId')['validate@bank'];
         $this->assertSame('ERROR', $account['last_sync_status']);
         $this->assertTrue(Woob::needsTwoFactor($account['last_sync_message']));
-        $titles = array_map(fn($r) => $r['payload']['aps']['alert']['title'], FakeApnsServer::requests());
+        $titles = array_map(fn($r) => $r['payload']['aps']['alert']['title'], FakePushRelay::requests());
         $this->assertSame(1, count(array_filter($titles, fn($t) => $t === Messages::t('fr', 'sync_2fa_title'))));
 
         // No retry: woob_2fa_retries=0
@@ -808,7 +808,7 @@ class BankTest extends DatabaseTestCase
         $this->assertSame(4, Db::queryOne("SELECT COUNT(*) AS n FROM bank_transaction", "")['n']);
 
         // The admin device is notified for each of his accounts (success and failure)
-        $titles = array_map(fn($r) => $r['payload']['aps']['alert']['title'], FakeApnsServer::requests());
+        $titles = array_map(fn($r) => $r['payload']['aps']['alert']['title'], FakePushRelay::requests());
         $this->assertContains(Messages::t('fr', 'sync_success_title'), $titles);
         $this->assertContains(Messages::t('fr', 'sync_error_title'), $titles);
     }
@@ -822,16 +822,16 @@ class BankTest extends DatabaseTestCase
         $this->sync();
 
         // Only the new expense of 60.10 reaches the threshold (42.50, 25 and the income do not)
-        $alerts = array_values(array_filter(FakeApnsServer::requests(),
+        $alerts = array_values(array_filter(FakePushRelay::requests(),
             fn($r) => $r['payload']['aps']['alert']['title'] === 'Dépense importante à vérifier'));
         $this->assertCount(1, $alerts);
         // With the real date of the transaction
         $this->assertMatchesRegularExpression('#^PRLV SEPA EDF : -60,10 € le \d{2}/\d{2}/\d{4}$#', $alerts[0]['payload']['aps']['alert']['body']);
 
         // Known transactions do not trigger the alert again
-        FakeApnsServer::start();
+        FakePushRelay::start();
         $this->sync();
-        $titles = array_map(fn($r) => $r['payload']['aps']['alert']['title'], FakeApnsServer::requests());
+        $titles = array_map(fn($r) => $r['payload']['aps']['alert']['title'], FakePushRelay::requests());
         $this->assertNotContains('Dépense importante à vérifier', $titles);
     }
 
@@ -840,7 +840,7 @@ class BankTest extends DatabaseTestCase
         Db::query("UPDATE users SET alert_threshold = 10, language = 'en' WHERE id = 1");
 
         $this->assertSame(1, Bank::alertLargeExpenses('111@bnp', [['label' => 'CB SHOP', 'amount' => -12.5]]));
-        $this->assertSame('CB SHOP: -12.50 €', FakeApnsServer::requests()[0]['payload']['aps']['alert']['body']);
+        $this->assertSame('CB SHOP: -12.50 €', FakePushRelay::requests()[0]['payload']['aps']['alert']['body']);
         $this->assertSame(0, Bank::alertLargeExpenses('111@bnp', []));
 
         Db::query("UPDATE users SET alert_threshold = NULL");
@@ -975,7 +975,7 @@ class BankTest extends DatabaseTestCase
         ]);
         // One user of the data set has a device; every user is notified
         $this->assertSame((int)Db::queryOne("SELECT COUNT(*) AS n FROM users", "")['n'], $sent);
-        $this->assertNotEmpty(FakeApnsServer::requests());
+        $this->assertNotEmpty(FakePushRelay::requests());
         $this->assertSame(0, Bank::alertRuleMatches([]));
     }
 
@@ -983,7 +983,7 @@ class BankTest extends DatabaseTestCase
     {
         // The devices of every user are notified, whoever added the account
         Bank::notifyBankUsers('fail@bank', true);
-        $this->assertNotEmpty(FakeApnsServer::requests());
+        $this->assertNotEmpty(FakePushRelay::requests());
     }
 
     public function testOwnerOfUnknownAccount()

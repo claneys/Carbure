@@ -10,7 +10,7 @@ icon: material/code-braces
 
 | Chemin | Contenu |
 |---|---|
-| `src/lib/` | Espace de noms `Carbure\Lib` : socle technique (configuration, base, logs, JWT, routage, woob, APNs, assistant d'installation, migrations, réglages) |
+| `src/lib/` | Espace de noms `Carbure\Lib` : socle technique (configuration, base, logs, JWT, routage, woob, client du service de notifications push, assistant d'installation, migrations, réglages) |
 | `src/lib/import/`, `src/lib/import/banks/` | Espace de noms `Carbure\Lib\Import` : lecture des relevés importés (OFX, QIF, CAMT, CSV) et profils CSV des banques |
 | `src/resources/` | Espace de noms `Carbure\Resources` : ressources de l'API |
 | `portal/` | Portail web Vue 3 |
@@ -23,7 +23,7 @@ icon: material/code-braces
 | `tools/coverage-check.php` | Contrôle du seuil de couverture |
 | `composer.json`, `phpstan.neon`, `phpunit.xml`, `tools/phpstan/` | Outils de développement (PHPStan et PHPUnit 11, installés par Composer dans `vendor/`) et règles de Carbure ; l'API elle-même n'a aucune dépendance |
 | `docker/` | `Dockerfile`, `docker-compose.yml` (avec MariaDB), configuration nginx et PHP-FPM, `entrypoint.sh` |
-| `data/` (non versionné) | Données de l'instance : `conf/` (`prod.ini`, `certs/`), `logs/`, `cache/`, `woob/` (banques et identifiants) |
+| `data/` (non versionné) | Données de l'instance : `conf/` (`prod.ini`), `logs/`, `cache/`, `woob/` (banques et identifiants) |
 | `VERSION` | Version de Carbure (`dev` dans le dépôt, écrite par le build de release) |
 | `docs/`, `mkdocs.yml` | Cette documentation |
 

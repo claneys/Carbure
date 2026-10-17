@@ -432,9 +432,26 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
     }
 
     /**
+     * Registers the instance on the push service and saves its API key, or renews the
+     * key already saved (administrators)
+     * @returns {Promise<Object>} {registered, renewed, key_id, limits}
+     */
+    async function registerPush() {
+        return request(`${baseUrl}/system/push-register`, { method: 'POST' }, 'Failed to register on the push service');
+    }
+
+    /**
+     * Sends a test push notification to the devices of the administrator
+     * @returns {Promise<Object>} {sent, devices, results: [{device, sent, status, error}]}
+     */
+    async function sendTestPush() {
+        return request(`${baseUrl}/system/push-test`, { method: 'POST' }, 'Failed to send the test notification');
+    }
+
+    /**
      * Channels of each kind of notification of the authenticated user
      * @returns {Promise<Object>} {preferences: {kind: {push, email}}, smtp, address, email_available,
-     *          budget_threshold, alert_threshold, budget_category, budgets: [{id, name}]}
+     *          push_available, budget_threshold, alert_threshold, budget_category, budgets: [{id, name}]}
      */
     async function fetchNotifications() {
         return request(`${baseUrl}/user/notifications`, {}, 'Failed to read the notifications');
@@ -1084,6 +1101,8 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
         fetchSyncInfo,
         renewSyncToken,
         sendTestEmail,
+        registerPush,
+        sendTestPush,
         fetchNotifications,
         updateNotifications,
         updateAlertSettings,

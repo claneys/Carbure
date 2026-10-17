@@ -1,5 +1,6 @@
 <?php
 
+use Carbure\Lib\Config;
 use Carbure\Lib\Db;
 use Carbure\Resources\Settings;
 use Carbure\Resources\System;
@@ -65,7 +66,7 @@ class SettingsTest extends DatabaseTestCase
         $config = Settings::get();
 
         $this->assertTrue($config['writable']);
-        $this->assertSame(['global', 'database', 'cleansing', 'auth', 'woob', 'apns', 'smtp'], array_column($config['sections'], 'name'));
+        $this->assertSame(['global', 'database', 'cleansing', 'auth', 'woob', 'push', 'smtp'], array_column($config['sections'], 'name'));
         $password = $this->setting($config, 'db_password');
         $this->assertTrue($password['secret']);
         $this->assertFalse($password['editable']);
@@ -80,7 +81,116 @@ class SettingsTest extends DatabaseTestCase
         $this->assertSame('list', $this->setting($config, 'regex_label')['kind']);
         // Editable but missing from the file
         $this->assertFalse($this->setting($config, 'public_url')['set']);
-        $this->assertSame('apns', $this->setting($config, 'apns_environment')['section']);
+        $this->assertSame('push', $this->setting($config, 'push_url')['section']);
+        $key = $this->setting($config, 'push_api_key');
+        $this->assertSame(['push', true, 'password', false], [$key['section'], $key['secret'], $key['kind'], $key['set']]);
+    }
+
+    public function testLegacyApnsSettingsAreReadOnlyAndMasked()
+    {
+        file_put_contents($this->file, "[apns]\napns_environment=production\napns_certificate_password=pem-secret\n", FILE_APPEND);
+        $this->loginAs(self::ADMIN);
+        $config = Settings::get();
+        $this->assertFalse($this->setting($config, 'apns_environment')['editable']);
+        $this->assertTrue($this->setting($config, 'apns_certificate_password')['secret']);
+        $this->assertStringNotContainsString('pem-secret', json_encode($config));
+    }
+
+    public function testPushApiKeyIsASecret()
+    {
+        $this->loginAs(self::ADMIN);
+        $key = 'cpk_0123456789abcdef_' . str_repeat('ab', 32);
+        $config = Settings::update(['push_api_key' => $key, 'push_url' => 'https://push.example.org/']);
+        $this->assertStringNotContainsString($key, json_encode($config));
+        $this->assertTrue($this->setting($config, 'push_api_key')['set']);
+        $ini = parse_ini_file($this->file, true);
+        $this->assertSame($key, $ini['push']['push_api_key']);
+        $this->assertSame('https://push.example.org', $ini['push']['push_url']);
+
+        $this->expectExceptionCode(400);
+        Settings::update(['push_api_key' => 'not a key']);
+    }
+
+    public function testRegisterPush()
+    {
+        Config::set('push_api_key', '');
+        Config::set('public_url', 'https://carbure.example.fr');
+        $this->loginAs(self::ADMIN);
+        $result = Settings::registerPush();
+
+        $this->assertTrue($result['registered']);
+        $this->assertFalse($result['renewed']);
+        $key = parse_ini_file($this->file, true)['push']['push_api_key'];
+        $this->assertSame('cpk_' . $result['key_id'], substr($key, 0, 20));
+        $this->assertSame($key, Config::get('push_api_key'));
+        $this->assertStringNotContainsString($key, json_encode($result));
+
+        // With a key: renewed (the devices follow the new key on the push service)
+        $renewed = Settings::registerPush();
+        $this->assertTrue($renewed['renewed']);
+        $this->assertNotSame($key, parse_ini_file($this->file, true)['push']['push_api_key']);
+        Config::set('public_url', '');
+    }
+
+    public function testRegisterPushNeedsAWritableFile()
+    {
+        Config::set('push_api_key', '');
+        chmod($this->file, 0400);
+        $this->loginAs(self::ADMIN);
+        try {
+            $this->expectExceptionMessage('cannot be written');
+            Settings::registerPush();
+        } finally {
+            chmod($this->file, 0600);
+        }
+    }
+
+    public function testRegisterPushRefused()
+    {
+        Config::set('push_api_key', 'cpk_deadbeefdeadbeef_' . str_repeat('0', 64));
+        $this->loginAs(self::ADMIN);
+        $before = file_get_contents($this->file);
+        try {
+            Settings::registerPush();
+            $this->fail('Registered');
+        } catch (Error $e) {
+            $this->assertSame(502, $e->getCode());
+        }
+        $this->assertSame($before, file_get_contents($this->file));
+    }
+
+    public function testTestPush()
+    {
+        $this->loginAs(self::ADMIN);
+        Db::execute("INSERT INTO devices (user_id, name, token, lastLogin) VALUES (?, 'Old iPad', ?, NOW())", "is", self::ADMIN, str_repeat('f', 64));
+        $result = Settings::testPush();
+
+        $this->assertSame(1, $result['sent']);
+        $this->assertSame(2, $result['devices']);
+        $byDevice = array_column($result['results'], null, 'device');
+        $this->assertTrue($byDevice['iPhone']['sent']);
+        $this->assertSame('unregistered', $byDevice['Old iPad']['status']);
+        $this->assertStringNotContainsString(self::DEVICE_TOKEN, json_encode($result));
+        $this->assertSame('Notification de test', FakePushRelay::requests()[0]['payload']['aps']['alert']['title']);
+        // The device unregistered from the push notifications is forgotten
+        $this->assertSame(['iPhone'], array_column(Db::execute("SELECT name FROM devices WHERE user_id = ?", "i", self::ADMIN)->get_result()->fetch_all(MYSQLI_ASSOC), 'name'));
+    }
+
+    public function testTestPushWithoutKeyOrDevice()
+    {
+        $this->loginAs(self::ADMIN);
+        Db::execute("DELETE FROM devices WHERE user_id = ?", "i", self::ADMIN);
+        try {
+            Settings::testPush();
+            $this->fail('Sent without device');
+        } catch (Error $e) {
+            $this->assertSame(400, $e->getCode());
+            $this->assertStringContainsString('No device', $e->getMessage());
+        }
+
+        Config::set('push_api_key', '');
+        $this->expectExceptionMessage('No API key of the push service');
+        Settings::testPush();
     }
 
     public function testUpdate()
@@ -176,11 +286,11 @@ class SettingsTest extends DatabaseTestCase
 
         // Added into a new [smtp] section, then into it
         $this->assertSame('smtp.example.com', parse_ini_file($this->file, true)['smtp']['smtp_host']);
-        file_put_contents($this->file, "[woob]\nwoob_debug=false\n[smtp]\n[apns]\napns_environment=sandbox\n");
+        file_put_contents($this->file, "[woob]\nwoob_debug=false\n[smtp]\n[push]\npush_url=https://push.example.org\n");
         Settings::update(['smtp_port' => '25', 'smtp_auth' => 'none']);
         $sections = parse_ini_file($this->file, true, INI_SCANNER_RAW);
         $this->assertSame(['smtp_auth' => 'none', 'smtp_port' => '25'], $sections['smtp']);
-        $this->assertSame(['apns_environment' => 'sandbox'], $sections['apns']);
+        $this->assertSame(['push_url' => 'https://push.example.org'], $sections['push']);
 
         // A one-word password is quoted too ("none" would be read as an empty value)
         Settings::update(['smtp_password' => 'none', 'smtp_host' => '']);
@@ -283,6 +393,6 @@ class SettingsTest extends DatabaseTestCase
     {
         $this->loginAs(self::USER);
         $this->assertAdminOnly(['GET /system/config', 'PUT /system/config', 'GET /system/sync', 'POST /system/sync-token',
-            'POST /system/smtp-test']);
+            'POST /system/smtp-test', 'POST /system/push-register', 'POST /system/push-test']);
     }
 }

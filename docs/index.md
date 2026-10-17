@@ -15,10 +15,10 @@ vous. Les opérations sont récupérées automatiquement auprès des banques fra
 - dans le **portail web** (`portal/`, Vue 3) : transactions, pointage, recherche,
   transactions récurrentes, import de relevés, budgets, insights, tendances, et pour les administrateurs règles, catégories, comptes
   et utilisateurs ;
-- dans l'**application iOS** Carbure, qui reçoit aussi des notifications push (APNs)
-  après chaque synchronisation, pour les dépenses importantes et les budgets atteints —
-  bientôt disponible sur l'App Store ; en attendant, le portail s'installe comme une
-  application sur ordinateur ou téléphone ;
+- dans l'**application iOS** Carbure, qui reçoit aussi des notifications push (par le
+  service Carbure Push ; Android à venir) après chaque synchronisation, pour les dépenses
+  importantes et les budgets atteints — bientôt disponible sur l'App Store ; en attendant,
+  le portail s'installe comme une application sur ordinateur ou téléphone ;
 - par un **agent IA** (Claude, ChatGPT, Cursor, Copilot, Gemini…) grâce au serveur MCP
   intégré, en lecture seule.
 
@@ -48,7 +48,7 @@ insights, notifications, agent IA et foyer.*
 | Tendances | Débit, crédit, hors budget, budget planifié et épargne (catégorie « Epargne ») sur 3, 6 ou 12 mois, comparaison avec une autre période |
 | Catégorisation | Catégories hiérarchiques (icône, couleur), règles par mots-clés appliquées à chaque synchronisation ou à la demande, notification sur une règle |
 | Insights | Indicateurs mensuels définis par une requête SQL encadrée, historique annuel |
-| Notifications | Push sur l'app iPhone et email (SMTP), au choix de chaque utilisateur et pour chaque type : résultat d'une synchronisation, nouvelle dépense au-dessus de son seuil, transaction d'une règle surveillée, budget du mois atteint |
+| Notifications | Push sur l'app iPhone (service Carbure Push : APNs, FCM pour Android à venir) et email (SMTP), au choix de chaque utilisateur et pour chaque type : résultat d'une synchronisation, nouvelle dépense au-dessus de son seuil, transaction d'une règle surveillée, budget du mois atteint |
 | Agents IA | Serveur MCP en lecture seule, activable par un administrateur ; Claude (web, Desktop, mobile) connecté par OAuth sans jeton, les autres agents avec un jeton d'accès à durée de validité |
 | Utilisateurs | Profils utilisateur et administrateur, langue fr/en, thème, seuils d'alerte, canaux des notifications, appareils, dernière connexion, blocage après 5 échecs de connexion |
 | Affichage | Thème clair ou sombre (suit le système, ou choisi d'un clic), contraste augmenté et couleurs forcées du système, accessibilité WCAG AA, portail installable comme une application |

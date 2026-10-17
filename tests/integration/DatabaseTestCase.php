@@ -41,7 +41,7 @@ abstract class DatabaseTestCase extends TestCase
     protected function setUp(): void
     {
         $this->resetData();
-        FakeApnsServer::start();
+        FakePushRelay::start();
         $_GET = [];
     }
 

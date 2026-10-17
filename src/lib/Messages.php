@@ -54,6 +54,8 @@ final class Messages {
             'email_portal' => 'Ouvrir Carbure : {url}',
             'smtp_test_title' => 'Email de test',
             'smtp_test_body' => 'Ce message de test confirme que Carbure peut envoyer les notifications par email.',
+            'push_test_title' => 'Notification de test',
+            'push_test_body' => 'Cette notification de test confirme que Carbure peut envoyer les notifications push.',
         ],
         'en' => [
             'sync_success_title' => 'Bank synchronization successful',
@@ -76,6 +78,8 @@ final class Messages {
             'email_portal' => 'Open Carbure: {url}',
             'smtp_test_title' => 'Test email',
             'smtp_test_body' => 'This test message confirms that Carbure can send the notifications by email.',
+            'push_test_title' => 'Test notification',
+            'push_test_body' => 'This test notification confirms that Carbure can send the push notifications.',
         ],
     ];
 

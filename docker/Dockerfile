@@ -66,7 +66,7 @@ WORKDIR /var/www/carbure
 COPY --chown=www-data:www-data . .
 
 # Data of the instance in the volume /data, seen by Carbure as data/:
-# conf/ (prod.ini written by the installation wizard, certs/), logs/, cache/, woob/
+# conf/ (prod.ini written by the installation wizard), logs/, cache/, woob/
 RUN echo "${CARBURE_VERSION#v}" > VERSION \
     && ln -s /data /var/www/carbure/data \
     && chmod +x docker/entrypoint.sh

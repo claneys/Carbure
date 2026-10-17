@@ -138,6 +138,8 @@ class ApiResolverTest extends TestCase
         'POST /oauth/token' => 'public',
         'POST /system/jwt-secret' => 'admin',
         'POST /system/migrate' => 'admin',
+        'POST /system/push-register' => 'admin',
+        'POST /system/push-test' => 'admin',
         'POST /system/smtp-test' => 'admin',
         'POST /system/sync-token' => 'admin',
         'POST /token' => 'user',

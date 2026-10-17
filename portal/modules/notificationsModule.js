@@ -3,10 +3,10 @@
  *
  * Notifications section of the profile page: for each kind of notification
  * (synchronization result, rule marked "notify", large expense, budget exceeded), the
- * channels it is sent on (push to the iOS app, email to the address of the profile),
- * and the settings shown under the label of their kind: the amount of a large expense,
- * the budget watched and the threshold of the budget alerts (percent of a budget).
- * Each change is saved at once.
+ * channels it is sent on (push to the iOS app, when the administrator configured the
+ * push service; email to the address of the profile), and the settings shown under the
+ * label of their kind: the amount of a large expense, the budget watched and the
+ * threshold of the budget alerts (percent of a budget). Each change is saved at once.
  *
  * @module notificationsModule
  */
@@ -64,6 +64,19 @@ export function emailUnavailableReason(notifications) {
 }
 
 /**
+ * Why the push channel cannot be used ('' when it can): no API key of the push service
+ * @param {Object|null} notifications - Answer of GET /user/notifications
+ * @returns {string} Translation key of the reason, or ''
+ */
+export function pushUnavailableReason(notifications) {
+    // Servers older than the push service do not send push_available: push available
+    if (!notifications || notifications.push_available !== false) {
+        return '';
+    }
+    return 'notificationsPushUnavailable';
+}
+
+/**
  * Creates the notifications module mixin for Vue components
  * @param {Function} getApiService - Function that returns the API service instance
  * @returns {Object} Vue mixin with the notifications data and methods
@@ -102,6 +115,14 @@ export function createNotificationsModule(getApiService) {
              */
             emailUnavailable() {
                 return emailUnavailableReason(this.notifications);
+            },
+
+            /**
+             * Translation key of the reason why the push channel is disabled ('' if usable)
+             * @returns {string}
+             */
+            pushUnavailable() {
+                return pushUnavailableReason(this.notifications);
             }
         },
 
@@ -136,14 +157,25 @@ export function createNotificationsModule(getApiService) {
             },
 
             /**
-             * Whether a channel can be changed: email only when it can be sent (a channel
-             * on stays changeable, to turn it off)
+             * Whether a channel can be changed: only when it can be sent (a channel on
+             * stays changeable, to turn it off)
              * @param {string} kind - Kind of notification
              * @param {string} channel - push or email
              * @returns {boolean}
              */
             notificationDisabled(kind, channel) {
-                return channel === 'email' && !!this.emailUnavailable && !this.notifications.preferences[kind].email;
+                const unavailable = channel === 'email' ? this.emailUnavailable : this.pushUnavailable;
+                return !!unavailable && !this.notifications.preferences[kind][channel];
+            },
+
+            /**
+             * Id of the reason why a channel is unavailable, for aria-describedby (null if usable)
+             * @param {string} channel - push or email
+             * @returns {string|null}
+             */
+            notificationUnavailableId(channel) {
+                const unavailable = channel === 'email' ? this.emailUnavailable : this.pushUnavailable;
+                return unavailable ? `notifications-${channel}-unavailable` : null;
             },
 
             /**

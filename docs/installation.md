@@ -60,7 +60,7 @@ DB_PASSWORD=un-mot-de-passe-solide
 
 Le dossier `data/` du projet, monté sur `/data` dans le conteneur, conserve tout ce qui est
 propre à votre instance : la configuration écrite par l'assistant (`data/conf/prod.ini`, avec
-des secrets aléatoires), la clé APNs (`data/conf/certs`), les logs (`data/logs`) et la
+des secrets aléatoires), les logs (`data/logs`) et la
 configuration woob avec vos banques (`data/woob`). C'est le seul dossier à sauvegarder, avec
 la base de données. Aucun mot de passe administrateur n'est passé par
 l'environnement : il est choisi dans l'assistant.
@@ -122,16 +122,19 @@ Quand `docker compose pull` apporte une nouvelle version majeure de MariaDB (par
 l'ancienne version, d'où l'importance de la sauvegarde. Pour garder une version donnée,
 fixez-la dans `docker/docker-compose.yml` (`image: mariadb:11`).
 
-### Notifications iOS (APNs)
+### Notifications push (Carbure Push)
 
-Copiez la clé `.p8` dans le volume, puis complétez la section `[apns]` de
-`/data/conf/prod.ini` :
+Les notifications de l'application iOS passent par le service externe Carbure Push :
+dans **Administration → Paramètres**, section **Notifications iOS (Carbure Push)**,
+cliquez sur **Inscrire l'instance** (la clé d'API obtenue est enregistrée dans
+`/data/conf/prod.ini`), puis sur **Envoyer une notification de test**. Sans clé, aucune
+notification push n'est envoyée. Voir [Configuration](configuration.md#push).
 
-```bash
-docker compose cp AuthKey_XXXXXXXXXX.p8 carbure:/data/conf/certs/
-docker compose exec carbure vi /data/conf/prod.ini   # apns_key_path=conf/certs/AuthKey_XXXXXXXXXX.p8
-docker compose restart carbure
-```
+!!! warning "Mise à jour depuis une version qui envoyait elle-même les notifications (APNs)"
+    La section `[apns]` et la clé `.p8` ne sont plus utilisées. **Inscrivez l'instance
+    (ou renseignez `push_api_key`) avant ou juste après la mise à jour**, sinon les
+    notifications push s'arrêtent. La migration `2026-10-23_device_platform` (plateforme
+    des appareils) est appliquée au démarrage du conteneur.
 
 ### Notifications par email (SMTP)
 
@@ -168,8 +171,9 @@ docker compose exec -u www-data carbure php tools/migrate.php --status # version
   sensibles est à configurer dans le serveur.
 - [woob](https://woob.tech/) installé pour l'utilisateur du serveur web. Le module BNP
   récent nécessite `curl_cffi` (`pip install "curl_cffi>=0.7"`).
-- Facultatif : une clé APNs `.p8` (Apple Developer) pour les notifications iOS, et un
-  serveur SMTP pour les notifications par email.
+- Pour les notifications push : un accès HTTPS sortant vers le service Carbure Push
+  (aucune clé Apple ni Firebase n'est nécessaire). Facultatif : un serveur SMTP pour les
+  notifications par email.
 
 ### 1. Copier Carbure
 

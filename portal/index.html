@@ -1422,6 +1422,43 @@
                                     </p>
                                     <p v-else-if="smtpTestResult" class="smtp-test-result sync-step-error" role="alert">{{ smtpTestResult.message }}</p>
                                 </div>
+                                <!-- Push service: registration of the instance (its API key), test push -->
+                                <template v-if="section.name === 'push'">
+                                    <div class="config-row push-row push-register">
+                                        <div class="config-label">
+                                            <span class="config-label-title" id="push-register-title">{{ t('pushRegisterTitle') }}</span>
+                                            <span class="config-help" id="push-register-help">{{ t('pushRegisterHelp') }}</span>
+                                        </div>
+                                        <div class="config-value">
+                                            <button type="button" class="btn-secondary push-register-button" @click="registerPush" :disabled="registeringPush || !configData.writable"
+                                                    aria-describedby="push-register-help">
+                                                <span class="material-icons" :class="{ spin: registeringPush }" aria-hidden="true">{{ registeringPush ? 'autorenew' : (pushKeySet ? 'key' : 'how_to_reg') }}</span>{{ t(pushKeySet ? 'pushRenewButton' : 'pushRegisterButton') }}
+                                            </button>
+                                        </div>
+                                        <p v-if="!pushKeySet && !pushRegisterResult" class="config-help push-note">{{ t('pushUnavailableAdmin') }}</p>
+                                        <p v-if="pushRegisterResult && pushRegisterResult.ok" class="push-result push-ok" role="status">
+                                            <span class="material-icons" aria-hidden="true">check_circle</span>{{ pushRegisterResult.message }}
+                                        </p>
+                                        <p v-else-if="pushRegisterResult" class="push-result sync-step-error" role="alert">{{ pushRegisterResult.message }}</p>
+                                    </div>
+                                    <div class="config-row push-row push-test">
+                                        <div class="config-label">
+                                            <span class="config-label-title">{{ t('pushTestTitle') }}</span>
+                                            <span class="config-help" id="push-test-help">{{ t('pushTestHelp') }}</span>
+                                        </div>
+                                        <div class="config-value">
+                                            <button type="button" class="btn-secondary push-test-button" @click="sendTestPush" :disabled="sendingTestPush || !pushKeySet"
+                                                    aria-describedby="push-test-help">
+                                                <span class="material-icons" :class="{ spin: sendingTestPush }" aria-hidden="true">{{ sendingTestPush ? 'autorenew' : 'notifications_active' }}</span>{{ t('pushTestButton') }}
+                                            </button>
+                                        </div>
+                                        <p v-if="configChangeCount" class="config-help push-note">{{ t('smtpTestUnsaved') }}</p>
+                                        <p v-if="pushTestResult && pushTestResult.ok" class="push-result push-ok" role="status">
+                                            <span class="material-icons" aria-hidden="true">check_circle</span>{{ pushTestResult.message }}
+                                        </p>
+                                        <p v-else-if="pushTestResult" class="push-result sync-step-error" role="alert">{{ pushTestResult.message }}</p>
+                                    </div>
+                                </template>
                             </fieldset>
 
                             <div v-if="configError" class="sync-step-error" role="alert">{{ configError }}</div>
@@ -1916,13 +1953,16 @@
                                                 <input type="checkbox" :id="'notification-' + kind + '-' + channel"
                                                        :checked="notifications.preferences[kind][channel]"
                                                        :disabled="notificationDisabled(kind, channel)"
-                                                       :aria-describedby="channel === 'email' && emailUnavailable ? 'notifications-email-unavailable' : null"
+                                                       :aria-describedby="notificationUnavailableId(channel)"
                                                        :aria-label="t('notificationsToggle', { channel: t('notificationsChannel_' + channel), kind: t('notificationsKind_' + kind) })"
                                                        @change="setNotification(kind, channel, $event.target.checked)" />
                                             </td>
                                         </tr>
                                     </tbody>
                                 </table>
+                                <p v-if="pushUnavailable" id="notifications-push-unavailable" class="rules-help notifications-unavailable">
+                                    <span class="material-icons inline-icon" aria-hidden="true">info</span>{{ t(pushUnavailable) }}
+                                </p>
                                 <p v-if="emailUnavailable" id="notifications-email-unavailable" class="rules-help notifications-unavailable">
                                     <span class="material-icons inline-icon" aria-hidden="true">info</span>{{ t(emailUnavailable) }}
                                 </p>

@@ -6298,8 +6298,9 @@ textarea:focus-visible,
     gap: 6px;
 }
 
-/* Test email of the SMTP settings */
-.smtp-test {
+/* Test email of the SMTP settings, registration and test of the push service */
+.smtp-test,
+.push-row {
     background: var(--background);
 }
 
@@ -6316,17 +6317,28 @@ textarea:focus-visible,
     flex: 0 1 auto;
 }
 
+/* Title of a row without a field (registration and test of the push service) */
+.config-label-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
 .smtp-test-note,
-.smtp-test-result {
+.smtp-test-result,
+.push-note,
+.push-result {
     grid-column: 1 / -1;
     margin: 0;
 }
 
-.smtp-test-result.sync-step-error {
+.smtp-test-result.sync-step-error,
+.push-result.sync-step-error {
     margin-left: 0;
 }
 
-.smtp-test-ok {
+.smtp-test-ok,
+.push-ok {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -6337,7 +6349,8 @@ textarea:focus-visible,
     font-size: 13px;
 }
 
-.smtp-test-ok .material-icons {
+.smtp-test-ok .material-icons,
+.push-ok .material-icons {
     font-size: 18px;
 }
 

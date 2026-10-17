@@ -176,7 +176,7 @@ Seules ces routes ne demandent pas de JWT (un test unitaire le vérifie) :
 - Une adresse IP est une **donnée personnelle** : les fichiers de log sont supprimés après
   `log_retention_days` jours (90 dans une nouvelle installation, voir
   [Configuration](configuration.md)).
-- `data/` : `conf/prod.ini`, `conf/certs/*.p8`, `logs/`, `woob/` (identifiants bancaires woob)
+- `data/` : `conf/prod.ini` (dont `push_api_key`, la clé d'API du service de notifications push), `logs/`, `woob/` (identifiants bancaires woob)
   sont exclus du dépôt Git.
 
 ## Recommandations de déploiement

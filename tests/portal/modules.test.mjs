@@ -640,6 +640,75 @@ test('config: the test email shows the recipient, or the error of the server', a
     assert.deepEqual(context.smtpTestResult, { ok: false, message: 'The SMTP server refused the recipient: 550' });
 });
 
+test('config: registration on the push service, renewal after confirmation, test push', async () => {
+    const { createConfigModule, pushTestOutcome } = await import('../../portal/modules/configModule.js');
+    const configWithKey = set => ({ file: 'conf/prod.ini', writable: true, sections: [{ name: 'push', settings: [
+        { key: 'push_url', value: '', set: false, editable: true, kind: 'url' },
+        { key: 'push_api_key', value: set ? '••••••••••••' : '', set, secret: true, editable: true, kind: 'password' },
+    ] }] });
+    const calls = [];
+    let registered = false;
+    let testAnswer = () => ({ sent: 1, devices: 2, results: [] });
+    const api = {
+        registerPush: async () => { calls.push('register'); const renewed = registered; registered = true; return { registered: true, renewed, key_id: 'abc' }; },
+        fetchConfig: async () => configWithKey(registered),
+        sendTestPush: async () => testAnswer(),
+    };
+    const { methods, data, computed } = createConfigModule(() => api);
+    const context = { ...data(), ...methods, t: (key, params) => `${key} ${JSON.stringify(params || {})}` };
+    Object.defineProperty(context, 'pushKeySet', { get: () => computed.pushKeySet.call(context) });
+    context.setConfig(configWithKey(false));
+    assert.equal(context.pushKeySet, false);
+
+    await context.registerPush();
+    assert.deepEqual(context.pushRegisterResult, { ok: true, message: 'pushRegistered {"key":"abc"}' });
+    assert.equal(context.pushKeySet, true);
+    assert.equal(context.registeringPush, false);
+
+    // A key already saved: renewed only after confirmation
+    window.confirm = () => false;
+    await context.registerPush();
+    assert.deepEqual(calls, ['register']);
+    window.confirm = () => true;
+    await context.registerPush();
+    assert.equal(context.pushRegisterResult.message, 'pushRenewed {"key":"abc"}');
+
+    api.registerPush = async () => { throw new Error('Push service registration refused'); };
+    await context.registerPush();
+    assert.deepEqual(context.pushRegisterResult, { ok: false, message: 'Push service registration refused' });
+
+    await context.sendTestPush();
+    assert.deepEqual(context.pushTestResult, { ok: true, message: 'pushTestSent {"count":1,"devices":2}' });
+    testAnswer = () => { throw new Error('No device'); };
+    await context.sendTestPush();
+    assert.deepEqual(context.pushTestResult, { ok: false, message: 'No device' });
+    assert.equal(context.sendingTestPush, false);
+
+    assert.deepEqual(pushTestOutcome({ sent: 0, devices: 2, results: [
+        { device: 'a', sent: false, status: 'unregistered', error: 'Unregistered' },
+        { device: 'b', sent: false, status: 'error', error: null },
+    ] }), { ok: false, key: 'pushTestFailed', params: { errors: 'Unregistered, error' } });
+});
+
+test('notifications: why the push channel is disabled', async () => {
+    const { pushUnavailableReason, createNotificationsModule } = await import('../../portal/modules/notificationsModule.js');
+    assert.equal(pushUnavailableReason(null), '');
+    assert.equal(pushUnavailableReason({ push_available: true }), '');
+    // A server older than the push service: available
+    assert.equal(pushUnavailableReason({}), '');
+    assert.equal(pushUnavailableReason({ push_available: false }), 'notificationsPushUnavailable');
+
+    const { methods } = createNotificationsModule(() => null);
+    const context = { ...methods, pushUnavailable: 'notificationsPushUnavailable', emailUnavailable: '',
+        notifications: { preferences: { sync: { push: true, email: false }, rule: { push: false, email: false } } } };
+    // A channel on stays changeable (to turn it off)
+    assert.equal(context.notificationDisabled('sync', 'push'), false);
+    assert.equal(context.notificationDisabled('rule', 'push'), true);
+    assert.equal(context.notificationDisabled('rule', 'email'), false);
+    assert.equal(context.notificationUnavailableId('push'), 'notifications-push-unavailable');
+    assert.equal(context.notificationUnavailableId('email'), null);
+});
+
 test('notifications: why the email channel is disabled', async () => {
     const { emailUnavailableReason } = await import('../../portal/modules/notificationsModule.js');
     assert.equal(emailUnavailableReason(null), '');

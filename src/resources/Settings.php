@@ -7,7 +7,8 @@
  * setting is shown, the secrets masked; only the settings that cannot run a
  * command, break the database connection nor change the transaction UUIDs can
  * be changed, each one checked against a strict rule. Also the request that
- * starts the bank synchronization (for a scheduler) and its token.
+ * starts the bank synchronization (for a scheduler) and its token, the test email,
+ * and the registration on the push service (Carbure Push) with a test push.
  *
  * @author     Ludovic Toinel
  * @copyright  2026 Carbure App
@@ -22,13 +23,15 @@ use Carbure\Lib\Installer;
 use Carbure\Lib\Jwt;
 use Carbure\Lib\Logger;
 use Carbure\Lib\Messages;
+use Carbure\Lib\PushRelay;
 use Error;
 use Exception;
 
 final class Settings {
 
-    /** Settings whose value is never sent to the portal */
-    const SECRETS = ['db_password', 'jwtsecret', 'password_salt', 'sync_token', 'apns_certificate_password', 'smtp_password'];
+    /** Settings whose value is never sent to the portal (apns_certificate_password: files
+     *  older than the push service) */
+    const SECRETS = ['db_password', 'jwtsecret', 'password_salt', 'sync_token', 'apns_certificate_password', 'smtp_password', 'push_api_key'];
 
     /**
      * Settings the portal can change: kind (select, bool, number, text, url, email,
@@ -49,11 +52,10 @@ final class Settings {
         'woob_auto_update' => ['kind' => 'bool'],
         'woob_2fa_wait' => ['kind' => 'number', 'min' => 0, 'max' => 300],
         'woob_2fa_retries' => ['kind' => 'number', 'min' => 0, 'max' => 5],
-        'apns_environment' => ['kind' => 'select', 'options' => ['production', 'sandbox']],
-        'apns_auth_method' => ['kind' => 'select', 'options' => ['token', 'certificate']],
-        'apns_bundle_id' => ['kind' => 'text', 'pattern' => '/^[A-Za-z0-9.\-]{1,100}$/'],
-        'apns_key_id' => ['kind' => 'text', 'pattern' => '/^[A-Z0-9]{10}$/', 'empty' => true],
-        'apns_team_id' => ['kind' => 'text', 'pattern' => '/^[A-Z0-9]{10}$/', 'empty' => true],
+        // Push service (Carbure Push): empty push_url is the official one, empty
+        // push_api_key: no push is sent
+        'push_url' => ['kind' => 'url', 'empty' => true],
+        'push_api_key' => ['kind' => 'password', 'pattern' => '/^cpk_[0-9a-f]{16}_[0-9a-f]{64}$/', 'empty' => true],
         // Empty smtp_host: no email is sent
         'smtp_host' => ['kind' => 'text', 'pattern' => '/^[A-Za-z0-9.\-]{1,253}$/', 'empty' => true],
         'smtp_port' => ['kind' => 'number', 'min' => 1, 'max' => 65535],
@@ -70,8 +72,7 @@ final class Settings {
         'log_level' => 'global', 'log_retention_days' => 'global', 'savings_category' => 'global', 'public_url' => 'global',
         'woob_transactions' => 'woob', 'woob_logging' => 'woob', 'woob_debug' => 'woob', 'woob_auto_update' => 'woob',
         'woob_2fa_wait' => 'woob', 'woob_2fa_retries' => 'woob',
-        'apns_environment' => 'apns', 'apns_auth_method' => 'apns', 'apns_bundle_id' => 'apns',
-        'apns_key_id' => 'apns', 'apns_team_id' => 'apns',
+        'push_url' => 'push', 'push_api_key' => 'push',
         'smtp_host' => 'smtp', 'smtp_port' => 'smtp', 'smtp_encryption' => 'smtp', 'smtp_auth' => 'smtp',
         'smtp_username' => 'smtp', 'smtp_password' => 'smtp', 'smtp_from' => 'smtp', 'smtp_from_name' => 'smtp',
     ];
@@ -244,6 +245,80 @@ final class Settings {
         Notification::sendEmail($to, $language, Messages::t($language, 'smtp_test_title'), Messages::t($language, 'smtp_test_body'), false);
         Logger::info("Test email sent to $to by user " . Jwt::getUserIdFromToken());
         return ['sent' => true, 'to' => $to];
+    }
+
+    /**
+     * Register the instance on the push service (Carbure Push) and save its API key in
+     * the configuration file (administrators). With a key already, the key is renewed
+     * instead: the devices keep receiving the notifications. The key is never returned.
+     *
+     * @return array<string, mixed> registered (true), renewed (a key was replaced), key_id
+     *               (public id of the key), limits (of the push service)
+     * @throws Error If the push service refuses or cannot be reached (502), or too many
+     *               registrations (429)
+     * @throws Exception If the configuration file cannot be written (checked first: a
+     *                   key obtained must not be lost)
+     */
+    #[ApiRoute('/system/push-register', method: 'POST', admin: true)]
+    public static function registerPush(): array
+    {
+        $file = self::file();
+        $ini = self::read($file);
+        if (!is_writable($file)) {
+            throw new Exception("The configuration file cannot be written by the web server");
+        }
+
+        $renewed = PushRelay::isConfigured();
+        $key = $renewed ? PushRelay::rotate() : PushRelay::register(self::instanceName());
+        self::write($file, Installer::setIni(self::addMissing($ini, 'push_api_key'), 'push_api_key', $key['api_key'], true));
+        Config::set('push_api_key', $key['api_key']);
+        Logger::warn("Push service API key " . ($renewed ? 'renewed' : 'registered') . " by user " . Jwt::getUserIdFromToken() . ": {$key['key_id']}");
+
+        return ['registered' => true, 'renewed' => $renewed, 'key_id' => $key['key_id'], 'limits' => $key['limits']];
+    }
+
+    /**
+     * Send a test push notification to the devices of the administrator (administrators),
+     * in his language.
+     *
+     * @return array<string, mixed> sent (devices reached), devices (devices of the
+     *               administrator), results [{device (name), sent, status, error}]
+     * @throws Error If there is no API key of the push service or no device (400)
+     */
+    #[ApiRoute('/system/push-test', method: 'POST', admin: true)]
+    public static function testPush(): array
+    {
+        if (!PushRelay::isConfigured()) {
+            throw new Error("No API key of the push service: register the instance first", 400);
+        }
+        $userId = Jwt::getUserIdFromToken();
+        $devices = Device::get($userId);
+        if (!$devices) {
+            throw new Error("No device: log in to the iOS app with your account first", 400);
+        }
+
+        $language = (string)(Db::queryOne("SELECT language FROM users WHERE id = ?", "i", $userId)['language'] ?? '');
+        $results = Device::sendNotification($userId, Messages::t($language, 'push_test_title'), Messages::t($language, 'push_test_body'));
+        $names = array_column($devices, 'name', 'token');
+        $list = [];
+        foreach ($results as $token => $result) {
+            $list[] = ['device' => (string)($names[$token] ?? ''), 'sent' => (bool)$result['success'],
+                'status' => (string)($result['status'] ?? 'error'), 'error' => $result['error'] ?? null];
+        }
+        $sent = count(array_filter(array_column($list, 'sent')));
+        Logger::info("Test push sent by user $userId to $sent of " . count($list) . " device(s)");
+        return ['sent' => $sent, 'devices' => count($list), 'results' => $list];
+    }
+
+    /**
+     * Name of the instance given to the push service: the host of its public URL.
+     *
+     * @return string
+     */
+    private static function instanceName(): string
+    {
+        $host = Config::has('public_url') ? parse_url((string)Config::get('public_url'), PHP_URL_HOST) : null;
+        return is_string($host) && $host !== '' ? $host : 'Carbure';
     }
 
     /**

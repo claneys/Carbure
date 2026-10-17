@@ -7,7 +7,8 @@ Rules for coding agents and contributors on Carbure. Pending work: [TODO.md](TOD
 Household budget/bank-transaction tracker: **portal** `portal/` (Vue 3 global build, no
 bundler) + **PHP 8.2+ REST API** `src/` (no framework, no runtime dependency; Composer only
 for dev tools: PHPStan, PHPUnit), also used by the
-**iOS app**. Transactions synced via woob, categorized by keywords; APNs notifications;
+**iOS app**. Transactions synced via woob, categorized by keywords; push notifications
+through the external relay Carbure Push (private repo `ltoinel/Carbure-push`: APNs, FCM);
 read-only MCP server at `/api/mcp`. Production = Docker image (nginx + PHP-FPM + woob)
 built by the GitHub release workflow; committing/pushing is not deploying.
 
@@ -17,7 +18,7 @@ built by the GitHub release workflow; committing/pushing is not deploying.
 |---|---|
 | `src/api.php` | HTTP entry (`/api/*`); without `conf/<env>.ini` serves only `/api/setup` |
 | `src/autoload.php` | Registers `ClassLoader` (PSR-4, on demand, no Composer), then `Config::load(getenv('APP_ENV') ?: 'prod')` |
-| `src/lib/` | Namespace `Carbure\Lib`: `ClassLoader`, `Config`, `Db` (mysqli), `Logger`, `Jwt`, `Webservice` (+ security headers), `ApiResolver`, `ApiRoute`, `Woob`, `Apns`, `Mailer` (SMTP), `Messages` (fr/en texts of the notifications), `Setup`/`Installer`, `Migrator`, `Setting` |
+| `src/lib/` | Namespace `Carbure\Lib`: `ClassLoader`, `Config`, `Db` (mysqli), `Logger`, `Jwt`, `Webservice` (+ security headers), `ApiResolver`, `ApiRoute`, `Woob`, `PushRelay` (client of Carbure Push), `Mailer` (SMTP), `Messages` (fr/en texts of the notifications), `Setup`/`Installer`, `Migrator`, `Setting` |
 | `src/lib/import/` | Namespace `Carbure\Lib\Import`: statement import behind `BankFile::parse()`: `OfxReader`, `QifReader`, `CamtReader`, `CsvReader` (+ `CsvGeneric` fallback), `BankProfiles` (schema) |
 | `src/lib/import/banks/` | One CSV profile per bank (`<id>.php` returns an array, no class: loaded by path by `BankProfiles`); fixtures `tests/fixtures/import/`, snapshots `…/expected/` |
 | `src/resources/` | Namespace `Carbure\Resources`: `User`, `Bank`, `Transaction`, `Budget`, `Category`, `Insight`, `Device`, `Notification`, `ApiToken`, `Mcp`, `OAuth`, `System` |
@@ -26,7 +27,7 @@ built by the GitHub release workflow; committing/pushing is not deploying.
 | `sql/carbure.sql`, `sql/migrations/` | Full schema; dated migrations (`Migrator`, table `schema_migrations`) |
 | `tools/migrate.php` | CLI migrations (run by the Docker entrypoint) |
 | `docker/` | `Dockerfile`, `nginx.conf`, `docker-compose.yml`, `docker-compose.dev.yml` |
-| `data/` | Untracked instance data: `conf/prod.ini`, `conf/certs/`, `logs/`, `cache/`, `woob/` |
+| `data/` | Untracked instance data: `conf/prod.ini`, `logs/`, `cache/`, `woob/` |
 | `conf/*.sample.ini`, `testing.ini`, `e2e.ini` | Sample/test config (`prod.ini` never tracked) |
 | `tests/unit/`, `tests/integration/` | PHPUnit (integration needs MariaDB) |
 | `tests/portal/` | Portal unit tests (`node:test`) |
