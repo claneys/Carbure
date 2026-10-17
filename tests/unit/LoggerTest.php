@@ -139,4 +139,11 @@ class LoggerTest extends TestCase
             @rmdir($dir);
         }
     }
+
+    public function testEmailsAreMasked()
+    {
+        $this->assertSame('j***@example.org', Logger::maskEmail('jane.doe@example.org'));
+        $this->assertSame('***', Logger::maskEmail('not-an-email'));
+        $this->assertSame('***', Logger::maskEmail('@example.org'));
+    }
 }

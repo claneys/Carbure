@@ -159,6 +159,18 @@ final class Logger {
     }
 
     /**
+     * Email address shortened for the logs: its first letter and its domain (j***@example.org).
+     *
+     * @param string $email The email address
+     * @return string The masked address
+     */
+    public static function maskEmail(string $email): string
+    {
+        $at = strrpos($email, '@');
+        return $at === false || $at === 0 ? '***' : $email[0] . '***' . substr($email, $at);
+    }
+
+    /**
      * Write the end of the request: method, path, status and duration. Level INFO, or
      * WARNING for a client error (4xx) and ERROR for a server error (5xx).
      *

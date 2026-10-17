@@ -248,7 +248,7 @@ final class Settings {
         $recipient = Db::queryOne("SELECT language FROM users WHERE email = ?", "s", $to);
         $language = (string)(($recipient ?? $user)['language'] ?? '');
         Notification::sendEmail($to, $language, Messages::t($language, 'smtp_test_title'), Messages::t($language, 'smtp_test_body'), false);
-        Logger::info("Test email sent to $to by user " . Jwt::getUserIdFromToken());
+        Logger::info("Test email sent to " . Logger::maskEmail($to) . " by user " . Jwt::getUserIdFromToken());
         return ['sent' => true, 'to' => $to];
     }
 

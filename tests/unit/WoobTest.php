@@ -1,6 +1,7 @@
 <?php
 
 use Carbure\Lib\Config;
+use Carbure\Lib\Logger;
 use Carbure\Lib\Woob;
 use Carbure\Lib\WoobRepository;
 use PHPUnit\Framework\TestCase;
@@ -267,5 +268,33 @@ class WoobTest extends TestCase
             rmdir("$home/.config");
             rmdir($home);
         }
+    }
+
+    public function testTheLogsKeepOnlyTheLastErrorLineOutsideOfWoobDebug()
+    {
+        $loggedOutput = new ReflectionMethod(Woob::class, 'loggedOutput');
+        $stderr = "Account FR76 3000 4000 0500 0012 3456 789 balance 1234.56\nAttributeError: login failed\n";
+
+        $this->assertSame('AttributeError: login failed', $loggedOutput->invoke(null, $stderr));
+        Config::set('woob_debug', true);
+        try {
+            $this->assertSame($stderr, $loggedOutput->invoke(null, $stderr));
+        } finally {
+            Config::set('woob_debug', false);
+        }
+    }
+
+    public function testAFailureLogsNoOutputOfWoobOutsideOfWoobDebug()
+    {
+        try {
+            Woob::getBankData('history', 'fail@bank');
+            $this->fail('woob failed');
+        } catch (Exception $e) {
+            Logger::flush();
+        }
+        $file = Config::get('data_dir') . '/logs/carbure_test_' . date('Ymd') . '.log';
+        $lines = array_filter(file($file), fn($line) => str_contains($line, 'Error while calling woob (exit code: 1)'));
+        $entry = json_decode(end($lines), true);
+        $this->assertSame(['stderr' => "AttributeError: 'NoneType' object has no attribute 'iter_accounts'"], $entry['context']);
     }
 }

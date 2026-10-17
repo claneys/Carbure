@@ -43,7 +43,7 @@ ce fichier (voir [Réglages en base](#reglages-en-base)).
 
 | Clé | Valeurs | Description |
 |---|---|---|
-| `log_level` ✏️ | `debug`, `info`, `warning`, `error` | Niveau minimal des logs (`data/logs/carbure_AAAAMMJJ.log`). En `debug`, les erreurs PHP sont affichées et les réponses JSON indentées. |
+| `log_level` ✏️ | `debug`, `info`, `warning`, `error` | Niveau minimal des logs (`data/logs/carbure_AAAAMMJJ.log`). En `debug`, les erreurs PHP sont affichées et les réponses JSON indentées, et les données du foyer sont journalisées (voir [Sécurité](securite.md#donnees-sensibles)). |
 | `log_retention_days` ✏️ | `0` à `3650` | Nombre de jours de conservation des fichiers de log ; les plus anciens sont supprimés à la fin de la synchronisation bancaire. `0` (ou absent) : conservés indéfiniment. `90` dans une nouvelle installation. |
 | `development` | `true` / `false` | Indicateur de mode développement, écrit à `false` par l'assistant (sans effet actuellement) |
 | `savings_category` ✏️ | nom | Catégorie dont les transactions (avec ses sous-catégories) constituent l'épargne de l'onglet Tendances ; `Epargne` par défaut, casse et accents ignorés |

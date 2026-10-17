@@ -234,7 +234,7 @@ final class User {
         $failures = (int)(Db::queryOne("SELECT failed_logins FROM users WHERE id = ?", "i", $user['id'])['failed_logins'] ?? 0);
         if ($failures >= self::MAX_FAILED_LOGINS) {
             Db::execute("UPDATE users SET failed_logins = 0, locked_until = NOW() + INTERVAL " . self::LOCK_HOURS . " HOUR WHERE id = ?", "i", $user['id']);
-            Logger::warn("Account {$user['username']} locked after " . self::MAX_FAILED_LOGINS . " failed logins");
+            Logger::warn("Account of user {$user['id']} locked after " . self::MAX_FAILED_LOGINS . " failed logins");
             return true;
         }
         return false;

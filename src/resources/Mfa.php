@@ -107,7 +107,7 @@ final class Mfa {
             return null;
         }
         if (!$supported) {
-            Logger::warn("Login of {$user['username']} refused: two-factor authentication not supported by the client");
+            Logger::warn("Login of user {$user['id']} refused: two-factor authentication not supported by the client");
             throw new Error(self::unsupportedMessage($device), 403);
         }
         return self::challenge($user, $enabled ? $state : null);

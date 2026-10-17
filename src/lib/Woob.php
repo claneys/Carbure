@@ -414,7 +414,7 @@ final class Woob {
     private static function failOnEmptyWithError(?array $data, string $stderr, string $message): void
     {
         if (!$data && preg_match(self::ERROR_LINE, self::withoutLogs($stderr))) {
-            Logger::error($message, ["stderr" => $stderr]);
+            Logger::error($message, ["stderr" => self::loggedOutput($stderr)]);
             throw new Exception($message . self::lastLine($stderr));
         }
     }
@@ -432,6 +432,18 @@ final class Woob {
         $lines = array_values(array_filter(array_map('trim', explode("\n", self::withoutLogs($output))),
             fn(string $line): bool => $line !== '' && !preg_match(self::DEBUG_HINT, $line)));
         return $lines ? ': ' . mb_substr(end($lines), 0, 200) : '';
+    }
+
+    /**
+     * Error output of woob as written in the logs: complete with woob_debug, otherwise only
+     * its last error line (the rest may hold data of the bank: accounts, pages, labels).
+     *
+     * @param string $stderr The error output of woob
+     * @return string
+     */
+    private static function loggedOutput(string $stderr): string
+    {
+        return Config::get('woob_debug') ? $stderr : substr(self::lastLine($stderr), 2);
     }
 
     /**
@@ -628,7 +640,9 @@ final class Woob {
         }
 
         if ($return_var != 0) {
-            Logger::error("Error while calling woob (exit code: $return_var)", ["stdout" => $stdout, "stderr" => $stderr]);
+            // The whole output (accounts, transactions, pages of the bank) only with woob_debug
+            Logger::error("Error while calling woob (exit code: $return_var)", Config::get('woob_debug')
+                ? ["stdout" => $stdout, "stderr" => $stderr] : ["stderr" => self::loggedOutput($stderr)]);
 
             // The last line of the error output usually gives the cause (e.g. a Python exception)
             throw new Exception("Error while calling woob (exit code: $return_var)" . self::lastLine($stderr));

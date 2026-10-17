@@ -216,4 +216,22 @@ class WebserviceTest extends TestCase
 
         $this->assertNull(Webservice::getHeader('X-Sync-Token'));
     }
+
+    public function testTheCallIsLoggedWithTheNamesOfItsParametersOnly()
+    {
+        $minLevel = new ReflectionProperty(Logger::class, 'minLevel');
+        $value = 'household-label-' . uniqid();
+        Config::set('log_level', 'info');
+        $minLevel->setValue(null, null);
+        try {
+            Webservice::callService('EchoResource', 'echo', ['first' => $value]);
+            Logger::flush();
+        } finally {
+            Config::set('log_level', 'debug');
+            $minLevel->setValue(null, null);
+        }
+        $log = file_get_contents(Config::get('data_dir') . '/logs/carbure_test_' . date('Ymd') . '.log');
+        $this->assertStringNotContainsString($value, $log);
+        $this->assertStringContainsString('"message":"Calling : EchoResource.echo","context":{"params":["first"]}', $log);
+    }
 }

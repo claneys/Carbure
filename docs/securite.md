@@ -246,6 +246,19 @@ Seules ces routes ne demandent pas de JWT (un test unitaire le vérifie) :
 - Une adresse IP est une **donnée personnelle** : les fichiers de log sont supprimés après
   `log_retention_days` jours (90 dans une nouvelle installation, voir
   [Configuration](configuration.md)).
+- **Données personnelles selon le niveau des logs** (`log_level`) :
+
+    | Niveau | Ce qui est écrit |
+    |---|---|
+    | `warning`, `error` (défaut) | Adresse IP et identifiant (numérique) de l'utilisateur sur chaque ligne ; erreurs, avec la seule dernière ligne d'erreur de woob |
+    | `info` | En plus : chaque appel de l'API avec le **nom** de ses paramètres, jamais leur valeur (libellés, montants, emails restent hors des logs) ; les emails envoyés, adresse masquée (`j***@example.org`) |
+    | `debug` | **Tout** : paramètres et réponses de l'API (transactions, soldes…, secrets toujours masqués) |
+
+    `woob_debug` écrit en plus la sortie complète de woob (comptes, opérations, pages de la
+    banque). `debug` et `woob_debug` servent à un dépannage ponctuel : remettez ensuite
+    `warning` et supprimez les fichiers de log concernés (`data/logs/`).
+- Les journaux nomment un utilisateur par son identifiant, jamais par son nom (compte
+  bloqué, connexion refusée faute de double authentification).
 - `data/` : `conf/prod.ini` (dont `push_api_key`, la clé d'API du service de notifications push), `logs/`, `woob/` (identifiants bancaires woob)
   sont exclus du dépôt Git.
 

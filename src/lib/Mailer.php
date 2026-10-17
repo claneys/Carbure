@@ -68,7 +68,7 @@ final class Mailer {
         } finally {
             fclose($socket);
         }
-        Logger::info("Email sent to $to");
+        Logger::info("Email sent to " . Logger::maskEmail($to));
     }
 
     /**
