@@ -123,13 +123,13 @@ final class Insight {
     }
 
     /**
-     * Check an icon name (Material icon).
+     * Check an icon name (Material icon), also used by the import of a backup.
      *
      * @param string|null $icon The icon
      * @return string|null The icon, or null for the default one
      * @throws Error If invalid
      */
-    private static function icon(?string $icon): ?string
+    public static function icon(?string $icon): ?string
     {
         if ($icon === null || $icon === '') {
             return null;

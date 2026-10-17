@@ -13,7 +13,7 @@ test.beforeEach(async ({ page }) => {
 
 /** Tabs of the main navigation (administrators), then those of the Administration menu */
 const MAIN_TABS = ['tabTransactions', 'tabBudget', 'tabInsights', 'tabTrends', 'tabRules', 'tabCategories', 'tabAccounts'];
-const ADMIN_TABS = ['tabUsers', 'tabSync', 'tabAgents', 'tabLogs', 'tabSettings'];
+const ADMIN_TABS = ['tabUsers', 'tabSync', 'tabAgents', 'tabLogs', 'tabSettings', 'tabBackup'];
 /** Tabs of a user who is not an administrator */
 const USER_TABS = ['tabTransactions', 'tabBudget', 'tabInsights', 'tabTrends'];
 
@@ -169,6 +169,26 @@ test('axe: the notifications of the profile and the result of the test email', a
     problems.push(...await axeViolations(page, tr('smtpTestTitle')));
     await page.setViewportSize({ width: 320, height: 256 });
     problems.push(...await reflowProblems(page, tr('smtpTestTitle')));
+
+    expect(problems).toEqual([]);
+});
+
+test('axe: the import of a backup, its files, its confirmation, at 320 CSS px too', async ({ adminPage: page }) => {
+    const problems = [];
+    await showTab(page, 'tabBackup');
+    const backup = { format: 'carbure-backup', version: 1, created_at: '2026-10-16T10:00:00+02:00', carbure: 'dev', datasets: { rules: [], budgets: [] } };
+    await page.locator('#backup-file').setInputFiles({ name: 'backup.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(backup)) });
+    await expect(page.locator('input[data-file]')).toHaveCount(2);
+    problems.push(...await axeViolations(page, tr('backupImportChoose')));
+    await page.setViewportSize({ width: 320, height: 256 });
+    problems.push(...await reflowProblems(page, tr('backupImportChoose')));
+    await page.setViewportSize({ width: 1280, height: 720 });
+
+    await page.locator('.backup-import-button').click();
+    const dialog = page.getByRole('dialog', { name: tr('backupImportConfirmTitle') });
+    await expect(dialog).toBeVisible();
+    problems.push(...await axeViolations(page, tr('backupImportConfirmTitle')));
+    await page.keyboard.press('Escape');
 
     expect(problems).toEqual([]);
 });

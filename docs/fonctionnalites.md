@@ -450,7 +450,7 @@ Détails : [Portail web](portail.md#accessibilite).
 ## Administration
 
 Les onglets **Règles**, **Catégories** et **Comptes**, et le menu **Administration**
-(**Utilisateurs**, **Logs**, **Paramètres**, **Synchro**, **Agent IA**, **API**) sont réservés aux administrateurs ; les autres
+(**Utilisateurs**, **Logs**, **Paramètres**, **Synchro**, **Agent IA**, **Sauvegarde**, **API**) sont réservés aux administrateurs ; les autres
 utilisateurs ouvrent **Agent IA** depuis leur menu.
 
 - **Utilisateurs** : création, modification (dont le profil), suppression, dernière
@@ -467,6 +467,11 @@ utilisateurs ouvrent **Agent IA** depuis leur menu.
 - **Synchro** : la commande `curl` (pour tous les comptes ou un seul) et la ligne crontab qui
   lancent la synchronisation, avec le jeton masqué jusqu'à « Afficher » ; l'onglet crée ou
   renouvelle ce jeton.
+- **Sauvegarde** : export des données choisies (catégories, règles, budgets, insights,
+  transactions, transactions supprimées) dans un ZIP, un fichier JSON par type ; import d'un
+  ZIP (en choisissant ses fichiers) ou d'un seul fichier, qui **supprime et remplace** les
+  données de chaque type importé, après confirmation, tout ou rien. Ni utilisateurs, ni mots
+  de passe, ni jetons, ni connexions bancaires dans une sauvegarde.
 - **API** : la documentation de l'API (Swagger UI) dans le portail ; « Try it out » appelle
   l'API avec la session de l'administrateur.
 - **Mise à jour de la base** : quand une nouvelle version modifie la base, un bandeau le

@@ -5833,7 +5833,8 @@ textarea:focus-visible,
     text-transform: none;
 }
 
-.modal-body .import-drop {
+.modal-body .import-drop,
+.backup-card .import-drop {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -6717,4 +6718,150 @@ button.is-busy:not(.btn-confirm-danger):hover {
 /* Close button of a modal whose action runs: no grey square */
 .modal-close:disabled {
     background: transparent;
+}
+
+/* ===== Backup (Administration) ===== */
+.backup-card + .backup-card {
+    margin-top: 20px;
+}
+
+.backup-datasets {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+    gap: 10px;
+    min-width: 0;
+    margin: 0 0 16px;
+    padding: 0;
+    border: 0;
+}
+
+.backup-datasets legend {
+    margin-bottom: 10px;
+    padding: 0;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.backup-dataset {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 12px 14px;
+    border: 1px solid var(--divider);
+    border-radius: var(--border-radius-md);
+    background: var(--surface);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.backup-dataset:hover,
+.backup-dataset.selected {
+    border-color: var(--primary-color);
+}
+
+.backup-dataset:focus-within {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+.backup-dataset.invalid {
+    border-color: var(--error-color);
+    cursor: not-allowed;
+}
+
+.backup-dataset input {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: var(--primary-color);
+}
+
+.backup-dataset-icon {
+    flex-shrink: 0;
+    color: var(--primary-color);
+}
+
+.backup-dataset-name {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+}
+
+.backup-dataset-name code {
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.backup-dataset-count {
+    color: var(--text-secondary);
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.backup-dataset.invalid .backup-dataset-icon,
+.backup-dataset.invalid .backup-dataset-count {
+    color: var(--error-color);
+}
+
+.backup-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.backup-actions button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.backup-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 0 0 16px;
+    padding: 10px 12px;
+    border-radius: var(--border-radius-sm);
+    background: var(--error-light);
+    color: var(--error-color);
+    font-size: 14px;
+}
+
+.backup-warning .material-icons {
+    font-size: 20px;
+}
+
+.backup-file {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.backup-file > .material-icons {
+    color: var(--primary-color);
+    font-size: 32px;
+}
+
+.backup-file > div {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.backup-file-meta {
+    color: var(--text-secondary);
+    font-size: 13px;
 }

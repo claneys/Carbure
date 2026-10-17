@@ -32,13 +32,38 @@ test('every tab is readable, buttons on hover included', async ({ adminPage: pag
     }
 
     await page.locator('.tabs').getByRole('button', { name: tr('tabAdministration'), exact: true }).click();
-    for (const tab of ['tabUsers', 'tabSync', 'tabAgents', 'tabLogs', 'tabSettings']) {
+    for (const tab of ['tabUsers', 'tabSync', 'tabAgents', 'tabLogs', 'tabSettings', 'tabBackup']) {
         await page.getByRole('tab', { name: tr(tab), exact: true }).click();
         await expect(page.getByRole('tab', { name: tr(tab), exact: true })).toHaveAttribute('aria-selected', 'true');
         await page.waitForLoadState('networkidle');
         await page.waitForTimeout(300);
         problems.push(...await contrastProblems(page, tr(tab)));
     }
+
+    expect(problems).toEqual([]);
+});
+
+test('the import of a backup is readable: its files, an invalid one, the confirmation', async ({ adminPage: page }) => {
+    const problems = [];
+    await page.locator('.tabs').getByRole('button', { name: tr('tabAdministration'), exact: true }).click();
+    await page.getByRole('tab', { name: tr('tabBackup'), exact: true }).click();
+    await expect(page.locator('#backup-file')).toBeAttached();
+
+    // A whole export saved as JSON (its datasets listed) is accepted like a ZIP
+    const rules = { format: 'carbure-backup', version: 1, datasets: { rules: [], budgets: [] } };
+    await page.locator('#backup-file').setInputFiles({ name: 'backup.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(rules)) });
+    await expect(page.locator('input[data-file]')).toHaveCount(2);
+    problems.push(...await contrastProblems(page, tr('backupImportChoose')));
+
+    await page.locator('.backup-import-button').click();
+    await expect(page.getByRole('dialog', { name: tr('backupImportConfirmTitle') })).toBeVisible();
+    problems.push(...await contrastProblems(page, tr('backupImportConfirmTitle')));
+    await page.getByRole('dialog').getByRole('button', { name: tr('cancel') }).click();
+
+    await page.getByRole('button', { name: tr('backupOtherFile') }).click();
+    await page.locator('#backup-file').setInputFiles({ name: 'notes.json', mimeType: 'application/json', buffer: Buffer.from('not json') });
+    await expect(page.locator('.backup-dataset.invalid')).toBeVisible();
+    problems.push(...await contrastProblems(page, tr('backupFileInvalid')));
 
     expect(problems).toEqual([]);
 });

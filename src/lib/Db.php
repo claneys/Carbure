@@ -123,4 +123,36 @@ final class Db {
 
         return $result->fetch_assoc() ?: null;
     }
+
+    /**
+     * Execute a prepared statement once per row (the statement is prepared once), e.g.
+     * the inserts of an import.
+     *
+     * @param string            $sql   The SQL query with placeholders (?)
+     * @param string            $types The types of the parameters of a row (s=string, i=integer, d=double)
+     * @param list<list<mixed>> $rows  The parameters of each row
+     * @return int The number of rows executed
+     * @throws Exception If the prepare or an execute fails
+     */
+    public static function executeMany(string $sql, string $types, array $rows): int
+    {
+        $conn = self::getConnection();
+        $stmt = $conn->prepare($sql);
+        if ($stmt === false) {
+            Logger::error("Database prepare failed: " . $conn->error);
+            throw new Exception("Database prepare failed: " . $conn->error);
+        }
+
+        foreach ($rows as $row) {
+            $stmt->bind_param($types, ...$row);
+            if (!$stmt->execute()) {
+                Logger::error("Database execute failed: " . $stmt->error);
+                throw new Exception("Database execute failed: " . $stmt->error);
+            }
+        }
+        $stmt->close();
+        Logger::debug("Database query succeeded (" . count($rows) . " rows): $sql");
+
+        return count($rows);
+    }
 }

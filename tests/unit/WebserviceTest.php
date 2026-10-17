@@ -119,6 +119,7 @@ class WebserviceTest extends TestCase
             'password' => 'secret',
             'device' => ['name' => 'iPhone', 'token' => 'abcdef'],
             'values' => ['smtp_host' => 'smtp.example.com', 'smtp_password' => 'mail-secret'],
+            'datasets' => ['transactions' => [['label' => 'CB SUPERMARCHE']]],
         ]);
 
         $this->assertSame('bob', $masked['username']);
@@ -128,6 +129,8 @@ class WebserviceTest extends TestCase
         // The SMTP password changed in Administration > Settings
         $this->assertSame('smtp.example.com', $masked['values']['smtp_host']);
         $this->assertSame('***', $masked['values']['smtp_password']);
+        // The rows of an imported backup (household data)
+        $this->assertSame('***', $masked['datasets']);
     }
 
     public function testPayload()

@@ -1031,6 +1031,39 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
         return request(`${baseUrl}/user?id=${encodeURIComponent(userId)}`, { method: 'PUT', body: JSON.stringify({ theme }) }, 'Failed to update user');
     }
 
+    /**
+     * Fetches the datasets of a backup and their number of rows (administrators)
+     * @returns {Promise<Array>} [{name, count}]
+     * @throws {Error} If request fails
+     */
+    async function fetchBackupInfo() {
+        const data = await request(`${baseUrl}/backup`, {}, 'Failed to fetch the backup datasets');
+        return Array.isArray(data) ? data : [];
+    }
+
+    /**
+     * Exports datasets (administrators)
+     * @param {Array<string>} datasets - Names of the datasets
+     * @returns {Promise<Object>} {format, version, created_at, carbure, schema, counts, datasets}
+     * @throws {Error} If request fails
+     */
+    async function exportBackup(datasets) {
+        return request(`${baseUrl}/backup/export?datasets=${encodeURIComponent(datasets.join(','))}`, {}, 'Failed to export the backup');
+    }
+
+    /**
+     * Imports datasets, which delete and replace their data (administrators)
+     * @param {Object} datasets - Rows by dataset: {categories: [...], ...}
+     * @returns {Promise<Object>} {imported: {name: count}}
+     * @throws {Error} If request fails (nothing changed)
+     */
+    async function importBackup(datasets) {
+        return request(`${baseUrl}/backup/import`, {
+            method: 'POST',
+            body: JSON.stringify({ datasets })
+        }, 'Failed to import the backup');
+    }
+
     return {
         abortAllExcept,
         fetchTransactions,
@@ -1108,6 +1141,9 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
         createUser,
         updateUser,
         updateUserTheme,
-        deleteUser
+        deleteUser,
+        fetchBackupInfo,
+        exportBackup,
+        importBackup
     };
 }

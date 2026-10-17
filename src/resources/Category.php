@@ -46,6 +46,16 @@ final class Category {
     private const TYPES = ['DEBIT', 'CREDIT', 'HORS-BUDGET'];
 
     /**
+     * Icon of a category (SF Symbols name used by the iOS app, may be empty)
+     */
+    public const ICON_PATTERN = '/^[a-z0-9._]{0,50}$/';
+
+    /**
+     * Color of a category (SwiftUI name or hex, may be empty)
+     */
+    public const COLOR_PATTERN = '/^(#[0-9a-fA-F]{3,8}|[a-zA-Z]{0,30})$/';
+
+    /**
      * Validate the fields of a category and return them normalized.
      *
      * @param int|null        $id     The category being modified (null for a new one)
@@ -67,7 +77,7 @@ final class Category {
         if (!in_array($type, self::TYPES, true)) {
             throw new Error("Invalid category type", 400);
         }
-        if (!preg_match('/^[a-z0-9._]{0,50}$/', (string)$icon) || !preg_match('/^(#[0-9a-fA-F]{3,8}|[a-zA-Z]{0,30})$/', (string)$color)) {
+        if (!preg_match(self::ICON_PATTERN, (string)$icon) || !preg_match(self::COLOR_PATTERN, (string)$color)) {
             throw new Error("Invalid icon or color", 400);
         }
 

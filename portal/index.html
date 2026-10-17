@@ -1494,6 +1494,92 @@
                     <div v-else-if="configError" class="sync-step-error" role="alert">{{ configError }}</div>
                 </div>
 
+                <div v-else-if="activeTab === 'backup'" key="backup" class="tab-panel">
+                    <!-- Export of the chosen datasets in a ZIP -->
+                    <section class="trends-card config-card backup-card" aria-labelledby="backup-export-title">
+                        <div class="panel-header">
+                            <div>
+                                <h2 id="backup-export-title">{{ t('backupExportTitle') }}</h2>
+                                <p class="rules-help">{{ t('backupExportHelp') }}</p>
+                            </div>
+                        </div>
+                        <div v-if="loadingBackup && !backupDatasets.length" class="loading">
+                            <div class="material-icons spin" aria-hidden="true">refresh</div>
+                            <p>{{ t('loadingMessage') }}</p>
+                        </div>
+                        <fieldset v-else class="backup-datasets">
+                            <legend class="visually-hidden">{{ t('backupDatasets') }}</legend>
+                            <label v-for="dataset in backupDatasets" :key="dataset.name" class="backup-dataset" :class="{ selected: backupExportSelection[dataset.name] }">
+                                <input type="checkbox" v-model="backupExportSelection[dataset.name]" :data-dataset="dataset.name" />
+                                <span class="material-icons backup-dataset-icon" aria-hidden="true">{{ backupDatasetIcon(dataset.name) }}</span>
+                                <span class="backup-dataset-name">{{ backupDatasetLabel(dataset.name) }}</span>
+                                <span class="backup-dataset-count">{{ t('backupRows', { count: dataset.count }) }}</span>
+                            </label>
+                        </fieldset>
+                        <div v-if="backupError" class="sync-step-error" role="alert">{{ backupError }}</div>
+                        <div class="backup-actions">
+                            <button type="button" class="btn-secondary" @click="toggleBackupExportAll" :disabled="!backupDatasets.length">
+                                <span class="material-icons" aria-hidden="true">{{ backupExportCount < backupDatasets.length ? 'select_all' : 'deselect' }}</span>{{ backupExportCount < backupDatasets.length ? t('backupSelectAll') : t('backupSelectNone') }}
+                            </button>
+                            <button type="button" class="backup-export-button" @click="exportBackup" :disabled="!backupExportCount || backupExporting">
+                                <span class="material-icons" :class="{ spin: backupExporting }" aria-hidden="true">{{ backupExporting ? 'autorenew' : 'download' }}</span>{{ backupExporting ? t('backupExporting') : t('backupExportButton') }}
+                            </button>
+                        </div>
+                    </section>
+
+                    <!-- Import of a ZIP or of a dataset file: deletes and replaces the data -->
+                    <section class="trends-card config-card backup-card" aria-labelledby="backup-import-title">
+                        <div class="panel-header">
+                            <div>
+                                <h2 id="backup-import-title">{{ t('backupImportTitle') }}</h2>
+                                <p class="rules-help">{{ t('backupImportHelp') }}</p>
+                            </div>
+                        </div>
+                        <p class="backup-warning">
+                            <span class="material-icons" aria-hidden="true">warning</span>{{ t('backupImportWarning') }}
+                        </p>
+
+                        <label v-if="!backupImportFile" class="import-drop" :class="{ over: backupDragOver, loading: backupImportLoading }"
+                               @dragover.prevent="backupDragOver = true" @dragleave.prevent="backupDragOver = false" @drop.prevent="onBackupDrop">
+                            <input type="file" id="backup-file" class="visually-hidden" :accept="backupAccept" @change="onBackupPick" :disabled="backupImportLoading" />
+                            <span class="material-icons import-drop-icon" :class="{ spin: backupImportLoading }" aria-hidden="true">{{ backupImportLoading ? 'autorenew' : 'cloud_upload' }}</span>
+                            <strong>{{ backupImportLoading ? t('importReading') : t('backupImportDrop') }}</strong>
+                            <span class="import-drop-hint">{{ t('backupImportDropHint') }}</span>
+                        </label>
+
+                        <template v-else>
+                            <div class="backup-file">
+                                <span class="material-icons" aria-hidden="true">folder_zip</span>
+                                <div>
+                                    <strong>{{ backupImportFile.name }}</strong>
+                                    <span v-if="backupImportManifest && backupImportManifest.created_at" class="backup-file-meta">
+                                        {{ t('backupCreatedAt', { date: new Date(backupImportManifest.created_at).toLocaleString(locale), version: backupImportManifest.carbure || '?' }) }}
+                                    </span>
+                                </div>
+                                <button type="button" class="btn-secondary" @click="resetBackupImport">
+                                    <span class="material-icons" aria-hidden="true">swap_horiz</span>{{ t('backupOtherFile') }}
+                                </button>
+                            </div>
+                            <fieldset class="backup-datasets">
+                                <legend>{{ t('backupImportChoose') }}</legend>
+                                <label v-for="entry in backupImportEntries" :key="entry.file" class="backup-dataset" :class="{ selected: entry.selected, invalid: entry.error }">
+                                    <input type="checkbox" :checked="entry.selected" :disabled="!!entry.error" @change="toggleBackupEntry(entry)" :data-file="entry.file" />
+                                    <span class="material-icons backup-dataset-icon" aria-hidden="true">{{ entry.error ? 'error' : backupDatasetIcon(entry.dataset) }}</span>
+                                    <span class="backup-dataset-name">{{ entry.error ? entry.file : backupDatasetLabel(entry.dataset) }}<code v-if="!entry.error">{{ entry.file }}</code></span>
+                                    <span class="backup-dataset-count">{{ entry.error ? t(entry.error) : t('backupRows', { count: entry.count }) }}</span>
+                                </label>
+                            </fieldset>
+                        </template>
+
+                        <div v-if="backupImportError" class="sync-step-error" role="alert">{{ backupImportError }}</div>
+                        <div v-if="backupImportFile" class="backup-actions">
+                            <button type="button" class="btn-danger backup-import-button" @click="confirmBackupImport" :disabled="!backupImportSelected.length">
+                                <span class="material-icons" aria-hidden="true">settings_backup_restore</span>{{ t('backupImportButton') }}
+                            </button>
+                        </div>
+                    </section>
+                </div>
+
                 <div v-else-if="activeTab === 'agents'" key="agents" class="tab-panel">
                     <div class="trends-view">
                         <section class="trends-card">

@@ -79,7 +79,8 @@
   clic, respecte ses réglages de contraste élevé et vise le niveau AA des WCAG 2.2.
 - 👨‍👩‍👧 **Pensé pour le foyer** : plusieurs utilisateurs, des comptes et des données partagés,
   chacun sa langue et ses appareils ; un administrateur gère comptes, catégories, règles,
-  utilisateurs et configuration, et copie la commande toute prête qui planifie la synchro.
+  utilisateurs et configuration, copie la commande toute prête qui planifie la synchro, et
+  sauvegarde ou restaure les données (catégories, règles, budgets, transactions…) dans un ZIP.
 - 🤖 **Interrogez vos comptes avec votre agent IA** : un serveur MCP intégré, en lecture seule
   et désactivable, répond à « combien en restaurants cette année ? » ou « où dépasse-t-on le
   budget ? ». Claude (web, Desktop, mobile) se connecte avec la seule URL du serveur, après

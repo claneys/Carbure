@@ -155,8 +155,6 @@ final class Webservice {
         
         // Remove /api prefix from request path
         $requestPath = (string)preg_replace('#^/api#', '', $requestPath);
-        
-        $data = self::getPayload();
 
         // Find the matching route
         $route = ApiResolver::findRoute($requestPath, $httpMethod);
@@ -170,6 +168,10 @@ final class Webservice {
 
         // Check access control
         self::checkAccess($route['apiRoute']);
+
+        // The body read once the caller is allowed: an anonymous request cannot make the
+        // server decode a large body (up to 32 MB on /api/backup/import)
+        $data = self::getPayload();
 
         // Call the service
         $response = self::callService($route['class'], $route['method'], $data, $route['apiRoute']->raw);
@@ -325,9 +327,10 @@ final class Webservice {
     {
         foreach ($data as $key => $value) {
             // settings: the bank credentials sent to woob, whatever their names;
-            // file: an imported bank statement (household data, large)
+            // file: an imported bank statement (household data, large);
+            // datasets: the rows of an imported backup (household data, large)
             if (in_array(strtolower((string)$key), ['password', 'token', 'settings', 'admin_password', 'db_password',
-                    'code', 'code_verifier', 'refresh_token', 'access_token', 'client_secret', 'file', 'smtp_password'], true)) {
+                    'code', 'code_verifier', 'refresh_token', 'access_token', 'client_secret', 'file', 'smtp_password', 'datasets'], true)) {
                 $data[$key] = '***';
             } elseif (is_array($value)) {
                 $data[$key] = self::maskSensitive($value);

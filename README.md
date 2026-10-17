@@ -78,7 +78,8 @@
   in one click, respects its high contrast settings and aims at WCAG 2.2 AA.
 - 👨‍👩‍👧 **Built for households**: several users, shared accounts and data, each with their own
   language and devices; an administrator manages accounts, categories, rules, users and the
-  configuration, and copies the ready-made command that schedules the sync.
+  configuration, copies the ready-made command that schedules the sync, and backs up or
+  restores the data (categories, rules, budgets, transactions…) in a ZIP.
 - 🤖 **Ask your AI agent about your money**: a built-in, read-only MCP server — which you can
   turn off — answers questions like "how much did we spend on restaurants this year?" or
   "which budgets are we over?". Claude (web, Desktop, mobile) connects from the server URL
