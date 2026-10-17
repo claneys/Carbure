@@ -147,7 +147,7 @@ class PushRelayTest extends TestCase
     public function testDefaultUrl()
     {
         Config::set('push_url', '');
-        $this->assertSame('https://push.carbure.org', PushRelay::url());
+        $this->assertSame('https://api.carbure.org', PushRelay::url());
         Config::set('push_url', 'https://relay.example/');
         $this->assertSame('https://relay.example', PushRelay::url());
     }

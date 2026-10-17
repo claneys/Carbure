@@ -517,7 +517,7 @@
     "configHelp_woob_auto_update": "Mise à jour automatique des modules bancaires de woob.",
     "configHelp_woob_2fa_wait": "Synchronisation planifiée : secondes d'attente avant de réessayer un compte dont la banque demande une validation dans son application (0 à 300).",
     "configHelp_woob_2fa_retries": "Synchronisation planifiée : nombre de nouvelles tentatives après une demande de validation de la banque (0 à 5, 0 pour ne pas réessayer).",
-    "configHelp_push_url": "Adresse du service de notifications push (vide : le service officiel https://push.carbure.org).",
+    "configHelp_push_url": "Adresse du service de notifications push (vide : le service officiel https://api.carbure.org).",
     "configHelp_push_api_key": "Clé d'API de cette instance sur le service de notifications push : jamais affichée ; obtenue par le bouton « Inscrire l'instance » ou collée ici (vide : aucune notification push n'est envoyée).",
     "configSection_smtp": "Emails (SMTP)",
     "configHelp_smtp_host": "Serveur SMTP des notifications par email (vide : aucun email n'est envoyé).",

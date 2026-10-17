@@ -22,7 +22,7 @@ use Error;
 final class PushRelay {
 
     /** Official relay, used when push_url is not set */
-    public const DEFAULT_URL = 'https://push.carbure.org';
+    public const DEFAULT_URL = 'https://api.carbure.org';
 
     /** Device tokens per request (limit of the relay) */
     private const TOKENS_PER_REQUEST = 20;

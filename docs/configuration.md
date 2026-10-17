@@ -107,7 +107,7 @@ notification avec sa clé d'API.
 
 | Clé | Description |
 |---|---|
-| `push_url` ✏️ | Adresse du service ; vide : le service officiel `https://push.carbure.org` |
+| `push_url` ✏️ | Adresse du service ; vide : le service officiel `https://api.carbure.org` |
 | `push_api_key` ✏️ | Clé d'API de l'instance (`cpk_<id>_<secret>`) : un secret, jamais affiché ni journalisé ; renseignée par **Inscrire l'instance** (ou collée). Vide : **aucune notification push n'est envoyée** (journalisé en info, le profil des utilisateurs l'indique) |
 
 Le bouton **Renouveler la clé** remplace une clé (fuitée par exemple) par une nouvelle,

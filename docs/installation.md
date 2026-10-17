@@ -130,7 +130,9 @@ fixez-la dans `docker/docker-compose.yml` (`image: mariadb:11`).
 2. **Notifications push** : la 1.5.0 n'envoie plus elle-même les notifications à Apple
    (APNs) mais passe par le service Carbure Push. Tant que l'instance n'y est pas
    inscrite, **aucune notification push n'est envoyée** (le reste fonctionne normalement).
-   Une fois le service disponible, inscrivez l'instance juste après la mise à jour (voir
+   En 1.5.0, l'adresse par défaut du service (`https://push.carbure.org`) n'est pas la
+   bonne : renseignez d'abord `push_url` = `https://api.carbure.org` (par défaut à partir
+   de la 1.6.0). Une fois le service disponible, inscrivez l'instance juste après la mise à jour (voir
    [Notifications push](#notifications-push-carbure-push)), puis retirez la section
    `[apns]` et la clé `.p8` de `/data/conf`.
 3. **Mettez à jour** l'image (`docker compose pull && docker compose up -d`). Trois
@@ -215,7 +217,7 @@ docker compose exec -u www-data carbure php tools/migrate.php --status # version
 - [woob](https://woob.tech/) installé pour l'utilisateur du serveur web. Le module BNP
   récent nécessite `curl_cffi` (`pip install "curl_cffi>=0.7"`).
 - Pour les notifications push : un accès HTTPS sortant vers le service Carbure Push
-  (aucune clé Apple ni Firebase n'est nécessaire). Facultatif : un serveur SMTP pour les
+  (`https://api.carbure.org` ; aucune clé Apple ni Firebase n'est nécessaire). Facultatif : un serveur SMTP pour les
   notifications par email.
 
 ### 1. Copier Carbure
