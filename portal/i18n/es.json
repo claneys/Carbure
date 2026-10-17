@@ -619,7 +619,7 @@
     "errorLoadingUsers": "Error al cargar los usuarios",
     "errorSavingUser": "Error al guardar el usuario",
     "errorDeletingUser": "Error al eliminar el usuario",
-    "loginSubtitle": "Gestión bancaria",
+    "loginSubtitle": "Recupera el control de tu presupuesto",
     "loginButton": "Iniciar sesión",
     "loggingIn": "Iniciando sesión…",
     "loginRequired": "Usuario y contraseña obligatorios",

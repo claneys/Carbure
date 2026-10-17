@@ -6,6 +6,7 @@ const USER_TABS = ['tabTransactions', 'tabBudget', 'tabInsights', 'tabTrends'];
 
 test('logs in and out from the login screen', async ({ page }) => {
     await page.goto('/portal/');
+    await expect(page.locator('.login-subtitle')).toHaveText('Reprenez le contrôle de votre budget');
     // The API is found from the address of the portal: no field to type it
     await expect(page.locator('#apiUrl')).toHaveCount(0);
 

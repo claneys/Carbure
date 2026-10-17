@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <strong>Your household budget, finally under control.</strong><br>
+  <strong>Take back control of your budget.</strong><br>
   Bank accounts synced automatically, expenses categorized, budgets tracked day by day —<br>
   on the web and on iPhone. Self-hosted, free and open source.
 </p>

@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <strong>Le budget de votre foyer, enfin sous contrôle.</strong><br>
+  <strong>Reprenez le contrôle de votre budget.</strong><br>
   Vos comptes bancaires synchronisés automatiquement, vos dépenses catégorisées,<br>
   vos budgets suivis au jour le jour — sur le web et sur iPhone. Hébergé chez vous, gratuit et open source.
 </p>

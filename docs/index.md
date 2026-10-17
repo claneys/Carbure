@@ -6,6 +6,8 @@ icon: material/home-outline
 
 # Carbure, le budget du foyer auto-hébergé
 
+*Reprenez le contrôle de votre budget.*
+
 **Carbure** est un portail web de suivi du budget et des transactions bancaires du foyer,
 gratuit, [open source](https://github.com/ltoinel/Carbure) et auto-hébergé : sur un
 serveur, un NAS Synology ou n'importe quelle machine avec Docker, les données restent chez

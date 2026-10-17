@@ -619,7 +619,7 @@
     "errorLoadingUsers": "Erreur lors du chargement des utilisateurs",
     "errorSavingUser": "Erreur lors de l'enregistrement",
     "errorDeletingUser": "Erreur lors de la suppression",
-    "loginSubtitle": "Gestion Bancaire",
+    "loginSubtitle": "Reprenez le contrôle de votre budget",
     "loginButton": "Se connecter",
     "loggingIn": "Connexion...",
     "loginRequired": "Nom d'utilisateur et mot de passe requis",
