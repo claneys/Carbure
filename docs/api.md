@@ -911,6 +911,15 @@ celle de l'administrateur). Renvoie `{"sent": true, "to": "…"}` ; `400` sans
 serveur SMTP configuré ou sans destinataire, `502` si le serveur est injoignable ou refuse
 l'email (sa réponse est dans le message d'erreur).
 
+### `GET /system/push` — administrateur
+
+Le service de notifications push de l'instance et le consentement de l'administrateur :
+`{"url": "https://…", "official": true, "registered": true, "consent": {"at": "2026-10-17T08:00:00Z", "url": "https://…"}, "consent_valid": true}`.
+`url` est le relais utilisé (`push_url`, le service officiel par défaut), `official` s'il
+s'agit du service officiel, `registered` si une clé d'API est configurée, `consent` le
+dernier consentement enregistré (`null` s'il n'y en a pas) et `consent_valid` s'il a été
+donné pour le relais actuel.
+
 ### `POST /system/push-register` — administrateur
 
 Inscrit l'instance sur le service de notifications push (`push_url`, le service officiel
@@ -920,6 +929,12 @@ de recevoir les notifications). La clé n'est jamais renvoyée :
 `{"registered": true, "renewed": false, "key_id": "…", "limits": {…}}`. `502` si le service
 est injoignable ou refuse, `429` au-delà de ses limites d'inscription ; le fichier de
 configuration doit être modifiable (vérifié avant l'appel).
+
+Paramètre `consent` (`true`) : l'administrateur accepte que les notifications (jetons des
+appareils, titre et texte) passent par ce relais. **Obligatoire** pour une inscription,
+et pour un renouvellement si le consentement enregistré porte sur un autre relais
+(`push_url` changé) : sinon `400`. Il est enregistré (date et adresse du relais, table
+`settings`) et renvoyé par `GET /system/push`.
 
 ### `POST /system/push-test` — administrateur
 

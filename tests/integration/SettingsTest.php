@@ -2,6 +2,7 @@
 
 use Carbure\Lib\Config;
 use Carbure\Lib\Db;
+use Carbure\Lib\PushRelay;
 use Carbure\Resources\Settings;
 use Carbure\Resources\System;
 
@@ -116,7 +117,8 @@ class SettingsTest extends DatabaseTestCase
         Config::set('push_api_key', '');
         Config::set('public_url', 'https://carbure.example.fr');
         $this->loginAs(self::ADMIN);
-        $result = Settings::registerPush();
+        $this->assertNull(Settings::push()['consent']);
+        $result = Settings::registerPush('true');
 
         $this->assertTrue($result['registered']);
         $this->assertFalse($result['renewed']);
@@ -125,11 +127,59 @@ class SettingsTest extends DatabaseTestCase
         $this->assertSame($key, Config::get('push_api_key'));
         $this->assertStringNotContainsString($key, json_encode($result));
 
-        // With a key: renewed (the devices follow the new key on the push service)
+        // The consent recorded, for the relay
+        $push = Settings::push();
+        $this->assertSame(PushRelay::url(), $push['consent']['url']);
+        $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/', $push['consent']['at']);
+        $this->assertTrue($push['consent_valid']);
+        $this->assertTrue($push['registered']);
+
+        // With a key: renewed (the devices follow the new key on the push service), the
+        // consent already given for this relay
         $renewed = Settings::registerPush();
         $this->assertTrue($renewed['renewed']);
         $this->assertNotSame($key, parse_ini_file($this->file, true)['push']['push_api_key']);
         Config::set('public_url', '');
+    }
+
+    public function testRegisterPushNeedsTheConsent()
+    {
+        Config::set('push_api_key', '');
+        $this->loginAs(self::ADMIN);
+        $before = file_get_contents($this->file);
+        foreach ([null, 'false', ''] as $consent) {
+            try {
+                Settings::registerPush($consent);
+                $this->fail('Registered without consent');
+            } catch (Error $e) {
+                $this->assertSame(400, $e->getCode());
+                $this->assertStringContainsString('consent', $e->getMessage());
+            }
+        }
+        $this->assertSame($before, file_get_contents($this->file));
+        $this->assertSame([], FakePushRelay::requests());
+        $this->assertNull(Settings::push()['consent']);
+    }
+
+    public function testRegisterPushAsksTheConsentAgainForAnotherRelay()
+    {
+        Config::set('push_api_key', '');
+        $this->loginAs(self::ADMIN);
+        Settings::registerPush('true');
+
+        // Another relay: the consent given for the first one is not valid for it
+        $url = Config::has('push_url') ? Config::get('push_url') : '';
+        Config::set('push_url', 'https://push.example.org');
+        try {
+            $push = Settings::push();
+            $this->assertSame('https://push.example.org', $push['url']);
+            $this->assertFalse($push['official']);
+            $this->assertFalse($push['consent_valid']);
+            $this->expectExceptionCode(400);
+            Settings::registerPush();
+        } finally {
+            Config::set('push_url', $url);
+        }
     }
 
     public function testRegisterPushNeedsAWritableFile()
@@ -151,7 +201,7 @@ class SettingsTest extends DatabaseTestCase
         $this->loginAs(self::ADMIN);
         $before = file_get_contents($this->file);
         try {
-            Settings::registerPush();
+            Settings::registerPush('true');
             $this->fail('Registered');
         } catch (Error $e) {
             $this->assertSame(502, $e->getCode());
@@ -393,6 +443,6 @@ class SettingsTest extends DatabaseTestCase
     {
         $this->loginAs(self::USER);
         $this->assertAdminOnly(['GET /system/config', 'PUT /system/config', 'GET /system/sync', 'POST /system/sync-token',
-            'POST /system/smtp-test', 'POST /system/push-register', 'POST /system/push-test']);
+            'POST /system/smtp-test', 'GET /system/push', 'POST /system/push-register', 'POST /system/push-test']);
     }
 }

@@ -105,6 +105,18 @@ inscrit une fois (bouton **Inscrire l'instance** de **Administration → Paramè
 résout une preuve de travail et enregistre la clé obtenue ici) puis lui envoie chaque
 notification avec sa clé d'API.
 
+**Consentement** : avant l'inscription, une fenêtre explique ce que l'instance confie au
+relais (son adresse ; les jetons des appareils mobiles iOS et Android et le contenu des
+notifications : titre et texte, par exemple montants et libellés des opérations, alertes
+de budget ; le nom de l'instance à l'inscription), qu'il les transmet à Apple (APNs) et à
+Google (Firebase Cloud Messaging), et ce qu'il en garde selon sa documentation : il ne
+journalise pas le texte des notifications et ne conserve que l'empreinte (SHA-256) des
+jetons. L'administrateur doit cocher « J'ai compris et j'accepte… » pour inscrire
+l'instance ; l'API refuse l'inscription sans ce consentement. Il est enregistré avec sa
+date et l'adresse du relais (affichés sous le bouton) et redemandé si `push_url` désigne
+ensuite un autre relais. Pour arrêter, videz `push_api_key` : plus aucune notification
+n'est envoyée au relais.
+
 | Clé | Description |
 |---|---|
 | `push_url` ✏️ | Adresse du service ; vide : le service officiel `https://api.carbure.org` |

@@ -432,12 +432,23 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
     }
 
     /**
+     * The relay of the push service and the consent of the administrators to it
+     * @returns {Promise<Object>} {url, official, registered, consent: {at, url}|null, consent_valid}
+     */
+    async function fetchPushInfo() {
+        return request(`${baseUrl}/system/push`, {}, 'Failed to load the push service');
+    }
+
+    /**
      * Registers the instance on the push service and saves its API key, or renews the
      * key already saved (administrators)
+     * @param {boolean} [consent] - The administrator accepts the push service (required to
+     *                              register, and to renew for another relay)
      * @returns {Promise<Object>} {registered, renewed, key_id, limits}
      */
-    async function registerPush() {
-        return request(`${baseUrl}/system/push-register`, { method: 'POST' }, 'Failed to register on the push service');
+    async function registerPush(consent = false) {
+        const options = consent ? { method: 'POST', body: JSON.stringify({ consent: true }) } : { method: 'POST' };
+        return request(`${baseUrl}/system/push-register`, options, 'Failed to register on the push service');
     }
 
     /**
@@ -1162,6 +1173,7 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
         fetchSyncInfo,
         renewSyncToken,
         sendTestEmail,
+        fetchPushInfo,
         registerPush,
         sendTestPush,
         fetchNotifications,

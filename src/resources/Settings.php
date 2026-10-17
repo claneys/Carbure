@@ -8,7 +8,8 @@
  * command, break the database connection nor change the transaction UUIDs can
  * be changed, each one checked against a strict rule. Also the request that
  * starts the bank synchronization (for a scheduler) and its token, the test email,
- * and the registration on the push service (Carbure Push) with a test push.
+ * and the registration on the push service (Carbure Push), after the consent of the
+ * administrator, with a test push.
  *
  * @author     Ludovic Toinel
  * @copyright  2026 Carbure App
@@ -24,6 +25,7 @@ use Carbure\Lib\Jwt;
 use Carbure\Lib\Logger;
 use Carbure\Lib\Messages;
 use Carbure\Lib\PushRelay;
+use Carbure\Lib\Setting;
 use Error;
 use Exception;
 
@@ -251,25 +253,52 @@ final class Settings {
     }
 
     /**
+     * The push service of the instance (administrators): the relay the notifications go
+     * through and the consent of the administrator to it.
+     *
+     * @return array<string, mixed> url (of the relay), official (the relay of Carbure),
+     *               registered (an API key is saved), consent ({at (ISO 8601 date), url} or
+     *               null), consent_valid (given for the current relay)
+     */
+    #[ApiRoute('/system/push', method: 'GET', admin: true)]
+    public static function push(): array
+    {
+        $consent = self::pushConsent();
+        return [
+            'url' => PushRelay::url(),
+            'official' => PushRelay::url() === PushRelay::DEFAULT_URL,
+            'registered' => PushRelay::isConfigured(),
+            'consent' => $consent,
+            'consent_valid' => $consent !== null && $consent['url'] === PushRelay::url(),
+        ];
+    }
+
+    /**
      * Register the instance on the push service (Carbure Push) and save its API key in
      * the configuration file (administrators). With a key already, the key is renewed
      * instead: the devices keep receiving the notifications. The key is never returned.
+     * The consent of the administrator is required for a registration, and for a renewal
+     * when it was not given for the current relay (push_url changed); it is recorded
+     * with its date and the relay.
      *
+     * @param string|bool|null $consent The administrator accepts that the notifications
+     *               (device tokens, title and text) go through the relay: "true"...
      * @return array<string, mixed> registered (true), renewed (a key was replaced), key_id
      *               (public id of the key), limits (of the push service)
-     * @throws Error If the push service refuses or cannot be reached (502), or too many
-     *               registrations (429)
+     * @throws Error If the consent is missing (400), the push service refuses or cannot be
+     *               reached (502), or too many registrations (429)
      * @throws Exception If the configuration file cannot be written (checked first: a
      *                   key obtained must not be lost)
      */
     #[ApiRoute('/system/push-register', method: 'POST', admin: true)]
-    public static function registerPush(): array
+    public static function registerPush(string|bool|null $consent = null): array
     {
         $file = self::file();
         $ini = self::read($file);
         if (!is_writable($file)) {
             throw new Exception("The configuration file cannot be written by the web server");
         }
+        self::requirePushConsent(filter_var($consent, FILTER_VALIDATE_BOOLEAN));
 
         $renewed = PushRelay::isConfigured();
         $key = $renewed ? PushRelay::rotate() : PushRelay::register(self::instanceName());
@@ -297,7 +326,7 @@ final class Settings {
         $userId = Jwt::getUserIdFromToken();
         $devices = Device::get($userId);
         if (!$devices) {
-            throw new Error("No device: log in to the iOS app with your account first", 400);
+            throw new Error("No device: log in to the mobile app with your account first", 400);
         }
 
         $language = (string)(Db::queryOne("SELECT language FROM users WHERE id = ?", "i", $userId)['language'] ?? '');
@@ -311,6 +340,39 @@ final class Settings {
         $sent = count(array_filter(array_column($list, 'sent')));
         Logger::info("Test push sent by user $userId to $sent of " . count($list) . " device(s)");
         return ['sent' => $sent, 'devices' => count($list), 'results' => $list];
+    }
+
+    /**
+     * Check the consent to the push service, and record it when given: required for a
+     * registration and when the recorded one is for another relay.
+     *
+     * @param bool $given The administrator accepted it now
+     * @return void
+     * @throws Error If it is required and not given (400)
+     */
+    private static function requirePushConsent(bool $given): void
+    {
+        $url = PushRelay::url();
+        if ($given) {
+            Setting::set('push_consent_at', gmdate('Y-m-d\\TH:i:s\\Z'));
+            Setting::set('push_consent_url', $url);
+            Logger::warn("Consent to the push service $url given by user " . Jwt::getUserIdFromToken());
+            return;
+        }
+        if (!PushRelay::isConfigured() || Setting::get('push_consent_url') !== $url) {
+            throw new Error("The consent to the push service $url is required", 400);
+        }
+    }
+
+    /**
+     * The recorded consent to the push service.
+     *
+     * @return array{at: string, url: string}|null Date (ISO 8601) and relay, null if none
+     */
+    private static function pushConsent(): ?array
+    {
+        $at = Setting::get('push_consent_at');
+        return $at === '' ? null : ['at' => $at, 'url' => Setting::get('push_consent_url')];
     }
 
     /**

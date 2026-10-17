@@ -40,7 +40,7 @@ choisissez la banque, saisissez les identifiants demandés, puis les comptes à 
 identifiants sont confiés à woob, qui les conserve sur votre serveur ; Carbure ne les
 enregistre pas.
 
-Les réglages de l'instance (niveau et conservation des logs, woob, notifications iOS, serveur
+Les réglages de l'instance (niveau et conservation des logs, woob, notifications push mobiles, serveur
 SMTP des emails…) se consultent et se modifient ensuite dans le portail, onglet **Administration →
 Paramètres** : voir [Configuration](configuration.md).
 
@@ -170,9 +170,11 @@ carte).
 ### Notifications push (Carbure Push)
 
 Les notifications de l'application iOS passent par le service externe Carbure Push :
-dans **Administration → Paramètres**, section **Notifications iOS (Carbure Push)**,
-cliquez sur **Inscrire l'instance** (la clé d'API obtenue est enregistrée dans
-`/data/conf/prod.ini`), puis sur **Envoyer une notification de test**. Sans clé, aucune
+dans **Administration → Paramètres**, section **Push Notification Mobile** (Carbure Push),
+cliquez sur **Inscrire l'instance**, lisez et acceptez le consentement (les jetons des
+appareils et le contenu des notifications passent par ce relais, qui les transmet à Apple
+et à Google ; la clé d'API obtenue est enregistrée dans `/data/conf/prod.ini`), puis sur
+**Envoyer une notification de test**. Sans clé, aucune
 notification push n'est envoyée. Voir [Configuration](configuration.md#push).
 
 !!! warning "Mise à jour depuis une version qui envoyait elle-même les notifications (APNs)"

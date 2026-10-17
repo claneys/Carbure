@@ -136,7 +136,16 @@ test('the registration on the push service and the test push are readable', asyn
         await page.getByRole('button', { name: tr('save') }).click();
         await expect(page.locator('.toast')).toHaveText(tr('configSaved'));
         await page.getByRole('button', { name: tr('pushRegisterButton') }).click();
+        // The consent: at rest, then accepted (the register button enabled)
+        const consent = page.getByRole('dialog', { name: tr('pushConsentTitle') });
+        await expect(consent).toBeVisible();
+        problems.push(...await contrastProblems(page, tr('pushConsentTitle')));
+        await consent.getByLabel(tr('pushConsentAccept')).check();
+        await expect(consent.getByRole('button', { name: tr('pushConsentSubmit') })).toBeEnabled();
+        problems.push(...await contrastProblems(page, `${tr('pushConsentTitle')} (accepted)`));
+        await consent.getByRole('button', { name: tr('pushConsentSubmit') }).click();
         await expect(page.locator('.push-register .push-ok')).toBeVisible();
+        await expect(page.locator('.push-consent-given')).toBeVisible();
         await page.getByRole('button', { name: tr('pushTestButton') }).click();
         await expect(page.locator('.push-test .push-ok')).toBeVisible();
         problems.push(...await contrastProblems(page, `${tr('pushTestTitle')} (sent)`));
@@ -145,7 +154,12 @@ test('the registration on the push service and the test push are readable', asyn
         await page.locator('#config-push_url').fill('http://127.0.0.1:9');
         await page.getByRole('button', { name: tr('save') }).click();
         await expect(page.locator('.toast')).toHaveText(tr('configSaved'));
+        // Another relay: the consent asked again (outdated one shown)
+        await expect(page.locator('.push-consent-given')).toContainText(tr('pushConsentOutdated'));
         await page.getByRole('button', { name: tr('pushRenewButton') }).click();
+        const again = page.getByRole('dialog', { name: tr('pushConsentTitle') });
+        await again.getByLabel(tr('pushConsentAccept')).check();
+        await again.getByRole('button', { name: tr('pushConsentSubmit') }).click();
         await expect(page.locator('.push-register .push-result[role="alert"]')).toBeVisible();
         problems.push(...await contrastProblems(page, `${tr('pushRegisterTitle')} (error)`));
     } finally {

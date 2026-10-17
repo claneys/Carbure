@@ -190,8 +190,14 @@ test('notifications and test email requests', async () => {
     await api.sendTestPush();
     assert.equal(calls.at(-2).url, `${BASE}/system/push-register`);
     assert.equal(calls.at(-2).options.method, 'POST');
+    assert.equal(calls.at(-2).options.body, undefined);
     assert.equal(calls.at(-1).url, `${BASE}/system/push-test`);
     assert.equal(calls.at(-1).options.method, 'POST');
+    await api.registerPush(true);
+    assert.deepEqual(JSON.parse(calls.at(-1).options.body), { consent: true });
+    await api.fetchPushInfo();
+    assert.equal(calls.at(-1).url, `${BASE}/system/push`);
+    assert.equal(calls.at(-1).options.method, undefined);
     calls.splice(4);
 
     await api.updateBudgetThreshold(80);

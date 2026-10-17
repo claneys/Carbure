@@ -355,7 +355,9 @@ SELECT -SUM(amount) AS amount FROM bank_transaction WHERE amount < 0 AND categor
 
 Les notifications sont envoyées en **push** sur l'**app iPhone** (Apple Push Notification
 service) et, si un administrateur a configuré un serveur SMTP, par **email** à l'adresse du
-profil :
+profil. Les notifications push passent par le relais **Carbure Push**, auquel un
+administrateur inscrit l'instance après avoir accepté son consentement (voir
+[Configuration](configuration.md#push)) :
 
 !!! info "App iPhone"
     L'application iOS Carbure sera prochainement disponible sur l'App Store.
@@ -473,7 +475,7 @@ utilisateurs ouvrent **Agent IA** depuis leur menu.
   y sont masqués.
 - **Paramètres** : le fichier de configuration du serveur, section par section, les secrets
   masqués. Les réglages sans risque (niveau de log, catégorie d'épargne, adresse publique,
-  options de woob, notifications iOS, serveur SMTP des emails, avec un **email de test**)
+  options de woob, notifications push mobiles, serveur SMTP des emails, avec un **email de test**)
   se modifient dans le portail, chaque valeur étant vérifiée ; la base, les secrets, la commande woob et le nettoyage des libellés restent en
   lecture seule.
 - **Synchro** : la commande `curl` (pour tous les comptes ou un seul) et la ligne crontab qui

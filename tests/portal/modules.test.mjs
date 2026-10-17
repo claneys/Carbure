@@ -640,7 +640,7 @@ test('config: the test email shows the recipient, or the error of the server', a
     assert.deepEqual(context.smtpTestResult, { ok: false, message: 'The SMTP server refused the recipient: 550' });
 });
 
-test('config: registration on the push service, renewal after confirmation, test push', async () => {
+test('config: registration on the push service after consent, renewal after confirmation, test push', async () => {
     const { createConfigModule, pushTestOutcome } = await import('../../portal/modules/configModule.js');
     const configWithKey = set => ({ file: 'conf/prod.ini', writable: true, sections: [{ name: 'push', settings: [
         { key: 'push_url', value: '', set: false, editable: true, kind: 'url' },
@@ -648,9 +648,20 @@ test('config: registration on the push service, renewal after confirmation, test
     ] }] });
     const calls = [];
     let registered = false;
+    let consent = null;
+    let relay = 'https://relay.example.org';
     let testAnswer = () => ({ sent: 1, devices: 2, results: [] });
     const api = {
-        registerPush: async () => { calls.push('register'); const renewed = registered; registered = true; return { registered: true, renewed, key_id: 'abc' }; },
+        registerPush: async given => {
+            calls.push(given ? 'register+consent' : 'register');
+            if (given) {
+                consent = { at: '2026-10-17T08:00:00Z', url: relay };
+            }
+            const renewed = registered;
+            registered = true;
+            return { registered: true, renewed, key_id: 'abc' };
+        },
+        fetchPushInfo: async () => ({ url: relay, official: false, registered, consent, consent_valid: !!consent && consent.url === relay }),
         fetchConfig: async () => configWithKey(registered),
         sendTestPush: async () => testAnswer(),
     };
@@ -660,19 +671,51 @@ test('config: registration on the push service, renewal after confirmation, test
     context.setConfig(configWithKey(false));
     assert.equal(context.pushKeySet, false);
 
+    // First registration: the consent dialog, nothing sent until it is ticked
     await context.registerPush();
+    assert.deepEqual(calls, []);
+    assert.equal(context.pushConsent.accepted, false);
+    assert.equal(context.pushInfo.url, 'https://relay.example.org');
+    await context.acceptPushConsent();
+    assert.deepEqual(calls, []);
+    context.closePushConsent();
+    assert.equal(context.pushConsent, null);
+
+    await context.registerPush();
+    context.pushConsent.accepted = true;
+    await context.acceptPushConsent();
+    assert.equal(context.pushConsent, null);
+    assert.deepEqual(calls, ['register+consent']);
     assert.deepEqual(context.pushRegisterResult, { ok: true, message: 'pushRegistered {"key":"abc"}' });
     assert.equal(context.pushKeySet, true);
     assert.equal(context.registeringPush, false);
+    assert.equal(context.pushInfo.consent_valid, true);
 
-    // A key already saved: renewed only after confirmation
+    // A key already saved, the consent given for this relay: renewed only after confirmation
     window.confirm = () => false;
     await context.registerPush();
-    assert.deepEqual(calls, ['register']);
+    assert.deepEqual(calls, ['register+consent']);
     window.confirm = () => true;
     await context.registerPush();
+    assert.deepEqual(calls, ['register+consent', 'register']);
     assert.equal(context.pushRegisterResult.message, 'pushRenewed {"key":"abc"}');
 
+    // Another relay: the consent asked again
+    relay = 'https://other.example.org';
+    await context.registerPush();
+    assert.equal(context.pushConsent.accepted, false);
+    assert.equal(calls.length, 2);
+    context.closePushConsent();
+
+    // The push service unreadable: nothing asked, the error shown
+    const fetchPushInfo = api.fetchPushInfo;
+    api.fetchPushInfo = async () => { throw new Error('down'); };
+    await context.registerPush();
+    assert.deepEqual(context.pushRegisterResult, { ok: false, message: 'pushInfoError {}' });
+    assert.equal(context.pushConsent, null);
+    api.fetchPushInfo = fetchPushInfo;
+
+    relay = 'https://relay.example.org';
     api.registerPush = async () => { throw new Error('Push service registration refused'); };
     await context.registerPush();
     assert.deepEqual(context.pushRegisterResult, { ok: false, message: 'Push service registration refused' });

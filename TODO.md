@@ -14,8 +14,9 @@ keeps track of what was done).
       2. check `bin/push-admin check` and `GET /v1/health` on the relay;
       3. upgrade Carbure; the migration `2026-10-23_device_platform` (`devices.platform`,
          default `ios`) is applied at container start (the code works before it);
-      4. **Administration → Settings → Notifications iOS (Carbure Push)**: set `push_url` if
-         not the default, click **Register the instance** (stores `push_api_key`), then
+      4. **Administration → Settings → Push Notification Mobile**: set `push_url` if
+         not the default, click **Register the instance**, accept the consent dialog (#201;
+         recorded in the `settings` table) (stores `push_api_key`), then
          **Send a test notification** to an iPhone;
       5. remove the `[apns]` section and `data/conf/certs/*.p8` from the NAS (no longer used);
       6. later: a release workflow publishing the image of Carbure Push to a registry.

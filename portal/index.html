@@ -1490,6 +1490,10 @@
                                             </button>
                                         </div>
                                         <p v-if="!pushKeySet && !pushRegisterResult" class="config-help push-note">{{ t('pushUnavailableAdmin') }}</p>
+                                        <p v-if="pushInfo && pushInfo.consent" class="config-help push-note push-consent-given">
+                                            {{ t('pushConsentGiven', { date: pushConsentDate(pushInfo.consent.at), url: pushInfo.consent.url }) }}
+                                            <template v-if="!pushInfo.consent_valid"> {{ t('pushConsentOutdated') }}</template>
+                                        </p>
                                         <p v-if="pushRegisterResult && pushRegisterResult.ok" class="push-result push-ok" role="status">
                                             <span class="material-icons" aria-hidden="true">check_circle</span>{{ pushRegisterResult.message }}
                                         </p>
@@ -2949,6 +2953,49 @@
                     <button @click="submitBudgetCopy(selectedMonth, selectedYear)" :disabled="copyingBudget">
                         <span class="material-icons" aria-hidden="true">check_circle</span>
                         {{ t('budgetCopyConfirm') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Consent to the push service (Carbure Push), before registering the instance:
+             the relay, what it receives, where it goes; the box ticked to register -->
+        <div v-if="pushConsent" class="modal-overlay" @click.self="closePushConsent">
+            <div class="modal modal-form modal-push-consent" role="dialog" aria-modal="true" aria-labelledby="push-consent-title"
+                 aria-describedby="push-consent-intro" @keydown="trapPushConsentFocus">
+                <div class="modal-header">
+                    <span class="material-icons" aria-hidden="true">privacy_tip</span>
+                    <h3 id="push-consent-title" tabindex="-1">{{ t('pushConsentTitle') }}</h3>
+                    <button class="modal-close" @click="closePushConsent" :aria-label="t('close')">
+                        <span class="material-icons" aria-hidden="true">close</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p id="push-consent-intro" class="push-consent-text">{{ t('pushConsentIntro') }}</p>
+                    <p class="push-consent-url"><code>{{ pushInfo ? pushInfo.url : '' }}</code></p>
+                    <p v-if="pushInfo && !pushInfo.official" class="push-consent-text">{{ t('pushConsentCustomRelay') }}</p>
+                    <h4 class="push-consent-heading">{{ t('pushConsentSentTitle') }}</h4>
+                    <ul class="push-consent-list">
+                        <li>{{ t('pushConsentSentTokens') }}</li>
+                        <li>{{ t('pushConsentSentContent') }}</li>
+                        <li>{{ t('pushConsentSentName') }}</li>
+                    </ul>
+                    <p class="push-consent-text">{{ t('pushConsentForwarded') }}</p>
+                    <p class="push-consent-text">{{ t('pushConsentStorage') }}</p>
+                    <p class="push-consent-text">{{ t('pushConsentStop') }}</p>
+                    <label class="setup-checkbox push-consent-accept">
+                        <input type="checkbox" id="push-consent-accept" v-model="pushConsent.accepted" />
+                        <span>{{ t('pushConsentAccept') }}</span>
+                    </label>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" @click="closePushConsent">
+                        <span class="material-icons" aria-hidden="true">cancel</span>
+                        {{ t('cancel') }}
+                    </button>
+                    <button type="button" class="push-consent-submit" :disabled="!pushConsent.accepted" @click="acceptPushConsent">
+                        <span class="material-icons" aria-hidden="true">how_to_reg</span>
+                        {{ t('pushConsentSubmit') }}
                     </button>
                 </div>
             </div>

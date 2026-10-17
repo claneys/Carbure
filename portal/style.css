@@ -6697,6 +6697,55 @@ textarea:focus-visible,
     }
 }
 
+/* ===== Consent to the push service (Carbure Push) ===== */
+.modal-push-consent {
+    max-width: 560px;
+}
+
+.modal-push-consent h3:focus {
+    outline: none;
+}
+
+.modal-push-consent h3:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+.push-consent-text,
+.push-consent-list {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text-primary);
+}
+
+.push-consent-list {
+    padding-left: 20px;
+}
+
+.push-consent-heading {
+    margin: 4px 0 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.push-consent-url {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.push-consent-url code {
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.modal-body label.push-consent-accept {
+    align-items: flex-start;
+    margin-top: 6px;
+    font-weight: 500;
+}
+
 /* ===== Confirmation modal (askConfirm) ===== */
 .modal-confirm .confirm-error {
     margin: 0;

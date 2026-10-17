@@ -66,7 +66,11 @@ export function createConfigModule(getApiService) {
                 registeringPush: false,
                 pushRegisterResult: null,
                 sendingTestPush: false,
-                pushTestResult: null
+                pushTestResult: null,
+                // Answer of GET /system/push: the relay and the consent to it
+                pushInfo: null,
+                // Consent dialog of the push service: {accepted, trigger}; null when closed
+                pushConsent: null
             };
         },
 
@@ -137,6 +141,31 @@ export function createConfigModule(getApiService) {
                 } finally {
                     this.loadingConfig = false;
                 }
+                await this.loadPushInfo();
+            },
+
+            /**
+             * Loads the relay of the push service and the consent to it
+             * @returns {Promise<boolean>} Whether it could be loaded
+             */
+            async loadPushInfo() {
+                try {
+                    this.pushInfo = await getApiService().fetchPushInfo();
+                    return true;
+                } catch (error) {
+                    this.pushInfo = null;
+                    return false;
+                }
+            },
+
+            /**
+             * Date of the consent to the push service, in the language of the portal
+             * @param {string} at - ISO 8601 date
+             * @returns {string}
+             */
+            pushConsentDate(at) {
+                const date = new Date(at);
+                return isNaN(date) ? at : date.toLocaleString(this.intlLocale, { dateStyle: 'long', timeStyle: 'short' });
             },
 
             /**
@@ -210,6 +239,8 @@ export function createConfigModule(getApiService) {
                     }
                     this.setConfig(await getApiService().updateConfig(values));
                     this.showToast(this.t('configSaved'));
+                    // The relay may have changed: the consent asked again for a new one
+                    this.loadPushInfo();
                 } catch (error) {
                     this.configError = error.message;
                 } finally {
@@ -261,18 +292,100 @@ export function createConfigModule(getApiService) {
             },
 
             /**
-             * Registers the instance on the push service (or renews its key, after
-             * confirmation) and shows the saved configuration
+             * Registers the instance on the push service, after the consent of the
+             * administrator (asked in a dialog for a registration, and for a renewal when
+             * it was given for another relay), or renews its key after confirmation
              * @returns {Promise<void>}
              */
             async registerPush() {
-                if (this.registeringPush || (this.pushKeySet && !window.confirm(this.t('pushRenewConfirm')))) {
+                if (this.registeringPush) {
                     return;
                 }
+                // The focus comes back to the button that asked, once the dialog is closed
+                const trigger = typeof document !== 'undefined' ? document.activeElement : null;
+                this.pushRegisterResult = null;
+                if (!await this.loadPushInfo()) {
+                    this.pushRegisterResult = { ok: false, message: this.t('pushInfoError') };
+                    return;
+                }
+                if (!this.pushKeySet || !this.pushInfo.consent_valid) {
+                    this.openPushConsent(trigger);
+                    return;
+                }
+                if (window.confirm(this.t('pushRenewConfirm'))) {
+                    await this.submitPushRegistration(false);
+                }
+            },
+
+            /**
+             * Opens the consent dialog of the push service, its title focused
+             * @param {Element|null} trigger - Element focused again once closed
+             */
+            openPushConsent(trigger) {
+                this.pushConsent = { accepted: false, trigger };
+                if (this.$nextTick) {
+                    this.$nextTick(() => document.getElementById('push-consent-title')?.focus());
+                }
+            },
+
+            /**
+             * Closes the consent dialog, the focus back on the button that opened it
+             */
+            closePushConsent() {
+                const trigger = this.pushConsent ? this.pushConsent.trigger : null;
+                this.pushConsent = null;
+                if (trigger && typeof trigger.focus === 'function' && trigger.isConnected) {
+                    trigger.focus();
+                }
+            },
+
+            /**
+             * Registers the instance once the consent is ticked
+             * @returns {Promise<void>}
+             */
+            async acceptPushConsent() {
+                if (!this.pushConsent || !this.pushConsent.accepted) {
+                    return;
+                }
+                this.closePushConsent();
+                await this.submitPushRegistration(true);
+            },
+
+            /**
+             * Keeps the keyboard focus in the consent dialog (Tab and Shift+Tab loop)
+             * @param {KeyboardEvent} event - keydown in the dialog
+             */
+            trapPushConsentFocus(event) {
+                if (event.key !== 'Tab') {
+                    return;
+                }
+                const focusable = [...event.currentTarget.querySelectorAll('button:not(:disabled), input:not(:disabled), a[href]')];
+                if (!focusable.length) {
+                    return;
+                }
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+                const active = document.activeElement;
+                if (event.shiftKey && (active === first || !event.currentTarget.contains(active) || active.id === 'push-consent-title')) {
+                    event.preventDefault();
+                    last.focus();
+                } else if (!event.shiftKey && active === last) {
+                    event.preventDefault();
+                    first.focus();
+                }
+            },
+
+            /**
+             * Registers the instance on the push service (or renews its key) and shows the
+             * saved configuration
+             * @param {boolean} consent - The administrator has just given the consent
+             * @returns {Promise<void>}
+             */
+            async submitPushRegistration(consent) {
                 this.registeringPush = true;
                 this.pushRegisterResult = null;
                 try {
-                    const result = await getApiService().registerPush();
+                    const result = await getApiService().registerPush(consent);
                     this.pushRegisterResult = { ok: true, message: this.t(result.renewed ? 'pushRenewed' : 'pushRegistered', { key: result.key_id }) };
                     this.setConfig(await getApiService().fetchConfig());
                 } catch (error) {
@@ -280,6 +393,7 @@ export function createConfigModule(getApiService) {
                 } finally {
                     this.registeringPush = false;
                 }
+                await this.loadPushInfo();
             },
 
             /**
