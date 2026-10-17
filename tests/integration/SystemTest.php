@@ -32,7 +32,7 @@ class SystemTest extends DatabaseTestCase
 
     public function testRotateJwtSecret()
     {
-        $file = sys_get_temp_dir() . '/carbure-rotate-' . uniqid() . '.ini';
+        $file = carbure_test_tmp('carbure-rotate-' . uniqid() . '.ini');
         file_put_contents($file, "[auth]\njwtsecret=secret\nsync_token=keep\n");
         System::$configFile = $file;
         try {

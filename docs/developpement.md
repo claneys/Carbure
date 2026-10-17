@@ -233,6 +233,10 @@ DB_HOST=127.0.0.1 DB_USER=root DB_PASSWORD=root composer test:all
 - `APP_ENV=testing` (défini dans `phpunit.xml`) charge `conf/testing.ini`.
 - Les tests d'intégration recréent la base `carbure_test` depuis `sql/carbure.sql`
   (`tests/bootstrap.php`).
+- Les fichiers temporaires d'une exécution (état du faux woob, certificat du faux serveur
+  SMTP…) vont dans son propre répertoire, `carbure-test-<pid>` du répertoire temporaire,
+  supprimé à la fin et transmis au faux woob par la variable `CARBURE_TEST_TMP` : deux
+  exécutions sur la même machine (deux worktrees, la suite e2e) ne se gênent pas.
 - Objectif : **≥ 90 % de couverture** du code de `src/`, mesurée en CI sur l'ensemble
   des suites.
 
@@ -271,7 +275,10 @@ npx playwright show-report                   # rapport HTML de la dernière exé
   `E2E_DB_HOST`, `E2E_DB_PORT` (3306), `E2E_DB_USER` (root), `E2E_DB_PASSWORD`. Par exemple
   `docker run -d -e MARIADB_ROOT_PASSWORD=root -p 3306:3306 mariadb:10.11`.
 - woob est remplacé par `tests/fixtures/fake-woob.php`, les logs vont dans
-  `tests/e2e/.data/logs/`.
+  `tests/e2e/.data/logs/`. L'état du faux woob est dans `carbure-e2e-<port>` du
+  répertoire temporaire (`CARBURE_TEST_TMP`, fixé par `playwright.config.js`) : deux
+  exécutions en parallèle prennent chacune leur port (`E2E_PORT`) et leur base
+  (`E2E_DB_NAME`, terminée par `_e2e`).
 - Les tests s'exécutent l'un après l'autre (une seule base). Les textes attendus sont lus
   dans `portal/i18n/<langue>.json` (`tr()` de `tests/e2e/fixtures.js`, qui reprend la
   traduction du portail, pluriels compris) : modifier un libellé ne casse pas les tests.

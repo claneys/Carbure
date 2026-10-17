@@ -1,9 +1,15 @@
 // End-to-end tests of the portal, against the real API (src/api.php) and a MariaDB
 // database recreated before each test. See README.md.
+const os = require('os');
+const path = require('path');
 const { defineConfig, devices } = require('@playwright/test');
 
 const port = Number(process.env.E2E_PORT || 8091);
 const baseURL = process.env.E2E_BASE_URL || `http://127.0.0.1:${port}`;
+// Temporary files of the run (state of the fake woob), shared by the server and the tests:
+// one directory per port, so that another run on the same machine (other port, or the
+// PHPUnit suites) does not see them
+process.env.CARBURE_TEST_TMP ||= path.join(os.tmpdir(), `carbure-e2e-${port}`);
 
 module.exports = defineConfig({
     testDir: './specs',
@@ -41,6 +47,7 @@ module.exports = defineConfig({
         timeout: 30_000,
         env: {
             APP_ENV: 'e2e',
+            CARBURE_TEST_TMP: process.env.CARBURE_TEST_TMP,
             // The bank synchronization streams its progress: several requests at a time
             PHP_CLI_SERVER_WORKERS: '4',
             E2E_DB_HOST: process.env.E2E_DB_HOST || '127.0.0.1',

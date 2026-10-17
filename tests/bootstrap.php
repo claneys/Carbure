@@ -10,6 +10,10 @@
  *   DB_HOST (default 127.0.0.1), DB_PORT (default 3306), DB_USER (default root), DB_PASSWORD (default empty)
  * The "carbure_test" database is dropped and recreated from sql/carbure.sql.
  *
+ * The temporary files of a run (state of the fake woob, certificate of the fake SMTP
+ * server...) go into its own directory (carbure_test_tmp()), removed at the end: two runs
+ * on the same machine (two worktrees, the e2e suite) do not see each other's files.
+ *
  * @author     Ludovic Toinel
  * @copyright  2026 Carbure App
  */
@@ -25,13 +29,49 @@ require_once __DIR__ . '/integration/DatabaseTestCase.php';
 // Tests log into logs/carbure_test_YYYYMMDD.log, not into the production logs
 $GLOBALS['SCOPE'] = 'test';
 
+/**
+ * Directory of the temporary files of this test run, or a file in it.
+ *
+ * @param string $name Name of the file (empty: the directory)
+ * @return string The path
+ */
+function carbure_test_tmp(string $name = ''): string
+{
+    $dir = getenv('CARBURE_TEST_TMP') ?: '';
+    return $name === '' ? $dir : "$dir/$name";
+}
+
+/**
+ * Remove a directory and its content.
+ *
+ * @param string $dir The directory
+ * @return void
+ */
+function carbure_test_remove_dir(string $dir): void
+{
+    foreach (array_diff(@scandir($dir) ?: [], ['.', '..']) as $name) {
+        $file = "$dir/$name";
+        is_dir($file) && !is_link($file) ? carbure_test_remove_dir($file) : @unlink($file);
+    }
+    @rmdir($dir);
+}
+
+// The directory of this run, also given to the fake woob (and every process started by
+// the tests) through the environment variable CARBURE_TEST_TMP
+$carbureTestTmp = sys_get_temp_dir() . '/carbure-test-' . getmypid();
+carbure_test_remove_dir($carbureTestTmp);
+mkdir($carbureTestTmp, 0700, true);
+putenv("CARBURE_TEST_TMP=$carbureTestTmp");
+$_ENV['CARBURE_TEST_TMP'] = $carbureTestTmp;
+register_shutdown_function('carbure_test_remove_dir', $carbureTestTmp);
+
 // Fake woob CLI (see tests/fixtures/fake-woob.php)
 Config::set('woob_path', escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg(__DIR__ . '/fixtures/fake-woob.php'));
 // Its repository (keyring read without network) and the keyrings it trusts
 Config::set('woob_repository', __DIR__ . '/fixtures/woob-repository/');
-WoobRepository::$keyringDir = sys_get_temp_dir() . '/carbure-fake-woob-keyrings';
+WoobRepository::$keyringDir = carbure_test_tmp('carbure-fake-woob-keyrings');
 // woob already run once (its list of repositories exists), its repository not trusted yet
-WoobRepository::$sourcesList = sys_get_temp_dir() . '/carbure-fake-woob-sources.list';
+WoobRepository::$sourcesList = carbure_test_tmp('carbure-fake-woob-sources.list');
 file_put_contents(WoobRepository::$sourcesList, "https://updates.woob.tech/%(version)s/main/\n");
 
 /**

@@ -10,7 +10,7 @@ class MigratorTest extends DatabaseTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->dir = sys_get_temp_dir() . '/carbure-migrations-' . uniqid();
+        $this->dir = carbure_test_tmp('carbure-migrations-' . uniqid());
         mkdir($this->dir);
         Db::query("DROP TABLE IF EXISTS schema_migrations, migration_test");
     }

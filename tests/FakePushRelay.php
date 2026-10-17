@@ -26,7 +26,7 @@ final class FakePushRelay
     {
         if (self::$process === null) {
             $port = self::freePort();
-            self::$log = tempnam(sys_get_temp_dir(), 'push');
+            self::$log = tempnam(carbure_test_tmp(), 'push');
             $env = array_merge(getenv(), ['PUSH_LOG' => self::$log]);
             $command = [PHP_BINARY, '-S', "127.0.0.1:$port", __DIR__ . '/fixtures/fake-push-relay.php'];
             self::$process = proc_open($command, [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes, null, $env);

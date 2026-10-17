@@ -28,7 +28,7 @@ final class FakeSmtpServer
     public static function start($mode = 'plain')
     {
         if (self::$log === null) {
-            self::$log = tempnam(sys_get_temp_dir(), 'smtp');
+            self::$log = tempnam(carbure_test_tmp(), 'smtp');
             self::$certificate = self::certificate();
             register_shutdown_function([self::class, 'stop']);
         }
@@ -104,12 +104,12 @@ final class FakeSmtpServer
      */
     private static function certificate()
     {
-        $file = sys_get_temp_dir() . '/carbure-test-smtp.pem';
+        $file = carbure_test_tmp('carbure-test-smtp.pem');
         if (is_file($file) && filesize($file) > 0) {
             return $file;
         }
         // Minimal OpenSSL configuration: some PHP builds ship without openssl.cnf
-        $config = tempnam(sys_get_temp_dir(), 'ossl');
+        $config = tempnam(carbure_test_tmp(), 'ossl');
         file_put_contents($config, "[req]\ndistinguished_name = dn\n[dn]\n");
         $options = ['config' => $config, 'private_key_type' => OPENSSL_KEYTYPE_RSA, 'private_key_bits' => 2048, 'digest_alg' => 'sha256'];
         $key = openssl_pkey_new($options);

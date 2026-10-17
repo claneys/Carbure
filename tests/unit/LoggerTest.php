@@ -107,7 +107,7 @@ class LoggerTest extends TestCase
     public function testPurgeDeletesTheFilesOlderThanTheRetention()
     {
         $dataDir = Config::get('data_dir');
-        $dir = sys_get_temp_dir() . '/carbure-logs-' . uniqid();
+        $dir = carbure_test_tmp('carbure-logs-' . uniqid());
         mkdir("$dir/logs", 0777, true);
         $old = 'carbure_' . date('Ymd', strtotime('-40 days')) . '.log';
         $oldScoped = 'carbure_e2e_' . date('Ymd', strtotime('-31 days')) . '.log';

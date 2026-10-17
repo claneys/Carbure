@@ -24,8 +24,8 @@ class SetupTest extends TestCase
             $this->markTestSkipped('mysqli extension not available');
         }
         $this->root = dirname(__DIR__, 2);
-        $this->configFile = sys_get_temp_dir() . '/carbure-setup-test-' . uniqid() . '/conf/' . self::ENV . '.ini';
-        $this->codeFile = sys_get_temp_dir() . '/carbure-setup-' . uniqid() . '.code';
+        $this->configFile = carbure_test_tmp('carbure-setup-test-' . uniqid() . '/conf/' . self::ENV . '.ini');
+        $this->codeFile = carbure_test_tmp('carbure-setup-' . uniqid() . '.code');
         try {
             $this->server()->query("DROP DATABASE IF EXISTS " . self::DB);
             $this->server()->query("CREATE DATABASE " . self::DB . " CHARACTER SET utf8mb4");
@@ -296,7 +296,7 @@ class SetupTest extends TestCase
             getenv('DB_USER') ?: 'root', getenv('DB_PASSWORD') ?: '');
         Installer::installSchema($db, $this->root);
         Installer::createAdmin($db, 'boss', 'supersecret');
-        $root = sys_get_temp_dir() . '/carbure-root-' . uniqid();
+        $root = carbure_test_tmp('carbure-root-' . uniqid());
         mkdir("$root/sql/migrations", 0777, true);
         mkdir("$root/conf");
         copy("$this->root/sql/carbure.sql", "$root/sql/carbure.sql");

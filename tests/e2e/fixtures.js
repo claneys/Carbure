@@ -171,13 +171,23 @@ function escapeRegExp(text) {
 }
 
 /**
+ * A file of the state of the fake woob, in the temporary directory of the run
+ * (CARBURE_TEST_TMP, set by playwright.config.js and shared with the server)
+ * @param {string} name
+ * @returns {string}
+ */
+function woobFile(name) {
+    return path.join(process.env.CARBURE_TEST_TMP, name);
+}
+
+/**
  * The repository of the fake woob trusted, as after an update confirmed by an
- * administrator (the keyrings of the fake woob are in the temporary directory, shared with
- * the server; the reset of the database forgets them)
+ * administrator (the keyrings of the fake woob are in the temporary directory of the run,
+ * CARBURE_TEST_TMP set by playwright.config.js and shared with the server; the reset of the
+ * database forgets them)
  */
 function trustWoobRepository() {
-    const os = require('os');
-    const keyrings = path.join(os.tmpdir(), 'carbure-fake-woob-keyrings');
+    const keyrings = woobFile('carbure-fake-woob-keyrings');
     fs.mkdirSync(keyrings, { recursive: true });
     fs.copyFileSync(path.join(__dirname, '../fixtures/woob-repository/trusted.gpg'), path.join(keyrings, 'https___updates_woob_tech_3_main_.gpg'));
 }
@@ -196,4 +206,4 @@ async function chooseLanguage(page, from, to) {
     await base.expect(page.locator('.tabs').getByRole('button', { name: tr('tabTransactions', {}, to), exact: true })).toBeVisible();
 }
 
-module.exports = { test, expect: base.expect, USERS, openTab, tr, pickCategory, euros, currentMonth, escapeRegExp, trustWoobRepository, chooseLanguage };
+module.exports = { test, expect: base.expect, USERS, openTab, tr, pickCategory, euros, currentMonth, escapeRegExp, woobFile, trustWoobRepository, chooseLanguage };

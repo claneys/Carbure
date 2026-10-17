@@ -16,7 +16,7 @@ class SettingsTest extends DatabaseTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->file = sys_get_temp_dir() . '/carbure-settings-' . uniqid() . '.ini';
+        $this->file = carbure_test_tmp('carbure-settings-' . uniqid() . '.ini');
         file_put_contents($this->file, <<<'INI'
             [global]
             log_level=warning

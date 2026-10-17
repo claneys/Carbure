@@ -207,7 +207,7 @@ class BankTest extends DatabaseTestCase
     public function testModuleNotInstalledYet()
     {
         $this->loginAs(self::ADMIN);
-        $installed = sys_get_temp_dir() . '/carbure-fake-woob-installed';
+        $installed = carbure_test_tmp('carbure-fake-woob-installed');
         @unlink($installed);
         $keyrings = WoobRepository::$keyringDir;
         array_map('unlink', glob("$keyrings/*") ?: []);
@@ -247,7 +247,7 @@ class BankTest extends DatabaseTestCase
     public function testCreateBackend()
     {
         $this->loginAs(self::ADMIN);
-        $added = sys_get_temp_dir() . '/carbure-fake-woob-add.json';
+        $added = carbure_test_tmp('carbure-fake-woob-add.json');
         @unlink($added);
 
         try {
@@ -279,7 +279,7 @@ class BankTest extends DatabaseTestCase
             Bank::createBackend('bnp', 'mybnp3', ['login' => '12345678', 'password' => '123456']);
             $this->assertNull(Db::queryOne("SELECT label FROM bank_backend WHERE name = ?", "s", 'mybnp3'));
         } finally {
-            @unlink(sys_get_temp_dir() . '/carbure-fake-woob-add.json');
+            @unlink(carbure_test_tmp('carbure-fake-woob-add.json'));
         }
 
         // A name too long is refused before woob is called
@@ -290,7 +290,7 @@ class BankTest extends DatabaseTestCase
 
     public function testDeleteBackend()
     {
-        $removed = sys_get_temp_dir() . '/carbure-fake-woob-removed';
+        $removed = carbure_test_tmp('carbure-fake-woob-removed');
         @unlink($removed);
         $this->loginAs(self::ADMIN);
         Bank::renameBackend('bnp', 'Compte joint');
@@ -323,7 +323,7 @@ class BankTest extends DatabaseTestCase
 
     public function testDeleteBackendKeptByWoob()
     {
-        $stuck = sys_get_temp_dir() . '/carbure-fake-woob-stuck';
+        $stuck = carbure_test_tmp('carbure-fake-woob-stuck');
         touch($stuck);
         $this->loginAs(self::ADMIN);
         try {
@@ -347,7 +347,7 @@ class BankTest extends DatabaseTestCase
     public function testCreateBackendWrongCredentials()
     {
         $this->loginAs(self::ADMIN);
-        $removed = sys_get_temp_dir() . '/carbure-fake-woob-removed';
+        $removed = carbure_test_tmp('carbure-fake-woob-removed');
         @unlink($removed);
         try {
             Bank::createBackend('bnp', 'mybnp', ['login' => 'wrong', 'password' => '123456']);
@@ -360,14 +360,14 @@ class BankTest extends DatabaseTestCase
             $this->assertSame('mybnp', trim(file_get_contents($removed)));
         } finally {
             @unlink($removed);
-            @unlink(sys_get_temp_dir() . '/carbure-fake-woob-add.json');
+            @unlink(carbure_test_tmp('carbure-fake-woob-add.json'));
         }
     }
 
     public function testCreateBackendBlockedByTheBank()
     {
         $this->loginAs(self::ADMIN);
-        $removed = sys_get_temp_dir() . '/carbure-fake-woob-removed';
+        $removed = carbure_test_tmp('carbure-fake-woob-removed');
         @unlink($removed);
         try {
             // The bank answers 403 to woob: not a matter of credentials
@@ -381,7 +381,7 @@ class BankTest extends DatabaseTestCase
             $this->assertSame('forbidden', trim(file_get_contents($removed)));
         } finally {
             @unlink($removed);
-            @unlink(sys_get_temp_dir() . '/carbure-fake-woob-add.json');
+            @unlink(carbure_test_tmp('carbure-fake-woob-add.json'));
         }
     }
 
@@ -420,7 +420,7 @@ class BankTest extends DatabaseTestCase
 
     public function testDiscover()
     {
-        @unlink(sys_get_temp_dir() . '/carbure-fake-woob-add.json');
+        @unlink(carbure_test_tmp('carbure-fake-woob-add.json'));
         $this->loginAs(self::ADMIN);
         $accounts = Bank::discover();
 
@@ -616,7 +616,7 @@ class BankTest extends DatabaseTestCase
     {
         Db::query("DELETE FROM bank_transaction");
         Db::query("INSERT INTO bank_account (bank_name, account_number, user_id) VALUES ('bank', 'validate', " . self::ADMIN . ")");
-        $validated = sys_get_temp_dir() . '/carbure-fake-woob-validated';
+        $validated = carbure_test_tmp('carbure-fake-woob-validated');
         @unlink($validated);
         try {
             // The validation is done in the bank app during the wait
@@ -643,7 +643,7 @@ class BankTest extends DatabaseTestCase
     public function testScheduledSyncRecordsTheValidationWhenTheRetriesRunOut()
     {
         Db::query("INSERT INTO bank_account (bank_name, account_number, user_id) VALUES ('bank', 'validate', " . self::ADMIN . ")");
-        @unlink(sys_get_temp_dir() . '/carbure-fake-woob-validated');
+        @unlink(carbure_test_tmp('carbure-fake-woob-validated'));
 
         [$output, $waited] = $this->scheduledSync('validate@bank', 2);
         $this->assertStringContainsString('data: Waiting for a validation validate@bank: new attempt in 2 s (1/2)', $output);
@@ -667,7 +667,7 @@ class BankTest extends DatabaseTestCase
     public function testSyncOfAUserDoesNotRetryAfterAValidation()
     {
         Db::query("INSERT INTO bank_account (bank_name, account_number, user_id) VALUES ('bank', 'validate', " . self::ADMIN . ")");
-        @unlink(sys_get_temp_dir() . '/carbure-fake-woob-validated');
+        @unlink(carbure_test_tmp('carbure-fake-woob-validated'));
         $waits = 0;
         Bank::$sleep = function () use (&$waits) {
             $waits++;
@@ -1042,13 +1042,13 @@ class BankTest extends DatabaseTestCase
             $this->assertStringEndsWith("data: Woob updated\n\n", $output);
 
             // woob got another keyring than the one confirmed: removed, the update fails
-            touch(sys_get_temp_dir() . '/carbure-fake-woob-other-keyring');
+            touch(carbure_test_tmp('carbure-fake-woob-other-keyring'));
             $output = $this->updateWoob($fingerprint);
             $this->assertStringContainsString('data: Woob update failed: keyring', $output);
             $this->assertStringContainsString("is not the confirmed one ($fingerprint)", $output);
             $this->assertFalse(Bank::woob()['trusted']);
         } finally {
-            @unlink(sys_get_temp_dir() . '/carbure-fake-woob-other-keyring');
+            @unlink(carbure_test_tmp('carbure-fake-woob-other-keyring'));
             array_map('unlink', glob(WoobRepository::$keyringDir . '/*') ?: []);
         }
     }

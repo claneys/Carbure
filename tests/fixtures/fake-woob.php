@@ -22,14 +22,30 @@
  * - account "slow@bank"  : waits 2 seconds before answering
  * - account "nocoming@bank": the coming transactions fail (code 1), the history works
  * - account "validate@bank": asks a validation in the bank app (even on a terminal) until
- *                          the file carbure-fake-woob-validated exists in the temp dir
+ *                          the file carbure-fake-woob-validated exists in its directory
  * - account "2fa@bank"   : asks a two-factor authentication, only possible when the output
  *                          is a terminal (like woob); otherwise fails with code 1
  * - other accounts       : one JSON array of transactions per line, like woob -f json
  * - with --debug          : the bank commands also write debug logs on stderr, like woob
+ *
+ * Its state (carbure-fake-woob-* files) is kept in the directory of the test run given by
+ * the environment variable CARBURE_TEST_TMP (else the temporary directory, as with
+ * ./start.sh --fake-woob), so that two runs on the same machine do not share it.
  */
 
 $type = $argv[2] ?? '';
+
+/**
+ * A file of the state of the fake woob, in the directory of the test run
+ *
+ * @param string $name Name of the file, without its carbure-fake-woob- prefix
+ * @return string The path of the file
+ */
+function fake_woob_file(string $name): string
+{
+    return (getenv('CARBURE_TEST_TMP') ?: sys_get_temp_dir()) . '/carbure-fake-woob-' . $name;
+}
+
 $account = $argv[3] ?? '';
 
 /**
@@ -39,11 +55,11 @@ $account = $argv[3] ?? '';
  */
 function fake_woob_trust_keyring(): void
 {
-    $keyrings = sys_get_temp_dir() . '/carbure-fake-woob-keyrings';
+    $keyrings = fake_woob_file('keyrings');
     if (glob("$keyrings/*.gpg")) {
         return;
     }
-    $keyring = is_file(sys_get_temp_dir() . '/carbure-fake-woob-other-keyring')
+    $keyring = is_file(fake_woob_file('other-keyring'))
         ? "Another keyring\n" : file_get_contents(__DIR__ . '/woob-repository/trusted.gpg');
     echo "The repository https://updates.woob.tech/3/main/ isn't trusted yet.\n"
         . "Fingerprint of keyring is " . sha1($keyring) . "\n"
@@ -64,7 +80,7 @@ function fake_woob_trust_keyring(): void
 
 // Like woob 3.7: the first run of any command (no list of repositories yet) creates the
 // list and refreshes the repositories first
-$sources = sys_get_temp_dir() . '/carbure-fake-woob-sources.list';
+$sources = fake_woob_file('sources.list');
 if (!is_file($sources)) {
     file_put_contents($sources, "https://updates.woob.tech/%(version)s/main/\n");
     fake_woob_trust_keyring();
@@ -80,7 +96,7 @@ if (($argv[1] ?? '') === 'config' && $type === 'modules') {
 if (($argv[1] ?? '') === 'config' && $type === 'list') {
     // One JSON object per line, with the (secret) configuration that must not leak;
     // the backends removed by "config remove" are no longer listed
-    $removed = file(sys_get_temp_dir() . '/carbure-fake-woob-removed', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
+    $removed = file(fake_woob_file('removed'), FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
     foreach ([['bnp', 'bnp', 'login=12345678, password=*****'], ['cic_pro', 'cic', 'login=jdoe, password=*****']] as [$name, $module, $configuration]) {
         if (!in_array($name, $removed, true)) {
             echo json_encode(['Name' => $name, 'Module' => $module, 'Configuration' => $configuration]) . "\n";
@@ -97,7 +113,7 @@ if (($argv[1] ?? '') === 'config' && $type === 'info') {
         exit(1);
     }
     $names = ['bnp' => 'BNP Paribas', 'boursorama' => 'Boursorama', 'cic' => 'CIC'];
-    $installed = $module !== 'boursorama' || is_file(sys_get_temp_dir() . '/carbure-fake-woob-installed');
+    $installed = $module !== 'boursorama' || is_file(fake_woob_file('installed'));
     $info = ['name' => $module, 'description' => $names[$module] ?? $module, 'installed' => $installed ? 'yes' : 'no'];
     if ($installed) {
         $info['config'] = [
@@ -114,8 +130,8 @@ if (($argv[1] ?? '') === 'config' && $type === 'info') {
 if (($argv[1] ?? '') === 'config' && $type === 'remove') {
     // Records the backends removed (one per line), to check it; with the file
     // carbure-fake-woob-stuck, woob silently removes nothing
-    if (!is_file(sys_get_temp_dir() . '/carbure-fake-woob-stuck')) {
-        file_put_contents(sys_get_temp_dir() . '/carbure-fake-woob-removed', ($argv[3] ?? '') . "\n", FILE_APPEND);
+    if (!is_file(fake_woob_file('stuck'))) {
+        file_put_contents(fake_woob_file('removed'), ($argv[3] ?? '') . "\n", FILE_APPEND);
     }
     exit(0);
 }
@@ -131,11 +147,11 @@ if (($argv[1] ?? '') === 'config' && $type === 'add') {
     if ($backend === 'carbure_install_probe') {
         // Installs the module, then stops at the first setting asked; like woob, the
         // signature of the module needs the keyring of its repository
-        if (!glob(sys_get_temp_dir() . '/carbure-fake-woob-keyrings/*.gpg')) {
+        if (!glob(fake_woob_file('keyrings') . '/*.gpg')) {
             fwrite(STDERR, "Error: No keyring found, please update repos.\n");
             exit(1);
         }
-        touch(sys_get_temp_dir() . '/carbure-fake-woob-installed');
+        touch(fake_woob_file('installed'));
         echo "Module {$argv[3]} has been installed!\nAborted.\n";
         exit(130);
     }
@@ -145,7 +161,7 @@ if (($argv[1] ?? '') === 'config' && $type === 'add') {
         $params[$key] = $value;
     }
     // Records what woob received, to check it
-    file_put_contents(sys_get_temp_dir() . '/carbure-fake-woob-add.json', json_encode(['module' => $argv[3], 'backend' => $backend, 'params' => $params]));
+    file_put_contents(fake_woob_file('add.json'), json_encode(['module' => $argv[3], 'backend' => $backend, 'params' => $params]));
     if ($backend === 'taken') {
         echo "Backend \"taken\" already exists.\n";
         exit(0);
@@ -169,7 +185,7 @@ if (($argv[1] ?? '') === 'config') {
 if (($argv[1] ?? '') === 'bank' && $type === 'list') {
     $index = array_search('-b', $argv);
     // Without -b: the backend added last by "config add" (or bnp)
-    $added = @json_decode((string)@file_get_contents(sys_get_temp_dir() . '/carbure-fake-woob-add.json'), true);
+    $added = @json_decode((string)@file_get_contents(fake_woob_file('add.json')), true);
     $backend = $index === false ? ($added['backend'] ?? 'bnp') : $argv[$index + 1];
     // A bank added with the login "wrong": the bank refuses the connection
     if ($backend === ($added['backend'] ?? null) && ($added['params']['login'] ?? '') === 'wrong') {
@@ -238,7 +254,7 @@ if ($account === 'nocoming@bank' && $type === 'coming') {
     exit(1);
 }
 
-if ($account === 'validate@bank' && !is_file(sys_get_temp_dir() . '/carbure-fake-woob-validated')) {
+if ($account === 'validate@bank' && !is_file(fake_woob_file('validated'))) {
     fwrite(STDERR, "Error(bank): You have to run bank in interactive mode to perform a two-factor authentication\n");
     exit(1);
 }

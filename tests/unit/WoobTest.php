@@ -210,7 +210,7 @@ class WoobTest extends TestCase
     public function testBackendIsEscaped()
     {
         // Without escaping, the shell would run the injected command
-        $marker = sys_get_temp_dir() . '/carbure-injection-' . uniqid();
+        $marker = carbure_test_tmp('carbure-injection-' . uniqid());
         Woob::listAccounts("x; touch $marker");
 
         $this->assertFileDoesNotExist($marker);
@@ -219,7 +219,7 @@ class WoobTest extends TestCase
     public function testBankIdIsEscaped()
     {
         // Without escaping, the shell would run the injected command
-        $marker = sys_get_temp_dir() . '/carbure-injection-' . uniqid();
+        $marker = carbure_test_tmp('carbure-injection-' . uniqid());
         Woob::getBankData('history', "x@bnp; touch $marker");
 
         $this->assertFileDoesNotExist($marker);
@@ -249,7 +249,7 @@ class WoobTest extends TestCase
     public function testBackendsFileMadePrivate()
     {
         // A file of the banks readable by everyone (copied into a NAS shared folder)
-        $home = sys_get_temp_dir() . '/carbure-woob-' . uniqid();
+        $home = carbure_test_tmp('carbure-woob-' . uniqid());
         mkdir("$home/.config/woob", 0777, true);
         chmod("$home/.config/woob", 0777);
         file_put_contents("$home/.config/woob/backends", "[bnp]\n");

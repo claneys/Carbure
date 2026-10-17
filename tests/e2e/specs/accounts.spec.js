@@ -1,5 +1,5 @@
 // Accounts tab (administrators): followed bank accounts and synchronization (fake woob)
-const { test, expect, tr, openTab, escapeRegExp, trustWoobRepository } = require('../fixtures');
+const { test, expect, tr, openTab, escapeRegExp, woobFile, trustWoobRepository } = require('../fixtures');
 
 /** Row of a followed account, by its bank id (account_number@bank) */
 const account = (page, bankId) => page.locator('.account-item').filter({ has: page.locator('code', { hasText: new RegExp(`^${escapeRegExp(bankId)}$`) }) });
@@ -461,7 +461,7 @@ test('an administrator trusts the woob repository, then updates the bank modules
 
 test('a fresh woob is not run before its repository is trusted', async ({ adminPage: page, api }) => {
     // woob never run (no list of its repositories): its first run would trust their keyring
-    require('fs').rmSync(require('path').join(require('os').tmpdir(), 'carbure-fake-woob-sources.list'), { force: true });
+    require('fs').rmSync(woobFile('carbure-fake-woob-sources.list'), { force: true });
     const refused = await api.get('/api/bank/backends');
     expect(refused.status()).toBe(409);
     expect((await refused.json()).error).toContain('Trust the woob repository first');

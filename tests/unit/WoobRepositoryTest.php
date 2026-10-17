@@ -19,7 +19,7 @@ class WoobRepositoryTest extends TestCase
     protected function tearDown(): void
     {
         $this->forget();
-        @unlink(sys_get_temp_dir() . '/carbure-fake-woob-other-keyring');
+        @unlink(carbure_test_tmp('carbure-fake-woob-other-keyring'));
     }
 
     /** The fake woob trusts no keyring */
@@ -65,7 +65,7 @@ class WoobRepositoryTest extends TestCase
     public function testRepositoryNotReachable()
     {
         $repository = Config::get('woob_repository');
-        Config::set('woob_repository', sys_get_temp_dir() . '/carbure-no-repository');
+        Config::set('woob_repository', carbure_test_tmp('carbure-no-repository'));
         try {
             $status = WoobRepository::status();
             [$result, $lines] = $this->update($this->fingerprint);
@@ -155,7 +155,7 @@ class WoobRepositoryTest extends TestCase
     public function testAKeyringStoredByWoobOtherThanTheConfirmedOneIsRemoved()
     {
         // The repository served another keyring to woob than to Carbure
-        touch(sys_get_temp_dir() . '/carbure-fake-woob-other-keyring');
+        touch(carbure_test_tmp('carbure-fake-woob-other-keyring'));
         [$result] = $this->update($this->fingerprint);
         $this->assertFalse($result['updated']);
         $this->assertStringContainsString('is not the confirmed one', $result['message']);
