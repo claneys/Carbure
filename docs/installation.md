@@ -122,6 +122,49 @@ Quand `docker compose pull` apporte une nouvelle version majeure de MariaDB (par
 l'ancienne version, d'où l'importance de la sauvegarde. Pour garder une version donnée,
 fixez-la dans `docker/docker-compose.yml` (`image: mariadb:11`).
 
+### Passer à la 1.5.0
+
+À faire **dans cet ordre** :
+
+1. **Sauvegardez la base**, comme avant toute mise à jour.
+2. **Notifications push** : la 1.5.0 n'envoie plus elle-même les notifications à Apple
+   (APNs) mais passe par le service Carbure Push. Tant que l'instance n'y est pas
+   inscrite, **aucune notification push n'est envoyée** (le reste fonctionne normalement).
+   Une fois le service disponible, inscrivez l'instance juste après la mise à jour (voir
+   [Notifications push](#notifications-push-carbure-push)), puis retirez la section
+   `[apns]` et la clé `.p8` de `/data/conf`.
+3. **Mettez à jour** l'image (`docker compose pull && docker compose up -d`). Trois
+   migrations sont appliquées au démarrage :
+    - `2026-10-23_device_platform` : plateforme des appareils (`ios` pour les existants) ;
+    - `2026-10-23_user_budget_alert_category` : budget surveillé par les alertes de
+      budget (tous les budgets pour les utilisateurs existants) ;
+    - `2026-10-24_user_mfa` : authentification à deux facteurs (tables vides).
+4. **Vérifiez** :
+    - **Administration → API** affiche Swagger UI : si le cadre reste vide derrière le
+      proxy inverse de DSM, celui-ci ajoute sans doute son propre en-tête
+      `X-Frame-Options: DENY` (à retirer pour `/swagger/`) ;
+    - **Mon profil → Notifications** : le seuil des dépenses importantes y est désormais,
+      avec le budget surveillé et son seuil.
+
+Nouveautés à activer si besoin :
+
+- **Authentification à deux facteurs** (désactivée par défaut) : avant de l'imposer
+  (**Administration → Paramètres**, `mfa_required`), configurez-la sur votre propre compte
+  (**Mon profil**) et gardez vos codes de récupération. L'app iOS actuelle continue de se
+  connecter depuis un iPhone déjà connu, mais un **nouvel** iPhone est refusé tant que l'app
+  ne sait pas saisir le code. En cas de perte de l'app et des codes :
+  `mfa_required=false` dans `/data/conf/prod.ini`.
+- **Sauvegarde** (**Administration → Sauvegarde**) : exportez vos données dans un ZIP ;
+  l'import **remplace** les données de chaque type importé.
+- **Langues** : espagnol, italien, allemand et portugais. Sur une instance qui n'est pas
+  en français, renseignez la catégorie d'épargne des **Tendances** dans
+  **Administration → Paramètres** (`savings_category`, « Epargne » par défaut).
+
+Rien ne change pour les règles de nettoyage des libellés : l'exemple de configuration ne
+contient plus `regex_label["/\s(CARTE.*|CARTE|CART|CAR|CA|C)$/"]=""`, mais gardez-la dans
+votre `prod.ini` si elle y est (la retirer créerait des doublons de transactions par
+carte).
+
 ### Notifications push (Carbure Push)
 
 Les notifications de l'application iOS passent par le service externe Carbure Push :
