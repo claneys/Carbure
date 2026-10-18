@@ -3,6 +3,7 @@ name: Security
 # Security checks, with their own badge in the README:
 # - secrets committed in the history (gitleaks), on each pull request and push on main;
 # - known vulnerabilities of the dependencies of the repository (Trivy), same triggers;
+# - security issues of the PHP code (Semgrep: CodeQL does not support PHP), same triggers;
 # - known vulnerabilities of the image published on Docker Hub (Trivy), every week: new
 #   vulnerabilities are published without any change of Carbure.
 # The image built by each pull request is scanned by the CI (job "Docker image").
@@ -89,6 +90,38 @@ jobs:
         with:
           sarif_file: trivy-dependencies.sarif
           category: trivy-dependencies
+
+  php:
+    name: PHP static analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      # Upload of the scan results to the Security tab
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+
+      # Semgrep CLI (pinned), PHP rules of the public registry (p/php: injections, unsafe
+      # functions, crypto, deserialization...), no account nor metrics. Fails on any finding
+      # (none on main), the SARIF report being published in any case
+      - name: Scan the PHP code
+        run: |
+          pip install --quiet semgrep==1.181.0
+          semgrep scan --config p/php --metrics=off --error --sarif --output semgrep-php.sarif src tools swagger
+
+      - name: Publish the scan in the Security tab
+        if: always() && github.event_name != 'pull_request'
+        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        with:
+          sarif_file: semgrep-php.sarif
+          category: semgrep-php
 
   published-image:
     name: Published image scan

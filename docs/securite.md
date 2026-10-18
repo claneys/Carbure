@@ -306,6 +306,10 @@ Le workflow **Security** (badge du README) regroupe les analyses de sécurité :
   git, à chaque pull request et à chaque push sur `main` ;
 - **Trivy** analyse les dépendances du dépôt (fichiers de verrouillage npm et pip) aux
   mêmes moments ;
+- **Semgrep** analyse le code PHP (`src/`, `tools/`, `swagger/`) aux mêmes moments, avec
+  les règles PHP de son registre public (injections, fonctions dangereuses, cryptographie,
+  désérialisation) : CodeQL, qui analyse le JavaScript du portail et les workflows, ne
+  prend pas en charge le PHP. Un résultat fait échouer l'analyse ;
 - **Trivy** analyse **chaque lundi** l'image publiée sur Docker Hub
   (`ltoinel/carbure:latest`) : de nouvelles vulnérabilités sont publiées sans que Carbure
   change. Un échec signale qu'une nouvelle release (image reconstruite) est nécessaire.

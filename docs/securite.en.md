@@ -306,6 +306,10 @@ The **Security** workflow (README badge) groups the security scans:
   history, on each pull request and each push to `main`;
 - **Trivy** scans the repository's dependencies (npm and pip lock files) at the
   same times;
+- **Semgrep** analyzes the PHP code (`src/`, `tools/`, `swagger/`) at the same times, with
+  the PHP rules of its public registry (injections, dangerous functions, cryptography,
+  deserialization): CodeQL, which analyzes the JavaScript of the portal and the workflows,
+  does not support PHP. A finding fails the scan;
 - **Trivy** scans **every Monday** the image published on Docker Hub
   (`ltoinel/carbure:latest`): new vulnerabilities are published without Carbure
   changing. A failure signals that a new release (rebuilt image) is needed.
