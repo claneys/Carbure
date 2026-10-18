@@ -31,6 +31,7 @@
   <a href="https://www.php.net/"><img src="https://img.shields.io/badge/PHP-%3E%3D%208.2-777BB4?logo=php&logoColor=white" alt="PHP"></a>
   <a href="https://mariadb.org/"><img src="https://img.shields.io/badge/MariaDB%20%2F%20MySQL-003545?logo=mariadb&logoColor=white" alt="MariaDB"></a>
   <a href="https://carbure.org/"><img src="https://img.shields.io/badge/docs-carbure.org-EF4860" alt="Docs"></a>
+  <a href="https://discord.gg/QsxYw4Rx9D"><img src="https://img.shields.io/badge/Discord-join%20the%20chat-5865F2?logo=discord&logoColor=white" alt="Discord"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License: MIT"></a>
 </p>
 
@@ -197,10 +198,12 @@ described in the [developer documentation](https://carbure.org/developpement/) (
 ## Contributing
 
 Contributions are welcome: read [AGENTS.md](AGENTS.md) (conventions, tests, definition of
-done) and the open tasks in [TODO.md](TODO.md). A question? Ask it in
+done) and the open tasks in [TODO.md](TODO.md). A question? Join the
+[Discord server](https://discord.gg/QsxYw4Rx9D) or ask in
 [Discussions](https://github.com/ltoinel/Carbure/discussions). Found a bug?
 [Open an issue](https://github.com/ltoinel/Carbure/issues). If Carbure is useful to you,
-a ⭐ helps others find it.
+a ⭐ helps others find it. All the ways to get help: [Support](https://carbure.org/assistance/)
+(in French).
 
 To set up the development environment, see
 [Run it locally to develop](#3-run-it-locally-to-develop).

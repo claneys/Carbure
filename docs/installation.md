@@ -429,7 +429,8 @@ qu'après un plantage de ce module, et Carbure ne peut pas répondre à sa quest
 
 ## Besoin d'aide ?
 
-Une question sur l'installation, la configuration ou l'utilisation ? Posez-la dans les
-[Discussions GitHub](https://github.com/ltoinel/Carbure/discussions) (catégorie **Q&A**) : la réponse profitera aux autres
-utilisateurs. Réservez les [issues](https://github.com/ltoinel/Carbure/issues) aux bugs
+Une question sur l'installation, la configuration ou l'utilisation ? Voyez d'abord la
+[FAQ](faq.md), puis posez-la sur le [serveur Discord](https://discord.gg/QsxYw4Rx9D) ou
+dans les [Discussions GitHub](https://github.com/ltoinel/Carbure/discussions) (catégorie
+**Q&A**) : la réponse profitera aux autres utilisateurs (voir [Assistance](assistance.md)). Réservez les [issues](https://github.com/ltoinel/Carbure/issues) aux bugs
 avérés, et signalez une faille de sécurité en privé (voir [Sécurité](securite.md)).

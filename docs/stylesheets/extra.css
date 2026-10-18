@@ -164,9 +164,9 @@
   box-shadow: 0 0.3rem 1rem rgba(0, 0, 0, 0.18);
 }
 
-/* ===== Header: link to the online demo (overrides/partials/source.html) ===== */
+/* ===== Header: links to the online demo and to Discord (overrides/partials/source.html) ===== */
 
-/* The demo link and the GitHub link side by side, at the breakpoints where Material shows
+/* The demo, Discord and GitHub links side by side, at the breakpoints where Material shows
    them: header from 60em, menu drawer below 76.25em (Material gives the GitHub link alone a
    fixed width) */
 @media screen and (min-width: 60em) {
@@ -196,7 +196,7 @@
   }
 }
 
-/* White pill on the pink header: text #B5203A on white = 6.5:1, white on #EF4860 = 3.6:1 */
+/* White pill on the pink header (demo and Discord links): text #B5203A on white = 6.5:1, white on #EF4860 = 3.6:1 */
 .carbure-demo {
   display: inline-flex;
   flex: 0 0 auto;

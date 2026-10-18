@@ -1,5 +1,6 @@
 {#-
-  Theme override: the link to the online demo, then the GitHub link of Material 9.7
+  Theme override: the links to the online demo and to the Discord server, then the GitHub
+  link of Material 9.7
   (partials/source.html). Shown in the header from 60em and in the menu drawer below.
 -#}
 <a href="{{ config.extra.demo_url }}" title="Essayer Carbure en ligne (compte demo / carbure)" class="carbure-demo">
@@ -7,6 +8,12 @@
     {% include ".icons/material/play-circle-outline.svg" %}
   </span>
   Démo
+</a>
+<a href="{{ config.extra.discord_url }}" title="Rejoindre le serveur Discord de Carbure : entraide et échanges" class="carbure-demo carbure-discord">
+  <span class="carbure-demo__icon md-icon">
+    {% include ".icons/fontawesome/brands/discord.svg" %}
+  </span>
+  Discord
 </a>
 <a href="{{ config.repo_url }}" title="{{ lang.t('source') }}" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">

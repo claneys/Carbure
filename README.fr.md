@@ -31,6 +31,7 @@
   <a href="https://www.php.net/"><img src="https://img.shields.io/badge/PHP-%3E%3D%208.2-777BB4?logo=php&logoColor=white" alt="PHP"></a>
   <a href="https://mariadb.org/"><img src="https://img.shields.io/badge/MariaDB%20%2F%20MySQL-003545?logo=mariadb&logoColor=white" alt="MariaDB"></a>
   <a href="https://carbure.org/"><img src="https://img.shields.io/badge/docs-carbure.org-EF4860" alt="Docs"></a>
+  <a href="https://discord.gg/QsxYw4Rx9D"><img src="https://img.shields.io/badge/Discord-rejoindre-5865F2?logo=discord&logoColor=white" alt="Discord"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License: MIT"></a>
 </p>
 
@@ -203,8 +204,9 @@ unitaires du portail, tests de bout en bout Playwright) sont décrits dans la
 
 Les contributions sont les bienvenues : lisez [AGENTS.md](AGENTS.md) (conventions, tests,
 définition de « terminé ») et la liste des tâches ouvertes dans [TODO.md](TODO.md). Une question ?
-Posez-la dans les [Discussions](https://github.com/ltoinel/Carbure/discussions). Un bug ? [Ouvrez une issue](https://github.com/ltoinel/Carbure/issues). Si Carbure vous est utile,
-une ⭐ aide d'autres personnes à le découvrir.
+Rejoignez le [serveur Discord](https://discord.gg/QsxYw4Rx9D) ou posez-la dans les [Discussions](https://github.com/ltoinel/Carbure/discussions). Un bug ? [Ouvrez une issue](https://github.com/ltoinel/Carbure/issues). Si Carbure vous est utile,
+une ⭐ aide d'autres personnes à le découvrir. Toutes les façons d'obtenir de l'aide :
+[Assistance](https://carbure.org/assistance/).
 
 Pour mettre en place l'environnement de développement, voir
 [Le lancer en local pour développer](#3-le-lancer-en-local-pour-développer).
