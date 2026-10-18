@@ -54,6 +54,8 @@ plugins:
 # No "Made with Material for MkDocs" in the footer
 extra:
   generator: false
+  # Online demo, linked from the header (overrides/partials/source.html)
+  demo_url: https://demo.carbure.org/
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/ltoinel/Carbure

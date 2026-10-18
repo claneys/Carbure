@@ -19,6 +19,10 @@
 </p>
 
 <p align="center">
+  <a href="https://demo.carbure.org/"><strong>▶ Try the online demo</strong></a> (log in as <code>demo</code> / <code>carbure</code>)
+</p>
+
+<p align="center">
   <a href="https://github.com/ltoinel/Carbure/actions/workflows/ci.yml"><img src="https://github.com/ltoinel/Carbure/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/ltoinel/Carbure/actions/workflows/security.yml"><img src="https://github.com/ltoinel/Carbure/actions/workflows/security.yml/badge.svg?branch=main" alt="Security"></a>
   <a href="https://github.com/ltoinel/Carbure/releases"><img src="https://img.shields.io/github/v/release/ltoinel/Carbure" alt="Release"></a>
@@ -131,8 +135,9 @@ flowchart LR
 
 ## Quick start
 
-To just try it, the demo image runs Carbure with its database and a sample household
-(wiped at each start, never for real data):
+To just try it, open the online demo at **[demo.carbure.org](https://demo.carbure.org/)**
+(log in as `demo` / `carbure`, fictitious data), or run it at home: the demo image runs
+Carbure with its database and a sample household (wiped at each start, never for real data):
 
 ```bash
 docker run --rm -p 8080:80 ltoinel/carbure:demo

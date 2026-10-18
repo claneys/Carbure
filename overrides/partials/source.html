@@ -1,0 +1,19 @@
+{#-
+  Theme override: the link to the online demo, then the GitHub link of Material 9.7
+  (partials/source.html). Shown in the header from 60em and in the menu drawer below.
+-#}
+<a href="{{ config.extra.demo_url }}" title="Essayer Carbure en ligne (compte demo / carbure)" class="carbure-demo">
+  <span class="carbure-demo__icon md-icon">
+    {% include ".icons/material/play-circle-outline.svg" %}
+  </span>
+  Démo
+</a>
+<a href="{{ config.repo_url }}" title="{{ lang.t('source') }}" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    {% set icon = config.theme.icon.repo or "fontawesome/brands/git-alt" %}
+    {% include ".icons/" ~ icon ~ ".svg" %}
+  </div>
+  <div class="md-source__repository">
+    {{ config.repo_name }}
+  </div>
+</a>

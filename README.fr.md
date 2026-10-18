@@ -19,6 +19,10 @@
 </p>
 
 <p align="center">
+  <a href="https://demo.carbure.org/"><strong>▶ Essayer la démo en ligne</strong></a> (compte <code>demo</code> / <code>carbure</code>)
+</p>
+
+<p align="center">
   <a href="https://github.com/ltoinel/Carbure/actions/workflows/ci.yml"><img src="https://github.com/ltoinel/Carbure/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/ltoinel/Carbure/actions/workflows/security.yml"><img src="https://github.com/ltoinel/Carbure/actions/workflows/security.yml/badge.svg?branch=main" alt="Sécurité"></a>
   <a href="https://github.com/ltoinel/Carbure/releases"><img src="https://img.shields.io/github/v/release/ltoinel/Carbure" alt="Release"></a>
@@ -132,8 +136,10 @@ flowchart LR
 
 ## Démarrage rapide
 
-Pour simplement l'essayer, l'image de démonstration lance Carbure avec sa base de données et
-un foyer d'exemple (effacé à chaque démarrage, jamais pour de vraies données) :
+Pour simplement l'essayer, ouvrez la démo en ligne sur **[demo.carbure.org](https://demo.carbure.org/)**
+(compte `demo` / `carbure`, données fictives), ou lancez-la chez vous : l'image de démonstration
+lance Carbure avec sa base de données et un foyer d'exemple (effacé à chaque démarrage, jamais
+pour de vraies données) :
 
 ```bash
 docker run --rm -p 8080:80 ltoinel/carbure:demo

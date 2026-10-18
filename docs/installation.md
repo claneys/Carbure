@@ -20,7 +20,10 @@ Avant d'installer, découvrez les [fonctionnalités](fonctionnalites.md) de Carb
 
 ## Essayer Carbure (démo)
 
-Pour découvrir Carbure en une commande, sans base de données à préparer ni installation :
+Le plus simple : la **démo en ligne** sur [demo.carbure.org](https://demo.carbure.org/),
+avec le compte `demo` / `carbure` et des données fictives.
+
+Pour la lancer chez vous, en une commande, sans base de données à préparer ni installation :
 
 ```bash
 docker run --rm -p 8080:80 ltoinel/carbure:demo

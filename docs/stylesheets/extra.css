@@ -146,3 +146,75 @@
   background: var(--md-primary-fg-color);
   box-shadow: 0 0.6rem 1.6rem rgba(0, 0, 0, 0.18);
 }
+
+/* ===== Header: link to the online demo (overrides/partials/source.html) ===== */
+
+/* The demo link and the GitHub link side by side, at the breakpoints where Material shows
+   them: header from 60em, menu drawer below 76.25em (Material gives the GitHub link alone a
+   fixed width) */
+@media screen and (min-width: 60em) {
+  .md-header__source {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    width: auto;
+    max-width: none;
+  }
+
+  .md-header__source .md-source {
+    width: 11.7rem;
+  }
+}
+
+@media screen and (max-width: 76.234375em) {
+  .md-nav--primary .md-nav__source {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding-left: 0.8rem;
+  }
+
+  .md-nav--primary .md-nav__source .md-source {
+    min-width: 0;
+  }
+}
+
+/* White pill on the pink header: text #B5203A on white = 6.5:1, white on #EF4860 = 3.6:1 */
+.carbure-demo {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.7rem 0.25rem 0.5rem;
+  border-radius: 1rem;
+  background-color: #FFFFFF;
+  color: #B5203A;
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.md-typeset .carbure-demo,
+.carbure-demo:link,
+.carbure-demo:visited {
+  color: #B5203A;
+}
+
+.carbure-demo:hover,
+.carbure-demo:focus-visible {
+  color: #8E1428;
+  background-color: #FFFFFF;
+  text-decoration: underline;
+}
+
+.carbure-demo:focus-visible {
+  outline: 2px solid #FFFFFF;
+  outline-offset: 2px;
+}
+
+.carbure-demo__icon svg {
+  display: block;
+  width: 1rem;
+  height: 1rem;
+  fill: currentColor;
+}
