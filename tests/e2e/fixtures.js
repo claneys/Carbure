@@ -181,7 +181,7 @@ function woobFile(name) {
 }
 
 /**
- * The portal as served by the demonstration Docker image (docker/Dockerfile.demo): GET
+ * The portal as served by the demonstration Docker image (docker/demo/Dockerfile): GET
  * /api/health says demo, the rest is the real API
  * @param {import('@playwright/test').Page} page
  */

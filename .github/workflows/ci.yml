@@ -206,7 +206,7 @@ jobs:
       - name: Lint the Dockerfile of the demo image
         uses: hadolint/hadolint-action@06be81baf89a55ffd0e24b8f04a4185738dd3387 # v3.5.0
         with:
-          dockerfile: docker/Dockerfile.demo
+          dockerfile: docker/demo/Dockerfile
           failure-threshold: error
 
       - name: Build the image
@@ -321,13 +321,16 @@ jobs:
           docker compose -f docker/docker-compose.yml exec -T carbure woob --version
           docker compose -f docker/docker-compose.yml exec -T carbure /opt/woob/bin/python -c 'import curl_cffi'
 
-      # Demo image (docker/Dockerfile.demo) on top of the image just built: MariaDB and the
-      # demonstration data inside, the public account printed in the logs
+      # Demo image (docker/demo/Dockerfile) on top of the image just built: MariaDB and the
+      # demonstration data inside, the public account printed in the logs; run with its
+      # hardened compose file (read-only, tmpfs, minimal capabilities)
       - name: Demo image
+        env:
+          CARBURE_DEMO_PORT: 8081
         run: |
           set -e
-          docker build -f docker/Dockerfile.demo --build-arg BASE=ltoinel/carbure:latest -t ltoinel/carbure:demo .
-          docker run -d --name carbure-demo -p 8081:80 ltoinel/carbure:demo
+          docker build -f docker/demo/Dockerfile --build-arg BASE=ltoinel/carbure:latest -t ltoinel/carbure:demo .
+          docker compose -f docker/demo/docker-compose.yml up -d
           for i in $(seq 1 60); do
             curl -fsS http://localhost:8081/api/health > /dev/null 2>&1 && break
             sleep 2

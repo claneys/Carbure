@@ -41,7 +41,7 @@ const API_BASE_URL = new URL('../api', new URL('.', window.location.href)).href;
 
 /**
  * Public account of the demonstration instance (Docker image carbure:demo, data of
- * docker/entrypoint-demo.sh), shown on its login screen
+ * docker/demo/entrypoint.sh), shown on its login screen
  */
 const DEMO_ACCOUNT = { username: 'demo', password: 'carbure' };
 

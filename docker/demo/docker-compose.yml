@@ -1,0 +1,42 @@
+# Carbure demonstration (image ltoinel/carbure:demo), hardened to be published behind a
+# reverse proxy: read-only file system, everything written goes to tmpfs (wiped at each
+# start, as the demonstration data), no new privileges, minimal capabilities.
+#   docker compose -f docker/demo/docker-compose.yml up -d
+#   docker compose -f docker/demo/docker-compose.yml logs carbure | grep Administrator
+# then http://localhost:8080/portal/ (demo / carbure). Never for real data.
+services:
+  carbure:
+    image: ltoinel/carbure:demo
+    container_name: carbure-demo
+    restart: unless-stopped
+    ports:
+      # Local only: a reverse proxy (HTTPS) publishes it; the container listens on 80
+      - "127.0.0.1:${CARBURE_DEMO_PORT:-8080}:80"
+    environment:
+      # Language of the demonstration users: fr, en, es, it, de or pt
+      LANGUAGE: ${CARBURE_DEMO_LANGUAGE:-fr}
+    read_only: true
+    tmpfs:
+      - /data
+      - /run
+      # nginx.pid (empty folder on the /run tmpfs of images up to 1.6.0)
+      - /run/nginx
+      - /tmp
+      - /var/tmp
+      - /var/lib/mysql
+      - /var/lib/nginx/tmp
+      - /var/log/nginx
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    cap_add:
+      # Root prepares the files of MariaDB and www-data (CHOWN, DAC_OVERRIDE, FOWNER),
+      # MariaDB, PHP-FPM and nginx then run as their own user (SETUID, SETGID), nginx
+      # listens on 80 (NET_BIND_SERVICE), docker stop reaches them all (KILL)
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETUID
+      - SETGID
+      - NET_BIND_SERVICE
+      - KILL

@@ -5,7 +5,7 @@
 # in the logs, new at each start). Not for real data: public password, everything is wiped at each start.
 #
 # Built on top of the regular image (docker/Dockerfile), from the root of the project:
-#   docker build -f docker/Dockerfile.demo --build-arg BASE=ltoinel/carbure:latest -t ltoinel/carbure:demo .
+#   docker build -f docker/demo/Dockerfile --build-arg BASE=ltoinel/carbure:latest -t ltoinel/carbure:demo .
 
 ARG BASE=ltoinel/carbure:latest
 # hadolint ignore=DL3006
@@ -23,7 +23,7 @@ RUN apk add --no-cache mariadb mariadb-client \
 # Demonstration data: the one of the development stack (./start.sh), the tests are not
 # in the regular image
 COPY --chown=www-data:www-data tests/e2e/server/seed.php /var/www/carbure/tests/e2e/server/seed.php
-COPY --chmod=755 docker/entrypoint-demo.sh /var/www/carbure/docker/entrypoint-demo.sh
+COPY --chmod=755 docker/demo/entrypoint.sh /var/www/carbure/docker/demo/entrypoint.sh
 
-ENTRYPOINT ["/var/www/carbure/docker/entrypoint-demo.sh"]
+ENTRYPOINT ["/var/www/carbure/docker/demo/entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]

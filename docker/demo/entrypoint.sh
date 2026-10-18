@@ -1,9 +1,10 @@
 #!/bin/sh
-# Entrypoint of the demonstration image (docker/Dockerfile.demo): at each start, a new
+# Entrypoint of the demonstration image (docker/demo/Dockerfile): at each start, a new
 # MariaDB database inside the container (local only), a configuration with random
 # secrets, the demonstration data, then the regular entrypoint (migrations, PHP-FPM,
 # nginx). docker stop stops nginx, PHP-FPM and MariaDB cleanly.
 # Everything is wiped at each start: never use this image for real data.
+# Runs read-only with few capabilities: see docker/demo/docker-compose.yml.
 set -e
 
 APP=/var/www/carbure
@@ -22,7 +23,9 @@ random() { head -c "$1" /dev/urandom | od -An -tx1 | tr -d ' \n'; }
 
 # --- MariaDB: new database, listening on 127.0.0.1 only ------------------------------
 rm -rf "${DATADIR:?}"/* /data/conf /data/cache /data/logs
-mkdir -p /run/mysqld /data/conf
+# Runtime directories of the image, empty when /run and /var/lib/nginx/tmp are tmpfs
+# (read-only container, see docker-compose.yml)
+mkdir -p /run/mysqld /run/nginx /var/lib/nginx/tmp /data/conf
 chown mysql:mysql /run/mysqld "$DATADIR"
 mariadb-install-db --user=mysql --datadir="$DATADIR" --skip-test-db \
     --auth-root-authentication-method=socket > /dev/null

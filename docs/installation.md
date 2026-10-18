@@ -35,8 +35,8 @@ mot de passe aléatoire, nouveau à chaque démarrage, affiché dans la sortie d
  User:          demo / carbure
  Administrator: admin / 3f9c1a7e5b2d8046   (new password at each start)
 ```
- Un foyer fictif y vit depuis un
-an : deux salaires, une vingtaine de catégories avec leurs budgets et leurs règles, des
+
+Un foyer fictif y vit depuis un an : deux salaires, une vingtaine de catégories avec leurs budgets et leurs règles, des
 dépenses saisonnières, de l'épargne.
 
 L'image de démonstration est l'image habituelle avec MariaDB et les données de démonstration
@@ -45,7 +45,8 @@ secrets aléatoires et les données sont rechargées. `Ctrl+C` (ou `docker stop`
 
 !!! warning "Uniquement pour essayer"
     **Toutes les données sont effacées à chaque démarrage** et le mot de passe du compte `demo` est public :
-    n'y saisissez aucune donnée réelle et ne l'exposez pas sur Internet. La synchronisation
+    n'y saisissez aucune donnée réelle et ne la publiez sur Internet qu'avec les précautions
+    ci-dessous. La synchronisation
     bancaire et les notifications ne sont pas configurées. Pour votre budget, installez
     Carbure avec l'image `ltoinel/carbure` (ci-dessous). Par sécurité, l'image de démonstration
     refuse de démarrer sur un volume `/data` d'une installation réelle.
@@ -53,6 +54,55 @@ secrets aléatoires et les données sont rechargées. `Ctrl+C` (ou `docker stop`
 Les utilisateurs de la démonstration sont en français ; `-e LANGUAGE=en` (ou `es`, `it`,
 `de`, `pt`) choisit une autre langue. Chaque version a aussi son image de démonstration :
 `ltoinel/carbure:<version>-demo` (par exemple `1.6.0-demo`).
+
+### Publier une démo
+
+Pour une démo en ligne, `docker/demo/docker-compose.yml` lance l'image durcie : système de
+fichiers en lecture seule (tout ce qui est écrit va en mémoire, effacé à chaque démarrage),
+aucune élévation de privilèges, seules les capacités nécessaires à MariaDB, PHP-FPM et nginx,
+port publié sur `127.0.0.1` uniquement :
+
+```bash
+docker compose -f docker/demo/docker-compose.yml up -d
+docker compose -f docker/demo/docker-compose.yml logs carbure | grep Administrator
+```
+
+`CARBURE_DEMO_PORT` (8080 par défaut) et `CARBURE_DEMO_LANGUAGE` (`fr` par défaut) se règlent
+dans l'environnement ou un fichier `.env` à côté. Placez devant un proxy inverse en HTTPS
+qui transmet tout au conteneur, sans réécrire ses en-têtes de sécurité (ils dépendent du
+chemin : portail, Swagger, API), et sans tampon pour l'API (suivi en direct) :
+
+```nginx
+location / {
+    proxy_pass http://127.0.0.1:8080;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+}
+location /api/ {
+    proxy_pass http://127.0.0.1:8080;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_buffering off;
+    proxy_read_timeout 3600s;
+}
+```
+
+Les visiteurs peuvent modifier les données : un redémarrage régulier les remet à neuf et
+change le mot de passe `admin`. Le script `docker/demo/run.sh` (à copier à côté du fichier
+compose sur le serveur) démarre la démo, la met à jour quand une nouvelle image est publiée
+(le conteneur n'est recréé que si l'image a changé), avec `--reset` la recrée avec des
+données neuves, et affiche le mot de passe `admin`. Par exemple dans la crontab :
+
+```cron
+0 * * * * /srv/carbure-demo/run.sh >> /var/log/carbure-demo.log 2>&1
+0 4 * * * /srv/carbure-demo/run.sh --reset >> /var/log/carbure-demo.log 2>&1
+```
+
+Le journal contient le mot de passe `admin` : gardez-le lisible par vous seul.
 
 ## Avec Docker (recommandé)
 

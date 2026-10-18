@@ -1,5 +1,5 @@
 # Only what the demonstration image adds to the regular one (the build context is the
 # root of the project)
 *
-!docker/entrypoint-demo.sh
+!docker/demo/entrypoint.sh
 !tests/e2e/server/seed.php
