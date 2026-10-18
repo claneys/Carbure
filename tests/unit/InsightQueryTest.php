@@ -54,6 +54,10 @@ class InsightQueryTest extends TestCase
             'IN sub-query' => ['SELECT COUNT(*) AS amount FROM bank_transaction WHERE category IN (SELECT id FROM `secrets`)'],
             'quoted table name' => ['SELECT COUNT(*) AS amount FROM "secrets"'],
             'MySQL TABLE statement' => ['SELECT 1 AS amount UNION TABLE secrets'],
+            'index hint FOR ORDER BY' => ['SELECT COUNT(*) AS amount FROM bank_transaction USE INDEX FOR ORDER BY (PRIMARY), otherdb.secrets'],
+            'index hint FOR GROUP BY' => ['SELECT COUNT(*) AS amount FROM bank_transaction IGNORE INDEX FOR GROUP BY (), otherdb.secrets'],
+            'FOR SYSTEM_TIME' => ['SELECT COUNT(*) AS amount FROM bank_transaction FOR SYSTEM_TIME ALL, otherdb.secrets'],
+            'non-reserved alias' => ['SELECT COUNT(*) AS amount FROM bank_transaction AS offset, otherdb.secrets'],
             'backslash' => ["SELECT COUNT(*) AS amount FROM bank_transaction WHERE label = '\\' FROM x '"],
             'insights' => ['SELECT COUNT(*) AS amount FROM budget_insight'],
             'users' => ['SELECT COUNT(*) AS amount FROM users'],
@@ -88,6 +92,7 @@ class InsightQueryTest extends TestCase
             'IN sub-query' => ['SELECT COUNT(*) AS amount FROM bank_transaction WHERE category IN (SELECT id FROM bank_transaction_category)'],
             'no table' => ['SELECT 42 AS amount'],
             'dual' => ['SELECT 42 AS amount FROM DUAL'],
+            'index hint FOR JOIN' => ['SELECT COUNT(*) AS amount FROM bank_transaction USE INDEX FOR JOIN (PRIMARY), budget'],
             'table name in a text' => ["SELECT COUNT(*) AS amount FROM bank_transaction WHERE label LIKE '%secrets FROM x%'"],
         ];
     }

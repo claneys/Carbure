@@ -22,10 +22,17 @@ final class SqlTables {
     private const BEFORE_TABLE = ['JOIN', 'STRAIGHT_JOIN', 'TABLE'];
 
     /**
-     * Words that end a FROM clause (its commas no longer separate tables)
+     * Words that end a FROM clause (its commas no longer separate tables): reserved words
+     * only, as a table alias that the server accepts must not end it (FOR is read apart)
      */
-    private const END_OF_FROM = ['WHERE', 'GROUP', 'HAVING', 'ORDER', 'LIMIT', 'UNION', 'EXCEPT', 'INTERSECT', 'WINDOW',
-        'INTO', 'FOR', 'LOCK', 'PROCEDURE', 'RETURNING', 'OFFSET', 'FETCH'];
+    private const END_OF_FROM = ['WHERE', 'GROUP', 'HAVING', 'ORDER', 'LIMIT', 'UNION', 'WINDOW', 'INTO', 'LOCK',
+        'PROCEDURE', 'FETCH'];
+
+    /**
+     * Words after FOR in an index hint of a table (USE INDEX FOR ORDER BY (…)): they do
+     * not end the FROM clause nor announce a table
+     */
+    private const INDEX_HINT_FOR = ['JOIN', 'ORDER', 'GROUP'];
 
     /**
      * Tokens of the query: quoted identifiers and texts, words, other characters
@@ -110,6 +117,7 @@ final class SqlTables {
             $word === 'SELECT' => $this->levels[count($this->levels) - 1] = ['select' => true, 'from' => false],
             $word === 'FROM' => $this->from(),
             $word === ',' => $this->expectTable = $this->levels[count($this->levels) - 1]['from'],
+            $word === 'FOR' => $this->skipIndexHintFor(),
             in_array($word, self::BEFORE_TABLE, true) => $this->expectTable = true,
             in_array($word, self::END_OF_FROM, true) => $this->levels[count($this->levels) - 1]['from'] = false,
             default => null,
@@ -127,6 +135,19 @@ final class SqlTables {
         if ($this->levels[$level]['select']) {
             $this->levels[$level]['from'] = true;
             $this->expectTable = true;
+        }
+    }
+
+    /**
+     * A FOR: in an index hint (FOR JOIN, FOR ORDER BY, FOR GROUP BY), skip the word that
+     * follows; the FROM clause goes on (FOR SYSTEM_TIME also belongs to a table).
+     *
+     * @return void
+     */
+    private function skipIndexHintFor(): void
+    {
+        if (in_array(strtoupper($this->tokens[$this->pos + 1] ?? ''), self::INDEX_HINT_FOR, true)) {
+            $this->pos++;
         }
     }
 

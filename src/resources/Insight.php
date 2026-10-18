@@ -187,12 +187,13 @@ final class Insight {
      * @param string $sql   The query with {month} and {year}
      * @param int    $month The month
      * @param int    $year  The year
-     * @return float|null The amount (null if the query fails)
+     * @return float|null The amount (null if the query is invalid or fails)
      */
     public static function amount(string $sql, int $month, int $year): ?float
     {
         try {
-            return self::run($sql, $month, $year);
+            // Checked again: a query stored before the current checks is not run
+            return self::run(self::validateQuery($sql), $month, $year);
         } catch (Throwable $e) {
             Logger::error("Insight query failed: " . $e->getMessage());
             return null;
@@ -291,18 +292,17 @@ final class Insight {
     }
 
     /**
-     * Run an insight query in a read-only transaction, with a time limit. The query is
-     * checked again: one stored before the current checks is not run.
+     * Run an insight query in a read-only transaction, with a time limit.
      *
-     * @param string $sql   The query with {month} and {year}
+     * @param string $sql   The query checked by validateQuery(), with {month} and {year}
      * @param int    $month The month
      * @param int    $year  The year
      * @return float|null The amount
-     * @throws Throwable If the query is invalid, fails, takes too long or does not return an amount
+     * @throws Throwable If the query fails, takes too long or does not return an amount
      */
     private static function run(string $sql, int $month, int $year): ?float
     {
-        $sql = str_replace(['{month}', '{year}'], [(string)$month, (string)$year], self::validateQuery($sql));
+        $sql = str_replace(['{month}', '{year}'], [(string)$month, (string)$year], $sql);
 
         Db::query("START TRANSACTION READ ONLY");
         try {
