@@ -24,8 +24,8 @@ qui consultent les mêmes données.
   premier utilisateur qui suit le compte, mais tous la voient et la pointent.
 - **Données personnelles** : chaque utilisateur a son identifiant, son mot de passe, sa
   langue (français, anglais, espagnol, italien, allemand ou portugais), son thème d'affichage, ses seuils d'alerte, les canaux de ses
-  notifications (push, email), ses appareils mobiles (iOS, Android), ses navigateurs de
-  confiance et ses jetons d'accès pour les agents IA.
+  notifications (push, email), ses appareils mobiles (iOS, Android), ses navigateurs web et
+  ses navigateurs de confiance et ses jetons d'accès pour les agents IA.
 - **Deux profils** :
 
 | | Utilisateur | Administrateur |
@@ -442,6 +442,7 @@ dépassent leur budget ce mois-ci ? », « Comment évolue notre épargne ? ».
   authentification** (application d'authentification, codes de secours),
   **Notifications** (canaux push de l'app mobile et email, seuil d'alerte, budget surveillé
   et son seuil) et **Mes appareils** (applications mobiles iOS et Android, supprimables ;
+  navigateurs web des connexions au portail, celui en cours signalé, supprimables ;
   navigateurs web de confiance, révocables).
 - **Mots de passe** chiffrés (bcrypt) ; session valable 30 jours.
 - **Blocage** : après 5 échecs de connexion d'affilée, le compte est bloqué 24 heures ; un

@@ -50,7 +50,7 @@ final class Insight {
      */
     public const REFUSED_TABLES = ['api_tokens', 'bank_transaction_deleted', 'budget_alert', 'budget_insight', 'devices',
         'mfa_recovery_code', 'mfa_trusted_browser', 'oauth_clients', 'oauth_codes', 'schema_migrations', 'settings',
-        'user_mfa', 'user_notification', 'users',
+        'user_browser', 'user_mfa', 'user_notification', 'users',
         'mysql', 'information_schema', 'performance_schema', 'sys'];
 
     /**

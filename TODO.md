@@ -78,6 +78,13 @@ keeps track of what was done).
       scheduler uses it, remove `?token=` from `GET /bank/sync` (the MCP server keeps its
       `?token=` for the agents that cannot send a header).
 
+- [ ] **Production** (web browsers in the devices, #246): the migration
+      `2026-10-26_user_browser` (table `user_browser`) is applied at container start (the
+      code works before it: no browser listed). After the deployment, log in to the portal
+      and check that **My profile → My devices → Web browsers** lists this browser with the
+      "This browser" badge; behind the DSM reverse proxy over HTTPS the cookie
+      `carbure_browser` must be Secure (`X-Forwarded-Proto: https` or `public_url`).
+
 - [ ] **Production** (API sub-tab, #163): after the deployment, open **Administration → API**
       and check that Swagger UI is shown. A blank frame means the DSM reverse proxy adds its
       own `X-Frame-Options: DENY` (or `frame-ancestors 'none'`) to `/swagger/`: let it pass

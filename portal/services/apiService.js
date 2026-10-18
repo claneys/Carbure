@@ -891,6 +891,24 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
     }
 
     /**
+     * Web browsers from which the authenticated user logged in, the last used first
+     * @returns {Promise<Array>} [{id, label, created_at, last_login, current}]
+     */
+    async function fetchBrowsers() {
+        const data = await request(`${baseUrl}/user/browser`, {}, 'Failed to fetch browsers');
+        return Array.isArray(data) ? data : [];
+    }
+
+    /**
+     * Forgets a web browser of the authenticated user (its session is not closed)
+     * @param {number} id - Browser ID
+     * @returns {Promise<void>}
+     */
+    async function deleteBrowser(id) {
+        await request(`${baseUrl}/user/browser?id=${encodeURIComponent(id)}`, { method: 'DELETE' }, 'Failed to remove the browser');
+    }
+
+    /**
      * Two-factor authentication of the authenticated user
      * @returns {Promise<Object>} {available, required, enabled, pending, recovery_codes_left, trusted_browsers}
      */
@@ -1234,6 +1252,8 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
         applyRules,
         fetchTrends,
         deleteDevice,
+        fetchBrowsers,
+        deleteBrowser,
         fetchMfa,
         setupMfa,
         enableMfa,

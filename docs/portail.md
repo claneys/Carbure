@@ -494,6 +494,10 @@ Quatre sous-onglets, comme l'administration : **Profil**, **Double authentificat
     (« iPhone16,1 · iOS 26.0 · app 1.2 ») et le token de notification, masqué par défaut. Les boutons permettent de l'afficher en
     entier, de le copier (HTTPS requis ; sinon le token est affiché) ou de **supprimer** un
     ancien appareil (`GET`/`DELETE /device`) ;
+  - **Navigateurs web** : navigateurs depuis lesquels l'utilisateur s'est connecté au
+    portail, avec un nom lisible tiré du User-Agent, le badge **Ce navigateur** pour celui
+    en cours, la date de dernière et de première connexion, et un bouton **Supprimer** (après
+    confirmation) qui l'oublie sans fermer sa session (`GET`/`DELETE /user/browser`) ;
   - **Navigateurs de confiance** : navigateurs web où le code de double authentification
     n'est pas redemandé pendant 6 mois, avec un nom lisible tiré du User-Agent (« Firefox
     sur Windows »), la date de dernière utilisation et l'échéance, et leur bouton

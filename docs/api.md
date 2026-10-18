@@ -776,6 +776,18 @@ envoyés ou tant que la migration `2026-10-25_device_model` n'est pas appliquée
 `id` : supprime un appareil de l'utilisateur connecté (il ne recevra plus de
 notifications). 404 si l'appareil n'existe pas ou appartient à un autre utilisateur.
 
+### `GET /user/browser`, `DELETE /user/browser?id=`
+
+Navigateurs web depuis lesquels l'utilisateur connecté s'est connecté au portail (une
+connexion sans objet `device`), le dernier utilisé en premier : `id`, `label` (User-Agent),
+`created_at` (première connexion), `last_login`, `current` (`true` pour le navigateur de la
+requête). Un cookie HttpOnly `carbure_browser` (envoyé aux seules routes `/user`) reconnaît
+le navigateur, la base n'en garde que l'empreinte SHA-256 ; un navigateur inutilisé depuis
+6 mois est oublié. Ce n'est pas un appareil : il ne reçoit pas de notification et ne
+dispense pas de la double authentification. `DELETE` l'oublie (`404` s'il n'existe pas ou
+appartient à un autre utilisateur) sans fermer sa session : il réapparaît à sa prochaine
+connexion. Liste vide tant que la migration `2026-10-26_user_browser` n'est pas appliquée.
+
 ### `POST /device/push`
 
 Envoie une notification de test à tous les appareils de l'utilisateur connecté, par le

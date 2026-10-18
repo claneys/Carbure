@@ -16,6 +16,7 @@ erDiagram
     users ||--o| user_mfa : "s'authentifie"
     users ||--o{ mfa_recovery_code : "secours"
     users ||--o{ mfa_trusted_browser : "fait confiance"
+    users ||--o{ user_browser : "se connecte"
     users ||--o{ api_tokens : "possède"
     users ||--o{ user_notification : "choisit"
     users ||--o{ budget_alert : "alerté"
@@ -181,6 +182,7 @@ erDiagram
 | `user_mfa` | Double authentification d'un utilisateur : `secret` TOTP (base32), `enabled` (0 tant que l'enrôlement n'est pas confirmé par un premier code), `last_step` le dernier pas de temps accepté (un code ne sert qu'une fois). Supprimée avec l'utilisateur. |
 | `mfa_recovery_code` | Codes de secours de la double authentification : seule l'empreinte SHA-256 (`code_hash`) est stockée, la ligne est supprimée à l'usage. Supprimés avec l'utilisateur. |
 | `mfa_trusted_browser` | Navigateurs de confiance (6 mois) : empreinte SHA-256 du jeton du cookie (`token_hash`), `label` (User-Agent), `created_at`, `expires_at`, `last_used_at`. Supprimés avec l'utilisateur, quand son mot de passe change ou que sa double authentification est désactivée ou réinitialisée. |
+| `user_browser` | Navigateurs web des connexions au portail : empreinte SHA-256 du jeton du cookie `carbure_browser` (`token_hash`, unique par utilisateur : plusieurs utilisateurs du foyer partagent le cookie d'un navigateur), `label` (User-Agent), `created_at`, `last_login`. Oubliés après 6 mois sans connexion ou à la demande de l'utilisateur, supprimés avec lui. Ni notification ni dispense de la double authentification. |
 | `user_notification` | Canaux choisis par un utilisateur pour un type de notification (`kind` : `sync`, `rule`, `expense`, `budget`) : `push` vers ses appareils, `email` vers l'adresse de son profil. Sans ligne pour un type : push oui, email non, sauf `budget` (ni l'un ni l'autre). Supprimés avec l'utilisateur. |
 | `budget_alert` | Alertes de budget envoyées : une par utilisateur, catégorie et mois (`month`, premier jour), avec le budget (`budget`), les dépenses (`spent`) et le pourcentage (`percent`) au moment de l'alerte. Une nouvelle alerte ne part que si le budget du mois dépasse celui déjà alerté. Supprimées avec l'utilisateur ou la catégorie. |
 | `api_tokens` | Jetons d'accès des agents IA (serveur MCP) : seule l'empreinte SHA-256 (`token_hash`) est stockée, `token_hint` (début du jeton) sert à le reconnaître ; `expires_at` `NULL` = sans expiration. Un jeton obtenu par OAuth porte son `client_id` et l'empreinte de son jeton de rafraîchissement (`refresh_hash`) ; `client_id` `NULL` = créé dans le portail. Supprimés avec l'utilisateur. |

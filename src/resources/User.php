@@ -124,7 +124,8 @@ final class User {
 
     /**
      * Open the session of a user whose credentials were checked: failures reset, device
-     * of the iOS app registered, date of the last login.
+     * of the mobile app registered (or the web browser when none is sent), date of the
+     * last login.
      *
      * @param array<string, mixed>      $user   The user row
      * @param array<string, mixed>|null $device Associative array with 'name', 'token' and, optional,
@@ -138,8 +139,13 @@ final class User {
             Db::execute("UPDATE users SET failed_logins = 0, locked_until = NULL WHERE id = ?", "i", $user['id']);
         }
 
-        // Update or create the device (the web portal does not send one)
-        Device::register((int)$user['id'], $device);
+        // Update or create the device of a mobile app; the web portal sends none: its
+        // browser is recorded instead
+        if ($device === null) {
+            Browser::record((int)$user['id']);
+        } else {
+            Device::register((int)$user['id'], $device);
+        }
 
         $token = Jwt::createJwt($user['id']);
 

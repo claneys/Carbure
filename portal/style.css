@@ -4658,6 +4658,19 @@ a.footer-brand:hover {
     color: var(--text-primary);
 }
 
+/* Badge of the web browser in use, after its name */
+.device-current {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 8px;
+    border-radius: var(--border-radius-sm);
+    font-size: 12px;
+    font-weight: 500;
+    background: var(--success-light);
+    color: var(--success-color);
+    vertical-align: middle;
+}
+
 /* Model, system and app versions of a mobile device, under its name */
 .device-model {
     font-size: 13px;

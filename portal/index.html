@@ -2192,7 +2192,7 @@
                             </template>
                         </section>
 
-                        <!-- Devices sub-tab: the mobile apps (iOS, Android), then the browsers trusted for 6 months at the second step of a login -->
+                        <!-- Devices sub-tab: the mobile apps (iOS, Android), the web browsers of the logins, then the browsers trusted for 6 months at the second step of a login -->
                         <section v-else-if="profileView === 'devices'" class="profile-container profile-devices" aria-labelledby="devices-title">
                             <div class="users-header">
                                 <h2 id="devices-title">{{ t('myDevices') }}</h2>
@@ -2220,6 +2220,31 @@
                                             <span class="material-icons" aria-hidden="true">content_copy</span>
                                         </button>
                                         <button class="btn-icon btn-icon-delete" @click="removeDevice(device)" :title="t('deleteDevice')" :aria-label="t('deleteDevice')">
+                                            <span class="material-icons" aria-hidden="true">delete</span>
+                                        </button>
+                                    </div>
+                                </li>
+                            </ul>
+
+                            <!-- Web browsers from which the user logged in to the portal (profileModule) -->
+                            <h3 class="mfa-subtitle">{{ t('webBrowsersTitle') }}</h3>
+                            <p class="rules-help">{{ t('webBrowsersHelp') }}</p>
+                            <div v-if="loadingBrowsers" class="transactions-hint">{{ t('loadingBrowsers') }}</div>
+                            <p v-else-if="browsers.length === 0" class="rules-help web-no-browsers">{{ t('noBrowsers') }}</p>
+                            <ul v-else class="device-list web-browsers" :aria-label="t('webBrowsersTitle')">
+                                <li v-for="browser in browsers" :key="browser.id" class="device-item">
+                                    <span class="material-icons device-icon" aria-hidden="true">language</span>
+                                    <div class="device-details">
+                                        <div class="device-name" :title="browser.label">
+                                            {{ browserName(browser.label) }}
+                                            <span v-if="browser.current" class="device-current">{{ t('currentBrowser') }}</span>
+                                        </div>
+                                        <div class="device-meta">{{ t('lastLogin') }} : {{ formatDate(browser.last_login) }}</div>
+                                        <div class="device-meta">{{ t('browserFirstLogin', { date: formatDate(browser.created_at) }) }}</div>
+                                    </div>
+                                    <div class="device-actions">
+                                        <button type="button" class="btn-icon btn-icon-delete" @click="removeBrowser(browser)"
+                                                :title="t('deleteBrowser')" :aria-label="t('deleteBrowser') + ' ' + browserName(browser.label)">
                                             <span class="material-icons" aria-hidden="true">delete</span>
                                         </button>
                                     </div>

@@ -1,6 +1,6 @@
 // Profile page, in four sub-tabs: personal information and language, two-factor
 // authentication, notifications (channels, large expense threshold, budget watched and
-// its threshold), devices (mobile apps and trusted web browsers)
+// its threshold), devices (mobile apps, web browsers and trusted web browsers)
 const { test, expect, tr } = require('../fixtures');
 const { startFakeSmtp } = require('../fake-smtp');
 
@@ -153,6 +153,40 @@ test('shows the platform of the mobile apps and the trusted web browsers', async
     await browsers.first().getByRole('button', { name: `${tr('mfaRevokeBrowser')} ${name}` }).click();
     await expect(page.locator('.toast')).toHaveText(tr('mfaBrowserRevoked'));
     await expect(page.locator('.mfa-no-browsers')).toHaveText(tr('mfaNoBrowsers'));
+});
+
+test('lists the web browsers of the logins, the current one marked, and removes one', async ({ userPage: page, request }) => {
+    const firefox = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0';
+    // A login from this browser (its cookie is kept by the page) and another one from Firefox
+    // (another cookie jar)
+    const mine = await page.request.post('/api/user/login', { data: { username: 'marie', password: 'marie-password' } });
+    expect(mine.ok(), await mine.text()).toBeTruthy();
+    const other = await request.post('/api/user/login', {
+        headers: { 'User-Agent': firefox },
+        data: { username: 'marie', password: 'marie-password' },
+    });
+    expect(other.ok(), await other.text()).toBeTruthy();
+
+    await openProfile(page, 'myDevices');
+    const browsers = page.getByRole('list', { name: tr('webBrowsersTitle') }).locator('.device-item');
+    const current = browsers.filter({ has: page.locator('.device-current') });
+    await expect(current).toHaveCount(1);
+    await expect(current.locator('.device-current')).toHaveText(tr('currentBrowser'));
+
+    // Firefox by its readable name and its last login; removed after confirmation
+    const name = tr('browserOnSystem', { browser: 'Firefox', system: 'Windows' });
+    const firefoxItem = browsers.filter({ hasText: name });
+    await expect(firefoxItem).toHaveCount(1);
+    await expect(firefoxItem).toContainText(tr('lastLogin'));
+    await expect(firefoxItem.locator('.device-current')).toHaveCount(0);
+    const count = await browsers.count();
+    await firefoxItem.getByRole('button', { name: `${tr('deleteBrowser')} ${name}` }).click();
+    const dialog = page.getByRole('dialog', { name: tr('deleteBrowser') });
+    await expect(dialog).toContainText(tr('confirmDeleteBrowser', { name }));
+    await dialog.getByRole('button', { name: tr('deleteBrowser') }).click();
+    await expect(page.locator('.toast')).toHaveText(tr('browserDeleted'));
+    await expect(browsers).toHaveCount(count - 1);
+    await expect(browsers.filter({ hasText: name })).toHaveCount(0);
 });
 
 /**

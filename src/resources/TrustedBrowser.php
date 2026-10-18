@@ -153,7 +153,7 @@ final class TrustedBrowser {
      *
      * @return bool
      */
-    private static function isHttps(): bool
+    public static function isHttps(): bool
     {
         return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
             || strtolower((string)Webservice::getHeader('X-Forwarded-Proto')) === 'https'

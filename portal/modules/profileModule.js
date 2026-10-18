@@ -4,7 +4,7 @@
  * Manages the authenticated user: header user menu and profile page, in four
  * sub-tabs: profile (email, names, password, interface language and display
  * theme), two-factor authentication (mfaModule), notifications (notificationsModule)
- * and devices (mobile apps and trusted web browsers).
+ * and devices (mobile apps, web browsers and trusted web browsers).
  * 
  * @module profileModule
  */
@@ -43,6 +43,9 @@ export function createProfileModule(getApiService) {
                 profileTabs: PROFILE_TABS,
                 profileView: PROFILE_TABS[0].key,
                 devices: [],
+                // Web browsers of the user: [{id, label, created_at, last_login, current}]
+                browsers: [],
+                loadingBrowsers: false,
                 // Database migrations to apply (administrators): {version, pending}
                 schemaStatus: null,
                 migrating: false,
@@ -274,6 +277,7 @@ export function createProfileModule(getApiService) {
                 this.profileView = PROFILE_TABS[0].key;
                 this.setActiveTab('profile');
                 this.loadDevices();
+                this.loadBrowsers();
                 this.loadNotifications();
                 this.loadMfaStatus();
             },
@@ -437,6 +441,50 @@ export function createProfileModule(getApiService) {
              */
             toggleToken(device) {
                 this.revealedTokens = { ...this.revealedTokens, [device.id]: !this.revealedTokens[device.id] };
+            },
+
+            /**
+             * Loads the web browsers from which the authenticated user logged in
+             * @returns {Promise<void>}
+             */
+            async loadBrowsers() {
+                const apiService = getApiService();
+                if (!apiService) {
+                    return;
+                }
+
+                this.loadingBrowsers = true;
+                try {
+                    this.browsers = await apiService.fetchBrowsers();
+                } catch (error) {
+                    console.error('Error loading browsers:', error);
+                    this.browsers = [];
+                    this.showToast(error.message);
+                } finally {
+                    this.loadingBrowsers = false;
+                }
+            },
+
+            /**
+             * Forgets a web browser after confirmation: listed again at its next login, its
+             * session is not closed
+             * @param {Object} browser - Browser ({id, label})
+             * @returns {Promise<void>}
+             */
+            async removeBrowser(browser) {
+                const removed = await this.askConfirm({
+                    title: this.t('deleteBrowser'),
+                    message: this.t('confirmDeleteBrowser', { name: this.browserName(browser.label) }),
+                    confirmLabel: this.t('deleteBrowser'),
+                    icon: 'delete',
+                    danger: true,
+                    action: () => getApiService().deleteBrowser(browser.id)
+                });
+                if (!removed) {
+                    return;
+                }
+                this.browsers = this.browsers.filter(b => b.id !== browser.id);
+                this.showToast(this.t('browserDeleted'));
             },
 
             /**
