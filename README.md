@@ -11,7 +11,7 @@
 <p align="center">
   <strong>Take back control of your budget.</strong><br>
   Bank accounts synced automatically, expenses categorized, budgets tracked day by day —<br>
-  on the web and on iPhone. Self-hosted, free and open source.
+  on the web, on iPhone and soon on Android. Self-hosted, free and open source.
 </p>
 
 <p align="center">
@@ -73,7 +73,7 @@
 - ✅ **Check-off**: verify transactions in one click and filter those still to review.
 - 🔁 **Recurring transactions**: salary, rent, subscriptions and bills are spotted on their
   own; see at a glance those still expected this month.
-- 🔔 **Alerts on iPhone and by email**: after each sync, as soon as an expense exceeds the
+- 🔔 **Alerts on your phone and by email**: after each sync, as soon as an expense exceeds the
   threshold you set, when a rule you chose matches, or when the spending of a budget
   reaches the percentage you chose; each user picks push, email or both for each kind of
   alert.
@@ -92,15 +92,18 @@
 - 🔒 **Everything stays with you**: Carbure runs on your own server (a NAS is enough). No
   account to create, no aggregator, no cloud: your bank credentials and data stay in your
   local database. The only outbound connections are to your bank (woob) and, if you enable
-  them, Apple's push notification service and your SMTP server.
+  them, the Carbure Push relay (notifications of the iPhone and Android apps) and your SMTP
+  server.
 
 > 🌍 **Bank coverage**: Carbure relies on [woob](https://woob.tech/) modules, which mainly
 > cover French banks. The portal is available in French, English, Spanish,
 > Italian, German and Portuguese; amounts are in euros.
 
-> 📱 **iPhone app**: the Carbure iOS app will soon be available on the App Store. Meanwhile, the web
-> portal installs as an app on a computer or a phone (Chrome/Edge "Install", Safari "Add to
-> Dock" or "Add to Home Screen"), over HTTPS.
+> 📱 **Mobile apps**: the Carbure apps for **iPhone** and **Android** will soon be available on
+> the App Store and Google Play: transactions, check-off, budgets, insights, trends, sync,
+> Face ID or fingerprint login and push notifications ([features](https://carbure.org/applications-mobiles/),
+> in French). Meanwhile, the web portal installs as an app on a computer or a phone
+> (Chrome/Edge "Install", Safari "Add to Dock" or "Add to Home Screen"), over HTTPS.
 
 ## How does it compare?
 
@@ -109,7 +112,7 @@
 | Bank connection | Direct, via woob | Third-party aggregators | Third-party aggregators | Direct, via woob |
 | Sub-categories adding up to their parent | ✅ | ➖ | ⚠️ | ➖ |
 | Several users sharing the same data | ✅ | ⚠️ | ✅ | ➖ |
-| Native iPhone app and push notifications | ✅ | ➖ | ➖ | ➖ |
+| Native iPhone and Android apps, push notifications | ✅ | ➖ | ➖ | ➖ |
 | Built-in MCP server for AI agents | ✅ | ➖ | ➖ | ➖ |
 | File import (OFX, QIF, CSV, CAMT.053) | ✅ | ✅ | ✅ | ⚠️ |
 | Several currencies | ➖ | ✅ | ➖ | ⚠️ |
@@ -128,16 +131,26 @@ flowchart LR
         api[PHP REST API] <--> db
     end
     portal[Web portal] <--> api
-    ios[iOS app] <--> api
+    mobile[iPhone and<br/>Android apps] <--> api
     ai[AI agent] <-->|MCP| api
-    sync -->|Carbure Push relay| push[iPhone notifications]
+    sync -->|Carbure Push relay| push[Mobile<br/>notifications]
 ```
 
 ## Quick start
 
-To just try it, open the online demo at **[demo.carbure.org](https://demo.carbure.org/)**
-(log in as `demo` / `carbure`, fictitious data), or run it at home: the demo image runs
-Carbure with its database and a sample household (wiped at each start, never for real data):
+Three ways to run Carbure, depending on what you want to do:
+
+| | For | In short |
+|---|---|---|
+| [**1. Demo**](#1-try-the-demo) | trying Carbure with a sample household | `docker run --rm -p 8080:80 ltoinel/carbure:demo` |
+| [**2. Production**](#2-install-it-for-real) | managing your household's real budget | `docker compose up -d`, then the setup wizard |
+| [**3. Development**](#3-run-it-locally-to-develop) | changing the code | `./start.sh` |
+
+### 1. Try the demo
+
+Nothing to install: open the online demo at **[demo.carbure.org](https://demo.carbure.org/)**
+(log in as `demo` / `carbure`, fictitious data). Or run it at home: the demo image runs
+Carbure with its database and a sample household, wiped at each start (never for real data):
 
 ```bash
 docker run --rm -p 8080:80 ltoinel/carbure:demo
@@ -146,7 +159,9 @@ docker run --rm -p 8080:80 ltoinel/carbure:demo
 Then open `http://localhost:8080/portal/` and log in as `demo` / `carbure`
 (the password of the `admin` administrator is printed in the container logs).
 
-To install it for real, with Docker (nginx, PHP and woob included):
+### 2. Install it for real
+
+With Docker and the production image (nginx, PHP and woob included) and MariaDB:
 
 ```bash
 git clone https://github.com/ltoinel/Carbure.git && cd Carbure/docker
@@ -155,9 +170,26 @@ docker compose up -d
 
 Open `http://localhost:8080/`: **the setup wizard** handles everything (database,
 administrator account, and optional starter categories, rules and insights) in three
-clicks, with no command to run. Database upgrades are
-automatic too. On a Synology NAS, follow the
-[tutorial](https://carbure.org/synology/).
+clicks, with no command to run. Database upgrades are automatic too. On a Synology NAS,
+follow the [tutorial](https://carbure.org/synology/); to reach it from your phone, put it
+behind an HTTPS reverse proxy ([installation](https://carbure.org/installation/)).
+
+### 3. Run it locally to develop
+
+With Git and Docker, from a clone of the repository:
+
+```bash
+git clone https://github.com/ltoinel/Carbure.git && cd Carbure
+./start.sh
+```
+
+`./start.sh` starts the production image and MariaDB with the code of the repository
+mounted live (a change is taken at the next request) and a sample household: open
+`http://localhost:8000/portal/` and log in as `admin` / `admin-password`. Useful options:
+`--reset` (fresh sample data), `--fresh` (empty install, setup wizard), `--fake-woob`
+(simulated banks), `--build` (rebuild the image), `--stop`, `--clean`; `./start.sh --help`
+lists them. The tests (PHPUnit, portal unit tests, Playwright end-to-end tests) are
+described in the [developer documentation](https://carbure.org/developpement/) (in French).
 
 👉 **Detailed installation, configuration, API reference, data model and security:
 [the documentation](https://carbure.org/)** (in French).
@@ -170,11 +202,8 @@ done) and the open tasks in [TODO.md](TODO.md). A question? Ask it in
 [Open an issue](https://github.com/ltoinel/Carbure/issues). If Carbure is useful to you,
 a ⭐ helps others find it.
 
-To develop, `./start.sh` starts the development environment with Docker: the production
-image and MariaDB, the code of the repository mounted live and a sample household
-(`http://localhost:8000/portal/`, `admin` / `admin-password`). The tests (PHPUnit, portal
-unit tests, Playwright end-to-end tests) are described in the
-[developer documentation](https://carbure.org/developpement/) (in French).
+To set up the development environment, see
+[Run it locally to develop](#3-run-it-locally-to-develop).
 
 ## License
 

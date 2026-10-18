@@ -11,7 +11,7 @@
 <p align="center">
   <strong>Reprenez le contrôle de votre budget.</strong><br>
   Vos comptes bancaires synchronisés automatiquement, vos dépenses catégorisées,<br>
-  vos budgets suivis au jour le jour — sur le web et sur iPhone. Hébergé chez vous, gratuit et open source.
+  vos budgets suivis au jour le jour — sur le web, sur iPhone et bientôt sur Android. Hébergé chez vous, gratuit et open source.
 </p>
 
 <p align="center">
@@ -74,7 +74,7 @@
 - ✅ **Pointage** : vérifiez vos transactions en un clic, filtrez celles qui restent à contrôler.
 - 🔁 **Opérations récurrentes** : salaire, loyer, abonnements et factures sont repérés tout
   seuls ; voyez d'un coup d'œil celles encore attendues ce mois-ci.
-- 🔔 **Alertes sur iPhone et par email** : après chaque synchronisation, dès qu'une dépense
+- 🔔 **Alertes sur votre téléphone et par email** : après chaque synchronisation, dès qu'une dépense
   dépasse le seuil que vous avez choisi, quand une règle que vous avez désignée s'applique,
   ou quand les dépenses d'un budget atteignent le pourcentage choisi ; chacun choisit push,
   email ou les deux pour chaque type d'alerte.
@@ -93,15 +93,19 @@
 - 🔒 **Tout reste chez vous** : Carbure tourne sur votre propre serveur (un NAS suffit). Pas de
   compte à créer, pas d'agrégateur, pas de cloud : vos identifiants et vos données bancaires
   restent dans votre base locale. Seules sorties réseau : votre banque (woob) et, si vous
-  les activez, le service de notifications d'Apple et votre serveur SMTP.
+  les activez, le relais Carbure Push (notifications des apps iPhone et Android) et votre
+  serveur SMTP.
 
 > 🌍 **Banques couvertes** : Carbure s'appuie sur les modules [woob](https://woob.tech/), qui
 > couvrent surtout les banques françaises. Le portail existe en français, anglais, espagnol,
 > italien, allemand et portugais ; les montants sont en euros.
 
-> 📱 **App iPhone** : l'application iOS Carbure sera prochainement disponible sur l'App Store. En
-> attendant, le portail web s'installe comme une application sur ordinateur ou téléphone
-> (Chrome/Edge « Installer », Safari « Ajouter au Dock » ou « Sur l'écran d'accueil »), en HTTPS.
+> 📱 **Applications mobiles** : les applications Carbure pour **iPhone** et **Android** seront
+> prochainement disponibles sur l'App Store et Google Play : transactions, pointage, budgets,
+> aperçus, tendances, synchronisation, connexion par Face ID ou empreinte et notifications push
+> ([fonctionnalités](https://carbure.org/applications-mobiles/)). En attendant, le portail web
+> s'installe comme une application sur ordinateur ou téléphone (Chrome/Edge « Installer »,
+> Safari « Ajouter au Dock » ou « Sur l'écran d'accueil »), en HTTPS.
 
 ## Comment se situe Carbure ?
 
@@ -110,7 +114,7 @@
 | Connexion bancaire | Directe, via woob | Agrégateurs tiers | Agrégateurs tiers | Directe, via woob |
 | Sous-catégories additionnées dans leur parent | ✅ | ➖ | ⚠️ | ➖ |
 | Plusieurs utilisateurs sur les mêmes données | ✅ | ⚠️ | ✅ | ➖ |
-| App iPhone native et notifications push | ✅ | ➖ | ➖ | ➖ |
+| Apps natives iPhone et Android, notifications push | ✅ | ➖ | ➖ | ➖ |
 | Serveur MCP intégré pour les agents IA | ✅ | ➖ | ➖ | ➖ |
 | Import de fichiers (OFX, QIF, CSV, CAMT.053) | ✅ | ✅ | ✅ | ⚠️ |
 | Plusieurs devises | ➖ | ✅ | ➖ | ⚠️ |
@@ -129,17 +133,27 @@ flowchart LR
         api[API REST PHP] <--> db
     end
     portal[Portail web] <--> api
-    ios[App iOS] <--> api
+    mobile[Apps iPhone<br/>et Android] <--> api
     ai[Agent IA] <-->|MCP| api
-    sync -->|relais Carbure Push| push[Notifications iPhone]
+    sync -->|relais Carbure Push| push[Notifications<br/>mobiles]
 ```
 
 ## Démarrage rapide
 
-Pour simplement l'essayer, ouvrez la démo en ligne sur **[demo.carbure.org](https://demo.carbure.org/)**
-(compte `demo` / `carbure`, données fictives), ou lancez-la chez vous : l'image de démonstration
-lance Carbure avec sa base de données et un foyer d'exemple (effacé à chaque démarrage, jamais
-pour de vraies données) :
+Trois façons de lancer Carbure, selon ce que vous voulez faire :
+
+| | Pour | En bref |
+|---|---|---|
+| [**1. Démo**](#1-essayer-la-démo) | essayer Carbure avec un foyer d'exemple | `docker run --rm -p 8080:80 ltoinel/carbure:demo` |
+| [**2. Production**](#2-linstaller-pour-de-bon) | gérer le vrai budget de votre foyer | `docker compose up -d`, puis l'assistant d'installation |
+| [**3. Développement**](#3-le-lancer-en-local-pour-développer) | modifier le code | `./start.sh` |
+
+### 1. Essayer la démo
+
+Rien à installer : ouvrez la démo en ligne sur **[demo.carbure.org](https://demo.carbure.org/)**
+(compte `demo` / `carbure`, données fictives). Ou lancez-la chez vous : l'image de
+démonstration lance Carbure avec sa base de données et un foyer d'exemple, effacé à chaque
+démarrage (jamais pour de vraies données) :
 
 ```bash
 docker run --rm -p 8080:80 ltoinel/carbure:demo
@@ -148,7 +162,9 @@ docker run --rm -p 8080:80 ltoinel/carbure:demo
 Ouvrez ensuite `http://localhost:8080/portal/` et connectez-vous avec `demo` / `carbure`
 (le mot de passe de l'administrateur `admin` est affiché dans les journaux du conteneur).
 
-Pour l'installer pour de bon, avec Docker (nginx, PHP et woob inclus) :
+### 2. L'installer pour de bon
+
+Avec Docker et l'image de production (nginx, PHP et woob inclus) et MariaDB :
 
 ```bash
 git clone https://github.com/ltoinel/Carbure.git && cd Carbure/docker
@@ -157,9 +173,28 @@ docker compose up -d
 
 Ouvrez `http://localhost:8080/` : **l'assistant d'installation** s'occupe de tout (base de
 données, compte administrateur, et en option des catégories, règles et insights de
-départ) en trois clics, sans aucune commande. Les mises à jour de la
-base de données sont, elles aussi, automatiques. Sur un NAS Synology, suivez le
-[tutoriel](https://carbure.org/synology/).
+départ) en trois clics, sans aucune commande. Les mises à jour de la base de données sont,
+elles aussi, automatiques. Sur un NAS Synology, suivez le
+[tutoriel](https://carbure.org/synology/) ; pour y accéder depuis votre téléphone,
+placez-le derrière un proxy inverse en HTTPS ([installation](https://carbure.org/installation/)).
+
+### 3. Le lancer en local pour développer
+
+Avec Git et Docker, depuis un clone du dépôt :
+
+```bash
+git clone https://github.com/ltoinel/Carbure.git && cd Carbure
+./start.sh
+```
+
+`./start.sh` démarre l'image de production et MariaDB avec le code du dépôt monté en direct
+(une modification est prise en compte à la requête suivante) et un foyer d'exemple : ouvrez
+`http://localhost:8000/portal/` et connectez-vous avec `admin` / `admin-password`. Options
+utiles : `--reset` (données d'exemple remises à zéro), `--fresh` (installation vierge,
+assistant d'installation), `--fake-woob` (banques simulées), `--build` (reconstruire
+l'image), `--stop`, `--clean` ; `./start.sh --help` les liste. Les tests (PHPUnit, tests
+unitaires du portail, tests de bout en bout Playwright) sont décrits dans la
+[documentation développeur](https://carbure.org/developpement/).
 
 👉 **Installation détaillée, configuration, référence de l'API, modèle de données et sécurité :
 [la documentation](https://carbure.org/).**
@@ -171,11 +206,8 @@ définition de « terminé ») et la liste des tâches ouvertes dans [TODO.md](T
 Posez-la dans les [Discussions](https://github.com/ltoinel/Carbure/discussions). Un bug ? [Ouvrez une issue](https://github.com/ltoinel/Carbure/issues). Si Carbure vous est utile,
 une ⭐ aide d'autres personnes à le découvrir.
 
-Pour développer, `./start.sh` démarre l'environnement de développement avec Docker : l'image
-de production et MariaDB, le code du dépôt monté en direct et un foyer d'exemple
-(`http://localhost:8000/portal/`, `admin` / `admin-password`). Les tests (PHPUnit, tests
-unitaires du portail, tests de bout en bout Playwright) sont décrits dans la
-[documentation développeur](https://carbure.org/developpement/).
+Pour mettre en place l'environnement de développement, voir
+[Le lancer en local pour développer](#3-le-lancer-en-local-pour-développer).
 
 ## Licence
 
