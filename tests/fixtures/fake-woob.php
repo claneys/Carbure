@@ -144,6 +144,8 @@ if (($argv[1] ?? '') === 'config' && $type === 'info') {
             'password' => ['label' => 'Code secret', 'default' => '', 'description' => 'Code secret', 'regexp' => '^(\\d{6})$', 'choices' => null, 'masked' => true, 'required' => true],
             'rotating_password' => ['label' => 'Automatically renew password every 100 connections', 'default' => false, 'description' => '', 'regexp' => null, 'choices' => ['y' => 'True', 'n' => 'False'], 'masked' => false, 'required' => false],
             'website' => ['label' => 'Type de compte', 'default' => 'pp', 'description' => 'Type de compte', 'regexp' => null, 'choices' => ['pp' => 'Particuliers/Professionnels', 'hbank' => 'HelloBank'], 'masked' => false, 'required' => false],
+            // Optional without default, like "identity" of boursorama: woob refuses it empty
+            'identity' => ['label' => "ID d'identité", 'default' => null, 'description' => '', 'regexp' => null, 'choices' => null, 'masked' => false, 'required' => false],
         ];
     }
     echo json_encode([$info]) . "\n";

@@ -203,6 +203,8 @@ class BankTest extends DatabaseTestCase
         $this->assertSame('pp', $fields['website']['default']);
         // A false boolean stays "n" (not the first choice, which would enable the option)
         $this->assertSame('n', $fields['rotating_password']['default']);
+        // No default (null): an empty value, optional
+        $this->assertSame(['default' => '', 'required' => false], array_intersect_key($fields['identity'], ['default' => 1, 'required' => 1]));
 
         try {
             Bank::module('unknown');
@@ -266,9 +268,10 @@ class BankTest extends DatabaseTestCase
             $this->assertSame('mybnp', $result['backend']);
             $this->assertNull($result['label']);
             $this->assertSame(['DEMO0000001@mybnp', '00087654321@mybnp'], array_column($result['accounts'], 'bankId'));
-            // Every setting of the module is given (defaults included), in the configuration
-            // file of woob as "woob config add" writes it (never on its command line: the fake
-            // woob refuses it), readable by its owner only, the other backends kept
+            // Every setting of the module is given (defaults included; an optional one left
+            // empty is not, woob refusing it: identity), in the configuration file of woob as
+            // "woob config add" writes it (never on its command line: the fake woob refuses it),
+            // readable by its owner only, the other backends kept
             $this->assertSame("[other]\n_module = cic\nlogin = jdoe\n"
                 . "[mybnp]\n_module = bnp\nlogin = 12345678\npassword = 123456\nrotating_password = n\nwebsite = pp\n\n",
                 file_get_contents($added));
@@ -292,6 +295,11 @@ class BankTest extends DatabaseTestCase
             Db::execute("INSERT INTO bank_backend (name, label) VALUES ('mybnp3', 'Ancien')", "");
             Bank::createBackend('bnp', 'mybnp3', ['login' => '12345678', 'password' => '123456']);
             $this->assertNull(Db::queryOne("SELECT label FROM bank_backend WHERE name = ?", "s", 'mybnp3'));
+
+            // An optional setting given is written
+            Bank::createBackend('bnp', 'mybnp4', ['login' => '12345678', 'password' => '123456', 'identity' => 'A1B2']);
+            $this->assertStringContainsString("[mybnp4]\n_module = bnp\nlogin = 12345678\npassword = 123456\nrotating_password = n\nwebsite = pp\nidentity = A1B2\n",
+                (string)file_get_contents(carbure_test_tmp('carbure-fake-woob-backends')));
         } finally {
             @unlink(carbure_test_tmp('carbure-fake-woob-backends'));
         }

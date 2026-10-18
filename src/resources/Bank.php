@@ -429,13 +429,17 @@ final class Bank {
             throw new Error("A bank named $backend is already configured in woob", 409);
         }
 
-        // Every setting of the module is given (woob would ask for a missing one),
-        // required ones present, values on one line, checked against the module's rules
+        // Every setting of the module is given, required ones present, values on one line,
+        // checked against the module's rules. An optional setting left empty is not written:
+        // woob then takes its own default, and refuses an empty value for a setting whose
+        // default is not empty (boursorama: identity)
         $params = [];
         foreach (Woob::moduleFields($module)['fields'] as $field) {
             $value = self::settingValue($field, $settings);
             self::checkSetting($field, $value);
-            $params[$field['key']] = $value;
+            if ($value !== '' || $field['required']) {
+                $params[$field['key']] = $value;
+            }
         }
 
         try {
