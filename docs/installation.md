@@ -26,9 +26,16 @@ Pour découvrir Carbure en une commande, sans base de données à préparer ni i
 docker run --rm -p 8080:80 ltoinel/carbure:demo
 ```
 
-Ouvrez `http://localhost:8080/portal/` et connectez-vous avec `admin` / `admin-password`
-(administrateur) ou `marie` / `marie-password` (utilisateur). Ces identifiants sont rappelés
-sur l'écran de connexion et dans les journaux du conteneur. Un foyer fictif y vit depuis un
+Ouvrez `http://localhost:8080/portal/` et connectez-vous avec `demo` / `carbure`
+(utilisateur), rappelés sur l'écran de connexion. Le compte administrateur `admin` reçoit un
+mot de passe aléatoire, nouveau à chaque démarrage, affiché dans la sortie du conteneur
+(`docker logs <conteneur>` s'il tourne en arrière-plan) :
+
+```text
+ User:          demo / carbure
+ Administrator: admin / 3f9c1a7e5b2d8046   (new password at each start)
+```
+ Un foyer fictif y vit depuis un
 an : deux salaires, une vingtaine de catégories avec leurs budgets et leurs règles, des
 dépenses saisonnières, de l'épargne.
 
@@ -37,7 +44,7 @@ L'image de démonstration est l'image habituelle avec MariaDB et les données de
 secrets aléatoires et les données sont rechargées. `Ctrl+C` (ou `docker stop`) l'arrête.
 
 !!! warning "Uniquement pour essayer"
-    **Toutes les données sont effacées à chaque démarrage** et le mot de passe est public :
+    **Toutes les données sont effacées à chaque démarrage** et le mot de passe du compte `demo` est public :
     n'y saisissez aucune donnée réelle et ne l'exposez pas sur Internet. La synchronisation
     bancaire et les notifications ne sont pas configurées. Pour votre budget, installez
     Carbure avec l'image `ltoinel/carbure` (ci-dessous). Par sécurité, l'image de démonstration

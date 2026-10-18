@@ -138,7 +138,8 @@ To just try it, the demo image runs Carbure with its database and a sample house
 docker run --rm -p 8080:80 ltoinel/carbure:demo
 ```
 
-Then open `http://localhost:8080/portal/` and log in as `admin` / `admin-password`.
+Then open `http://localhost:8080/portal/` and log in as `demo` / `carbure`
+(the password of the `admin` administrator is printed in the container logs).
 
 To install it for real, with Docker (nginx, PHP and woob included):
 

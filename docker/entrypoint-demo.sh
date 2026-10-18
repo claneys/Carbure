@@ -63,6 +63,19 @@ chmod 640 "$CONF"
 
 # --- Demonstration data (the one of ./start.sh) ---------------------------------------
 su -s /bin/sh www-data -c "php $APP/tests/e2e/server/seed.php --demo"
+# Accounts of the demo: the public user demo / carbure (the user marie of the data set),
+# the administrator admin with a random password, printed below
+DEMO_USER=demo
+DEMO_PASSWORD=carbure
+ADMIN_PASSWORD=$(random 8)
+DB_PASSWORD="$DB_PASSWORD" DEMO_USER="$DEMO_USER" DEMO_PASSWORD="$DEMO_PASSWORD" \
+ADMIN_PASSWORD="$ADMIN_PASSWORD" php -r '
+    $db = new mysqli("127.0.0.1", "carbure", getenv("DB_PASSWORD"), "carbure_demo", 3306);
+    $user = getenv("DEMO_USER");
+    $demo = $db->prepare("UPDATE users SET username = ?, email = ?, password = ? WHERE username = \"marie\"");
+    $demo->execute([$user, "$user@example.com", password_hash(getenv("DEMO_PASSWORD"), PASSWORD_DEFAULT)]);
+    $admin = $db->prepare("UPDATE users SET password = ? WHERE username = \"admin\"");
+    $admin->execute([password_hash(getenv("ADMIN_PASSWORD"), PASSWORD_DEFAULT)]);'
 # Language of the demonstration users (fr by default)
 case "${LANGUAGE:-fr}" in
     fr|en|es|it|de|pt) mariadb --socket="$SOCKET" carbure_demo -e "UPDATE users SET language = '${LANGUAGE:-fr}'" ;;
@@ -84,7 +97,8 @@ trap stop TERM INT QUIT
 cat <<BANNER
 ==================================================================
  Carbure demo: http://localhost:8080/portal/ (or the port you published)
- Login: admin / admin-password   (user: marie / marie-password)
+ User:          $DEMO_USER / $DEMO_PASSWORD
+ Administrator: admin / $ADMIN_PASSWORD   (new password at each start)
  Demonstration data, wiped at each start: never enter real data.
 ==================================================================
 BANNER

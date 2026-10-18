@@ -139,7 +139,8 @@ un foyer d'exemple (effacé à chaque démarrage, jamais pour de vraies données
 docker run --rm -p 8080:80 ltoinel/carbure:demo
 ```
 
-Ouvrez ensuite `http://localhost:8080/portal/` et connectez-vous avec `admin` / `admin-password`.
+Ouvrez ensuite `http://localhost:8080/portal/` et connectez-vous avec `demo` / `carbure`
+(le mot de passe de l'administrateur `admin` est affiché dans les journaux du conteneur).
 
 Pour l'installer pour de bon, avec Docker (nginx, PHP et woob inclus) :
 

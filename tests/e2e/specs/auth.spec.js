@@ -34,14 +34,9 @@ test('a demonstration instance shows its public account on the login screen', as
     await page.reload();
     const notice = page.locator('.login-demo');
     await expect(notice).toContainText(tr('loginDemoTitle'));
-    await expect(notice).toContainText(tr('loginDemoAccount', { username: 'admin', password: 'admin-password' }));
+    await expect(notice).toContainText(tr('loginDemoAccount', { username: 'demo', password: 'carbure' }));
     await expect(notice).toContainText(tr('loginDemoWarning'));
 
-    // The account shown logs in
-    await page.getByLabel(tr('username')).fill('admin');
-    await page.getByLabel(tr('password')).fill('admin-password');
-    await page.getByRole('button', { name: tr('loginButton') }).click();
-    await expect(page.locator('.user-menu-name')).toHaveText('admin');
 });
 
 test('refuses a wrong password', async ({ page }) => {

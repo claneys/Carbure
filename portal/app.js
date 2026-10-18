@@ -41,9 +41,9 @@ const API_BASE_URL = new URL('../api', new URL('.', window.location.href)).href;
 
 /**
  * Public account of the demonstration instance (Docker image carbure:demo, data of
- * tests/e2e/server/seed.php --demo), shown on its login screen
+ * docker/entrypoint-demo.sh), shown on its login screen
  */
-const DEMO_ACCOUNT = { username: 'admin', password: 'admin-password' };
+const DEMO_ACCOUNT = { username: 'demo', password: 'carbure' };
 
 /** Tabs reserved to administrators */
 const ADMIN_TABS = ['rules', 'categories', 'accounts', 'users', 'logs', 'config', 'sync', 'backup', 'api'];

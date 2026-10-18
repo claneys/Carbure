@@ -25,7 +25,8 @@ keeps track of what was done).
       pushed by the release workflow from the next release (1.6.0): until then the
       `docker run … ltoinel/carbure:demo` command of the README and of the docs fails. After
       the release, check `docker run --rm -p 8080:80 ltoinel/carbure:demo` on amd64 and
-      arm64, and mention the demo tag in the overview of the Docker Hub repository.
+      arm64, and mention the demo tag in the overview of the Docker Hub repository
+      (accounts: `demo` / `carbure`, `admin` with a random password printed in the logs).
 
 - [ ] **Push relay — release the device bindings**: Carbure never calls
       `DELETE /v1/devices/{token}` of the relay. A device deleted from an instance (or

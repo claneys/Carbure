@@ -333,11 +333,18 @@ jobs:
             sleep 2
           done
           curl -fsS http://localhost:8081/api/health | tee /dev/stderr | grep -q '"demo":true'
-          docker logs carbure-demo 2>&1 | grep -q 'admin / admin-password'
+          docker logs carbure-demo 2>&1 | grep -q 'User: *demo / carbure'
+          # The administrator has a random password, printed in the logs
+          admin=$(docker logs carbure-demo 2>&1 | sed -n 's/^ Administrator: admin \/ \([0-9a-f]\{16\}\) .*/\1/p')
+          test -n "$admin"
+          login() {
+            curl -fsS -X POST http://localhost:8081/api/user/login -H 'Content-Type: application/json' \
+              -d "{\"username\":\"$1\",\"password\":\"$2\"}" | python3 -c 'import sys,json; print(json.load(sys.stdin)["token"])'
+          }
+          login admin "$admin" > /dev/null
+          ! login admin admin-password 2> /dev/null
           # Login with the public account, the demonstration data is there
-          token=$(curl -fsS -X POST http://localhost:8081/api/user/login \
-            -H 'Content-Type: application/json' \
-            -d '{"username":"admin","password":"admin-password"}' | python3 -c 'import sys,json; print(json.load(sys.stdin)["token"])')
+          token=$(login demo carbure)
           count=$(curl -fsS -H "Authorization: Bearer $token" http://localhost:8081/api/transaction | python3 -c 'import sys,json; print(len(json.load(sys.stdin)))')
           echo "Transactions of the month: $count"
           test "$count" -gt 0
