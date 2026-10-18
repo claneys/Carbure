@@ -147,6 +147,23 @@
   box-shadow: 0 0.6rem 1.6rem rgba(0, 0, 0, 0.18);
 }
 
+/* ===== Screenshots of the mobile apps, side by side (wrapped on narrow screens) ===== */
+.md-typeset .mobile-screens {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.md-typeset .mobile-screens img {
+  width: 220px;
+  max-width: calc(50% - 0.5rem);
+  height: auto;
+  border-radius: 0.6rem;
+  /* Raw screenshots, without a device frame: a shadow separates them from the page */
+  box-shadow: 0 0.3rem 1rem rgba(0, 0, 0, 0.18);
+}
+
 /* ===== Header: link to the online demo (overrides/partials/source.html) ===== */
 
 /* The demo link and the GitHub link side by side, at the breakpoints where Material shows

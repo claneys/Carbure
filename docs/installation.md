@@ -265,7 +265,7 @@ carte).
 
 ### Notifications push (Carbure Push)
 
-Les notifications de l'application iOS passent par le service externe Carbure Push :
+Les notifications des applications iOS et Android passent par le service externe Carbure Push :
 dans **Administration → Paramètres**, section **Push Notification Mobile** (Carbure Push),
 cliquez sur **Inscrire l'instance**, lisez et acceptez le consentement (les jetons des
 appareils et le contenu des notifications passent par ce relais, qui les transmet à Apple

@@ -9,7 +9,8 @@ icon: material/star-shooting-outline
 Cette page décrit **ce que fait Carbure** et **selon quelles règles** : d'où viennent les
 transactions, comment elles sont classées, comment sont calculés les budgets, le flux du mois
 et les tendances, qui reçoit quelle notification et ce que chacun peut faire. Pour
-l'utilisation écran par écran, voir [Portail web](portail.md).
+l'utilisation écran par écran, voir [Portail web](portail.md) et
+[Applications mobiles](applications-mobiles.md).
 
 ![Liste des transactions du mois dans le portail Carbure, avec leur catégorie](assets/screenshot-transactions.png)
 
@@ -225,7 +226,7 @@ la création, la modification et la suppression d'une catégorie aux autres util
 | Revenu | Argent reçu | Salaire, Allocations |
 | Hors budget | Mouvements qui ne sont ni des dépenses ni des revenus : virements entre ses propres comptes, épargne | Virements internes, Épargne |
 
-- **Icône et couleur**, choisies parmi celles que l'app iPhone sait afficher : la même
+- **Icône et couleur**, choisies parmi celles que les apps mobiles savent afficher : la même
   catégorie a le même aspect partout (transactions, budgets, flux, sélecteurs).
 - La catégorie **« Non catégorisé »** reçoit tout ce qu'aucune règle ne reconnaît ; elle ne
   peut être ni modifiée ni supprimée.
@@ -332,7 +333,7 @@ renvoie un montant pour le mois affiché.
   son résultat pour le mois affiché s'affiche.
 - La requête s'exécute **en lecture seule** : une seule instruction `SELECT`, sans écriture,
   sans accès aux comptes utilisateurs ni aux jetons (voir [Sécurité](securite.md)).
-- L'historique de chaque insight mois par mois est disponible par l'API, pour l'app iPhone.
+- L'historique de chaque insight mois par mois est disponible par l'API, pour les apps mobiles.
 
 Des **recettes prêtes à l'emploi** (une catégorie et ses sous-catégories, abonnements,
 comparaison avec l'an dernier, taux d'épargne, matelas de sécurité, budget restant,
@@ -354,14 +355,16 @@ SELECT -SUM(amount) AS amount FROM bank_transaction WHERE amount < 0 AND categor
 
 ## Notifications
 
-Les notifications sont envoyées en **push** sur l'**app iPhone** (Apple Push Notification
-service) et, si un administrateur a configuré un serveur SMTP, par **email** à l'adresse du
+Les notifications sont envoyées en **push** sur les [**apps iPhone et
+Android**](applications-mobiles.md) (Apple Push Notification service, Firebase Cloud
+Messaging) et, si un administrateur a configuré un serveur SMTP, par **email** à l'adresse du
 profil. Les notifications push passent par le relais **Carbure Push**, auquel un
 administrateur inscrit l'instance après avoir accepté son consentement (voir
 [Configuration](configuration.md#push)) :
 
-!!! info "App iPhone"
-    L'application iOS Carbure sera prochainement disponible sur l'App Store.
+!!! info "Applications mobiles"
+    Les applications Carbure pour iPhone et Android seront prochainement disponibles sur
+    l'App Store et Google Play.
 
 | Quand | Qui la reçoit | Contenu |
 |---|---|---|
@@ -517,9 +520,10 @@ utilisateurs ouvrent **Agent IA** depuis leur menu.
 - Les opérations récurrentes sont **détectées**, pas **planifiées** : pas d'échéancier de
   factures ni de prévision du solde.
 - Pas d'**objectifs d'épargne**.
-- L'app native est sur **iPhone** ; sur Android et sur ordinateur, le portail web
-  s'utilise dans le navigateur ou s'installe comme une application
-  ([en HTTPS](portail.md#installer-le-portail-comme-une-application)), sans mode hors
-  ligne.
+- Les [apps iPhone et Android](applications-mobiles.md) servent au suivi au quotidien ;
+  l'administration et l'import de relevés se font dans le portail web, qui s'utilise dans
+  le navigateur ou s'installe comme une application
+  ([en HTTPS](portail.md#installer-le-portail-comme-une-application)). Ni les apps ni le
+  portail n'ont de mode hors ligne.
 
 Voir aussi le [comparatif](comparatif.md) avec Firefly III, Actual Budget et Kresus.

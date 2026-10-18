@@ -82,7 +82,7 @@ transaction importée.
 |---|---|
 | `jwtsecret` | Secret HMAC des JWT (durée de validité : 30 jours), généré par l'assistant d'installation. Un administrateur le renouvelle depuis le portail (bandeau affiché si le secret est faible) ; le changer déconnecte tous les clients. |
 | `password_salt` | Sel des anciens mots de passe SHA-256, utilisé seulement pour les migrer vers bcrypt à la connexion |
-| `mfa_required` | `true` : double authentification (code d'une application TOTP) imposée à la connexion de tous les utilisateurs, sauf depuis un iPhone déjà enregistré ou un navigateur de confiance (6 mois) ; `false` par défaut. Modifiable dans **Administration › Paramètres** ; le repasser à `false` dans le fichier est le recours d'un administrateur qui a perdu son téléphone et ses codes de secours. Voir [Sécurité](securite.md#double-authentification-totp). |
+| `mfa_required` | `true` : double authentification (code d'une application TOTP) imposée à la connexion de tous les utilisateurs, sauf depuis un appareil mobile (iOS, Android) déjà enregistré ou un navigateur de confiance (6 mois) ; `false` par défaut. Modifiable dans **Administration › Paramètres** ; le repasser à `false` dans le fichier est le recours d'un administrateur qui a perdu son téléphone et ses codes de secours. Voir [Sécurité](securite.md#double-authentification-totp). |
 | `sync_token` | Secret permettant au planificateur d'appeler `/api/bank/sync` sans JWT, dans l'en-tête `X-Sync-Token` (`?token=` dans l'URL : obsolète). Vide = seul un utilisateur connecté peut lancer la synchro. |
 
 ## `[woob]`
@@ -99,7 +99,7 @@ transaction importée.
 
 ## `[push]`
 
-Les notifications push des applications mobiles (iOS aujourd'hui, Android à venir) passent
+Les notifications push des applications mobiles (iOS et Android, voir [Applications mobiles](applications-mobiles.md)) passent
 par **Carbure Push**, un service externe qui détient les identifiants des fournisseurs (clé
 APNs d'Apple, compte de service Firebase) : l'instance n'en a besoin d'aucun. Elle s'y
 inscrit une fois (bouton **Inscrire l'instance** de **Administration → Paramètres**, qui

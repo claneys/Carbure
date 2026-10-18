@@ -10,7 +10,7 @@ Carbure face aux autres gestionnaires de budget open source à héberger soi-mê
 Actual Budget et Kresus.
 
 Carbure vise un foyer dont les comptes sont en France et qui veut garder ses données chez lui,
-avec une app iPhone (bientôt sur l'App Store) et un agent IA. Les autres outils open source ci-dessous sont excellents,
+avec des apps iPhone et Android (bientôt sur l'App Store et Google Play) et un agent IA. Les autres outils open source ci-dessous sont excellents,
 avec d'autres points forts : un modèle comptable plus riche (Firefly III), le budget par
 enveloppes et une application local-first (Actual Budget), ou la même connexion woob pour un
 seul utilisateur (Kresus).
@@ -56,8 +56,8 @@ seul utilisateur (Kresus).
 |---|---|---|---|---|
 | Plusieurs utilisateurs sur les mêmes données | ✅ administrateur et utilisateurs | ⚠️ utilisateurs séparés | ✅ | ➖ |
 | iPhone | ✅ app native | ⚠️ apps tierces | ⚠️ application web (PWA) | ⚠️ interface web |
-| Android | ⚠️ portail web installable (PWA) | ⚠️ apps tierces | ⚠️ application web (PWA) | ⚠️ interface web |
-| Alertes | ✅ push iPhone et e-mail, au choix : synchro, grosse dépense, règle, budget atteint | ⚠️ e-mail, webhooks | ➖ | ⚠️ e-mail : montant, solde |
+| Android | ✅ app native | ⚠️ apps tierces | ⚠️ application web (PWA) | ⚠️ interface web |
+| Alertes | ✅ push iPhone et Android, e-mail, au choix : synchro, grosse dépense, règle, budget atteint | ⚠️ e-mail, webhooks | ➖ | ⚠️ e-mail : montant, solde |
 
 ## Ouvert et extensible
 

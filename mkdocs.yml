@@ -88,12 +88,14 @@ nav:
   - Fonctionnalités: fonctionnalites.md
   - Recettes d'insights: insights.md
   - Comparatif: comparatif.md
+  - Confidentialité: confidentialite.md
   - Mise en route:
       - Installation: installation.md
       - NAS Synology: synology.md
       - Configuration: configuration.md
   - Utilisation:
       - Portail web: portail.md
+      - Applications mobiles: applications-mobiles.md
       - Agents IA (MCP): mcp.md
   - Technique:
       - Architecture: architecture.md
@@ -101,4 +103,3 @@ nav:
       - Modèle de données: modele-donnees.md
       - Développement: developpement.md
       - Sécurité: securite.md
-  - Confidentialité: confidentialite.md

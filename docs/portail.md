@@ -8,7 +8,7 @@ icon: material/monitor-dashboard
 
 Le portail (`portal/`) est une application Vue 3 servie en fichiers statiques, sous
 `https://<serveur>/portal/` (l'adresse racine y redirige). Il utilise la même API que
-l'app iOS. Cette page décrit les écrans ; les règles de fonctionnement (calculs, règles,
+les [applications mobiles](applications-mobiles.md). Cette page décrit les écrans ; les règles de fonctionnement (calculs, règles,
 notifications, droits) sont dans [Fonctionnalités](fonctionnalites.md).
 
 ## Installation
@@ -247,7 +247,7 @@ la catégorie choisie.
 Arborescence des catégories (un niveau de sous-catégories) regroupée par type (dépenses,
 revenus, hors budget). **+** ajoute une catégorie, le crayon la modifie (dans une modale),
 la corbeille la supprime. L'icône et la couleur se choisissent parmi celles que
-l'application iOS sait afficher, avec un aperçu. Supprimer une catégorie fait passer ses
+les applications mobiles savent afficher, avec un aperçu. Supprimer une catégorie fait passer ses
 transactions en « Non catégorisé » et supprime ses budgets et règles ; une catégorie qui a
 des sous-catégories ne peut pas être supprimée. La catégorie « Non catégorisé » (0) est
 protégée.
@@ -325,7 +325,7 @@ dans leur application. La synchronisation planifiée ne déclenche jamais cette 
 elle réessaie d'abord le compte après `woob_2fa_wait` secondes (`woob_2fa_retries` fois :
 la validation a pu être faite entre-temps sur le téléphone), puis, si la banque la demande
 toujours, elle échoue, le compte passe en **Authentification forte requise** et chaque utilisateur
-reçoit la notification « Strong authentication needed » sur l'app iOS. Le bouton
+reçoit la notification « Strong authentication needed » sur l'app mobile. Le bouton
 **Valider l'authentification forte** (sur la ligne du compte ou sous l'erreur) relance la
 synchronisation de ce compte en mode interactif : woob déclenche la demande, son message
 s'affiche (« validez dans votre application… ») et la synchronisation attend la validation
