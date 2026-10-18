@@ -19,6 +19,20 @@ class DeviceTest extends DatabaseTestCase
         $this->assertSame([], Device::getMine());
     }
 
+    public function testLinkGivesThePublicAddressOfTheApi()
+    {
+        $this->loginAs(self::USER);
+        $this->assertSame(['server' => null], Device::link(), 'Without public_url: the address of the portal');
+
+        Config::set('public_url', 'https://budget.example.org/');
+        try {
+            $this->assertSame(['server' => 'https://budget.example.org/api/'], Device::link());
+            $this->assertSame(['server' => 'https://budget.example.org/api/'], json_decode($this->callRoute('GET', '/device/link'), true));
+        } finally {
+            Config::set('public_url', '');
+        }
+    }
+
     public function testDelete()
     {
         $this->loginAs(self::ADMIN);

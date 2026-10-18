@@ -488,6 +488,13 @@ Quatre sous-onglets, comme l'administration : **Profil**, **Double authentificat
   secours**, et un code de l'application ou de secours de la **désactiver** (après
   confirmation). Les navigateurs de confiance sont dans **Mes appareils**.
 - **Mes appareils** :
+  - **Connecter l'application mobile** : QR code
+    `https://carbure.org/app/?server=<adresse de l'API>` à scanner avec l'appareil photo du
+    téléphone, qui ouvre l'app sur ce serveur (voir
+    [Applications mobiles](applications-mobiles.md#lien-de-connexion)), l'adresse affichée
+    et un bouton **Copier le lien** ; l'adresse est celle de `public_url` si elle est
+    renseignée (`GET /device/link`), sinon celle du portail, et un avertissement s'affiche
+    pour `localhost` ;
   - **Applications mobiles** : appareils enregistrés à la connexion depuis l'app, avec
     leur plateforme (icône et libellé **iOS** ou **Android**), la date de dernière connexion,
     le modèle, la version du système et celle de l'application quand l'app les envoie

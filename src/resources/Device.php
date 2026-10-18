@@ -12,6 +12,7 @@
 namespace Carbure\Resources;
 
 use Carbure\Lib\ApiRoute;
+use Carbure\Lib\Config;
 use Carbure\Lib\Db;
 use Carbure\Lib\Jwt;
 use Carbure\Lib\Logger;
@@ -41,6 +42,20 @@ final class Device {
     public static function getMine(): array
     {
         return self::get(Jwt::getUserIdFromToken());
+    }
+
+    /**
+     * Address of the API given to the mobile apps by the QR code of the devices
+     * (https://carbure.org/app/?server=...): the setting public_url followed by /api/, the
+     * portal may be opened through another address (local network); null without it (the
+     * portal uses its own address).
+     *
+     * @return array{server: string|null}
+     */
+    #[ApiRoute('/device/link', method: 'GET')]
+    public static function link(): array
+    {
+        return ['server' => Config::has('public_url') ? OAuth::baseUrl() . '/api/' : null];
     }
 
     /**

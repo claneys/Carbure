@@ -106,6 +106,7 @@ class ApiResolverTest extends TestCase
         'GET /category/keyword' => 'user',
         'GET /category/keyword/count' => 'admin',
         'GET /device' => 'user',
+        'GET /device/link' => 'user',
         'GET /health' => 'public',
         'GET /insight' => 'admin',
         'GET /mcp' => 'public',

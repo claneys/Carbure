@@ -93,6 +93,12 @@ sur le téléphone (ou scanné en QR code avec l'appareil photo), ouvre l'app et
 le serveur et l'identifiant, après confirmation : l'app prévient que le mot de passe sera
 envoyé à ce serveur et que la session en cours sera fermée.
 
+Le portail affiche ce QR code dans **Mon profil → Mes appareils** (**Connecter
+l'application mobile**) : il contient l'adresse de l'API, celle du paramètre `public_url`
+quand il est renseigné (sinon l'adresse par laquelle le portail est ouvert), sans
+identifiant ni mot de passe. Une adresse `localhost` ou `127.0.0.1`, injoignable depuis un
+téléphone, est signalée.
+
 ## Chargement
 
 Après la connexion, l'app charge le mois en cours (catégories, budgets, transactions,

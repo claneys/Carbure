@@ -771,6 +771,12 @@ Appareils de l'utilisateur connecté : `id`, `user_id`, `name`, `token`, `platfo
 `lastLogin`, `model`, `os_version`, `app_version` (`null` si l'application ne les a pas
 envoyés ou tant que la migration `2026-10-25_device_model` n'est pas appliquée).
 
+### `GET /device/link`
+
+Adresse de l'API donnée aux applications mobiles par le QR code de **Mes appareils** :
+`{ "server": "https://carbure.exemple.fr/api/" }`, soit `public_url` suivi de `/api/`, ou
+`null` sans ce paramètre (le portail utilise alors sa propre adresse).
+
 ### `DELETE /device`
 
 `id` : supprime un appareil de l'utilisateur connecté (il ne recevra plus de

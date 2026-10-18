@@ -4671,6 +4671,27 @@ a.footer-brand:hover {
     vertical-align: middle;
 }
 
+/* QR code that opens the mobile apps on this server, atop the devices */
+.app-link {
+    margin-bottom: 24px;
+}
+
+.app-link-server {
+    margin: 0 0 8px;
+    text-align: center;
+    color: var(--text-secondary);
+    overflow-wrap: anywhere;
+}
+
+.app-link-server code {
+    color: var(--text-primary);
+}
+
+.app-link-actions {
+    display: flex;
+    justify-content: center;
+}
+
 /* Model, system and app versions of a mobile device, under its name */
 .device-model {
     font-size: 13px;

@@ -9,6 +9,36 @@
  * @module profileModule
  */
 
+import { qrCodeOf } from './mfaModule.js';
+
+/** Page of carbure.org that opens the mobile apps on a server (Universal Links, App Links) */
+export const APP_LINK_URL = 'https://carbure.org/app/';
+
+/**
+ * Link that opens the mobile apps on a server, for the QR code of the devices
+ * @param {string} apiUrl - Address of the API (a trailing slash is added)
+ * @returns {string} https://carbure.org/app/?server=<API URL, encoded>
+ */
+export function appLinkOf(apiUrl) {
+    const server = String(apiUrl || '').replace(/\/*$/, '/');
+    return `${APP_LINK_URL}?server=${encodeURIComponent(server)}`;
+}
+
+/**
+ * Whether a phone cannot reach an address: localhost, 127.0.0.0/8, ::1
+ * @param {string} url - Address
+ * @returns {boolean}
+ */
+export function isLoopbackUrl(url) {
+    let host;
+    try {
+        host = new URL(url).hostname.toLowerCase();
+    } catch (error) {
+        return false;
+    }
+    return host === 'localhost' || host.endsWith('.localhost') || /^127\./.test(host) || host === '[::1]';
+}
+
 /** Sub-tabs of the profile page, in their order */
 export const PROFILE_TABS = [
     { key: 'profile', icon: 'person', label: 'profileTabProfile' },
@@ -46,6 +76,8 @@ export function createProfileModule(getApiService) {
                 // Web browsers of the user: [{id, label, created_at, last_login, current}]
                 browsers: [],
                 loadingBrowsers: false,
+                // Public address of the API (setting public_url), null: the one of the portal
+                appServer: null,
                 // Database migrations to apply (administrators): {version, pending}
                 schemaStatus: null,
                 migrating: false,
@@ -74,6 +106,39 @@ export function createProfileModule(getApiService) {
         },
 
         computed: {
+            /**
+             * Address of the API given to the mobile apps: the public one (public_url),
+             * else the one of the portal
+             * @returns {string}
+             */
+            appServerUrl() {
+                return this.appServer || this.apiBaseUrl || '';
+            },
+
+            /**
+             * Link of the QR code that opens the mobile apps on this server
+             * @returns {string}
+             */
+            appLink() {
+                return appLinkOf(this.appServerUrl);
+            },
+
+            /**
+             * QR code of the link of the mobile apps
+             * @returns {{size: number, path: string}|null} null if the library is missing
+             */
+            appQr() {
+                return qrCodeOf(this.appLink);
+            },
+
+            /**
+             * The address given to the apps is not reachable by a phone (localhost)
+             * @returns {boolean}
+             */
+            appServerUnreachable() {
+                return isLoopbackUrl(this.appServerUrl);
+            },
+
             /**
              * Sub-tabs of the profile page shown: the two-factor authentication only once
              * its migration is applied
@@ -278,6 +343,7 @@ export function createProfileModule(getApiService) {
                 this.setActiveTab('profile');
                 this.loadDevices();
                 this.loadBrowsers();
+                this.loadAppServer();
                 this.loadNotifications();
                 this.loadMfaStatus();
             },
@@ -441,6 +507,38 @@ export function createProfileModule(getApiService) {
              */
             toggleToken(device) {
                 this.revealedTokens = { ...this.revealedTokens, [device.id]: !this.revealedTokens[device.id] };
+            },
+
+            /**
+             * Loads the public address of the API for the QR code of the mobile apps
+             * (null on failure: the address of the portal is used)
+             * @returns {Promise<void>}
+             */
+            async loadAppServer() {
+                const apiService = getApiService();
+                if (!apiService) {
+                    return;
+                }
+                try {
+                    this.appServer = (await apiService.fetchDeviceLink()).server || null;
+                } catch (error) {
+                    console.error('Error loading the address of the apps:', error);
+                    this.appServer = null;
+                }
+            },
+
+            /**
+             * Copies the link of the mobile apps to the clipboard
+             * @returns {Promise<void>}
+             */
+            async copyAppLink() {
+                try {
+                    await navigator.clipboard.writeText(this.appLink);
+                    this.showToast(this.t('appLinkCopied'));
+                } catch (error) {
+                    // Clipboard API needs HTTPS (or localhost): the link stays shown
+                    this.showToast(this.t('copyUnavailable'));
+                }
             },
 
             /**

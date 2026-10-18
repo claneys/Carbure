@@ -881,6 +881,14 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
     }
 
     /**
+     * Public address of the API given to the mobile apps (QR code of the devices)
+     * @returns {Promise<{server: (string|null)}>} null without the setting public_url
+     */
+    async function fetchDeviceLink() {
+        return request(`${baseUrl}/device/link`, {}, 'Failed to read the address of the apps');
+    }
+
+    /**
      * Deletes a device of the authenticated user
      * @param {number} id - Device ID
      * @returns {Promise<void>}
@@ -1254,6 +1262,7 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
         deleteDevice,
         fetchBrowsers,
         deleteBrowser,
+        fetchDeviceLink,
         fetchMfa,
         setupMfa,
         enableMfa,

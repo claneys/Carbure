@@ -98,6 +98,25 @@ test('switches the portal to English', async ({ userPage: page }) => {
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
 });
 
+test('shows the QR code that opens the mobile apps on this server', async ({ userPage: page, baseURL, api }) => {
+    await openProfile(page, 'myDevices');
+    const card = page.getByRole('group', { name: tr('appLinkTitle') });
+    await expect(card.getByRole('img', { name: tr('appLinkQrLabel') })).toBeVisible();
+    // Without public_url, the address of the portal: 127.0.0.1 cannot be reached by a phone
+    const portalApi = `${new URL(baseURL).origin}/api`;
+    await expect(card.locator('.app-link-server code')).toHaveText(portalApi);
+    await expect(card.locator('.app-link-warning')).toContainText(tr('appLinkUnreachable'));
+
+    // With the public address of Carbure: the one given to the apps
+    const saved = await api.put('/api/system/config', { data: { values: { public_url: 'https://budget.example.org' } } });
+    expect(saved.ok(), await saved.text()).toBeTruthy();
+    await page.reload();
+    await openProfile(page, 'myDevices');
+    await expect(card.locator('.app-link-server code')).toHaveText('https://budget.example.org/api/');
+    await expect(card.locator('.app-link-warning')).toHaveCount(0);
+    await expect(card.getByRole('img', { name: tr('appLinkQrLabel') })).toBeVisible();
+});
+
 test('shows, reveals then deletes a device', async ({ adminPage: page }) => {
     await openProfile(page, 'myDevices');
 

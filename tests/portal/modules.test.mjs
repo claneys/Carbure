@@ -572,6 +572,52 @@ test('profile: sub-tabs, the two-factor one hidden before its migration; platfor
     assert.equal(details({}), '');
 });
 
+test('profile: QR code of the mobile apps, with the public address of the API when there is one', async () => {
+    const { createProfileModule, appLinkOf, isLoopbackUrl } = await import('../../portal/modules/profileModule.js');
+    assert.equal(appLinkOf('https://carbure.example.com/api'), 'https://carbure.org/app/?server=https%3A%2F%2Fcarbure.example.com%2Fapi%2F');
+    assert.equal(appLinkOf('https://carbure.example.com/api//'), 'https://carbure.org/app/?server=https%3A%2F%2Fcarbure.example.com%2Fapi%2F');
+    assert.equal(appLinkOf('http://192.168.1.10:8080/api/'), 'https://carbure.org/app/?server=http%3A%2F%2F192.168.1.10%3A8080%2Fapi%2F');
+
+    for (const url of ['http://localhost/api', 'http://127.0.0.1:8000/api', 'http://[::1]/api', 'http://carbure.localhost/api']) {
+        assert.equal(isLoopbackUrl(url), true, url);
+    }
+    for (const url of ['https://carbure.example.com/api', 'http://192.168.1.10/api', 'not a url', '']) {
+        assert.equal(isLoopbackUrl(url), false, url);
+    }
+
+    const module = createProfileModule(() => null);
+    const computed = context => Object.fromEntries(['appServerUrl', 'appServerUnreachable']
+        .map(name => [name, module.computed[name].call({ ...context, appServerUrl: module.computed.appServerUrl.call(context) })]));
+    // Without public_url: the address of the portal
+    assert.deepEqual(computed({ appServer: null, apiBaseUrl: 'http://localhost:8000/api' }),
+        { appServerUrl: 'http://localhost:8000/api', appServerUnreachable: true });
+    assert.deepEqual(computed({ appServer: 'https://budget.example.org/api/', apiBaseUrl: 'http://localhost:8000/api' }),
+        { appServerUrl: 'https://budget.example.org/api/', appServerUnreachable: false });
+    assert.equal(module.computed.appLink.call({ appServerUrl: 'https://budget.example.org/api/' }),
+        'https://carbure.org/app/?server=https%3A%2F%2Fbudget.example.org%2Fapi%2F');
+
+    // The public address read from the API; on failure, the one of the portal
+    let answer = { server: 'https://budget.example.org/api/' };
+    const api = { fetchDeviceLink: async () => { if (answer instanceof Error) { throw answer; } return answer; } };
+    const loading = createProfileModule(() => api);
+    const context = { appServer: 'old' };
+    await loading.methods.loadAppServer.call(context);
+    assert.equal(context.appServer, 'https://budget.example.org/api/');
+    answer = { server: null };
+    await loading.methods.loadAppServer.call(context);
+    assert.equal(context.appServer, null);
+    answer = new Error('offline');
+    context.appServer = 'x';
+    const error = console.error;
+    console.error = () => {};
+    try {
+        await loading.methods.loadAppServer.call(context);
+    } finally {
+        console.error = error;
+    }
+    assert.equal(context.appServer, null);
+});
+
 test('profile: the header toggle switches the theme at once and saves it in the profile', async () => {
     const { createProfileModule } = await import('../../portal/modules/profileModule.js');
     let choice = 'system';

@@ -2197,6 +2197,25 @@
                             <div class="users-header">
                                 <h2 id="devices-title">{{ t('myDevices') }}</h2>
                             </div>
+                            <!-- QR code that opens the mobile apps on this server (https://carbure.org/app/?server=...) -->
+                            <div class="app-link" role="group" aria-labelledby="app-link-title">
+                                <h3 id="app-link-title" class="mfa-subtitle">{{ t('appLinkTitle') }}</h3>
+                                <p class="rules-help">{{ t('appLinkHelp') }}</p>
+                                <svg v-if="appQr" class="mfa-qr app-link-qr" :view-box.camel="'0 0 ' + appQr.size + ' ' + appQr.size" role="img" :aria-label="t('appLinkQrLabel')" shape-rendering="crispEdges">
+                                    <rect :width="appQr.size" :height="appQr.size" fill="#ffffff" />
+                                    <path :d="appQr.path" fill="#000000" />
+                                </svg>
+                                <p class="app-link-server">{{ t('appLinkServer') }} <code>{{ appServerUrl }}</code></p>
+                                <p v-if="appServerUnreachable" class="sync-step-error app-link-warning" role="note">
+                                    <span class="material-icons inline-icon" aria-hidden="true">warning</span>{{ t('appLinkUnreachable') }}
+                                </p>
+                                <div class="app-link-actions">
+                                    <button type="button" class="btn-secondary" @click="copyAppLink">
+                                        <span class="material-icons" aria-hidden="true">content_copy</span>{{ t('appLinkCopy') }}
+                                    </button>
+                                </div>
+                            </div>
+
                             <h3 class="mfa-subtitle">{{ t('mobileDevicesTitle') }}</h3>
                             <div v-if="loadingDevices" class="transactions-hint">{{ t('loadingDevices') }}</div>
                             <div v-else-if="devices.length === 0" class="transactions-hint">{{ t('noDevices') }}</div>
