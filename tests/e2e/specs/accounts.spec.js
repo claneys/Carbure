@@ -8,8 +8,8 @@ test('lists the followed accounts with their last synchronization', async ({ adm
     await openTab(page, tr('tabAccounts'));
 
     await expect(page.locator('.accounts-list .account-item')).toHaveCount(2);
-    const bnp = account(page, '00012345678@bnp');
-    await expect(bnp.locator('.account-name')).toContainText('BNP ···5678');
+    const bnp = account(page, 'DEMO0000001@bnp');
+    await expect(bnp.locator('.account-name')).toContainText('BNP ···0001');
     await expect(bnp.locator('.account-name')).toContainText(tr('accountAddedBy', { user: 'admin' }));
     await expect(bnp.locator('.account-sync-state')).toHaveText(tr('lastSync_OK'));
     await expect(account(page, 'fail@bank').locator('.account-sync-state')).toHaveText(tr('lastSyncNever'));
@@ -28,8 +28,8 @@ test('shows each followed account under its bank, the others in a last group', a
     // The BNP account under BNP, with its actions
     const bnpAccounts = groups.nth(0).getByRole('list', { name: tr('followedAccountsOf', { bank: 'BNP Paribas (bnp)' }) });
     await expect(bnpAccounts.locator('.account-item')).toHaveCount(1);
-    await expect(account(page, '00012345678@bnp').getByRole('button', { name: tr('syncAccount') })).toBeVisible();
-    await expect(groups.nth(0).locator('.account-item code')).toHaveText('00012345678@bnp');
+    await expect(account(page, 'DEMO0000001@bnp').getByRole('button', { name: tr('syncAccount') })).toBeVisible();
+    await expect(groups.nth(0).locator('.account-item code')).toHaveText('DEMO0000001@bnp');
     // No account followed for cic_pro: a hint, its button to add some stays in its header
     await expect(groups.nth(1).locator('.bank-group-empty')).toHaveText(tr('noFollowedAccountInBank'));
     await expect(groups.nth(1).locator('.account-item')).toHaveCount(0);
@@ -39,7 +39,7 @@ test('shows each followed account under its bank, the others in a last group', a
 
 test('synchronizes one account', async ({ adminPage: page }) => {
     await openTab(page, tr('tabAccounts'));
-    await account(page, '00012345678@bnp').getByRole('button', { name: tr('syncAccount') }).click();
+    await account(page, 'DEMO0000001@bnp').getByRole('button', { name: tr('syncAccount') }).click();
 
     // Only this account: the other one (fail@bank) would end in error
     const status = page.locator('.sync-status');
@@ -53,8 +53,8 @@ test('synchronizes one account', async ({ adminPage: page }) => {
     // The system command run for each step, without a log file for woob
     const commands = page.locator('.sync-log li.sync-log-command');
     await expect(commands).toHaveCount(2);
-    await expect(commands.first()).toContainText("Woob command 00012345678@bnp:");
-    await expect(commands.first()).toContainText("bank coming '00012345678@bnp' --count");
+    await expect(commands.first()).toContainText("Woob command DEMO0000001@bnp:");
+    await expect(commands.first()).toContainText("bank coming 'DEMO0000001@bnp' --count");
     await expect(commands.first()).not.toContainText('--logging');
 
     // The new transactions are in the month
@@ -94,7 +94,7 @@ test('synchronizes every account at once', async ({ adminPage: page }) => {
     // Both followed accounts: fail@bank ends in error, the BNP account is synchronized
     await expect(page.locator('.sync-status')).toContainText(tr('syncStatus_error'));
     await expect(page.locator('.sync-account')).toHaveCount(2);
-    await expect(account(page, '00012345678@bnp').locator('.account-sync-state')).toHaveText(tr('lastSync_OK'));
+    await expect(account(page, 'DEMO0000001@bnp').locator('.account-sync-state')).toHaveText(tr('lastSync_OK'));
     await expect(account(page, 'fail@bank').locator('.account-sync-state')).toHaveText(tr('lastSync_ERROR'));
     await expect(page.getByRole('button', { name: tr('syncAllAccounts') })).toBeEnabled();
     // At least one account failed: the update of the bank modules is offered below the log
@@ -139,7 +139,7 @@ test('offers to update the bank modules below the log of a failed synchronizatio
     await expect(modal).toHaveCount(0);
 
     // Synchronization started again: not offered while it runs nor once it succeeds
-    await account(page, '00012345678@bnp').getByRole('button', { name: tr('syncAccount') }).click();
+    await account(page, 'DEMO0000001@bnp').getByRole('button', { name: tr('syncAccount') }).click();
     await expect(page.locator('.sync-status')).toContainText(tr('syncStatus_success'), { timeout: 15_000 });
     await expect(help).toHaveCount(0);
 });
@@ -169,19 +169,19 @@ test('adds accounts of a connected bank, from the accounts woob lists for it', a
 
 test('names an account, shown instead of the bank and the end of its number', async ({ adminPage: page }) => {
     await openTab(page, tr('tabAccounts'));
-    const bnp = account(page, '00012345678@bnp');
+    const bnp = account(page, 'DEMO0000001@bnp');
     await bnp.getByRole('button', { name: tr('editAccount') }).click();
 
     let modal = page.getByRole('dialog', { name: tr('editAccount') });
     // Only its name changes: the account comes from woob
-    await expect(modal.locator('.account-woob-id')).toContainText('00012345678@bnp');
+    await expect(modal.locator('.account-woob-id')).toContainText('DEMO0000001@bnp');
     await expect(modal.getByRole('textbox')).toHaveCount(1);
     await expect(modal.getByLabel(tr('accountLabel'))).toHaveValue('');
     await modal.getByLabel(tr('accountLabel')).fill('Compte joint');
     await modal.getByRole('button', { name: tr('save') }).click();
     await expect(page.locator('.toast')).toHaveText(tr('accountUpdated'));
     await expect(bnp.locator('.account-name')).toContainText('Compte joint');
-    await expect(bnp.locator('.account-name')).not.toContainText('BNP ···5678');
+    await expect(bnp.locator('.account-name')).not.toContainText('BNP ···0001');
 
     // Also in the synchronization progress
     await bnp.getByRole('button', { name: tr('syncAccount') }).click();
@@ -195,7 +195,7 @@ test('names an account, shown instead of the bank and the end of its number', as
     await modal.getByLabel(tr('accountLabel')).fill('');
     await modal.getByRole('button', { name: tr('save') }).click();
     await expect(page.locator('.toast')).toHaveText(tr('accountUpdated'));
-    await expect(bnp.locator('.account-name')).toContainText('BNP ···5678');
+    await expect(bnp.locator('.account-name')).toContainText('BNP ···0001');
 });
 
 test('keeps the history when the coming transactions fail', async ({ adminPage: page, api }) => {
@@ -288,7 +288,7 @@ test('connects a new bank, then follows two of its accounts at once', async ({ a
     await add.getByRole('button', { name: tr('followSelected', { count: 2 }) }).click();
 
     await expect(page.locator('.toast')).toHaveText(tr('accountsFollowedToast', { count: 2 }));
-    await expect(account(page, '00012345678@boursorama').locator('.account-name')).toContainText('Compte chèques');
+    await expect(account(page, 'DEMO0000001@boursorama').locator('.account-name')).toContainText('Compte chèques');
     await expect(account(page, '00087654321@boursorama').locator('.account-name')).toContainText('Livret A');
     // The bank by its name, its woob name next to it (not repeated)
     const connection = page.locator('.bank-connection').filter({ hasText: 'Boursorama' });
@@ -320,7 +320,7 @@ test('connects a second login of a bank already connected', async ({ adminPage: 
 
     await expect(page.locator('.toast')).toHaveText(tr('accountsFollowedToast', { count: 1 }));
     await expect(account(page, '00087654321@bnp_2')).toBeVisible();
-    await expect(account(page, '00012345678@bnp')).toBeVisible();
+    await expect(account(page, 'DEMO0000001@bnp')).toBeVisible();
 });
 
 test('renames a connected bank', async ({ adminPage: page }) => {
@@ -352,7 +352,7 @@ test('renames a connected bank', async ({ adminPage: page }) => {
 test('removes a connected bank, with its followed accounts', async ({ adminPage: page }) => {
     await openTab(page, tr('tabAccounts'));
     await expect(page.locator('.bank-connection')).toHaveCount(2);
-    await expect(account(page, '00012345678@bnp')).toBeVisible();
+    await expect(account(page, 'DEMO0000001@bnp')).toBeVisible();
     const remove = page.getByRole('button', { name: tr('deleteBankConnectionOf', { bank: 'BNP Paribas (bnp)' }) });
     const dialog = page.getByRole('dialog', { name: tr('deleteBankConnection') });
 
@@ -390,7 +390,7 @@ test('removes a connected bank, with its followed accounts', async ({ adminPage:
     await expect(page.locator('.bank-connection')).toHaveCount(1);
     await expect(page.locator('.bank-connection code')).toHaveText('cic_pro');
     // Its followed account is no longer followed, the other one stays
-    await expect(account(page, '00012345678@bnp')).toHaveCount(0);
+    await expect(account(page, 'DEMO0000001@bnp')).toHaveCount(0);
     await expect(account(page, 'fail@bank')).toBeVisible();
 
     // Kept by the server

@@ -209,7 +209,7 @@ if (($argv[1] ?? '') === 'bank' && $type === 'list') {
         exit(0);
     }
     echo json_encode([
-        ['id' => "00012345678@$backend", 'label' => 'Compte chèques', 'balance' => '1234.56', 'currency' => 'EUR'],
+        ['id' => "DEMO0000001@$backend", 'label' => 'Compte chèques', 'balance' => '1234.56', 'currency' => 'EUR'],
         ['id' => "00087654321@$backend", 'label' => 'Livret A', 'balance' => '5000.00', 'currency' => 'EUR'],
     ]) . "\n";
     exit(0);

@@ -16,7 +16,7 @@
  *   - admin  : administrator, French
  *   - marie  : user, French
  *
- * Bank accounts: 00012345678@bnp (synchronized by the fake woob) and fail@bank (woob fails).
+ * Bank accounts: DEMO0000001@bnp (synchronized by the fake woob) and fail@bank (woob fails).
  * Categories: Alimentation (Supermarché, Restaurant), Logement, Salaire, Épargne (Livret A)
  * and the default category 0. Budgets of the month: Supermarché 300, Restaurant 100
  * (Alimentation = their sum), Logement 1000. The tests rely on these amounts: the
@@ -96,7 +96,7 @@ function carbure_e2e_seed($demo = false)
 
     // The fake woob fails for "fail@bank"
     $conn->query("INSERT INTO bank_account (bank_name, account_number, user_id, last_sync_at, last_sync_status, last_sync_message) VALUES
-        ('bnp', '00012345678', 1, NOW() - INTERVAL 1 DAY, 'OK', '3 new'),
+        ('bnp', 'DEMO0000001', 1, NOW() - INTERVAL 1 DAY, 'OK', '3 new'),
         ('bank', 'fail', 1, NULL, NULL, NULL)");
 
     // Transactions of the current month and of the two previous months
@@ -117,7 +117,7 @@ function carbure_e2e_seed($demo = false)
     foreach ($transactions as [$ago, $day, $type, $label, $category, $amount, $pointed]) {
         $date = date('Y-m-d', strtotime(date('Y-m-01') . " -$ago months +" . ($day - 1) . ' days'));
         // Synchronized from the account of the household (see bank_account)
-        $exec("INSERT INTO bank_transaction (uuid, date, rdate, type, label, category, amount, card, bank_name, account_number, pointed, user) VALUES (?, ?, ?, ?, ?, ?, ?, '', 'bnp', '00012345678', ?, 1)",
+        $exec("INSERT INTO bank_transaction (uuid, date, rdate, type, label, category, amount, card, bank_name, account_number, pointed, user) VALUES (?, ?, ?, ?, ?, ?, ?, '', 'bnp', 'DEMO0000001', ?, 1)",
             "sssisidi", md5($date . $label . $amount), $date, $date, $type, $label, $category, $amount, $pointed);
     }
 

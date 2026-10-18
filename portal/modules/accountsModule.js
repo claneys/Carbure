@@ -406,7 +406,7 @@ export function createAccountsModule(getApiService) {
 
             /**
              * Short display of an account: the name given to the followed account, else
-             * "BNP ···5678" ("···5678" without bank: imported file)
+             * "BNP ···0001" ("···0001" without bank: imported file)
              * @param {Object} account - Account, or transaction: {bank_name, account_number}
              *                           (the label of a transaction is not the account's)
              * @returns {string}

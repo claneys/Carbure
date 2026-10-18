@@ -138,7 +138,7 @@ test('changes the category and the checked state in the detail modal', async ({ 
     const modal = page.getByRole('dialog', { name: tr('transactionDetail') });
     await expect(modal.locator('.transaction-detail-amount')).toHaveText(euros(-45));
     // Bank at the origin of the transaction
-    await expect(modal.locator('.transaction-detail-bank')).toHaveText('BNP ···5678');
+    await expect(modal.locator('.transaction-detail-bank')).toHaveText('BNP ···0001');
     await pickCategory(modal, 'Supermarché');
     await modal.getByLabel(tr('transactionChecked')).check();
     await modal.getByRole('button', { name: tr('save') }).click();
@@ -337,7 +337,7 @@ test('imports only the transactions left checked', async ({ adminPage: page }) =
 test('imports a statement file without any account to synchronize', async ({ adminPage: page }) => {
     // No followed account anymore
     await openTab(page, tr('tabAccounts'));
-    for (const bankId of ['00012345678@bnp', 'fail@bank']) {
+    for (const bankId of ['DEMO0000001@bnp', 'fail@bank']) {
         const item = page.locator('.account-item').filter({ has: page.locator('code', { hasText: bankId }) });
         await item.getByRole('button', { name: tr('deleteAccount') }).click();
         await expect(item).toHaveCount(0);

@@ -265,7 +265,7 @@ class BankTest extends DatabaseTestCase
             $result = Bank::createBackend('bnp', 'mybnp', ['login' => '12345678', 'password' => '123456', 'unknown' => 'x']);
             $this->assertSame('mybnp', $result['backend']);
             $this->assertNull($result['label']);
-            $this->assertSame(['00012345678@mybnp', '00087654321@mybnp'], array_column($result['accounts'], 'bankId'));
+            $this->assertSame(['DEMO0000001@mybnp', '00087654321@mybnp'], array_column($result['accounts'], 'bankId'));
             // Every setting of the module is given (defaults included), in the configuration
             // file of woob as "woob config add" writes it (never on its command line: the fake
             // woob refuses it), readable by its owner only, the other backends kept
@@ -447,22 +447,22 @@ class BankTest extends DatabaseTestCase
         $accounts = Bank::discover();
 
         $this->assertCount(2, $accounts);
-        $this->assertSame('00012345678@bnp', $accounts[0]['bankId']);
+        $this->assertSame('DEMO0000001@bnp', $accounts[0]['bankId']);
         $this->assertSame('Compte chèques', $accounts[0]['label']);
         $this->assertFalse($accounts[0]['followed']);
 
-        Bank::create('00012345678', 'bnp');
+        Bank::create('DEMO0000001', 'bnp');
         $this->assertTrue(Bank::discover()[0]['followed']);
     }
 
     public function testDiscoverTheAccountsOfOneBank()
     {
         $this->loginAs(self::ADMIN);
-        Bank::create('00012345678', 'cic_pro');
+        Bank::create('DEMO0000001', 'cic_pro');
 
         // woob bank list -b cic_pro: only the accounts of this bank connection
         $accounts = Bank::discover('cic_pro');
-        $this->assertSame(['00012345678@cic_pro', '00087654321@cic_pro'], array_column($accounts, 'bankId'));
+        $this->assertSame(['DEMO0000001@cic_pro', '00087654321@cic_pro'], array_column($accounts, 'bankId'));
         $this->assertSame(['cic_pro'], array_values(array_unique(array_column($accounts, 'bank_name'))));
         $this->assertSame([true, false], array_column($accounts, 'followed'));
 

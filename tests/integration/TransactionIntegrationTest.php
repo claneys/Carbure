@@ -196,10 +196,10 @@ class TransactionIntegrationTest extends DatabaseTestCase
         // Saved before the origin was stored: a synchronization fills it, not a later one
         Transaction::save($transaction, self::USER, false);
         $this->assertNull(Db::queryOne("SELECT bank_name FROM bank_transaction WHERE label='PRLV SEPA ORIGINE'", "")['bank_name']);
-        Transaction::save($transaction, self::USER, false, ['bank_name' => 'bnp', 'account_number' => '00012345678']);
+        Transaction::save($transaction, self::USER, false, ['bank_name' => 'bnp', 'account_number' => 'DEMO0000001']);
         Transaction::save($transaction, self::USER, false, ['bank_name' => 'other', 'account_number' => '999']);
 
         $saved = Db::queryOne("SELECT bank_name, account_number FROM bank_transaction WHERE label='PRLV SEPA ORIGINE'", "");
-        $this->assertSame(['bank_name' => 'bnp', 'account_number' => '00012345678'], $saved);
+        $this->assertSame(['bank_name' => 'bnp', 'account_number' => 'DEMO0000001'], $saved);
     }
 }

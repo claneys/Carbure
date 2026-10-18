@@ -92,8 +92,8 @@ test('an administrator gets the request that starts the synchronization', async 
     // Masked again, one account
     await page.getByRole('button', { name: tr('syncTokenHide') }).click();
     await expect(curl).toContainText('X-Sync-Token: ••••');
-    await page.locator('#sync-account').selectOption('00012345678@bnp');
-    await expect(curl).toContainText('/api/bank/sync?account=00012345678%40bnp');
+    await page.locator('#sync-account').selectOption('DEMO0000001@bnp');
+    await expect(curl).toContainText('/api/bank/sync?account=DEMO0000001%40bnp');
 });
 
 test('the scheduler passes the sync token in a header, the URL token is deprecated', async ({ adminPage: page }) => {
