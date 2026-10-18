@@ -211,6 +211,19 @@ When `docker compose pull` brings a new major version of MariaDB (for example fr
 the old version, hence the importance of the backup. To stay on a given version,
 pin it in `docker/docker-compose.yml` (`image: mariadb:11`).
 
+### Upgrading to 1.8.0 { #passer-a-la-180 }
+
+- The migration `2026-10-26_user_browser` is applied at startup: it records the web
+  browsers of the portal logins, listed in **My profile → My devices** (the code works
+  before it, with no browser listed).
+- The `push_url` setting is gone: the notification service is always Carbure Push
+  (`https://api.carbure.org`), a value left in `/data/conf/prod.ini` is ignored. The
+  registration of the instance, its key and the state of the service are in
+  **Administration → Mobile push**.
+- The QR code of **My devices** gives the address of the API to the mobile apps: set
+  `public_url` (**Administration → Settings**) if the portal is also opened through a
+  local address.
+
 ### Upgrading to 1.6.0 { #passer-a-la-160 }
 
 The `2026-10-25_device_model` migration is applied at startup: model, system version
@@ -227,8 +240,9 @@ To be done **in this order**:
    (APNs) itself but goes through the Carbure Push service. As long as the instance is not
    registered with it, **no push notification is sent** (everything else works normally).
    In 1.5.0, the default address of the service (`https://push.carbure.org`) is not the
-   right one: first set `push_url` = `https://api.carbure.org` (starting with
-   1.6.0, this setting is gone: the service is always `https://api.carbure.org`). Once the service is available, register the instance right after the update (see
+   right one: first set `push_url` = `https://api.carbure.org` (the default address
+   starting with 1.6.0; starting with 1.8.0, this setting is gone: the service is always
+   `https://api.carbure.org`). Once the service is available, register the instance right after the update (see
    [Push notifications](#notifications-push-carbure-push)), then remove the
    `[apns]` section and the `.p8` key from `/data/conf`.
 3. **Update** the image (`docker compose pull && docker compose up -d`). Three

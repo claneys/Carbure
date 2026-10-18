@@ -211,6 +211,19 @@ Quand `docker compose pull` apporte une nouvelle version majeure de MariaDB (par
 l'ancienne version, d'où l'importance de la sauvegarde. Pour garder une version donnée,
 fixez-la dans `docker/docker-compose.yml` (`image: mariadb:11`).
 
+### Passer à la 1.8.0
+
+- La migration `2026-10-26_user_browser` est appliquée au démarrage : elle enregistre les
+  navigateurs web des connexions au portail, listés dans **Mon profil → Mes appareils**
+  (le code fonctionne avant elle, sans navigateur listé).
+- Le réglage `push_url` disparaît : le service de notifications est toujours Carbure Push
+  (`https://api.carbure.org`), une valeur restée dans `/data/conf/prod.ini` est ignorée.
+  L'inscription de l'instance, sa clé et l'état du service sont dans **Administration →
+  Push mobile**.
+- Le QR code de **Mes appareils** donne aux applications mobiles l'adresse de l'API :
+  renseignez `public_url` (**Administration → Paramètres**) si le portail est aussi ouvert
+  par une adresse locale.
+
 ### Passer à la 1.6.0
 
 La migration `2026-10-25_device_model` est appliquée au démarrage : modèle, version du
@@ -227,8 +240,9 @@ Android déjà enregistrés, notés iOS jusque-là : leurs notifications push re
    (APNs) mais passe par le service Carbure Push. Tant que l'instance n'y est pas
    inscrite, **aucune notification push n'est envoyée** (le reste fonctionne normalement).
    En 1.5.0, l'adresse par défaut du service (`https://push.carbure.org`) n'est pas la
-   bonne : renseignez d'abord `push_url` = `https://api.carbure.org` (à partir de la
-   1.6.0, ce réglage disparaît : le service est toujours `https://api.carbure.org`). Une fois le service disponible, inscrivez l'instance juste après la mise à jour (voir
+   bonne : renseignez d'abord `push_url` = `https://api.carbure.org` (c'est l'adresse par
+   défaut à partir de la 1.6.0 ; à partir de la 1.8.0, ce réglage disparaît : le service est
+   toujours `https://api.carbure.org`). Une fois le service disponible, inscrivez l'instance juste après la mise à jour (voir
    [Notifications push](#notifications-push-carbure-push)), puis retirez la section
    `[apns]` et la clé `.p8` de `/data/conf`.
 3. **Mettez à jour** l'image (`docker compose pull && docker compose up -d`). Trois

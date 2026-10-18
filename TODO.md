@@ -8,8 +8,8 @@ keeps track of what was done).
       the `.p8` key):
       1. deploy the relay (private repo `ltoinel/Carbure-push`, README "Déploiement"): its
          own container with the APNs `.p8` key and, for Android later, the Firebase service
-         account; serve it in HTTPS on `https://api.carbure.org` (the only relay from 1.6.0, no
-         `push_url` setting any more; with Carbure 1.5.0, whose default is
+         account; serve it in HTTPS on `https://api.carbure.org` (the default relay from 1.6.0,
+         the only one from 1.8.0, no `push_url` setting any more; with Carbure 1.5.0, whose default is
          `https://push.carbure.org`, set `push_url` to `https://api.carbure.org`);
       2. check `bin/push-admin check` and `GET /v1/health` on the relay;
       3. upgrade Carbure; the migration `2026-10-23_device_platform` (`devices.platform`,
