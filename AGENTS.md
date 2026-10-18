@@ -180,6 +180,6 @@ git config core.hooksPath .githooks   # pre-commit lint, pre-push unit tests
 - PHP coverage ≥ 90 % in CI (unit + integration).
 - SQL migration if schema changed, flagged as deployment action.
 - `TODO.md` updated (check done, add discovered debt/manual steps).
-- `README.md` / `docs/` updated if behavior or API changes, in French **and** English: a
+- `README.md` (French) and `README.en.md` / `docs/` updated if behavior or API changes, in French **and** English: a
   `docs/<page>.md` changed without its `docs/<page>.en.md` fails the docs CI
   (`tools/check-docs-english.sh`); English headings keep the French anchors (`## Title { #titre }`).
