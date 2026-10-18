@@ -1,9 +1,10 @@
 {#-
-  Page not found: in French, with the ways back into the documentation.
+  Page not found (one page for the whole site, at its root): in French then in English,
+  with the ways back into the documentation.
 -#}
 {% extends "main.html" %}
 {% block htmltitle %}
-  <title>Page introuvable - {{ config.site_name }}</title>
+  <title>Page introuvable / Page not found - {{ config.site_name }}</title>
 {% endblock %}
 {% block content %}
   <h1>Page introuvable</h1>
@@ -17,4 +18,17 @@
     <li><a href="{{ config.site_url }}comparatif/">Comparatif</a> avec Firefly III, Actual Budget et Kresus</li>
   </ul>
   <p>La recherche, en haut de la page, parcourt toute la documentation.</p>
+
+  <h2 lang="en">Page not found</h2>
+  <div lang="en">
+    <p>This page does not exist or was moved. These pages of the Carbure documentation may
+    help you:</p>
+    <ul>
+      <li><a href="{{ config.site_url }}en/">Home</a>: Carbure, the self-hosted household budget</li>
+      <li><a href="{{ config.site_url }}en/fonctionnalites/">Features</a></li>
+      <li><a href="{{ config.site_url }}en/installation/">Installation</a> and the
+        <a href="{{ config.site_url }}en/synology/">Synology NAS tutorial</a></li>
+      <li><a href="{{ config.site_url }}en/comparatif/">Comparison</a> with Firefly III, Actual Budget and Kresus</li>
+    </ul>
+  </div>
 {% endblock %}

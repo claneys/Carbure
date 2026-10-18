@@ -50,10 +50,84 @@ exclude_docs: |
   !.well-known/
 not_in_nav: |
   /app.md
+  /app.en.md
 
 plugins:
   - search:
-      lang: fr
+      lang: [fr, en]
+  # French at the root, English under /en/: page.md and its translation page.en.md; a page
+  # not translated yet is shown in French. The language switch is in the header.
+  - i18n:
+      docs_structure: suffix
+      fallback_to_default: true
+      reconfigure_material: true
+      reconfigure_search: true
+      languages:
+        - locale: fr
+          name: Français
+          default: true
+          build: true
+        - locale: en
+          name: English
+          build: true
+          site_description: >-
+            Free, open source and self-hosted household budget manager: automatic bank
+            synchronization, categories, budgets and trends
+          copyright: >-
+            Copyright &copy; 2023-2026 <a href="https://ludovic.toinel.com">Ludovic Toinel</a>
+            · Free software under the <a href="https://github.com/ltoinel/Carbure/blob/main/LICENSE">MIT license</a>
+          theme:
+            palette:
+              - media: "(prefers-color-scheme: light)"
+                scheme: default
+                primary: custom
+                accent: custom
+                toggle:
+                  icon: material/weather-night
+                  name: Switch to dark mode
+              - media: "(prefers-color-scheme: dark)"
+                scheme: slate
+                primary: custom
+                accent: custom
+                toggle:
+                  icon: material/weather-sunny
+                  name: Switch to light mode
+          nav_translations:
+            Accueil: Home
+            Fonctionnalités: Features
+            Recettes d'insights: Insight recipes
+            Comparatif: Comparison
+            Confidentialité: Privacy
+            Mise en route: Getting started
+            Configuration: Configuration
+            Utilisation: Usage
+            Portail web: Web portal
+            Applications mobiles: Mobile apps
+            Agents IA (MCP): AI agents (MCP)
+            Technique: Technical
+            Architecture: Architecture
+            Modèle de données: Data model
+            Développement: Development
+            Sécurité: Security
+            FAQ: FAQ
+            Assistance: Support
+          extra:
+            generator: false
+            demo_url: https://demo.carbure.org/
+            discord_url: https://discord.gg/QsxYw4Rx9D
+            social:
+              - icon: fontawesome/brands/github
+                link: https://github.com/ltoinel/Carbure
+                name: Source code on GitHub
+              - icon: fontawesome/brands/discord
+                link: https://discord.gg/QsxYw4Rx9D
+                name: "Discord: help and chat"
+              - icon: material/forum-outline
+                link: https://github.com/ltoinel/Carbure/discussions
+                name: "Discussions: questions and ideas"
+              - icon: fontawesome/brands/youtube
+                link: https://www.youtube.com/@carbure-org
+                name: "Carbure videos on YouTube"
   # No external CDN: the fonts (Google Fonts) and any other external asset are
   # downloaded at build time and served with the site
   - privacy
@@ -74,6 +148,9 @@ extra:
     - icon: material/forum-outline
       link: https://github.com/ltoinel/Carbure/discussions
       name: "Discussions : questions et idées"
+    - icon: fontawesome/brands/youtube
+      link: https://www.youtube.com/@carbure-org
+      name: "Vidéos de Carbure sur YouTube"
 
 extra_css:
   - stylesheets/extra.css

@@ -3,9 +3,9 @@ name: Docs
 on:
   push:
     branches: [main]
-    paths: ['docs/**', 'overrides/**', 'mkdocs.yml', '.github/workflows/docs.yml']
+    paths: ['docs/**', 'overrides/**', 'mkdocs.yml', '.github/workflows/docs.yml', 'tools/check-docs-english.sh']
   pull_request:
-    paths: ['docs/**', 'overrides/**', 'mkdocs.yml', '.github/workflows/docs.yml']
+    paths: ['docs/**', 'overrides/**', 'mkdocs.yml', '.github/workflows/docs.yml', 'tools/check-docs-english.sh']
   workflow_dispatch:
 
 permissions:
@@ -26,6 +26,13 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          # The base of a pull request, to compare its French and English pages
+          fetch-depth: 0
+
+      - name: English version of each page
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: tools/check-docs-english.sh ${BASE_REF:+origin/$BASE_REF}
 
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:

@@ -24,7 +24,7 @@ qui consultent les mêmes données.
   premier utilisateur qui suit le compte, mais tous la voient et la pointent.
 - **Données personnelles** : chaque utilisateur a son identifiant, son mot de passe, sa
   langue (français, anglais, espagnol, italien, allemand ou portugais), son thème d'affichage, ses seuils d'alerte, les canaux de ses
-  notifications (push, email), ses appareils mobiles (iOS, Android), ses navigateurs web et
+  notifications (push, email), ses appareils mobiles (iOS, Android), ses navigateurs web,
   ses navigateurs de confiance et ses jetons d'accès pour les agents IA.
 - **Deux profils** :
 

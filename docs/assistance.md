@@ -30,6 +30,14 @@ réponses, consultable par tous : posez-y une question d'installation ou d'usage
 (catégorie [Q&A](https://github.com/ltoinel/Carbure/discussions/categories/q-a)) ou
 proposez une idée.
 
+## Vidéos
+
+Les vidéos de la [chaîne YouTube de Carbure](https://www.youtube.com/@carbure-org), à
+commencer par le teaser, montrent Carbure en action : un bon point de départ pour le
+découvrir.
+
+[Voir les vidéos sur YouTube](https://www.youtube.com/@carbure-org){ .md-button }
+
 ## Signaler un bug
 
 [Ouvrez une issue](https://github.com/ltoinel/Carbure/issues/new/choose) avec le

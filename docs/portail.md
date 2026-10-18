@@ -578,20 +578,3 @@ choisies par les utilisateurs (catégories) et les graphiques SVG ne sont pas me
 
 Ajouter `?debug=true` à l'URL affiche un panneau avec la dernière requête API et active
 des logs dans la console du navigateur.
-
-## Organisation du code
-
-| Fichier | Rôle |
-|---|---|
-| `index.html` | Gabarit Vue (tous les écrans, dont l'assistant d'installation) |
-| `app.js` | Application racine : authentification, onglets (onglets d'administration réservés), initialisation |
-| `modules/*.js` | Mixins par domaine : `setup` (assistant), `transaction`, `import` (import de relevés), `budget`, `insights`, `trends`, `rules`, `categories`, `accounts`, `sync`, `agents`, `oauth` (consentement des agents IA), `logs`, `config` (Paramètres, email de test, Synchro), `user`, `profile` (profil et ses sous-onglets, appareils, mise à jour de la base), `notifications` (canaux des notifications du profil), `confirm` (fenêtre de confirmation) |
-| `services/apiService.js` | Appels HTTP vers l'API |
-| `stores/budgetStore.js` | Navigation dans l'arborescence des budgets |
-| `components/*.js` | Composants : diagramme de flux (`FlowChart`), sélecteur de catégorie (`CategoryPicker`, compact dans les listes), éditeur SQL (`SqlEditor`) |
-| `i18n.js`, `i18n/*.json` | Chargement des traductions, et un fichier JSON par langue (`fr` de référence, `en`, `es`, `it`, `de`, `pt`) |
-| `utils/formatters.js`, `utils/categoryIcons.js` | Formatage des montants, dates, icônes ; icônes et couleurs des catégories |
-| `vendor/` | Vue, CodeMirror (éditeur SQL) et polices, servis localement |
-| `manifest.webmanifest`, `icons/` | Manifeste et icônes de l'application installée |
-| `theme.js` | Thème clair ou sombre appliqué avant l'affichage de la page |
-| `style.css` | Styles (variables CSS dans `:root`, thème sombre, contraste augmenté, couleurs forcées) |

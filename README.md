@@ -30,7 +30,7 @@
   <a href="https://github.com/ltoinel/Carbure/actions/workflows/ci.yml"><img src="https://img.shields.io/badge/coverage-%E2%89%A5%2090%25-brightgreen" alt="Coverage"></a>
   <a href="https://www.php.net/"><img src="https://img.shields.io/badge/PHP-%3E%3D%208.2-777BB4?logo=php&logoColor=white" alt="PHP"></a>
   <a href="https://mariadb.org/"><img src="https://img.shields.io/badge/MariaDB%20%2F%20MySQL-003545?logo=mariadb&logoColor=white" alt="MariaDB"></a>
-  <a href="https://carbure.org/"><img src="https://img.shields.io/badge/docs-carbure.org-EF4860" alt="Docs"></a>
+  <a href="https://carbure.org/en/"><img src="https://img.shields.io/badge/docs-carbure.org-EF4860" alt="Docs"></a>
   <a href="https://discord.gg/QsxYw4Rx9D"><img src="https://img.shields.io/badge/Discord-join%20the%20chat-5865F2?logo=discord&logoColor=white" alt="Discord"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License: MIT"></a>
 </p>
@@ -56,7 +56,7 @@
   </tr>
 </table>
 
-<p align="center">👉 <a href="https://carbure.org/fonctionnalites/"><b>All the features</b></a>, with every screen (in French)</p>
+<p align="center">👉 <a href="https://carbure.org/en/fonctionnalites/"><b>All the features</b></a>, with every screen</p>
 
 ## Why Carbure?
 
@@ -102,8 +102,9 @@
 
 > 📱 **Mobile apps**: the Carbure apps for **iPhone** and **Android** will soon be available on
 > the App Store and Google Play: transactions, check-off, budgets, insights, trends, sync,
-> Face ID or fingerprint login and push notifications ([features](https://carbure.org/applications-mobiles/),
-> in French). Meanwhile, the web portal installs as an app on a computer or a phone
+> Face ID or fingerprint login and push notifications
+> ([features](https://carbure.org/en/applications-mobiles/)). Meanwhile, the web portal
+> installs as an app on a computer or a phone
 > (Chrome/Edge "Install", Safari "Add to Dock" or "Add to Home Screen"), over HTTPS.
 
 ## How does it compare?
@@ -118,7 +119,7 @@
 | File import (OFX, QIF, CSV, CAMT.053) | ✅ | ✅ | ✅ | ⚠️ |
 | Several currencies | ➖ | ✅ | ➖ | ⚠️ |
 
-✅ yes · ⚠️ partly · ➖ no — 👉 **[Full comparison](https://carbure.org/comparatif/)** (in French):
+✅ yes · ⚠️ partly · ➖ no — 👉 **[Full comparison](https://carbure.org/en/comparatif/)**:
 23 criteria (hosting, bank data, budget, household and devices, API), with the strengths of
 each tool.
 
@@ -172,8 +173,8 @@ docker compose up -d
 Open `http://localhost:8080/`: **the setup wizard** handles everything (database,
 administrator account, and optional starter categories, rules and insights) in three
 clicks, with no command to run. Database upgrades are automatic too. On a Synology NAS,
-follow the [tutorial](https://carbure.org/synology/); to reach it from your phone, put it
-behind an HTTPS reverse proxy ([installation](https://carbure.org/installation/)).
+follow the [tutorial](https://carbure.org/en/synology/); to reach it from your phone, put it
+behind an HTTPS reverse proxy ([installation](https://carbure.org/en/installation/)).
 
 ### 3. Run it locally to develop
 
@@ -190,10 +191,10 @@ mounted live (a change is taken at the next request) and a sample household: ope
 `--reset` (fresh sample data), `--fresh` (empty install, setup wizard), `--fake-woob`
 (simulated banks), `--build` (rebuild the image), `--stop`, `--clean`; `./start.sh --help`
 lists them. The tests (PHPUnit, portal unit tests, Playwright end-to-end tests) are
-described in the [developer documentation](https://carbure.org/developpement/) (in French).
+described in the [developer documentation](https://carbure.org/en/developpement/).
 
 👉 **Detailed installation, configuration, API reference, data model and security:
-[the documentation](https://carbure.org/)** (in French).
+[the documentation](https://carbure.org/en/)**.
 
 ## Contributing
 
@@ -202,8 +203,7 @@ done) and the open tasks in [TODO.md](TODO.md). A question? Join the
 [Discord server](https://discord.gg/QsxYw4Rx9D) or ask in
 [Discussions](https://github.com/ltoinel/Carbure/discussions). Found a bug?
 [Open an issue](https://github.com/ltoinel/Carbure/issues). If Carbure is useful to you,
-a ⭐ helps others find it. All the ways to get help: [Support](https://carbure.org/assistance/)
-(in French).
+a ⭐ helps others find it. All the ways to get help: [Support](https://carbure.org/en/assistance/).
 
 To set up the development environment, see
 [Run it locally to develop](#3-run-it-locally-to-develop).

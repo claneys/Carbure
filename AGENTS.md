@@ -32,7 +32,7 @@ built by the GitHub release workflow; committing/pushing is not deploying.
 | `tests/unit/`, `tests/integration/` | PHPUnit (integration needs MariaDB) |
 | `tests/portal/` | Portal unit tests (`node:test`) |
 | `tests/e2e/` | Playwright, real API, DB recreated per test; `server/seed.php` = also `start.sh` data |
-| `docs/`, `mkdocs.yml` | MkDocs docs; `VERSION` = `dev` in repo |
+| `docs/`, `mkdocs.yml` | MkDocs site carbure.org, French `page.md` + English `page.en.md` (mkdocs-static-i18n, English under `/en/`); `VERSION` = `dev` in repo |
 
 ## Commands
 
@@ -180,4 +180,6 @@ git config core.hooksPath .githooks   # pre-commit lint, pre-push unit tests
 - PHP coverage ≥ 90 % in CI (unit + integration).
 - SQL migration if schema changed, flagged as deployment action.
 - `TODO.md` updated (check done, add discovered debt/manual steps).
-- `README.md` / `docs/` updated if behavior or API changes.
+- `README.md` / `docs/` updated if behavior or API changes, in French **and** English: a
+  `docs/<page>.md` changed without its `docs/<page>.en.md` fails the docs CI
+  (`tools/check-docs-english.sh`); English headings keep the French anchors (`## Title { #titre }`).
