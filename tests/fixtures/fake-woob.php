@@ -7,7 +7,9 @@
  * Usage: fake-woob.php bank <coming|history> <account@bank> [options...]
  *        fake-woob.php bank list [-b <backend>] -f json (two accounts, "none": no account)
  *        fake-woob.php config info <module> -f json       (settings once installed, like woob 3.7)
- *        fake-woob.php config add <module> '"<backend> key=value ..."' (installs with the probe name)
+ *        fake-woob.php config add <module> carbure_install_probe (installs the module; any
+ *                                                          setting on the command line is refused:
+ *                                                          the credentials must never be there)
  *        fake-woob.php config remove <backend>           (no longer listed by config list)
  *        fake-woob.php config update                     (trusts the keyring by itself the first time,
  *                                                          like woob without a terminal)
@@ -28,6 +30,9 @@
  * - other accounts       : one JSON array of transactions per line, like woob -f json
  * - with --debug          : the bank commands also write debug logs on stderr, like woob
  *
+ * The backends added by Carbure are read, like woob, in the file WOOB_BACKENDS (set in woob_path
+ * by the tests), else carbure-fake-woob-backends; "bank list" without -b lists the last one.
+ *
  * Its state (carbure-fake-woob-* files) is kept in the directory of the test run given by
  * the environment variable CARBURE_TEST_TMP (else the temporary directory, as with
  * ./start.sh --fake-woob), so that two runs on the same machine do not share it.
@@ -47,6 +52,24 @@ function fake_woob_file(string $name): string
 }
 
 $account = $argv[3] ?? '';
+
+/**
+ * The backend added last in the configuration file of the backends, like woob reads it
+ *
+ * @return array{backend: string, module: string, params: array<string, string>}|null
+ */
+function fake_woob_added(): ?array
+{
+    $file = getenv('WOOB_BACKENDS') ?: fake_woob_file('backends');
+    $sections = is_file($file) ? parse_ini_file($file, true, INI_SCANNER_RAW) : [];
+    if (!$sections) {
+        return null;
+    }
+    $params = end($sections);
+    $module = $params['_module'] ?? '';
+    unset($params['_module']);
+    return ['backend' => (string)key($sections), 'module' => $module, 'params' => $params];
+}
 
 /**
  * Like woob 3.7 refreshing its repositories while no keyring is trusted: without a
@@ -137,37 +160,21 @@ if (($argv[1] ?? '') === 'config' && $type === 'remove') {
 }
 
 if (($argv[1] ?? '') === 'config' && $type === 'add') {
-    // Like woob 3.7: at most 2 arguments, the module then "backend key=value ..." quoted
-    if (count($argv) > 5) {
-        fwrite(STDERR, "Error: too many arguments. Command takes at most 2 arguments\n");
-        exit(64);
+    // Carbure only installs a module this way: the settings of a backend (its credentials)
+    // must never be on the command line, visible to every process
+    if (count($argv) !== 5 || $argv[4] !== 'carbure_install_probe') {
+        fwrite(STDERR, "Error: fake woob: settings on the command line: " . count($argv) . " arguments\n");
+        exit(2);
     }
-    $words = explode(' ', trim($argv[4] ?? '', '"'));
-    $backend = array_shift($words);
-    if ($backend === 'carbure_install_probe') {
-        // Installs the module, then stops at the first setting asked; like woob, the
-        // signature of the module needs the keyring of its repository
-        if (!glob(fake_woob_file('keyrings') . '/*.gpg')) {
-            fwrite(STDERR, "Error: No keyring found, please update repos.\n");
-            exit(1);
-        }
-        touch(fake_woob_file('installed'));
-        echo "Module {$argv[3]} has been installed!\nAborted.\n";
-        exit(130);
+    // Installs the module, then stops at the first setting asked; like woob, the
+    // signature of the module needs the keyring of its repository
+    if (!glob(fake_woob_file('keyrings') . '/*.gpg')) {
+        fwrite(STDERR, "Error: No keyring found, please update repos.\n");
+        exit(1);
     }
-    $params = [];
-    foreach ($words as $word) {
-        [$key, $value] = explode('=', $word, 2) + [1 => ''];
-        $params[$key] = $value;
-    }
-    // Records what woob received, to check it
-    file_put_contents(fake_woob_file('add.json'), json_encode(['module' => $argv[3], 'backend' => $backend, 'params' => $params]));
-    if ($backend === 'taken') {
-        echo "Backend \"taken\" already exists.\n";
-        exit(0);
-    }
-    echo "Backend \"$backend\" successfully added.\n";
-    exit(0);
+    touch(fake_woob_file('installed'));
+    echo "Module {$argv[3]} has been installed!\nAborted.\n";
+    exit(130);
 }
 
 if (($argv[1] ?? '') === 'config' && $type === 'update') {
@@ -184,8 +191,8 @@ if (($argv[1] ?? '') === 'config') {
 
 if (($argv[1] ?? '') === 'bank' && $type === 'list') {
     $index = array_search('-b', $argv);
-    // Without -b: the backend added last by "config add" (or bnp)
-    $added = @json_decode((string)@file_get_contents(fake_woob_file('add.json')), true);
+    // Without -b: the backend added last (or bnp)
+    $added = fake_woob_added();
     $backend = $index === false ? ($added['backend'] ?? 'bnp') : $argv[$index + 1];
     // A bank added with the login "wrong": the bank refuses the connection
     if ($backend === ($added['backend'] ?? null) && ($added['params']['login'] ?? '') === 'wrong') {

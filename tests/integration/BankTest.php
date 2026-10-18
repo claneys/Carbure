@@ -96,6 +96,17 @@ class BankTest extends DatabaseTestCase
             $this->assertSame(409, $e->getCode());
         }
 
+        // Never starting with "-": woob would read "-x@bnp" as an option; inside, kept
+        foreach ([['-x', 'bnp'], ['--debug', 'bnp'], ['111', '-bnp']] as [$account, $bank]) {
+            try {
+                Bank::create($account, $bank);
+                $this->fail("Accepted $account@$bank");
+            } catch (Error $e) {
+                $this->assertSame(400, $e->getCode(), $e->getMessage());
+            }
+        }
+        $this->assertSame('12-3@bnp-2', Bank::create('12-3', 'bnp-2')['bankId']);
+
         $this->expectException(Error::class);
         $this->expectExceptionCode(400);
         Bank::create('1; rm -rf /', 'bnp');
@@ -159,7 +170,7 @@ class BankTest extends DatabaseTestCase
         $this->assertSame(['Compte joint ✨', null], array_column(Bank::backends(), 'label'));
         $this->assertSame(1, (int)Db::queryOne("SELECT COUNT(*) AS n FROM bank_backend", "")['n']);
 
-        foreach ([['Bad Name', 'x', 400], ['bnp', str_repeat('a', 101), 400], ['unknown', 'x', 404]] as [$backend, $label, $code]) {
+        foreach ([['Bad Name', 'x', 400], ['-bnp', 'x', 400], ['bnp', str_repeat('a', 101), 400], ['unknown', 'x', 404]] as [$backend, $label, $code]) {
             try {
                 Bank::renameBackend($backend, $label);
                 $this->fail("Accepted $backend");
@@ -247,18 +258,21 @@ class BankTest extends DatabaseTestCase
     public function testCreateBackend()
     {
         $this->loginAs(self::ADMIN);
-        $added = carbure_test_tmp('carbure-fake-woob-add.json');
-        @unlink($added);
+        $added = carbure_test_tmp('carbure-fake-woob-backends');
+        file_put_contents($added, "[other]\n_module = cic\nlogin = jdoe\n");
 
         try {
             $result = Bank::createBackend('bnp', 'mybnp', ['login' => '12345678', 'password' => '123456', 'unknown' => 'x']);
             $this->assertSame('mybnp', $result['backend']);
             $this->assertNull($result['label']);
             $this->assertSame(['00012345678@mybnp', '00087654321@mybnp'], array_column($result['accounts'], 'bankId'));
-            // Every setting of the module is given (defaults included), in the format woob reads
-            $this->assertSame(['module' => 'bnp', 'backend' => 'mybnp', 'params' => [
-                'login' => '12345678', 'password' => '123456', 'rotating_password' => 'n', 'website' => 'pp',
-            ]], json_decode(file_get_contents($added), true));
+            // Every setting of the module is given (defaults included), in the configuration
+            // file of woob as "woob config add" writes it (never on its command line: the fake
+            // woob refuses it), readable by its owner only, the other backends kept
+            $this->assertSame("[other]\n_module = cic\nlogin = jdoe\n"
+                . "[mybnp]\n_module = bnp\nlogin = 12345678\npassword = 123456\nrotating_password = n\nwebsite = pp\n\n",
+                file_get_contents($added));
+            $this->assertSame(0600, fileperms($added) & 0777);
         } finally {
             @unlink($added);
         }
@@ -279,7 +293,7 @@ class BankTest extends DatabaseTestCase
             Bank::createBackend('bnp', 'mybnp3', ['login' => '12345678', 'password' => '123456']);
             $this->assertNull(Db::queryOne("SELECT label FROM bank_backend WHERE name = ?", "s", 'mybnp3'));
         } finally {
-            @unlink(carbure_test_tmp('carbure-fake-woob-add.json'));
+            @unlink(carbure_test_tmp('carbure-fake-woob-backends'));
         }
 
         // A name too long is refused before woob is called
@@ -308,7 +322,7 @@ class BankTest extends DatabaseTestCase
             $this->assertSame($transactions, (int)Db::queryOne("SELECT COUNT(*) AS n FROM bank_transaction", "")['n']);
 
             // Already removed: unknown
-            foreach ([['bnp', 404], ['Bad Name', 400]] as [$backend, $code]) {
+            foreach ([['bnp', 404], ['Bad Name', 400], ['-b', 400]] as [$backend, $code]) {
                 try {
                     Bank::deleteBackend($backend);
                     $this->fail("Removed $backend");
@@ -356,11 +370,12 @@ class BankTest extends DatabaseTestCase
             $this->assertSame(400, $e->getCode());
             $this->assertStringStartsWith('The bank refused the credentials, check them: ', $e->getMessage());
             $this->assertStringContainsString('Identifiant ou mot de passe incorrect', $e->getMessage());
-            // Removed from woob, to try again
+            // Removed from woob, to try again, with its credentials
             $this->assertSame('mybnp', trim(file_get_contents($removed)));
+            $this->assertStringNotContainsString('mybnp', (string)file_get_contents(carbure_test_tmp('carbure-fake-woob-backends')));
         } finally {
             @unlink($removed);
-            @unlink(carbure_test_tmp('carbure-fake-woob-add.json'));
+            @unlink(carbure_test_tmp('carbure-fake-woob-backends'));
         }
     }
 
@@ -381,13 +396,15 @@ class BankTest extends DatabaseTestCase
             $this->assertSame('forbidden', trim(file_get_contents($removed)));
         } finally {
             @unlink($removed);
-            @unlink(carbure_test_tmp('carbure-fake-woob-add.json'));
+            @unlink(carbure_test_tmp('carbure-fake-woob-backends'));
         }
     }
 
     public function testCreateBackendValidation()
     {
         $this->loginAs(self::ADMIN);
+        // A backend of another module (not a bank one: not listed by woob) of the same name
+        file_put_contents(carbure_test_tmp('carbure-fake-woob-backends'), "[taken]\n_module = other\n");
         foreach ([
             ['bnp', 'new', ['password' => '123456']],                                 // login missing
             ['bnp', 'new', ['login' => '1 2', 'password' => '123456']],               // space
@@ -395,7 +412,8 @@ class BankTest extends DatabaseTestCase
             ['bnp', 'new', ['login' => '1', 'password' => 'abc']],                    // not 6 digits
             ['bnp', 'new', ['login' => '1', 'password' => '123456', 'website' => 'nope']], // not a choice
             ['bnp', 'New Bank', ['login' => '1', 'password' => '123456']],            // name
-            ['bnp', 'taken', ['login' => '1', 'password' => '123456']],               // woob refuses
+            ['bnp', 'taken', ['login' => '1', 'password' => '123456']],               // in the file of woob
+            ['bnp', '-b', ['login' => '1', 'password' => '123456']],                  // read as an option
         ] as [$module, $backend, $settings]) {
             try {
                 Bank::createBackend($module, $backend, $settings);
@@ -404,6 +422,10 @@ class BankTest extends DatabaseTestCase
                 $this->assertSame(400, $e->getCode(), $e->getMessage());
             }
         }
+
+        // Nothing added to the file of woob
+        $this->assertSame("[taken]\n_module = other\n", file_get_contents(carbure_test_tmp('carbure-fake-woob-backends')));
+        unlink(carbure_test_tmp('carbure-fake-woob-backends'));
 
         // A bank already configured in woob
         $this->expectException(Error::class);
@@ -420,7 +442,7 @@ class BankTest extends DatabaseTestCase
 
     public function testDiscover()
     {
-        @unlink(carbure_test_tmp('carbure-fake-woob-add.json'));
+        @unlink(carbure_test_tmp('carbure-fake-woob-backends'));
         $this->loginAs(self::ADMIN);
         $accounts = Bank::discover();
 

@@ -297,4 +297,125 @@ class WoobTest extends TestCase
         $entry = json_decode(end($lines), true);
         $this->assertSame(['stderr' => "AttributeError: 'NoneType' object has no attribute 'iter_accounts'"], $entry['context']);
     }
+
+    public function testAnAccountIsNeverReadAsAnOption()
+    {
+        // "-x@bnp" given to woob would be one of its options
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Invalid bank account');
+        Woob::getBankData('history', '--debug@bnp');
+    }
+
+    public function testBackendNamesNeverStartWithADash()
+    {
+        foreach (['bnp', 'bnp_2', 'bnp-pro', '2bnp'] as $name) {
+            $this->assertMatchesRegularExpression(Woob::BACKEND_NAME, $name);
+        }
+        foreach (['-b', '--debug', 'Bnp', 'b p', ''] as $name) {
+            $this->assertDoesNotMatchRegularExpression(Woob::BACKEND_NAME, $name);
+        }
+    }
+
+    public function testAddBackendKeepsTheCredentialsOffTheCommandLine()
+    {
+        // The fake woob refuses any setting on its command line ("config add" only installs)
+        $file = Woob::backendsFile();
+        $this->assertSame(carbure_test_tmp('carbure-fake-woob-backends'), $file);
+        file_put_contents($file, "[cic_pro]\n_module = cic\nlogin = jdoe");
+        try {
+            Woob::addBackend('bnp', 'mybnp', ['login' => '12345678', 'Password' => 'p@ss;%#=[x]', 'website' => '']);
+
+            // Written as "woob config add" writes it: lowercase keys, the other backends kept
+            $this->assertSame("[cic_pro]\n_module = cic\nlogin = jdoe\n"
+                . "[mybnp]\n_module = bnp\nlogin = 12345678\npassword = p@ss;%#=[x]\nwebsite = \n\n", file_get_contents($file));
+            $this->assertSame(0600, fileperms($file) & 0777);
+            // woob reads it with RawConfigParser: no inline comment (";", "#"), no interpolation
+            // ("%"), split on the first "=": the value is read as written
+
+            // Removed with its credentials (also when woob did not remove it), the others kept
+            Woob::removeBackend('mybnp');
+            $this->assertSame("[cic_pro]\n_module = cic\nlogin = jdoe\n", file_get_contents($file));
+        } finally {
+            @unlink($file);
+            @unlink(carbure_test_tmp('carbure-fake-woob-removed'));
+        }
+    }
+
+    public function testAddBackendCreatesAPrivateFile()
+    {
+        $home = carbure_test_tmp('carbure-woob-' . uniqid());
+        $previous = Config::get('woob_path');
+        Config::set('woob_path', 'env WOOB_WORKDIR=' . escapeshellarg("$home/woob") . ' woob');
+        try {
+            (new ReflectionMethod(Woob::class, 'appendBackend'))->invoke(null, Woob::backendsFile(), "[b]\n_module = bnp\n\n");
+            $this->assertSame("[b]\n_module = bnp\n\n", file_get_contents("$home/woob/backends"));
+            $this->assertSame(0600, fileperms("$home/woob/backends") & 0777);
+            $this->assertSame(0700, fileperms("$home/woob") & 0777);
+        } finally {
+            Config::set('woob_path', $previous);
+            @unlink("$home/woob/backends");
+            @rmdir("$home/woob");
+            @rmdir($home);
+        }
+    }
+
+    public function testAddBackendRefusals()
+    {
+        $file = Woob::backendsFile();
+        file_put_contents($file, "[taken]\n_module = cic\n");
+        try {
+            foreach ([
+                ['bnp', 'taken', ['login' => '1'], 'Backend "taken" already exists.'],
+                ['bnp', '-b', ['login' => '1'], 'Invalid woob module or backend name'],
+                ['bnp]', 'x', ['login' => '1'], 'Invalid woob module or backend name'],
+                ['bnp', 'x', ['login' => "1\n[other]"], 'Invalid setting login'],
+                ['bnp', 'x', ['log in' => '1'], 'Invalid setting log in'],
+                // woob would run it as a command to get the value
+                ['bnp', 'x', ['password' => '`touch /tmp/x`'], 'Invalid setting password'],
+                ['bnp', 'x', ['password' => '`'], 'Invalid setting password'],
+            ] as [$module, $backend, $params, $message]) {
+                try {
+                    Woob::addBackend($module, $backend, $params);
+                    $this->fail("Added $backend");
+                } catch (Exception $e) {
+                    $this->assertSame("woob could not add the bank: $message", $e->getMessage());
+                }
+            }
+            // Nothing written
+            $this->assertSame("[taken]\n_module = cic\n", file_get_contents($file));
+        } finally {
+            @unlink($file);
+        }
+    }
+
+    /**
+     * @return array<string, array{string, string}>
+     */
+    public static function backendsFiles(): array
+    {
+        return [
+            'WOOB_BACKENDS' => ['env WOOB_BACKENDS=/w/banks.ini HOME=/h woob', '/w/banks.ini'],
+            'WOOB_WORKDIR' => ["env 'WOOB_WORKDIR=/w/' HOME=/h woob", '/w/backends'],
+            'XDG_CONFIG_HOME' => ['env XDG_CONFIG_HOME="/x" HOME=/h woob', '/x/woob/backends'],
+            'HOME' => ['env HOME=/data/woob woob', '/data/woob/.config/woob/backends'],
+            'MY_WOOB_BACKENDS is not WOOB_BACKENDS' => ['env MY_WOOB_BACKENDS=/w HOME=/h woob', '/h/.config/woob/backends'],
+        ];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('backendsFiles')]
+    public function testBackendsFileIsFoundAsWoobFindsIt(string $woobPath, string $expected)
+    {
+        $previous = Config::get('woob_path');
+        $environment = getenv('XDG_CONFIG_HOME');
+        Config::set('woob_path', $woobPath);
+        putenv('XDG_CONFIG_HOME');
+        try {
+            $this->assertSame($expected, Woob::backendsFile());
+        } finally {
+            Config::set('woob_path', $previous);
+            if ($environment !== false) {
+                putenv("XDG_CONFIG_HOME=$environment");
+            }
+        }
+    }
 }

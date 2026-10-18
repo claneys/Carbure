@@ -78,7 +78,7 @@ in_data() { compose run --rm --no-deps -T --entrypoint sh carbure -c "$1"; }
 # and sample data the first time (or with --reset)
 configure_dev_instance() {
     case "$WOOB" in
-        fake) WOOB_PATH="php /var/www/carbure/tests/fixtures/fake-woob.php" ;;
+        fake) WOOB_PATH="env WOOB_BACKENDS=/tmp/carbure-fake-woob-backends php /var/www/carbure/tests/fixtures/fake-woob.php" ;;
         real) WOOB_PATH="env HOME=/data/woob woob" ;;
         *) fail "WOOB must be real or fake (or use --fake-woob)" ;;
     esac

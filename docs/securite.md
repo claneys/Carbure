@@ -269,6 +269,13 @@ Seules ces routes ne demandent pas de JWT (un test unitaire le vérifie) :
     `warning` et supprimez les fichiers de log concernés (`data/logs/`).
 - Les journaux nomment un utilisateur par son identifiant, jamais par son nom (compte
   bloqué, connexion refusée faute de double authentification).
+- Les identifiants bancaires saisis dans le portail ne passent **jamais sur la ligne de
+  commande** de woob (visible de tous les processus du conteneur : `ps`,
+  `/proc/<pid>/cmdline`) : Carbure écrit la banque directement dans le fichier de
+  configuration de woob (`.config/woob/backends`, lisible par son seul propriétaire), au
+  format qu'écrirait `woob config add`. Une valeur entre accents graves (`` `…` ``) est
+  refusée : woob l'exécuterait comme une commande pour obtenir la valeur. Un compte ou un nom de banque commençant par `-`
+  est refusé (`400`) : woob le lirait comme une option.
 - `data/` : `conf/prod.ini` (dont `push_api_key`, la clé d'API du service de notifications push), `logs/`, `woob/` (identifiants bancaires woob)
   sont exclus du dépôt Git.
 

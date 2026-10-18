@@ -36,6 +36,18 @@ final class Woob {
     /** An error reported by woob on stderr (a "Bug(<backend>): ..." of a module included) */
     private const ERROR_LINE = '/error|exception|traceback|unable|no module|^Bug\(/im';
 
+    /** Name of a woob module */
+    public const MODULE_NAME = '/^[a-z0-9_]{1,50}$/';
+
+    /** Name of a woob backend: never starting with "-", which woob would read as an option */
+    public const BACKEND_NAME = '/^[a-z0-9_][a-z0-9_-]{0,49}$/';
+
+    /**
+     * Value of a setting that cannot be written in the configuration file of woob: on more
+     * than one line, or between backquotes (woob runs it as a shell command to get the value)
+     */
+    private const UNSAFE_SETTING = '/[\x00-\x1f\x7f]|^`(.*`)?$/s';
+
     /** Hint woob adds after an error: not its cause */
     private const DEBUG_HINT = '/^Use --debug option to print backtraces/';
 
@@ -352,44 +364,203 @@ final class Woob {
      * Configure a bank backend in woob with the settings typed in the portal
      * (woob keeps them; Carbure does not store them).
      *
+     * The settings hold the bank credentials: they are never given on the command line
+     * of woob ("woob config add" only reads them there, where any process of the
+     * container sees them in /proc/<pid>/cmdline). The backend is written in the
+     * configuration file of woob instead, as "woob config add" does: a section named
+     * after the backend, with the module and the settings (RawConfigParser format, the
+     * file readable by its owner only). The module is installed before (moduleFields()).
+     *
      * @param string $module  The woob module
      * @param string $backend The backend name
      * @param array<string, string> $params The settings: key => value
      * @return void
-     * @throws Exception If woob refuses the backend
+     * @throws Exception If the backend cannot be written (name taken, invalid setting, file)
+     * @throws Error If the woob repository must be trusted first (409)
      */
     public static function addBackend(string $module, string $backend, array $params): void
     {
-        // woob reads at most 2 arguments: the module, then the backend name and the
-        // key=value settings together, quoted (it splits them on spaces)
-        $settings = [$backend];
-        foreach ($params as $key => $value) {
-            $settings[] = "$key=$value";
-        }
-        $woob_path = self::path();
-        $stderr = '';
+        // Same checks as before running woob (repository trusted, file readable by its owner only)
+        self::path();
         // The settings are not logged: they contain the bank credentials
-        $process = proc_open("$woob_path config add " . escapeshellarg($module) . ' ' . escapeshellarg('"' . implode(' ', $settings) . '"') . " < /dev/null",
-            [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
-        if (!is_resource($process)) {
-            throw new Exception("Unable to run woob");
-        }
-        $stdout = stream_get_contents($pipes[1]);
-        $stderr = stream_get_contents($pipes[2]);
-        fclose($pipes[1]);
-        fclose($pipes[2]);
-        $code = proc_close($process);
-
-        // Success is announced by woob; anything else (missing setting asked, module
-        // not loaded, name taken...) is a failure
-        if ($code !== 0 || stripos($stdout, 'successfully added') === false) {
+        try {
+            self::appendBackend(self::backendsFile(), self::backendSection($module, $backend, $params));
+        } catch (Exception $e) {
             Logger::error("woob could not add the backend $backend ($module)");
-            throw new Exception("woob could not add the bank" . self::lastLine($stderr ?: $stdout));
+            throw new Exception("woob could not add the bank: " . $e->getMessage());
         }
     }
 
     /**
-     * Remove a backend from woob (and the credentials woob kept for it).
+     * Section of the configuration file of woob for a backend, as written by woob
+     * (RawConfigParser: lowercase keys, "key = value" lines, then an empty line).
+     *
+     * @param string $module  The woob module
+     * @param string $backend The backend name
+     * @param array<string, string> $params The settings: key => value
+     * @return string The section
+     * @throws Exception If a name, a key or a value cannot be written on one line of the file
+     */
+    private static function backendSection(string $module, string $backend, array $params): string
+    {
+        if (!preg_match(self::MODULE_NAME, $module) || !preg_match(self::BACKEND_NAME, $backend)) {
+            throw new Exception("Invalid woob module or backend name");
+        }
+        $section = "[$backend]\n_module = $module\n";
+        foreach ($params as $key => $value) {
+            // Read stripped by woob
+            $value = trim($value);
+            if (!preg_match('/^[A-Za-z0-9_]{1,100}$/', (string)$key) || preg_match(self::UNSAFE_SETTING, $value)) {
+                throw new Exception("Invalid setting $key");
+            }
+            $section .= strtolower((string)$key) . " = $value\n";
+        }
+        return "$section\n";
+    }
+
+    /**
+     * Add a section to the configuration file of the woob backends (created readable by
+     * its owner only, as woob refuses to start otherwise), locked while it is written.
+     *
+     * @param string $file    The configuration file of the woob backends
+     * @param string $section The section of the backend ("[name]\n...")
+     * @return void
+     * @throws Exception If the backend already exists or the file cannot be written
+     */
+    private static function appendBackend(string $file, string $section): void
+    {
+        $dir = dirname($file);
+        if (!is_dir($dir) && !@mkdir($dir, 0700, true)) {
+            throw new Exception("Unable to create $dir");
+        }
+        $handle = @fopen($file, 'c+');
+        if ($handle === false) {
+            throw new Exception("Unable to open $file");
+        }
+        try {
+            // Readable by its owner only before any credential is written in it
+            @chmod($file, 0600);
+            flock($handle, LOCK_EX);
+            $content = (string)stream_get_contents($handle);
+            $name = substr($section, 1, (int)strpos($section, ']') - 1);
+            if (in_array($name, self::sections($content), true)) {
+                throw new Exception("Backend \"$name\" already exists.");
+            }
+            $separator = $content !== '' && !str_ends_with($content, "\n") ? "\n" : '';
+            if (fwrite($handle, $separator . $section) === false || !fflush($handle)) {
+                throw new Exception("Unable to write $file");
+            }
+        } finally {
+            flock($handle, LOCK_UN);
+            fclose($handle);
+        }
+    }
+
+    /**
+     * Names of the sections (backends) of a configuration file of woob.
+     *
+     * @param string $content The content of the file
+     * @return list<string>
+     */
+    private static function sections(string $content): array
+    {
+        preg_match_all('/^\[(.+)\][ \t]*\r?$/m', $content, $matches);
+        return $matches[1];
+    }
+
+    /**
+     * Remove the section of a backend from the configuration file of woob, if it is still
+     * there (its credentials with it).
+     *
+     * @param string $file    The configuration file of the woob backends
+     * @param string $backend The backend name
+     * @return void
+     */
+    private static function removeSection(string $file, string $backend): void
+    {
+        $handle = is_file($file) ? @fopen($file, 'c+') : false;
+        if ($handle === false) {
+            return;
+        }
+        flock($handle, LOCK_EX);
+        $content = (string)stream_get_contents($handle);
+        if (in_array($backend, self::sections($content), true)) {
+            ftruncate($handle, 0);
+            rewind($handle);
+            fwrite($handle, self::withoutSection($content, $backend));
+            fflush($handle);
+        }
+        flock($handle, LOCK_UN);
+        fclose($handle);
+    }
+
+    /**
+     * A configuration file of woob without the section of a backend: from its header to
+     * the next section, or the end of the file.
+     *
+     * @param string $content The content of the file
+     * @param string $backend The backend name
+     * @return string
+     */
+    private static function withoutSection(string $content, string $backend): string
+    {
+        $kept = [];
+        $inSection = false;
+        foreach (explode("\n", $content) as $line) {
+            if (preg_match('/^\[(.+)\][ \t]*\r?$/', $line, $m)) {
+                $inSection = $m[1] === $backend;
+            }
+            if (!$inSection) {
+                $kept[] = $line;
+            }
+        }
+        $content = implode("\n", $kept);
+        return $content === '' || str_ends_with($content, "\n") ? $content : "$content\n";
+    }
+
+    /**
+     * Configuration file of the woob backends (logins and passwords of the banks), found
+     * as woob finds it: WOOB_BACKENDS, else "backends" in WOOB_WORKDIR, else in
+     * $XDG_CONFIG_HOME/woob, else in $HOME/.config/woob. Each variable is read in the
+     * command woob_path ("env HOME=/data/woob woob"), else in the environment of PHP,
+     * which woob inherits.
+     *
+     * @return string The path of the file
+     * @throws Exception If the home directory of woob is unknown
+     */
+    public static function backendsFile(): string
+    {
+        $file = self::commandEnv('WOOB_BACKENDS');
+        if ($file !== null) {
+            return $file;
+        }
+        $workdir = self::commandEnv('WOOB_WORKDIR')
+            ?? (($config = self::commandEnv('XDG_CONFIG_HOME')) !== null ? "$config/woob" : null);
+        $home = self::home();
+        if ($workdir === null && $home === null) {
+            throw new Exception("Unknown home directory of woob: set HOME in woob_path");
+        }
+        return rtrim($workdir ?? "$home/.config/woob", '/') . '/backends';
+    }
+
+    /**
+     * Value of an environment variable for woob: set in the command woob_path
+     * ("env NAME=value woob"), else in the environment of PHP.
+     *
+     * @param string $name The name of the variable
+     * @return string|null The value, null if unset or empty
+     */
+    private static function commandEnv(string $name): ?string
+    {
+        $value = preg_match('/(?<![\w-])' . $name . '=(\S+)/', (string)Config::get('woob_path'), $m)
+            ? trim($m[1], '"\'') : getenv($name);
+        return is_string($value) && $value !== '' ? $value : null;
+    }
+
+    /**
+     * Remove a backend from woob (and the credentials woob kept for it): also from the
+     * configuration file of woob when woob did not remove it (a backend written by
+     * addBackend() where woob does not read it).
      *
      * @param string $backend The backend name
      * @return void
@@ -398,6 +569,11 @@ final class Woob {
     {
         $woob_path = self::path();
         shell_exec("$woob_path config remove " . escapeshellarg($backend) . ' < /dev/null 2>&1');
+        try {
+            self::removeSection(self::backendsFile(), $backend);
+        } catch (Exception) {
+            // Home directory of woob unknown: nothing written by Carbure
+        }
     }
 
     /**
@@ -452,6 +628,7 @@ final class Woob {
      * @param string $type  The type of transactions to get (coming or history)
      * @param string $bankId The bank account identifier
      * @return string The full command to execute
+     * @throws Exception If the account would be read as an option by woob
      */
     private static function buildCommand(string $type, string $bankId): string
     {
@@ -463,6 +640,10 @@ final class Woob {
 
         $auto_update_flag = $woob_auto_update ? " --auto-update" : "";
 
+        // Never an option of woob ("-x@bank"): refused when the account is followed
+        if (str_starts_with($bankId, '-')) {
+            throw new Exception("Invalid bank account $bankId");
+        }
         $bankId = escapeshellarg($bankId);
 
         return "$woob_path bank $type $bankId --count $woob_transactions$auto_update_flag" . self::loggingOptions()

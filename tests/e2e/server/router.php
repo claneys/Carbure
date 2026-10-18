@@ -67,7 +67,6 @@ Config::set('db_password', getenv('E2E_DB_PASSWORD') ?: '');
 if (getenv('E2E_DB_NAME')) {
     Config::set('db_name', getenv('E2E_DB_NAME'));
 }
-Config::set('woob_path', escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($root . '/tests/fixtures/fake-woob.php'));
 // Its repository (keyring read without network) and the keyrings it trusts
 Config::set('woob_repository', $root . '/tests/fixtures/woob-repository/');
 // The state of the fake woob is in the directory of the run (CARBURE_TEST_TMP, set by
@@ -75,6 +74,9 @@ Config::set('woob_repository', $root . '/tests/fixtures/woob-repository/');
 $tmpDir = getenv('CARBURE_TEST_TMP') ?: sys_get_temp_dir() . '/carbure-e2e-' . $_SERVER['SERVER_PORT'];
 putenv("CARBURE_TEST_TMP=$tmpDir");
 @mkdir($tmpDir, 0700, true);
+// The configuration file of its backends (written by Woob::addBackend()) too
+Config::set('woob_path', 'env WOOB_BACKENDS=' . escapeshellarg($tmpDir . '/carbure-fake-woob-backends') . ' '
+    . escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($root . '/tests/fixtures/fake-woob.php'));
 WoobRepository::$keyringDir = $tmpDir . '/carbure-fake-woob-keyrings';
 WoobRepository::$sourcesList = $tmpDir . '/carbure-fake-woob-sources.list';
 

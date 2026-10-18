@@ -334,11 +334,12 @@ pour `POST /bank/backend`.
 
 ### `POST /bank/backend` — administrateur
 
-Configure une banque dans woob : `module`, `backend` (nom, `[a-z0-9_-]`), `settings`
-(objet des paramètres du module ; seules ses clés sont transmises, valeurs sur une ligne
-sans espace, choix vérifiés), `label` (facultatif : nom donné à la connexion, 100
-caractères max, par exemple « Compte joint »). Les identifiants sont confiés à woob, ni
-stockés ni journalisés par Carbure (`settings` est masqué dans les logs). Renvoie
+Configure une banque dans woob : `module`, `backend` (nom, `[a-z0-9_-]`, sans `-` au
+début), `settings` (objet des paramètres du module ; seules ses clés sont transmises,
+valeurs sur une ligne sans espace, choix vérifiés), `label` (facultatif : nom donné à la
+connexion, 100 caractères max, par exemple « Compte joint »). Les identifiants sont
+confiés à woob, ni stockés ni journalisés par Carbure (`settings` est masqué dans les
+logs), et jamais passés sur la ligne de commande de woob. Renvoie
 `backend`, `label` et les `accounts` trouvés (même format que `/bank/discover`). `409` si
 une banque de ce nom existe déjà dans woob ou si son module n'est pas installé et le dépôt
 de woob pas encore approuvé, `400` si un paramètre manque ou si woob refuse.

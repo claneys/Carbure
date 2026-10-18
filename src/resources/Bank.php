@@ -83,10 +83,11 @@ final class Bank {
      */
     private static function validateAccount(string $accountNumber, string $bankName): void
     {
-        if (!preg_match('/^[A-Za-z0-9_.:-]{1,100}$/', $accountNumber)) {
+        // Never starting with "-": woob would read "-x@bank" as an option
+        if (!preg_match('/^[A-Za-z0-9_.:][A-Za-z0-9_.:-]{0,99}$/', $accountNumber)) {
             throw new Error("Invalid account number", 400);
         }
-        if (!preg_match('/^[A-Za-z0-9_-]{1,50}$/', $bankName)) {
+        if (!preg_match('/^[A-Za-z0-9_][A-Za-z0-9_-]{0,49}$/', $bankName)) {
             throw new Error("Invalid bank (woob backend) name", 400);
         }
     }
@@ -313,7 +314,7 @@ final class Bank {
     #[ApiRoute('/bank/backend', method: 'PUT', admin: true)]
     public static function renameBackend(string $backend, ?string $label = null): array
     {
-        if (!preg_match('/^[a-z0-9_-]{1,50}$/', $backend)) {
+        if (!preg_match(Woob::BACKEND_NAME, $backend)) {
             throw new Error("Invalid bank name (lowercase letters, digits, - and _)", 400);
         }
         $label = self::normalizeLabel($label);
@@ -337,7 +338,7 @@ final class Bank {
     #[ApiRoute('/bank/backend', method: 'DELETE', admin: true)]
     public static function deleteBackend(string $backend): bool
     {
-        if (!preg_match('/^[a-z0-9_-]{1,50}$/', $backend)) {
+        if (!preg_match(Woob::BACKEND_NAME, $backend)) {
             throw new Error("Invalid bank name (lowercase letters, digits, - and _)", 400);
         }
         if (!in_array($backend, array_column(Woob::listBackends(), 'name'), true)) {
@@ -394,7 +395,7 @@ final class Bank {
     #[ApiRoute('/bank/module', method: 'GET', admin: true)]
     public static function module(string $module): array
     {
-        if (!preg_match('/^[a-z0-9_]{1,50}$/', $module)) {
+        if (!preg_match(Woob::MODULE_NAME, $module)) {
             throw new Error("Invalid woob module", 400);
         }
         return Woob::moduleFields($module);
@@ -420,7 +421,7 @@ final class Bank {
     #[ApiRoute('/bank/backend', method: 'POST', admin: true)]
     public static function createBackend(string $module, string $backend, mixed $settings = [], ?string $label = null): array
     {
-        if (!preg_match('/^[a-z0-9_]{1,50}$/', $module) || !preg_match('/^[a-z0-9_-]{1,50}$/', $backend)) {
+        if (!preg_match(Woob::MODULE_NAME, $module) || !preg_match(Woob::BACKEND_NAME, $backend)) {
             throw new Error("Invalid woob module or bank name (lowercase letters, digits, - and _)", 400);
         }
         $label = self::normalizeLabel($label);
@@ -561,7 +562,7 @@ final class Bank {
     public static function discover(?string $backend = null): array
     {
         $backend = $backend === '' ? null : $backend;
-        if ($backend !== null && !preg_match('/^[a-z0-9_-]{1,50}$/', $backend)) {
+        if ($backend !== null && !preg_match(Woob::BACKEND_NAME, $backend)) {
             throw new Error("Invalid bank name (lowercase letters, digits, - and _)", 400);
         }
         $followed = array_column(self::accounts(), 'bankId');

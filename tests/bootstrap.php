@@ -65,8 +65,10 @@ putenv("CARBURE_TEST_TMP=$carbureTestTmp");
 $_ENV['CARBURE_TEST_TMP'] = $carbureTestTmp;
 register_shutdown_function('carbure_test_remove_dir', $carbureTestTmp);
 
-// Fake woob CLI (see tests/fixtures/fake-woob.php)
-Config::set('woob_path', escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg(__DIR__ . '/fixtures/fake-woob.php'));
+// Fake woob CLI (see tests/fixtures/fake-woob.php), with its configuration file of the
+// backends (written by Woob::addBackend()) in the directory of the run
+Config::set('woob_path', 'env WOOB_BACKENDS=' . escapeshellarg(carbure_test_tmp('carbure-fake-woob-backends')) . ' '
+    . escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg(__DIR__ . '/fixtures/fake-woob.php'));
 // Its repository (keyring read without network) and the keyrings it trusts
 Config::set('woob_repository', __DIR__ . '/fixtures/woob-repository/');
 WoobRepository::$keyringDir = carbure_test_tmp('carbure-fake-woob-keyrings');
