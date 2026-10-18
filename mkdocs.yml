@@ -78,6 +78,10 @@ extra:
 extra_css:
   - stylesheets/extra.css
 
+# Teaser of the home page: YouTube loaded only on click
+extra_javascript:
+  - javascripts/teaser.js
+
 markdown_extensions:
   - admonition
   - attr_list

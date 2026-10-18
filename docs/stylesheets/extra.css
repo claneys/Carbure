@@ -135,16 +135,69 @@
   text-decoration-color: currentColor;
 }
 
-/* ===== Presentation video of the home page ===== */
-.md-typeset video.teaser {
+/* ===== Presentation video of the home page (YouTube, javascripts/teaser.js): a local
+   thumbnail with a play button, replaced by the player on click ===== */
+.md-typeset .teaser {
+  position: relative;
   display: block;
   width: 100%;
   height: auto;
   aspect-ratio: 16 / 9;
   margin: 1.2em 0;
+  overflow: hidden;
+  border: 0;
   border-radius: 0.6rem;
   background: var(--md-primary-fg-color);
   box-shadow: 0 0.6rem 1.6rem rgba(0, 0, 0, 0.18);
+}
+
+.md-typeset .teaser img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Play button: white triangle on the pink of the site, darker on hover and focus */
+.md-typeset .teaser__play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 50%;
+  background: #D12C48;
+  box-shadow: 0 0.3rem 1rem rgba(0, 0, 0, 0.35);
+  transform: translate(-50%, -50%);
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.md-typeset .teaser__play::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 54%;
+  border-style: solid;
+  border-width: 0.85rem 0 0.85rem 1.4rem;
+  border-color: transparent transparent transparent #FFFFFF;
+  transform: translate(-50%, -50%);
+}
+
+.md-typeset a.teaser:hover .teaser__play,
+.md-typeset a.teaser:focus-visible .teaser__play {
+  background: #8E1428;
+  transform: translate(-50%, -50%) scale(1.08);
+}
+
+.md-typeset a.teaser:focus-visible {
+  outline: 3px solid var(--md-accent-fg-color);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .md-typeset .teaser__play {
+    transition: none;
+  }
 }
 
 /* ===== Screenshots of the mobile apps, side by side (wrapped on narrow screens) ===== */

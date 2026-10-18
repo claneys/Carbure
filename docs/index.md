@@ -28,10 +28,10 @@ vous. Les opérations sont récupérées automatiquement auprès des banques fra
 
 Tous s'appuient sur la même **API REST PHP** (`src/`).
 
-<video class="teaser" controls playsinline preload="none" poster="assets/carbure-header.jpg">
-  <source src="assets/videos/carbure-teaser.mp4" type="video/mp4">
-  Votre navigateur ne lit pas cette vidéo : <a href="assets/videos/carbure-teaser.mp4">la télécharger</a>.
-</video>
+<a class="teaser" href="https://www.youtube.com/watch?v=PUCd27oJkig" data-youtube="PUCd27oJkig" title="Teaser de Carbure (1 min) sur YouTube">
+  <img src="assets/teaser-youtube.jpg" alt="Lire le teaser de Carbure (1 min, YouTube)" width="1280" height="720">
+  <span class="teaser__play" aria-hidden="true"></span>
+</a>
 
 *Carbure en une minute : synchronisation, catégorisation, budgets, flux du mois, tendances,
 insights, notifications, agent IA et foyer.*
