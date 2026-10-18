@@ -41,6 +41,8 @@ jobs:
         if: github.event_name != 'pull_request'
         with:
           path: site
+          # .well-known/ (Universal Links, App Links) is a hidden directory
+          include-hidden-files: true
 
   deploy:
     name: Deploy to GitHub Pages

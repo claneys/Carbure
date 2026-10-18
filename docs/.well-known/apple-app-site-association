@@ -1,0 +1,13 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["M5QBT9H9V7.org.carbure.app"],
+        "components": [
+          { "/": "/app", "comment": "Server link: /app?server=…" },
+          { "/": "/app/", "comment": "Server link: /app/?server=…" }
+        ]
+      }
+    ]
+  }
+}

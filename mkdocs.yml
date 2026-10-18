@@ -44,6 +44,13 @@ theme:
   icon:
     repo: fontawesome/brands/github
 
+# Published but outside the navigation: the association files of the mobile apps
+# (Universal Links, App Links) and the page their server links open without the app
+exclude_docs: |
+  !.well-known/
+not_in_nav: |
+  /app.md
+
 plugins:
   - search:
       lang: fr
