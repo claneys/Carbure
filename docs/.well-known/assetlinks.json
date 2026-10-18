@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "org.carbure.app",
+      "sha256_cert_fingerprints": [
+        "B8:81:8A:63:CD:64:79:D4:B9:B9:21:F0:54:91:F3:05:23:35:15:21:41:7B:88:D3:F6:87:2E:26:84:9A:09:B2"
+      ]
+    }
+  }
+]
