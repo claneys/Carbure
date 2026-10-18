@@ -89,6 +89,9 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: write
+    outputs:
+      # true when this run created the release (not when it already existed)
+      created: ${{ steps.publish.outputs.created }}
     steps:
       # git archive works on the local clone: the git credentials are not needed (the
       # release is created by gh with GH_TOKEN)
@@ -114,6 +117,7 @@ jobs:
       # gh creates a draft, uploads the archives, then publishes it: the release is
       # complete when it becomes immutable
       - name: Publish the release with its archives
+        id: publish
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -126,6 +130,50 @@ jobs:
             flags+=(--prerelease)
           fi
           gh release create "$TAG" dist/* --title "Carbure $TAG" --generate-notes --verify-tag "${flags[@]}"
+          echo "created=true" >> "$GITHUB_OUTPUT"
+
+  discord:
+    name: Announce on Discord
+    # A release created with GITHUB_TOKEN triggers no other workflow ("release: published"):
+    # announced here, once, when this run created a release (not a pre-release)
+    needs: release
+    if: needs.release.outputs.created == 'true' && !contains(inputs.tag || github.ref_name, '-')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      # Webhook of the #changelog channel of the Carbure Discord server (Channel settings →
+      # Integrations → Webhooks), in the secret DISCORD_CHANGELOG_WEBHOOK. The notes are
+      # sent as an embed (4096 characters at most: cut, with a link to the full notes);
+      # no mention pings anyone (the generated notes name the authors with @)
+      - name: Post the release on the changelog channel
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WEBHOOK: ${{ secrets.DISCORD_CHANGELOG_WEBHOOK }}
+        run: |
+          if [ -z "$WEBHOOK" ]; then
+            echo "::notice::No secret DISCORD_CHANGELOG_WEBHOOK: the release is not announced on Discord"
+            exit 0
+          fi
+          gh release view "$TAG" -R "$GITHUB_REPOSITORY" --json name,url,body > release.json
+          jq --arg version "${TAG#v}" '
+            def notes: (.body // "") | gsub("\r"; "") as $body
+              | if ($body | length) > 3800
+                then ($body[0:3800] | sub("\n[^\n]*$"; "")) + "\n\n…"
+                else $body end;
+            {
+              username: "Carbure",
+              allowed_mentions: { parse: [] },
+              embeds: [{
+                title: ("🚀 " + .name),
+                url: .url,
+                color: 13708360,
+                description: (notes + "\n\n[Notes complètes / Full release notes](" + .url + ")"),
+                fields: [{ name: "Docker", value: ("`docker pull ltoinel/carbure:" + $version + "`") }]
+              }]
+            }' release.json > payload.json
+          curl -fsS --retry 3 -H "Content-Type: application/json" --data @payload.json "$WEBHOOK"
 
   docker:
     name: Docker image

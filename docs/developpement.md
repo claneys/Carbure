@@ -335,7 +335,11 @@ Le workflow lance la CI, publie l'image Docker Hub `ltoinel/carbure` (`1.2.0`, `
 pré-release, sans le tag `latest`. Les releases du dépôt sont **immuables** : aucun fichier
 ne peut être ajouté une fois la release publiée, d'où cet ordre (le workflow crée un
 brouillon, y joint les archives, puis le publie). L'image reçoit aussi une attestation de
-provenance (voir [Sécurité](securite.md#verifier-lorigine-de-limage)).
+provenance (voir [Sécurité](securite.md#verifier-lorigine-de-limage)). Une nouvelle release
+(pas une pré-release) est ensuite annoncée sur le canal **#changelog** du
+[serveur Discord](https://discord.gg/QsxYw4Rx9D) : titre, lien, notes et commande
+`docker pull`, par le webhook du secret `DISCORD_CHANGELOG_WEBHOOK` (sans ce secret,
+l'annonce est sautée).
 
 **Actions → Release → Run workflow** (champ `tag`) reconstruit l'image Docker d'un tag
 existant ; sa release, immuable, n'est pas modifiée. Le tag doit être une version

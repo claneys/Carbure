@@ -335,7 +335,11 @@ label, `.github/release.yml`). A tag with a suffix (`v1.2.0-rc.1`) produces a
 pre-release, without the `latest` tag. The repository's releases are **immutable**: no file
 can be added once the release is published, hence this order (the workflow creates a
 draft, attaches the archives to it, then publishes it). The image also receives a provenance
-attestation (see [Security](securite.md#verifier-lorigine-de-limage)).
+attestation (see [Security](securite.md#verifier-lorigine-de-limage)). A new release
+(not a pre-release) is then announced on the **#changelog** channel of the
+[Discord server](https://discord.gg/QsxYw4Rx9D): title, link, notes and `docker pull`
+command, through the webhook of the secret `DISCORD_CHANGELOG_WEBHOOK` (without this
+secret, the announcement is skipped).
 
 **Actions → Release → Run workflow** (`tag` field) rebuilds the Docker image of an existing
 tag; its release, being immutable, is not changed. The tag must be an existing semantic
