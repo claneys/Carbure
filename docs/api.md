@@ -695,10 +695,12 @@ Gestion des insights, avec leur requête SQL :
 | `icon` | non | Icône Material (`[a-z0-9_]`) ; choisie d'après le nom si vide |
 
 La requête doit être un unique `SELECT` renvoyant une colonne `amount`, sans `;` ni
-commentaire, sans mot-clé d'écriture, d'administration, de fichier ou de temporisation, et
-ne peut pas lire les tables `users`, `api_tokens`, `devices` ni les schémas système. Elle
-est testée sur le mois courant avant l'enregistrement (`400` avec la cause sinon) et
-exécutée dans une transaction en lecture seule. `POST` et `PUT` renvoient l'insight avec
+commentaire ni `\`, sans mot-clé d'écriture, d'administration, de fichier ou de
+temporisation, et ne lit que les tables du budget (`bank_transaction`,
+`bank_transaction_category`, `bank_transaction_category_keyword`, `budget`,
+`bank_account`, `bank_backend`, sans nom de base). Elle est testée sur le mois courant avant
+l'enregistrement (`400` avec la cause sinon) et exécutée dans une transaction en lecture
+seule, en 5 secondes au plus (au-delà : `400` à l'enregistrement, `0` dans les listes). `POST` et `PUT` renvoient l'insight avec
 le montant du mois courant.
 
 ### `POST /insight/check` — administrateur

@@ -23,8 +23,8 @@ Le serveur refuse une requête qui ne les respecte pas (la fenêtre d'ajout l'in
 la saisie) :
 
 - **une seule instruction `SELECT`**, de **500 caractères au plus** (espaces et retours à la
-  ligne compris), sans `;` au milieu ni commentaire (`--`, `#`, `/* */`) ; `WITH` n'est pas
-  accepté, une sous-requête dans le `FROM` l'est ;
+  ligne compris), sans `;` au milieu, ni commentaire (`--`, `#`, `/* */`), ni barre oblique
+  inverse (`\`) ; `WITH` n'est pas accepté, une sous-requête dans le `FROM` l'est ;
 - elle renvoie une **colonne nommée `amount`** (`… AS amount`) : seule la **première ligne**
   est lue ;
 - `{month}` et `{year}` sont remplacés par le **mois** (1 à 12) et l'**année** affichés,
@@ -33,9 +33,18 @@ la saisie) :
   `DELETE`, `CREATE`, `DROP`…), `SET`, `DO`, `INTO`, `LOAD`, `SLEEP`, `BENCHMARK`, `SHOW`,
   `CALL`, `LOCK`, `USER`, `PASSWORD`… (liste complète dans `src/resources/Insight.php`) ;
   la colonne `user` des transactions ne peut donc pas être lue ;
-- **tables interdites** : `users`, `api_tokens`, `devices` et les schémas système
-  (`mysql`, `information_schema`, `performance_schema`, `sys`) ;
-- la requête s'exécute dans une **transaction en lecture seule**.
+- **seules les tables du budget sont lisibles** : `bank_transaction`,
+  `bank_transaction_category`, `bank_transaction_category_keyword` (règles de
+  catégorisation), `budget`, `bank_account` et `bank_backend` (connexions bancaires), sans
+  nom de base devant (`carbure.bank_transaction` est refusé). Toute autre table est refusée :
+  utilisateurs, double authentification, jetons, appareils, OAuth, paramètres, insights,
+  migrations… ainsi que les schémas système (`mysql`, `information_schema`,
+  `performance_schema`, `sys`). Le nom d'une table refusée est interdit partout dans la
+  requête, même dans un texte entre apostrophes ;
+- la requête s'exécute dans une **transaction en lecture seule**, en **5 secondes au plus** :
+  au-delà, le serveur l'interrompt (la fenêtre d'ajout l'indique, la carte affiche
+  0,00 €). Elle est exécutée à chaque affichage de l'onglet Insights, et douze fois pour
+  l'historique d'une année : évitez les produits cartésiens.
 
 Le **nom** compte de 1 à **20 caractères** ; la **couleur** est l'une des 13 couleurs :
 `red`, `orange`, `amber`, `lime`, `green`, `teal`, `cyan`, `blue`, `indigo`, `purple`,

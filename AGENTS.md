@@ -18,7 +18,7 @@ built by the GitHub release workflow; committing/pushing is not deploying.
 |---|---|
 | `src/api.php` | HTTP entry (`/api/*`); without `conf/<env>.ini` serves only `/api/setup` |
 | `src/autoload.php` | Registers `ClassLoader` (PSR-4, on demand, no Composer), then `Config::load(getenv('APP_ENV') ?: 'prod')` |
-| `src/lib/` | Namespace `Carbure\Lib`: `ClassLoader`, `Config`, `Db` (mysqli), `Logger`, `Jwt`, `Webservice` (+ security headers), `ApiResolver`, `ApiRoute`, `Woob`, `PushRelay` (client of Carbure Push), `Mailer` (SMTP), `Messages` (fr/en texts of the notifications), `Setup`/`Installer`, `Migrator`, `Setting` |
+| `src/lib/` | Namespace `Carbure\Lib`: `ClassLoader`, `Config`, `Db` (mysqli), `Logger`, `Jwt`, `Webservice` (+ security headers), `ApiResolver`, `ApiRoute`, `Woob`, `PushRelay` (client of Carbure Push), `Mailer` (SMTP), `Messages` (fr/en texts of the notifications), `Setup`/`Installer`, `Migrator`, `Setting`, `SqlTables` (tables read by an insight query) |
 | `src/lib/import/` | Namespace `Carbure\Lib\Import`: statement import behind `BankFile::parse()`: `OfxReader`, `QifReader`, `CamtReader`, `CsvReader` (+ `CsvGeneric` fallback), `BankProfiles` (schema) |
 | `src/lib/import/banks/` | One CSV profile per bank (`<id>.php` returns an array, no class: loaded by path by `BankProfiles`); fixtures `tests/fixtures/import/`, snapshots `…/expected/` |
 | `src/resources/` | Namespace `Carbure\Resources`: `User`, `Bank`, `Transaction`, `Budget`, `Category`, `Insight`, `Device`, `Notification`, `ApiToken`, `Mcp`, `OAuth`, `System` |

@@ -28,6 +28,10 @@ keeps track of what was done).
       arm64, and mention the demo tag in the overview of the Docker Hub repository
       (accounts: `demo` / `carbure`, `admin` with a random password printed in the logs).
 
+- [ ] **Insights restricted to the budget tables (#226)**: after the upgrade, an insight
+      whose query reads another table (or takes more than 5 s) shows 0: check the
+      Insights tab of the instance and fix such queries.
+
 - [ ] **Push relay — release the device bindings**: Carbure never calls
       `DELETE /v1/devices/{token}` of the relay. A device deleted from an instance (or
       moved to another instance) stays bound to the key of the first instance, so a second

@@ -168,10 +168,20 @@ administrateur peut les gérer, et chaque requête est encadrée :
 
 - à l'enregistrement : un unique `SELECT`, sans `;` ni commentaire, sans mot-clé d'écriture,
   d'administration, de fichier (`INTO OUTFILE`, `LOAD_FILE`) ou de temporisation (`SLEEP`,
-  `BENCHMARK`), sans accès aux tables `users`, `api_tokens`, `devices` ni aux schémas système ;
-  la requête est testée avant d'être enregistrée ;
-- à l'exécution : dans une **transaction en lecture seule** (`START TRANSACTION READ ONLY`),
-  et une requête en échec donne `0` sans bloquer les autres.
+  `BENCHMARK`), sans barre oblique inverse ; la requête est testée avant d'être enregistrée ;
+- **liste blanche de tables** : seules les tables du budget sont lisibles
+  (`bank_transaction`, `bank_transaction_category`, `bank_transaction_category_keyword`,
+  `budget`, `bank_account`, `bank_backend`), sans nom de base. Les autres tables du schéma
+  (`users`, `user_mfa` et ses secrets TOTP, codes de secours, jetons, appareils, OAuth,
+  paramètres…) et les schémas système sont refusés, même cités dans une sous-requête, une
+  `UNION` ou un message d'erreur provoqué (`EXTRACTVALUE`) : le message d'erreur renvoyé par
+  `POST /insight/check` ne peut donc contenir que des données du budget. Un test unitaire
+  impose de classer chaque nouvelle table de `sql/carbure.sql` ;
+- à l'exécution : la requête est **vérifiée à nouveau** (une requête enregistrée avant ces
+  règles n'est pas exécutée), dans une **transaction en lecture seule** (`START TRANSACTION
+  READ ONLY`) et avec une **limite de 5 secondes** (`SET STATEMENT max_statement_time` sous
+  MariaDB, indication `MAX_EXECUTION_TIME` sous MySQL) ; une requête en échec ou trop longue
+  donne `0` sans bloquer les autres.
 
 ## Jetons d'accès (MCP)
 

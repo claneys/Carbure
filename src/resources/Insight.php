@@ -6,8 +6,8 @@
  * Insights of the Insights tab: a name, a color and an SQL query returning an
  * `amount` for a month ({month} and {year} are replaced by the selected month).
  * Administrators manage them; as the SQL is stored and executed by the server,
- * it is restricted to one read-only SELECT on the bank data, run in a read-only
- * transaction.
+ * it is restricted to one read-only SELECT on the budget tables (Insight::READABLE_TABLES),
+ * run in a read-only transaction with a time limit (Insight::$maxSeconds).
  *
  * @author     Ludovic Toinel
  * @copyright  2026 Carbure App
@@ -19,6 +19,7 @@ use Carbure\Lib\ApiRoute;
 use Carbure\Lib\Db;
 use Carbure\Lib\Logger;
 use Carbure\Lib\Month;
+use Carbure\Lib\SqlTables;
 use Error;
 use Throwable;
 
@@ -37,9 +38,32 @@ final class Insight {
         . 'GET_LOCK|RELEASE_LOCK|SHOW|DESCRIBE|EXPLAIN|KILL|SHUTDOWN|FLUSH|RESET|PURGE|INSTALL|UNINSTALL|USER|PASSWORD|CURRENT_USER|SYSTEM_USER|SESSION_USER';
 
     /**
-     * Tables an insight cannot read: credentials and devices, and the system schemas
+     * Tables an insight can read: the budget data
      */
-    private const FORBIDDEN_TABLES = 'users|api_tokens|devices|mysql|information_schema|performance_schema|sys';
+    public const READABLE_TABLES = ['bank_account', 'bank_backend', 'bank_transaction', 'bank_transaction_category',
+        'bank_transaction_category_keyword', 'budget'];
+
+    /**
+     * Tables refused even as a word of the query: every other table of sql/carbure.sql
+     * (credentials, MFA secrets, OAuth, settings... a unit test keeps the list in sync with
+     * the schema) and the system schemas
+     */
+    public const REFUSED_TABLES = ['api_tokens', 'bank_transaction_deleted', 'budget_alert', 'budget_insight', 'devices',
+        'mfa_recovery_code', 'mfa_trusted_browser', 'oauth_clients', 'oauth_codes', 'schema_migrations', 'settings',
+        'user_mfa', 'user_notification', 'users',
+        'mysql', 'information_schema', 'performance_schema', 'sys'];
+
+    /**
+     * MySQL/MariaDB errors of a query stopped by its time limit: MariaDB max_statement_time,
+     * MySQL max_execution_time
+     */
+    private const TIMEOUT_ERRORS = [1969, 3024];
+
+    /**
+     * Time limit of an insight query, in seconds (run at each display of the Insights tab,
+     * twelve times for the history of a year)
+     */
+    public static float $maxSeconds = 5.0;
 
     /**
      * All the insights with their SQL (administrators).
@@ -198,8 +222,8 @@ final class Insight {
     }
 
     /**
-     * Check the query of an insight: a single SELECT, without comment nor forbidden
-     * keyword or table, returning a column named amount.
+     * Check the query of an insight: a single SELECT, without comment, backslash nor
+     * forbidden keyword, reading only the budget tables, returning a column named amount.
      *
      * @param string $sql The query
      * @return string The query without its final semicolon and spaces
@@ -214,21 +238,40 @@ final class Insight {
         if (!preg_match('/^SELECT\s/i', $sql)) {
             throw new Error("The query must be a SELECT", 400);
         }
-        // One statement, no comment (they could hide a part of the query)
-        if (preg_match('/;|--|#|\/\*|\*\//', $sql)) {
-            throw new Error("The query must be a single statement without comments", 400);
+        // One statement, no comment (they could hide a part of the query), no backslash
+        // (the end of a quoted text would depend on the SQL mode of the server)
+        if (preg_match('/;|--|#|\/\*|\*\/|\\\\/', $sql)) {
+            throw new Error("The query must be a single statement without comments nor backslashes", 400);
         }
         if (preg_match('/\b(' . self::FORBIDDEN_WORDS . ')\b/i', $sql, $match)) {
             throw new Error("Forbidden keyword in the query: " . strtoupper($match[1]), 400);
         }
-        if (preg_match('/\b(' . self::FORBIDDEN_TABLES . ')\b/i', $sql, $match)) {
-            throw new Error("The query cannot read " . $match[1], 400);
-        }
+        self::validateTables($sql);
         if (!preg_match('/\bAS\s+`?amount`?\b/i', $sql)) {
             throw new Error("The query must return a column named amount (… AS amount)", 400);
         }
 
         return $sql;
+    }
+
+    /**
+     * Check the tables of a query: no word naming a refused table, and only the readable
+     * tables where a table is read (FROM, JOIN), without database name.
+     *
+     * @param string $sql The query
+     * @return void
+     * @throws Error If the query reads another table
+     */
+    private static function validateTables(string $sql): void
+    {
+        if (preg_match('/\b(' . implode('|', self::REFUSED_TABLES) . ')\b/i', $sql, $match)) {
+            throw new Error("The query cannot read " . $match[1], 400);
+        }
+        foreach (SqlTables::references($sql) as $table) {
+            if (!in_array(strtolower($table), [...self::READABLE_TABLES, 'dual'], true)) {
+                throw new Error("The query cannot read $table (readable tables: " . implode(', ', self::READABLE_TABLES) . ")", 400);
+            }
+        }
     }
 
     /**
@@ -248,21 +291,27 @@ final class Insight {
     }
 
     /**
-     * Run an insight query in a read-only transaction.
+     * Run an insight query in a read-only transaction, with a time limit. The query is
+     * checked again: one stored before the current checks is not run.
      *
      * @param string $sql   The query with {month} and {year}
      * @param int    $month The month
      * @param int    $year  The year
      * @return float|null The amount
-     * @throws Throwable If the query fails or does not return an amount
+     * @throws Throwable If the query is invalid, fails, takes too long or does not return an amount
      */
     private static function run(string $sql, int $month, int $year): ?float
     {
-        $sql = str_replace(['{month}', '{year}'], [(string)$month, (string)$year], $sql);
+        $sql = str_replace(['{month}', '{year}'], [(string)$month, (string)$year], self::validateQuery($sql));
 
         Db::query("START TRANSACTION READ ONLY");
         try {
-            $row = Db::query($sql)->fetch_assoc();
+            $row = Db::query(self::bounded($sql))->fetch_assoc();
+        } catch (Throwable $e) {
+            if (in_array(Db::getConnection()->errno, self::TIMEOUT_ERRORS, true)) {
+                throw new Error("The query takes more than " . self::$maxSeconds . " seconds", 400);
+            }
+            throw $e;
         } finally {
             Db::query("COMMIT");
         }
@@ -271,5 +320,20 @@ final class Insight {
             throw new Error("The query must return a column named amount", 400);
         }
         return $row['amount'] === null ? null : round((float)$row['amount'], 2);
+    }
+
+    /**
+     * Add the time limit to a query: SET STATEMENT max_statement_time (seconds) on
+     * MariaDB, the hint MAX_EXECUTION_TIME (milliseconds) on MySQL.
+     *
+     * @param string $sql The query (a SELECT)
+     * @return string The query with its time limit
+     */
+    private static function bounded(string $sql): string
+    {
+        if (str_contains(Db::getConnection()->server_info, 'MariaDB')) {
+            return "SET STATEMENT max_statement_time=" . self::$maxSeconds . " FOR " . $sql;
+        }
+        return (string)preg_replace('/^SELECT\b/i', 'SELECT /*+ MAX_EXECUTION_TIME(' . (int)ceil(self::$maxSeconds * 1000) . ') */', $sql, 1);
     }
 }

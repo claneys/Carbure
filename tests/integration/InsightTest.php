@@ -6,6 +6,8 @@ use Carbure\Resources\Insight;
 
 class InsightTest extends DatabaseTestCase
 {
+    private const SQL_SLOW_MONTH = "SELECT SUM(amount) AS amount FROM bank_transaction WHERE label = 'Slow' AND MONTH(date)={month} AND YEAR(date)={year}";
+
     private const SQL = 'SELECT SUM(amount) AS amount FROM bank_transaction WHERE amount > 0 AND MONTH(date)={month} AND YEAR(date)={year}';
 
     protected function setUp(): void
@@ -114,5 +116,58 @@ class InsightTest extends DatabaseTestCase
         Db::query("INSERT INTO budget_insight (name, color, `sql`) VALUES ('Écriture', 'gray', 'UPDATE bank_transaction SET amount = 0')");
         Budget::getInsights();
         $this->assertNotEquals(0, Db::queryOne("SELECT SUM(ABS(amount)) AS s FROM bank_transaction", "")['s']);
+    }
+
+    public function testStoredQueryOnARefusedTableIsNotRun()
+    {
+        // A query stored before the allow-list (or imported in the database)
+        Db::query("INSERT INTO user_mfa (user_id, secret, created_at) VALUES (1, 'JBSWY3DPEHPK3PXP', NOW())");
+        Db::query("INSERT INTO budget_insight (name, color, `sql`) VALUES ('Secret', 'gray', 'SELECT ORD(SUBSTRING(secret,1,1)) AS amount FROM user_mfa')");
+        $this->assertEquals(0, array_column(Budget::getInsights(), 'amount', 'name')['Secret']);
+
+        $check = Insight::check('SELECT EXTRACTVALUE(1,CONCAT(0x7e,(SELECT secret FROM user_mfa LIMIT 1))) AS amount');
+        $this->assertFalse($check['valid']);
+        $this->assertStringNotContainsString('JBSWY3DPEHPK3PXP', $check['error']);
+        $this->assertStringContainsString('cannot read user_mfa', $check['error']);
+    }
+
+    public function testSlowQueryIsStopped()
+    {
+        // 300 transactions: the cartesian product of four copies has 8 billion rows (SUM: MySQL
+        // computes a COUNT(*) of a cartesian product without reading it)
+        $rows = [];
+        for ($i = 0; $i < 300; $i++) {
+            $rows[] = [md5("slow$i"), '2020-01-01', '2020-01-01', 'Slow', -1];
+        }
+        Db::executeMany("INSERT INTO bank_transaction (uuid, date, rdate, type, label, category, amount, user) VALUES (?, ?, ?, 1, ?, 0, ?, 1)", "ssssd", $rows);
+        $slow = 'SELECT SUM(a.amount) AS amount FROM bank_transaction a, bank_transaction b, bank_transaction c, bank_transaction d';
+
+        $previous = Insight::$maxSeconds;
+        Insight::$maxSeconds = 0.05;
+        try {
+            $start = microtime(true);
+            $check = Insight::check($slow);
+            $this->assertFalse($check['valid']);
+            $this->assertSame('The query takes more than 0.05 seconds', $check['error']);
+            $this->assertLessThan(5, microtime(true) - $start);
+
+            // In the list, a value of 0 without breaking the other insights
+            Db::execute("INSERT INTO budget_insight (name, color, `sql`) VALUES ('Lent', 'gray', ?)", "s", $slow);
+            $insights = array_column(Budget::getInsights(1, 2020), 'amount', 'name');
+            $this->assertEquals(0, $insights['Lent']);
+            $this->assertLessThanOrEqual(-300, $insights['Dépenses']);
+
+            try {
+                Insight::create('Lent', 'red', $slow);
+                $this->fail('Slow query saved');
+            } catch (Error $e) {
+                $this->assertSame(400, $e->getCode());
+                $this->assertStringContainsString('more than 0.05 seconds', $e->getMessage());
+            }
+        } finally {
+            Insight::$maxSeconds = $previous;
+        }
+        // The connection stays usable, with the default time limit
+        $this->assertSame(['valid' => true, 'amount' => -300.0], Insight::check(self::SQL_SLOW_MONTH, 1, 2020));
     }
 }

@@ -233,6 +233,7 @@ notifications, alertes de budget envoyées) sont propres à chaque utilisateur.
 ## Limites connues
 
 - `budget_insight` stocke du SQL exécuté par le serveur : il est encadré (administrateurs
-  seulement, mots-clés et tables interdits, transaction en lecture seule), mais des
+  seulement, mots-clés interdits, tables du budget seulement, transaction en lecture seule
+  limitée à 5 secondes), mais des
   indicateurs définis dans le code seraient plus sûrs. Une requête d'insight écrite avec
   `MONTH(date)` / `YEAR(date)` n'utilise pas l'index sur les dates : préférer un intervalle.
