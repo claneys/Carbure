@@ -1,5 +1,7 @@
 // Push service (Carbure Push) simulated for the specs that register the instance and
-// send a test push (Settings tab): proof of work of difficulty 4, every key accepted
+// send a test push (Settings tab), on the port where the server sends its push
+// notifications (E2E_PUSH_PORT, see playwright.config.js): proof of work of difficulty
+// 4, every key accepted
 // except those it revoked, the notifications kept in memory. As
 // tests/fixtures/fake-push-relay.php does: the token 64 x "f" is unregistered.
 const http = require('http');
@@ -15,7 +17,7 @@ function newKey() {
 }
 
 /**
- * Starts the fake push service on a free port of 127.0.0.1
+ * Starts the fake push service on 127.0.0.1, port E2E_PUSH_PORT
  * @returns {Promise<{url: string, keys: string[], notifications: Array<Object>, close: Function}>}
  */
 function startFakePushRelay() {
@@ -35,6 +37,9 @@ function startFakePushRelay() {
             };
             const known = keys.includes(key) && !revoked.has(key);
 
+            if (request.url === '/v1/health') {
+                return answer(200, { status: 'ok', version: 'e2e' });
+            }
             if (request.url === '/v1/register/challenge') {
                 return answer(200, { challenge: `e2e.${crypto.randomBytes(4).toString('hex')}`, difficulty: 4, algorithm: 'sha256', expires_at: 0 });
             }
@@ -49,6 +54,10 @@ function startFakePushRelay() {
             }
             if (!known) {
                 return answer(401, { error: 'Missing or invalid API key', code: 401 });
+            }
+            if (request.url === '/v1/keys/current') {
+                return answer(200, { key_id: key.slice(4, 20), name: 'carbure.e2e', created_at: 0,
+                    limits: { notifications_per_day: 500, devices: 20 }, devices: 1, used_today: notifications.filter(n => n.key === key).length });
             }
             if (request.url === '/v1/keys/rotate') {
                 revoked.add(key);
@@ -74,7 +83,7 @@ function startFakePushRelay() {
     });
 
     return new Promise(resolve => {
-        server.listen(0, '127.0.0.1', () => {
+        server.listen(Number(process.env.E2E_PUSH_PORT), '127.0.0.1', () => {
             resolve({
                 url: `http://127.0.0.1:${server.address().port}`,
                 keys,

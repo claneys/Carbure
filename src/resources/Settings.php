@@ -31,8 +31,8 @@ use Exception;
 
 final class Settings {
 
-    /** Settings whose value is never sent to the portal (apns_certificate_password: files
-     *  older than the push service) */
+    /** Settings whose value is never sent in the configuration (apns_certificate_password:
+     *  files older than the push service; push_api_key is shown by GET /system/push) */
     const SECRETS = ['db_password', 'jwtsecret', 'password_salt', 'sync_token', 'apns_certificate_password', 'smtp_password', 'push_api_key'];
 
     /**
@@ -56,9 +56,8 @@ final class Settings {
         'woob_auto_update' => ['kind' => 'bool'],
         'woob_2fa_wait' => ['kind' => 'number', 'min' => 0, 'max' => 300],
         'woob_2fa_retries' => ['kind' => 'number', 'min' => 0, 'max' => 5],
-        // Push service (Carbure Push): empty push_url is the official one, empty
+        // Push service (Carbure Push, always https://api.carbure.org): empty
         // push_api_key: no push is sent
-        'push_url' => ['kind' => 'url', 'empty' => true],
         'push_api_key' => ['kind' => 'password', 'pattern' => '/^cpk_[0-9a-f]{16}_[0-9a-f]{64}$/', 'empty' => true],
         // Empty smtp_host: no email is sent
         'smtp_host' => ['kind' => 'text', 'pattern' => '/^[A-Za-z0-9.\-]{1,253}$/', 'empty' => true],
@@ -77,10 +76,14 @@ final class Settings {
         'mfa_required' => 'auth',
         'woob_transactions' => 'woob', 'woob_logging' => 'woob', 'woob_debug' => 'woob', 'woob_auto_update' => 'woob',
         'woob_2fa_wait' => 'woob', 'woob_2fa_retries' => 'woob',
-        'push_url' => 'push', 'push_api_key' => 'push',
+        'push_api_key' => 'push',
         'smtp_host' => 'smtp', 'smtp_port' => 'smtp', 'smtp_encryption' => 'smtp', 'smtp_auth' => 'smtp',
         'smtp_username' => 'smtp', 'smtp_password' => 'smtp', 'smtp_from' => 'smtp', 'smtp_from_name' => 'smtp',
     ];
+
+    /** Settings no longer used, not shown even if an older file has them (push_url: the
+     *  relay is always https://api.carbure.org) */
+    const OBSOLETE = ['push_url'];
 
     /**
      * The configuration file, by section (administrators).
@@ -103,8 +106,10 @@ final class Settings {
         foreach ($ini as $name => $settings) {
             $list = [];
             foreach ((array)$settings as $key => $value) {
-                $list[] = self::describe($key, $value);
-                $seen[$key] = true;
+                if (!in_array($key, self::OBSOLETE, true)) {
+                    $list[] = self::describe($key, $value);
+                    $seen[$key] = true;
+                }
             }
             $sections[$name] = $list;
         }
@@ -254,11 +259,12 @@ final class Settings {
 
     /**
      * The push service of the instance (administrators): the relay the notifications go
-     * through and the consent of the administrator to it.
+     * through, the API key of the instance and the consent of the administrator to it.
      *
      * @return array<string, mixed> url (of the relay), official (the relay of Carbure),
-     *               registered (an API key is saved), consent ({at (ISO 8601 date), url} or
-     *               null), consent_valid (given for the current relay)
+     *               registered (an API key is saved), api_key (the key, '' if none),
+     *               consent ({at (ISO 8601 date), url} or null), consent_valid (given for
+     *               the current relay), config_writable (the key can be saved)
      */
     #[ApiRoute('/system/push', method: 'GET', admin: true)]
     public static function push(): array
@@ -266,11 +272,26 @@ final class Settings {
         $consent = self::pushConsent();
         return [
             'url' => PushRelay::url(),
-            'official' => PushRelay::url() === PushRelay::DEFAULT_URL,
+            'official' => PushRelay::url() === PushRelay::URL,
             'registered' => PushRelay::isConfigured(),
+            'api_key' => PushRelay::apiKey(),
             'consent' => $consent,
             'consent_valid' => $consent !== null && $consent['url'] === PushRelay::url(),
+            'config_writable' => is_writable(self::file()),
         ];
+    }
+
+    /**
+     * Status of the push service (administrators): the relay answers (its health) and
+     * accepts the key of the instance (its devices and notifications of the day).
+     *
+     * @return array<string, mixed> relay {reachable, status, version, error}, key {state:
+     *               valid, invalid, none or unknown, key_id, devices, used_today, limits, error}
+     */
+    #[ApiRoute('/system/push-status', method: 'GET', admin: true)]
+    public static function pushStatus(): array
+    {
+        return PushRelay::status();
     }
 
     /**
@@ -278,7 +299,7 @@ final class Settings {
      * the configuration file (administrators). With a key already, the key is renewed
      * instead: the devices keep receiving the notifications. The key is never returned.
      * The consent of the administrator is required for a registration, and for a renewal
-     * when it was not given for the current relay (push_url changed); it is recorded
+     * when it was not given for the current relay; it is recorded
      * with its date and the relay.
      *
      * @param string|bool|null $consent The administrator accepts that the notifications

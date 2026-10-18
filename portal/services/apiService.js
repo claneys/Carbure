@@ -433,10 +433,18 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
 
     /**
      * The relay of the push service and the consent of the administrators to it
-     * @returns {Promise<Object>} {url, official, registered, consent: {at, url}|null, consent_valid}
+     * @returns {Promise<Object>} {url, official, registered, api_key, consent: {at, url}|null, consent_valid, config_writable}
      */
     async function fetchPushInfo() {
         return request(`${baseUrl}/system/push`, {}, 'Failed to load the push service');
+    }
+
+    /**
+     * Status of the push service: health of the relay and status of the API key
+     * @returns {Promise<Object>} {relay: {reachable, status, version, error}, key: {state, key_id, devices, used_today, limits, error}}
+     */
+    async function fetchPushStatus() {
+        return request(`${baseUrl}/system/push-status`, {}, 'Failed to load the status of the push service');
     }
 
     /**
@@ -1174,6 +1182,7 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
         renewSyncToken,
         sendTestEmail,
         fetchPushInfo,
+        fetchPushStatus,
         registerPush,
         sendTestPush,
         fetchNotifications,

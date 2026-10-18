@@ -13,7 +13,7 @@ test.beforeEach(async ({ page }) => {
 
 /** Tabs of the main navigation (administrators), then those of the Administration menu */
 const MAIN_TABS = ['tabTransactions', 'tabBudget', 'tabInsights', 'tabTrends', 'tabRules', 'tabAccounts'];
-const ADMIN_TABS = ['tabUsers', 'tabCategories', 'tabSync', 'tabAgents', 'tabLogs', 'tabSettings', 'tabBackup'];
+const ADMIN_TABS = ['tabUsers', 'tabCategories', 'tabSync', 'tabPush', 'tabAgents', 'tabLogs', 'tabSettings', 'tabBackup'];
 /** Tabs of a user who is not an administrator */
 const USER_TABS = ['tabTransactions', 'tabBudget', 'tabInsights', 'tabTrends'];
 

@@ -65,6 +65,10 @@ putenv("CARBURE_TEST_TMP=$carbureTestTmp");
 $_ENV['CARBURE_TEST_TMP'] = $carbureTestTmp;
 register_shutdown_function('carbure_test_remove_dir', $carbureTestTmp);
 
+// No test reaches the relay of Carbure: the push notifications go to an unreachable
+// address unless a test starts the fake relay (tests/FakePushRelay.php)
+putenv('CARBURE_PUSH_URL=http://127.0.0.1:1');
+
 // Fake woob CLI (see tests/fixtures/fake-woob.php), with its configuration file of the
 // backends (written by Woob::addBackend()) in the directory of the run
 Config::set('woob_path', 'env WOOB_BACKENDS=' . escapeshellarg(carbure_test_tmp('carbure-fake-woob-backends')) . ' '

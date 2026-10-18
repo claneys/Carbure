@@ -1486,47 +1486,18 @@
                                     </p>
                                     <p v-else-if="smtpTestResult" class="smtp-test-result sync-step-error" role="alert">{{ smtpTestResult.message }}</p>
                                 </div>
-                                <!-- Push service: registration of the instance (its API key), test push -->
-                                <template v-if="section.name === 'push'">
-                                    <div class="config-row push-row push-register">
-                                        <div class="config-label">
-                                            <span class="config-label-title" id="push-register-title">{{ t('pushRegisterTitle') }}</span>
-                                            <span class="config-help" id="push-register-help">{{ t('pushRegisterHelp') }}</span>
-                                        </div>
-                                        <div class="config-value">
-                                            <button type="button" class="btn-secondary push-register-button" @click="registerPush" :disabled="registeringPush || !configData.writable"
-                                                    aria-describedby="push-register-help">
-                                                <span class="material-icons" :class="{ spin: registeringPush }" aria-hidden="true">{{ registeringPush ? 'autorenew' : (pushKeySet ? 'key' : 'how_to_reg') }}</span>{{ t(pushKeySet ? 'pushRenewButton' : 'pushRegisterButton') }}
-                                            </button>
-                                        </div>
-                                        <p v-if="!pushKeySet && !pushRegisterResult" class="config-help push-note">{{ t('pushUnavailableAdmin') }}</p>
-                                        <p v-if="pushInfo && pushInfo.consent" class="config-help push-note push-consent-given">
-                                            {{ t('pushConsentGiven', { date: pushConsentDate(pushInfo.consent.at), url: pushInfo.consent.url }) }}
-                                            <template v-if="!pushInfo.consent_valid"> {{ t('pushConsentOutdated') }}</template>
-                                        </p>
-                                        <p v-if="pushRegisterResult && pushRegisterResult.ok" class="push-result push-ok" role="status">
-                                            <span class="material-icons" aria-hidden="true">check_circle</span>{{ pushRegisterResult.message }}
-                                        </p>
-                                        <p v-else-if="pushRegisterResult" class="push-result sync-step-error" role="alert">{{ pushRegisterResult.message }}</p>
+                                <!-- Push service: registration, API key and test push are in the Push tab -->
+                                <div v-if="section.name === 'push'" class="config-row push-row push-moved">
+                                    <div class="config-label">
+                                        <span class="config-label-title">{{ t('tabPush') }}</span>
+                                        <span class="config-help">{{ t('pushSettingsMoved') }}</span>
                                     </div>
-                                    <div class="config-row push-row push-test">
-                                        <div class="config-label">
-                                            <span class="config-label-title">{{ t('pushTestTitle') }}</span>
-                                            <span class="config-help" id="push-test-help">{{ t('pushTestHelp') }}</span>
-                                        </div>
-                                        <div class="config-value">
-                                            <button type="button" class="btn-secondary push-test-button" @click="sendTestPush" :disabled="sendingTestPush || !pushKeySet"
-                                                    aria-describedby="push-test-help">
-                                                <span class="material-icons" :class="{ spin: sendingTestPush }" aria-hidden="true">{{ sendingTestPush ? 'autorenew' : 'notifications_active' }}</span>{{ t('pushTestButton') }}
-                                            </button>
-                                        </div>
-                                        <p v-if="configChangeCount" class="config-help push-note">{{ t('smtpTestUnsaved') }}</p>
-                                        <p v-if="pushTestResult && pushTestResult.ok" class="push-result push-ok" role="status">
-                                            <span class="material-icons" aria-hidden="true">check_circle</span>{{ pushTestResult.message }}
-                                        </p>
-                                        <p v-else-if="pushTestResult" class="push-result sync-step-error" role="alert">{{ pushTestResult.message }}</p>
+                                    <div class="config-value">
+                                        <button type="button" class="btn-secondary" @click="setActiveTab('push')">
+                                            <span class="material-icons" aria-hidden="true">notifications_active</span>{{ t('pushOpenTab') }}
+                                        </button>
                                     </div>
-                                </template>
+                                </div>
                             </fieldset>
 
                             <div v-if="configError" class="sync-step-error" role="alert">{{ configError }}</div>
@@ -1597,6 +1568,100 @@
                     </section>
 
                     <div v-else-if="configError" class="sync-step-error" role="alert">{{ configError }}</div>
+                </div>
+
+                <div v-else-if="activeTab === 'push'" key="push" class="tab-panel">
+                    <!-- Status of the push service and of the key of the instance -->
+                    <section class="trends-card config-card push-card" aria-labelledby="push-status-title">
+                        <div class="panel-header">
+                            <div>
+                                <h2 id="push-status-title">{{ t('pushStatusTitle') }}</h2>
+                                <p class="rules-help">{{ t('pushStatusHelp') }}</p>
+                            </div>
+                            <button type="button" class="btn-secondary push-status-refresh" @click="loadPushStatus" :disabled="loadingPushStatus">
+                                <span class="material-icons" :class="{ spin: loadingPushStatus }" aria-hidden="true">refresh</span>{{ t('pushStatusRefresh') }}
+                            </button>
+                        </div>
+                        <ul v-if="pushStatus" class="push-status-list" aria-live="polite">
+                            <li class="push-status-item" :class="'push-status-' + pushRelayState.level">
+                                <span class="material-icons" aria-hidden="true">{{ pushRelayState.icon }}</span>
+                                <div>
+                                    <strong>{{ t('pushStatusRelay') }}</strong> <code>{{ pushInfo ? pushInfo.url : '' }}</code>
+                                    <span class="push-status-text">{{ t(pushRelayState.label, { version: pushStatus.relay.version || '?' }) }}</span>
+                                    <span v-if="pushStatus.relay.error" class="push-status-detail">{{ pushStatus.relay.error }}</span>
+                                </div>
+                            </li>
+                            <li class="push-status-item" :class="'push-status-' + pushKeyState.level">
+                                <span class="material-icons" aria-hidden="true">{{ pushKeyState.icon }}</span>
+                                <div>
+                                    <strong>{{ t('pushStatusKey') }}</strong>
+                                    <span class="push-status-text">{{ t(pushKeyState.label, pushKeyState.params) }}</span>
+                                    <span v-if="pushStatus.key.error" class="push-status-detail">{{ pushStatus.key.error }}</span>
+                                </div>
+                            </li>
+                        </ul>
+                        <p v-else-if="loadingPushStatus" class="rules-help">{{ t('pushStatusLoading') }}</p>
+                        <p v-else-if="pushStatusError" class="sync-step-error" role="alert">{{ pushStatusError }}</p>
+                    </section>
+
+                    <!-- Registration of the instance, its API key -->
+                    <section class="trends-card config-card push-card" aria-labelledby="push-register-title">
+                        <div class="panel-header">
+                            <div>
+                                <h2 id="push-register-title">{{ t('pushRegisterTitle') }}</h2>
+                                <p class="rules-help" id="push-register-help">{{ t('pushRegisterHelp') }}</p>
+                            </div>
+                        </div>
+                        <div v-if="pushInfo && pushInfo.api_key" class="push-key">
+                            <span class="material-icons" aria-hidden="true">key</span>
+                            <div class="push-key-text">
+                                <strong id="push-key-title">{{ t('pushKeyTitle') }}</strong>
+                                <code class="push-key-value" :class="{ revealed: pushKeyRevealed }" aria-labelledby="push-key-title" aria-describedby="push-key-help">{{ pushKeyDisplay }}</code>
+                                <span class="config-help" id="push-key-help">{{ t('pushKeyHelp') }}</span>
+                            </div>
+                            <button type="button" class="btn-icon push-key-toggle" @click="pushKeyRevealed = !pushKeyRevealed" :aria-pressed="pushKeyRevealed ? 'true' : 'false'"
+                                    :title="t(pushKeyRevealed ? 'pushKeyHide' : 'pushKeyShow')" :aria-label="t(pushKeyRevealed ? 'pushKeyHide' : 'pushKeyShow')">
+                                <span class="material-icons" aria-hidden="true">{{ pushKeyRevealed ? 'visibility_off' : 'visibility' }}</span>
+                            </button>
+                            <button type="button" class="btn-icon push-key-copy" @click="copyText(pushInfo.api_key)" :title="t('pushKeyCopy')" :aria-label="t('pushKeyCopy')">
+                                <span class="material-icons" aria-hidden="true">content_copy</span>
+                            </button>
+                        </div>
+                        <div class="push-register">
+                            <button type="button" class="btn-primary push-register-button" @click="registerPush" :disabled="registeringPush || !pushInfo || !pushInfo.config_writable"
+                                    aria-describedby="push-register-help">
+                                <span class="material-icons" :class="{ spin: registeringPush }" aria-hidden="true">{{ registeringPush ? 'autorenew' : (pushKeySet ? 'key' : 'how_to_reg') }}</span>{{ t(pushKeySet ? 'pushRenewButton' : 'pushRegisterButton') }}
+                            </button>
+                            <p v-if="!pushKeySet && !pushRegisterResult" class="config-help push-note">{{ t('pushUnavailableAdmin') }}</p>
+                            <p v-if="pushInfo && !pushInfo.config_writable" class="config-help push-note">{{ t('pushConfigReadOnly') }}</p>
+                            <p v-if="pushInfo && pushInfo.consent" class="config-help push-note push-consent-given">
+                                {{ t('pushConsentGiven', { date: pushConsentDate(pushInfo.consent.at), url: pushInfo.consent.url }) }}
+                                <template v-if="!pushInfo.consent_valid"> {{ t('pushConsentOutdated') }}</template>
+                            </p>
+                            <p v-if="pushRegisterResult && pushRegisterResult.ok" class="push-result push-ok" role="status">
+                                <span class="material-icons" aria-hidden="true">check_circle</span>{{ pushRegisterResult.message }}
+                            </p>
+                            <p v-else-if="pushRegisterResult" class="push-result sync-step-error" role="alert">{{ pushRegisterResult.message }}</p>
+                        </div>
+                    </section>
+
+                    <!-- Test notification to the devices of the administrator -->
+                    <section class="trends-card config-card push-card push-test" aria-labelledby="push-test-title">
+                        <div class="panel-header">
+                            <div>
+                                <h2 id="push-test-title">{{ t('pushTestTitle') }}</h2>
+                                <p class="rules-help" id="push-test-help">{{ t('pushTestHelp') }}</p>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-secondary push-test-button" @click="sendTestPush" :disabled="sendingTestPush || !pushKeySet"
+                                aria-describedby="push-test-help">
+                            <span class="material-icons" :class="{ spin: sendingTestPush }" aria-hidden="true">{{ sendingTestPush ? 'autorenew' : 'notifications_active' }}</span>{{ t('pushTestButton') }}
+                        </button>
+                        <p v-if="pushTestResult && pushTestResult.ok" class="push-result push-ok" role="status">
+                            <span class="material-icons" aria-hidden="true">check_circle</span>{{ pushTestResult.message }}
+                        </p>
+                        <p v-else-if="pushTestResult" class="push-result sync-step-error" role="alert">{{ pushTestResult.message }}</p>
+                    </section>
                 </div>
 
                 <div v-else-if="activeTab === 'backup'" key="backup" class="tab-panel">
@@ -3002,7 +3067,6 @@
                 <div class="modal-body">
                     <p id="push-consent-intro" class="push-consent-text">{{ t('pushConsentIntro') }}</p>
                     <p class="push-consent-url"><code>{{ pushInfo ? pushInfo.url : '' }}</code></p>
-                    <p v-if="pushInfo && !pushInfo.official" class="push-consent-text">{{ t('pushConsentCustomRelay') }}</p>
                     <h4 class="push-consent-heading">{{ t('pushConsentSentTitle') }}</h4>
                     <ul class="push-consent-list">
                         <li>{{ t('pushConsentSentTokens') }}</li>

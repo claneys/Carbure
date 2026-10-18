@@ -25,7 +25,7 @@ relu à chaque requête), sauf le conteneur Docker pour `SYNC_INTERVAL`.
     Les clés marquées ✏️ dans les tableaux ci-dessous s'y modifient directement : `log_level`,
     `log_retention_days`, `savings_category`, `public_url`, `woob_transactions`,
     `woob_logging`, `woob_debug`, `woob_auto_update`, `woob_2fa_wait`, `woob_2fa_retries`,
-    `push_url`, `push_api_key` et les réglages
+    `push_api_key` et les réglages
     SMTP (`smtp_host`, `smtp_port`, `smtp_encryption`, `smtp_auth`, `smtp_username`,
     `smtp_password`, `smtp_from`, `smtp_from_name`). Chaque valeur est
     vérifiée (liste de valeurs, nombre borné, format) avant l'écriture, et le fichier
@@ -100,9 +100,10 @@ transaction importée.
 ## `[push]`
 
 Les notifications push des applications mobiles (iOS et Android, voir [Applications mobiles](applications-mobiles.md)) passent
-par **Carbure Push**, un service externe qui détient les identifiants des fournisseurs (clé
+par **Carbure Push** (`https://api.carbure.org`, toujours ce service : pas de réglage
+d'adresse), un service externe qui détient les identifiants des fournisseurs (clé
 APNs d'Apple, compte de service Firebase) : l'instance n'en a besoin d'aucun. Elle s'y
-inscrit une fois (bouton **Inscrire l'instance** de **Administration → Paramètres**, qui
+inscrit une fois (bouton **Inscrire l'instance** de **Administration → Push mobile**, qui
 résout une preuve de travail et enregistre la clé obtenue ici) puis lui envoie chaque
 notification avec sa clé d'API.
 
@@ -114,18 +115,22 @@ Google (Firebase Cloud Messaging), et ce qu'il en garde selon sa documentation :
 journalise pas le texte des notifications et ne conserve que l'empreinte (SHA-256) des
 jetons. L'administrateur doit cocher « J'ai compris et j'accepte… » pour inscrire
 l'instance ; l'API refuse l'inscription sans ce consentement. Il est enregistré avec sa
-date et l'adresse du relais (affichés sous le bouton) et redemandé si `push_url` désigne
-ensuite un autre relais. Pour arrêter, videz `push_api_key` : plus aucune notification
+date et l'adresse du relais (affichés sous le bouton). Pour arrêter, videz `push_api_key` : plus aucune notification
 n'est envoyée au relais.
 
 | Clé | Description |
 |---|---|
-| `push_url` ✏️ | Adresse du service ; vide : le service officiel `https://api.carbure.org` |
-| `push_api_key` ✏️ | Clé d'API de l'instance (`cpk_<id>_<secret>`) : un secret, jamais affiché ni journalisé ; renseignée par **Inscrire l'instance** (ou collée). Vide : **aucune notification push n'est envoyée** (journalisé en info, le profil des utilisateurs l'indique) |
+| `push_api_key` ✏️ | Clé d'API de l'instance (`cpk_<id>_<secret>`) : un secret, jamais journalisé ; masquée dans son champ, affichée aux administrateurs dans **Administration → Push mobile** (identifiant public seul, en entier avec **Afficher la clé d'API**, bouton **Copier**) ; renseignée par **Inscrire l'instance** (ou collée). Vide : **aucune notification push n'est envoyée** (journalisé en info, le profil des utilisateurs l'indique) |
 
-Le bouton **Renouveler la clé** remplace une clé (fuitée par exemple) par une nouvelle,
-les appareils continuant de recevoir les notifications. **Envoyer une notification de
-test** l'envoie aux appareils de l'administrateur. Les appareils que le service déclare
+Un ancien fichier qui contient encore `push_url` reste valable : ce réglage n'est plus lu
+ni affiché.
+
+L'onglet **Push mobile** affiche aussi l'**état du service** : le relais répond-il
+(`GET /v1/health`, avec sa version) et accepte-t-il la clé de l'instance
+(`GET /v1/keys/current` : valide avec ses appareils et ses notifications du jour, refusée
+si elle est révoquée). Le bouton **Renouveler la clé** remplace une clé (fuitée par
+exemple) par une nouvelle, les appareils continuant de recevoir les notifications.
+**Envoyer une notification de test** l'envoie aux appareils de l'administrateur. Les appareils que le service déclare
 désinscrits (application supprimée, jeton expiré) sont oubliés.
 
 Une ancienne section `[apns]` est ignorée (affichée en lecture seule) : elle peut être

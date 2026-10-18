@@ -470,7 +470,7 @@ Détails : [Portail web](portail.md#accessibilite).
 ## Administration
 
 Les onglets **Règles** et **Comptes**, et le menu **Administration**
-(**Utilisateurs**, **Catégories**, **Logs**, **Paramètres**, **Synchro**, **Agent IA**, **Sauvegarde**, **API**) sont réservés aux administrateurs ; les autres
+(**Utilisateurs**, **Catégories**, **Logs**, **Paramètres**, **Synchro**, **Push mobile**, **Agent IA**, **Sauvegarde**, **API**) sont réservés aux administrateurs ; les autres
 utilisateurs ouvrent **Agent IA** depuis leur menu.
 
 - **Utilisateurs** : création, modification (dont le profil), suppression, dernière

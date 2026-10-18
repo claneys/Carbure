@@ -227,8 +227,8 @@ Android déjà enregistrés, notés iOS jusque-là : leurs notifications push re
    (APNs) mais passe par le service Carbure Push. Tant que l'instance n'y est pas
    inscrite, **aucune notification push n'est envoyée** (le reste fonctionne normalement).
    En 1.5.0, l'adresse par défaut du service (`https://push.carbure.org`) n'est pas la
-   bonne : renseignez d'abord `push_url` = `https://api.carbure.org` (par défaut à partir
-   de la 1.6.0). Une fois le service disponible, inscrivez l'instance juste après la mise à jour (voir
+   bonne : renseignez d'abord `push_url` = `https://api.carbure.org` (à partir de la
+   1.6.0, ce réglage disparaît : le service est toujours `https://api.carbure.org`). Une fois le service disponible, inscrivez l'instance juste après la mise à jour (voir
    [Notifications push](#notifications-push-carbure-push)), puis retirez la section
    `[apns]` et la clé `.p8` de `/data/conf`.
 3. **Mettez à jour** l'image (`docker compose pull && docker compose up -d`). Trois
@@ -266,11 +266,11 @@ carte).
 ### Notifications push (Carbure Push)
 
 Les notifications des applications iOS et Android passent par le service externe Carbure Push :
-dans **Administration → Paramètres**, section **Push Notification Mobile** (Carbure Push),
+dans **Administration → Push mobile**, vérifiez que le relais est opérationnel,
 cliquez sur **Inscrire l'instance**, lisez et acceptez le consentement (les jetons des
 appareils et le contenu des notifications passent par ce relais, qui les transmet à Apple
 et à Google ; la clé d'API obtenue est enregistrée dans `/data/conf/prod.ini`), puis sur
-**Envoyer une notification de test**. Sans clé, aucune
+**Envoyer une notification de test** (l'état de la clé passe à « Valide »). Sans clé, aucune
 notification push n'est envoyée. Voir [Configuration](configuration.md#push).
 
 !!! warning "Mise à jour depuis une version qui envoyait elle-même les notifications (APNs)"

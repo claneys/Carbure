@@ -6383,6 +6383,95 @@ textarea:focus-visible,
     flex: 0 1 auto;
 }
 
+/* Push tab: status of the relay and of the key, API key, registration, test */
+.push-card + .push-card {
+    margin-top: 16px;
+}
+
+.push-status-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.push-status-item,
+.push-key {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: var(--border-radius-lg);
+    background: var(--background);
+}
+
+.push-key {
+    margin-bottom: 16px;
+}
+
+.push-status-item > div,
+.push-key-text {
+    display: flex;
+    flex: 1 1 220px;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+/* The level is told by the icon and the text, never by the color alone; the texts keep
+   the colors of the theme (the icons only are colored: 3:1 at least) */
+.push-status-item > .material-icons,
+.push-key > .material-icons {
+    color: var(--text-secondary);
+}
+
+.push-status-ok > .material-icons {
+    color: var(--success-color);
+}
+
+.push-status-warning > .material-icons {
+    color: var(--warning-color);
+}
+
+.push-status-error > .material-icons {
+    color: var(--error-color);
+}
+
+.push-status-text {
+    color: var(--text-primary);
+}
+
+.push-status-detail {
+    font-size: 13px;
+    color: var(--text-secondary);
+    overflow-wrap: anywhere;
+}
+
+.push-register {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.push-test .push-result {
+    margin-top: 12px;
+}
+
+.push-key-value {
+    display: block;
+    min-width: 0;
+    font-size: 12px;
+    color: var(--text-primary);
+    background: var(--surface);
+    padding: 4px 8px;
+    border-radius: var(--border-radius-sm);
+    overflow-wrap: anywhere;
+}
+
 /* Title of a row without a field (registration and test of the push service) */
 .config-label-title {
     font-size: 14px;

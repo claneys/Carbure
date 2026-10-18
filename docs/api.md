@@ -930,7 +930,7 @@ Le fichier de configuration, par section : `file` (chemin dans l'instance), `wri
 
 `values` : les nouvelles valeurs par clé, uniquement parmi les réglages modifiables
 (`log_level`, `log_retention_days`, `savings_category`, `public_url`, `woob_transactions`, `woob_logging`,
-`woob_debug`, `woob_auto_update`, `woob_2fa_wait`, `woob_2fa_retries`, `push_url`, `push_api_key`, `smtp_host`, `smtp_port`, `smtp_encryption`, `smtp_auth`,
+`woob_debug`, `woob_auto_update`, `woob_2fa_wait`, `woob_2fa_retries`, `push_api_key`, `smtp_host`, `smtp_port`, `smtp_encryption`, `smtp_auth`,
 `smtp_username`, `smtp_password`, `smtp_from`, `smtp_from_name`). Toutes les valeurs sont vérifiées avant d'écrire quoi que
 ce soit (`400` sinon, fichier inchangé) ; l'ancien fichier est gardé en `.bak`. Renvoie la
 configuration comme `GET`.
@@ -953,27 +953,41 @@ l'email (sa réponse est dans le message d'erreur).
 
 ### `GET /system/push` — administrateur
 
-Le service de notifications push de l'instance et le consentement de l'administrateur :
-`{"url": "https://…", "official": true, "registered": true, "consent": {"at": "2026-10-17T08:00:00Z", "url": "https://…"}, "consent_valid": true}`.
-`url` est le relais utilisé (`push_url`, le service officiel par défaut), `official` s'il
-s'agit du service officiel, `registered` si une clé d'API est configurée, `consent` le
-dernier consentement enregistré (`null` s'il n'y en a pas) et `consent_valid` s'il a été
-donné pour le relais actuel.
+Le service de notifications push de l'instance, sa clé d'API et le consentement de
+l'administrateur :
+`{"url": "https://api.carbure.org", "official": true, "registered": true, "api_key": "cpk_…", "consent": {"at": "2026-10-17T08:00:00Z", "url": "https://api.carbure.org"}, "consent_valid": true, "config_writable": true}`.
+`url` est le relais utilisé (toujours `https://api.carbure.org`), `official` s'il s'agit
+du service officiel (toujours vrai), `registered` si une clé d'API est configurée,
+`api_key` la clé (`""` sans inscription ; réservée aux administrateurs, jamais dans
+`GET /system/config`), `consent` le dernier consentement enregistré (`null` s'il n'y en a
+pas), `consent_valid` s'il a été donné pour ce relais et `config_writable` si le fichier
+de configuration peut recevoir la clé.
+
+### `GET /system/push-status` — administrateur
+
+L'état du service de notifications push, vérifié auprès du relais à chaque appel :
+`{"relay": {"reachable": true, "status": "ok", "version": "1.0.0", "error": null}, "key": {"state": "valid", "key_id": "0123456789abcdef", "devices": 3, "used_today": 12, "limits": {"notifications_per_day": 500, "devices": 20}}}`.
+
+- `relay` : réponse de `GET /v1/health` ; `status` vaut `ok`, `error` (le relais répond
+  mais pas « ok » : `error` donne la raison) ou `unreachable` (`reachable` à `false`).
+- `key` : réponse de `GET /v1/keys/current` avec la clé de l'instance ; `state` vaut
+  `valid` (avec `key_id`, `devices`, `used_today`, `limits`), `invalid` (refusée :
+  révoquée ou inconnue), `none` (pas de clé) ou `unknown` (relais injoignable ou réponse
+  inattendue), avec `error` pour ces deux derniers cas et `invalid`.
 
 ### `POST /system/push-register` — administrateur
 
-Inscrit l'instance sur le service de notifications push (`push_url`, le service officiel
-par défaut) : résout sa preuve de travail, obtient une clé d'API et l'écrit dans
+Inscrit l'instance sur le service de notifications push (`https://api.carbure.org`) : résout sa preuve de travail, obtient une clé d'API et l'écrit dans
 `push_api_key`. Avec une clé déjà configurée, la **renouvelle** (les appareils continuent
-de recevoir les notifications). La clé n'est jamais renvoyée :
+de recevoir les notifications). La clé n'est pas renvoyée ici (`GET /system/push` la donne) :
 `{"registered": true, "renewed": false, "key_id": "…", "limits": {…}}`. `502` si le service
 est injoignable ou refuse, `429` au-delà de ses limites d'inscription ; le fichier de
 configuration doit être modifiable (vérifié avant l'appel).
 
 Paramètre `consent` (`true`) : l'administrateur accepte que les notifications (jetons des
 appareils, titre et texte) passent par ce relais. **Obligatoire** pour une inscription,
-et pour un renouvellement si le consentement enregistré porte sur un autre relais
-(`push_url` changé) : sinon `400`. Il est enregistré (date et adresse du relais, table
+et pour un renouvellement si le consentement enregistré porte sur un autre relais (celui
+d'une ancienne version) : sinon `400`. Il est enregistré (date et adresse du relais, table
 `settings`) et renvoyé par `GET /system/push`.
 
 ### `POST /system/push-test` — administrateur

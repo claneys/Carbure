@@ -82,7 +82,7 @@ class SettingsTest extends DatabaseTestCase
         $this->assertSame('list', $this->setting($config, 'regex_label')['kind']);
         // Editable but missing from the file
         $this->assertFalse($this->setting($config, 'public_url')['set']);
-        $this->assertSame('push', $this->setting($config, 'push_url')['section']);
+        $this->assertNull($this->setting($config, 'push_url'));
         $key = $this->setting($config, 'push_api_key');
         $this->assertSame(['push', true, 'password', false], [$key['section'], $key['secret'], $key['kind'], $key['set']]);
     }
@@ -101,15 +101,35 @@ class SettingsTest extends DatabaseTestCase
     {
         $this->loginAs(self::ADMIN);
         $key = 'cpk_0123456789abcdef_' . str_repeat('ab', 32);
-        $config = Settings::update(['push_api_key' => $key, 'push_url' => 'https://push.example.org/']);
+        $config = Settings::update(['push_api_key' => $key]);
         $this->assertStringNotContainsString($key, json_encode($config));
         $this->assertTrue($this->setting($config, 'push_api_key')['set']);
-        $ini = parse_ini_file($this->file, true);
-        $this->assertSame($key, $ini['push']['push_api_key']);
-        $this->assertSame('https://push.example.org', $ini['push']['push_url']);
+        $this->assertSame($key, parse_ini_file($this->file, true)['push']['push_api_key']);
 
         $this->expectExceptionCode(400);
         Settings::update(['push_api_key' => 'not a key']);
+    }
+
+    public function testPushApiKeyShownToTheAdministrators()
+    {
+        $this->loginAs(self::ADMIN);
+        $this->assertSame(FakePushRelay::API_KEY, Settings::push()['api_key']);
+        $this->assertTrue(Settings::push()['config_writable']);
+        $status = Settings::pushStatus();
+        $this->assertSame('ok', $status['relay']['status']);
+        $this->assertSame('valid', $status['key']['state']);
+        Config::set('push_api_key', '');
+        $this->assertSame('', Settings::push()['api_key']);
+    }
+
+    public function testPushUrlIsNoLongerASetting()
+    {
+        $this->loginAs(self::ADMIN);
+        // An older file keeps its push_url, no longer shown nor editable
+        file_put_contents($this->file, "[push]\npush_url=https://push.example.org\npush_api_key=\n");
+        $this->assertNull($this->setting(Settings::get(), 'push_url'));
+        $this->expectExceptionCode(400);
+        Settings::update(['push_url' => 'https://push.example.org']);
     }
 
     public function testRegisterPush()
@@ -168,8 +188,7 @@ class SettingsTest extends DatabaseTestCase
         Settings::registerPush('true');
 
         // Another relay: the consent given for the first one is not valid for it
-        $url = Config::has('push_url') ? Config::get('push_url') : '';
-        Config::set('push_url', 'https://push.example.org');
+        FakePushRelay::point('https://push.example.org');
         try {
             $push = Settings::push();
             $this->assertSame('https://push.example.org', $push['url']);
@@ -178,7 +197,7 @@ class SettingsTest extends DatabaseTestCase
             $this->expectExceptionCode(400);
             Settings::registerPush();
         } finally {
-            Config::set('push_url', $url);
+            FakePushRelay::point(FakePushRelay::url());
         }
     }
 

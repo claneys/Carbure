@@ -46,7 +46,7 @@ const API_BASE_URL = new URL('../api', new URL('.', window.location.href)).href;
 const DEMO_ACCOUNT = { username: 'demo', password: 'carbure' };
 
 /** Tabs reserved to administrators */
-const ADMIN_TABS = ['rules', 'categories', 'accounts', 'users', 'logs', 'config', 'sync', 'backup', 'api'];
+const ADMIN_TABS = ['rules', 'categories', 'accounts', 'users', 'logs', 'config', 'sync', 'push', 'backup', 'api'];
 
 /**
  * Tabs grouped under "Administration" in the navigation of the administrators (the
@@ -56,6 +56,7 @@ const ADMINISTRATION_TABS = [
     { key: 'users', icon: 'people', label: 'tabUsers' },
     { key: 'categories', icon: 'category', label: 'tabCategories' },
     { key: 'sync', icon: 'sync', label: 'tabSync' },
+    { key: 'push', icon: 'notifications_active', label: 'tabPush' },
     { key: 'agents', icon: 'smart_toy', label: 'tabAgents' },
     { key: 'logs', icon: 'receipt_long', label: 'tabLogs' },
     { key: 'config', icon: 'tune', label: 'tabSettings' },
@@ -433,6 +434,9 @@ const app = createApp({
                     break;
                 case 'sync':
                     this.loadSyncInfo();
+                    break;
+                case 'push':
+                    this.loadPushTab();
                     break;
                 case 'backup':
                     this.loadBackupInfo();

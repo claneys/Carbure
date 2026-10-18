@@ -10,6 +10,9 @@ const baseURL = process.env.E2E_BASE_URL || `http://127.0.0.1:${port}`;
 // one directory per port, so that another run on the same machine (other port, or the
 // PHPUnit suites) does not see them
 process.env.CARBURE_TEST_TMP ||= path.join(os.tmpdir(), `carbure-e2e-${port}`);
+// Push service of the server: the fake one that the specs start on this port
+// (fake-push-relay.js); nothing listens there otherwise (push service unreachable)
+process.env.E2E_PUSH_PORT ||= String(port + 10);
 
 module.exports = defineConfig({
     testDir: './specs',
@@ -48,6 +51,7 @@ module.exports = defineConfig({
         env: {
             APP_ENV: 'e2e',
             CARBURE_TEST_TMP: process.env.CARBURE_TEST_TMP,
+            CARBURE_PUSH_URL: `http://127.0.0.1:${process.env.E2E_PUSH_PORT}`,
             // The bank synchronization streams its progress: several requests at a time
             PHP_CLI_SERVER_WORKERS: '4',
             E2E_DB_HOST: process.env.E2E_DB_HOST || '127.0.0.1',

@@ -1,12 +1,13 @@
 <?php
 
 use Carbure\Lib\Config;
+use Carbure\Lib\PushRelay;
 
 /**
  * FakePushRelay.php
  *
  * Starts tests/fixtures/fake-push-relay.php with the PHP built-in web server and
- * configures Carbure to send its push notifications to it, with a test API key.
+ * points Carbure to it (CARBURE_PUSH_URL, the relay of the tests), with a test API key.
  */
 final class FakePushRelay
 {
@@ -39,9 +40,20 @@ final class FakePushRelay
             self::$url = "http://127.0.0.1:$port";
         }
 
-        Config::set('push_url', self::$url);
+        self::point(self::$url);
         Config::set('push_api_key', self::API_KEY);
         file_put_contents(self::$log, '');
+    }
+
+    /**
+     * Send the push notifications to another relay (unreachable, wrong path...).
+     *
+     * @param string|null $url The relay, null for the relay of Carbure
+     * @return void
+     */
+    public static function point(?string $url)
+    {
+        putenv(PushRelay::TEST_URL_VARIABLE . ($url === null ? '' : "=$url"));
     }
 
     /**

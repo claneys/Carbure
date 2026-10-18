@@ -79,7 +79,7 @@ class PushRelayTest extends TestCase
         FakePushRelay::start();
         $this->assertSame('Push service: Relay not configured', PushRelay::sendToMultiple([self::TOKEN => 'ios'], 'relay-down', 'Body')[self::TOKEN]['error']);
 
-        Config::set('push_url', 'http://127.0.0.1:1');
+        FakePushRelay::point('http://127.0.0.1:1');
         $result = PushRelay::sendToMultiple([self::TOKEN => 'ios'], 'Title', 'Body')[self::TOKEN];
         $this->assertSame(0, $result['http_code']);
         $this->assertStringStartsWith('Push service unreachable', $result['error']);
@@ -87,7 +87,7 @@ class PushRelayTest extends TestCase
 
     public function testMissingResult()
     {
-        Config::set('push_url', FakePushRelay::url() . '/nowhere');
+        FakePushRelay::point(FakePushRelay::url() . '/nowhere');
         $result = PushRelay::sendToMultiple([self::TOKEN => 'ios'], 'Title', 'Body')[self::TOKEN];
         $this->assertSame('error', $result['status']);
         $this->assertSame(404, $result['http_code']);
@@ -103,7 +103,7 @@ class PushRelayTest extends TestCase
 
     public function testRegisterFailures()
     {
-        Config::set('push_url', FakePushRelay::url() . '/nowhere');
+        FakePushRelay::point(FakePushRelay::url() . '/nowhere');
         try {
             PushRelay::register('x');
             $this->fail('Registered');
@@ -112,7 +112,7 @@ class PushRelayTest extends TestCase
             $this->assertStringContainsString('challenge refused', $e->getMessage());
         }
 
-        Config::set('push_url', 'http://127.0.0.1:1');
+        FakePushRelay::point('http://127.0.0.1:1');
         $this->expectExceptionCode(502);
         PushRelay::register('x');
     }
@@ -144,11 +144,47 @@ class PushRelayTest extends TestCase
         $this->assertSame('0', PushRelay::solve('challenge', 0));
     }
 
-    public function testDefaultUrl()
+    public function testUrlIsTheRelayOfCarbure()
     {
-        Config::set('push_url', '');
+        FakePushRelay::point(null);
         $this->assertSame('https://api.carbure.org', PushRelay::url());
-        Config::set('push_url', 'https://relay.example/');
+        FakePushRelay::point('https://relay.example/');
         $this->assertSame('https://relay.example', PushRelay::url());
+        // The setting of older configuration files is ignored
+        Config::set('push_url', 'https://other.example');
+        $this->assertSame('https://relay.example', PushRelay::url());
+    }
+
+    public function testStatus()
+    {
+        $this->assertSame(['relay' => ['reachable' => true, 'status' => 'ok', 'version' => 'test', 'error' => null],
+            'key' => ['state' => 'valid', 'key_id' => '0123456789abcdef', 'devices' => 3, 'used_today' => 12,
+                'limits' => ['notifications_per_day' => 500, 'devices' => 20]]], PushRelay::status());
+
+        Config::set('push_api_key', 'cpk_deadbeefdeadbeef_' . str_repeat('0', 64));
+        $this->assertSame(['state' => 'invalid', 'error' => 'API key revoked'], PushRelay::status()['key']);
+
+        Config::set('push_api_key', '');
+        $this->assertSame(['state' => 'none'], PushRelay::status()['key']);
+
+        Config::set('push_api_key', FakePushRelay::API_KEY);
+        FakePushRelay::point(FakePushRelay::url() . '/nowhere');
+        $status = PushRelay::status();
+        $this->assertSame(['reachable' => true, 'status' => 'error', 'version' => '', 'error' => 'Not found'], $status['relay']);
+        $this->assertSame(['state' => 'unknown', 'error' => 'Not found'], $status['key']);
+
+        FakePushRelay::point('http://127.0.0.1:1');
+        $status = PushRelay::status();
+        $this->assertFalse($status['relay']['reachable']);
+        $this->assertSame('unreachable', $status['relay']['status']);
+        $this->assertSame('unknown', $status['key']['state']);
+        $this->assertStringStartsWith('Push service unreachable', $status['key']['error']);
+    }
+
+    public function testApiKey()
+    {
+        $this->assertSame(FakePushRelay::API_KEY, PushRelay::apiKey());
+        Config::set('push_api_key', '');
+        $this->assertSame('', PushRelay::apiKey());
     }
 }

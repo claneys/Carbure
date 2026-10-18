@@ -5,6 +5,8 @@
  *
  * Router for the PHP built-in web server simulating the push service (Carbure Push)
  * in tests:
+ * - GET  /v1/health             : {"status":"ok","version":"test"}
+ * - GET  /v1/keys/current       : the key (id from the key), 3 devices, 12 notifications today
  * - GET  /v1/register/challenge : a challenge of difficulty 4
  * - POST /v1/register           : 201 and a new API key if the nonce solves the
  *                                 challenge, else 400
@@ -49,7 +51,14 @@ function newKey()
 
 $authenticated = str_starts_with($authorization, 'Bearer cpk_') && !str_starts_with($authorization, 'Bearer cpk_dead');
 
-if ($path === '/v1/register/challenge') {
+if ($path === '/v1/health') {
+    answer(200, ['status' => 'ok', 'version' => 'test']);
+} elseif ($path === '/v1/keys/current') {
+    $authenticated
+        ? answer(200, ['key_id' => substr($authorization, 11, 16), 'name' => 'carbure.test', 'created_at' => 0,
+            'limits' => ['notifications_per_day' => 500, 'devices' => 20], 'devices' => 3, 'used_today' => 12])
+        : answer(401, ['error' => 'API key revoked', 'code' => 401]);
+} elseif ($path === '/v1/register/challenge') {
     answer(200, ['challenge' => 'test.' . bin2hex(random_bytes(4)), 'difficulty' => 4, 'algorithm' => 'sha256', 'expires_at' => time() + 600]);
 } elseif ($path === '/v1/register') {
     $solved = ord(hash('sha256', ($body['challenge'] ?? '') . ':' . ($body['nonce'] ?? ''), true)[0]) >> 4 === 0;

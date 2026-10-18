@@ -8,14 +8,14 @@ keeps track of what was done).
       the `.p8` key):
       1. deploy the relay (private repo `ltoinel/Carbure-push`, README "Déploiement"): its
          own container with the APNs `.p8` key and, for Android later, the Firebase service
-         account; serve it in HTTPS on `https://api.carbure.org` (the default `push_url`
-         since 1.6.0; with Carbure 1.5.0, whose default is `https://push.carbure.org`,
-         set `push_url` to `https://api.carbure.org` in the settings);
+         account; serve it in HTTPS on `https://api.carbure.org` (the only relay from 1.6.0, no
+         `push_url` setting any more; with Carbure 1.5.0, whose default is
+         `https://push.carbure.org`, set `push_url` to `https://api.carbure.org`);
       2. check `bin/push-admin check` and `GET /v1/health` on the relay;
       3. upgrade Carbure; the migration `2026-10-23_device_platform` (`devices.platform`,
          default `ios`) is applied at container start (the code works before it);
-      4. **Administration → Settings → Push Notification Mobile**: set `push_url` if
-         not the default, click **Register the instance**, accept the consent dialog (#201;
+      4. **Administration → Settings → Push Notification Mobile**: click **Register the
+         instance**, accept the consent dialog (#201;
          recorded in the `settings` table) (stores `push_api_key`), then
          **Send a test notification** to an iPhone;
       5. remove the `[apns]` section and `data/conf/certs/*.p8` from the NAS (no longer used);

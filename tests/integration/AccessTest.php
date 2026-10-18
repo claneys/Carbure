@@ -32,7 +32,7 @@ class AccessTest extends DatabaseTestCase
     public function testEveryAdministratorRouteRefusesAUser()
     {
         $routes = $this->adminRoutes();
-        $this->assertCount(48, $routes);
+        $this->assertCount(49, $routes);
 
         $this->loginAs(self::USER);
         $this->assertAdminOnly($routes);
