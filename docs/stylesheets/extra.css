@@ -288,3 +288,33 @@
   height: 1rem;
   fill: currentColor;
 }
+
+/* Language switch: the code of the active language (FR, EN) instead of an icon */
+.md-header__button.carbure-lang {
+  min-width: 2.2rem;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid currentColor;
+  border-radius: 0.2rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.05em;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.md-header__button.carbure-lang:hover,
+.md-header__button.carbure-lang:focus-visible {
+  color: #8E1428;
+  background-color: #FFFFFF;
+}
+
+.md-header__button.carbure-lang:focus-visible {
+  outline: 2px solid #FFFFFF;
+  outline-offset: 2px;
+}
+
+.md-select__link[aria-current="true"] {
+  font-weight: 700;
+}

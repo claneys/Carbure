@@ -6,7 +6,7 @@ icon: material/shield-account-outline
 
 # Politique de confidentialité
 
-*Dernière mise à jour : 17 octobre 2026*
+*Dernière mise à jour : 19 octobre 2026*
 
 Cette politique s'applique aux applications mobiles **Carbure** pour iPhone et Android
 (« l'application »), éditées par Ludovic Toinel, et au service de notifications
@@ -144,26 +144,3 @@ vous pouvez aussi utiliser les [Discussions GitHub](https://github.com/ltoinel/C
 
 Cette politique peut évoluer avec l'application ; la date de dernière mise à jour figure
 en haut de la page.
-
----
-
-## English summary
-
-- The Carbure app connects **only to the Carbure server you enter** (self-hosted by you or
-  your household). The publisher has **no access** to your accounts, transactions or bank
-  credentials.
-- **No ads, no analytics, no tracking, no third-party crash reporting, no data sale.**
-  Financial data is kept in memory only, never stored on the phone.
-- Stored on the phone: server address, last username, settings, push token; username and
-  password only if you enable biometric login (iOS Keychain / Android Keystore-encrypted).
-  Biometric data never leaves the phone's system.
-- Sent to your server at login: credentials, device model, platform and push token.
-- **Push notifications** go from your server through the **Carbure Push** relay
-  (`api.carbure.org`, run by the publisher) to Apple APNs or Google FCM. Their title and
-  text (e.g. a transaction label and amount) are **neither stored nor logged** by the
-  relay, which keeps only a SHA-256 hash of the push token and per-server keys and
-  counters. On Android, Google's Firebase Cloud Messaging library exchanges an
-  installation id and technical device information with Google.
-- Uninstalling the app erases its data on the phone; your account on the Carbure server
-  is deleted by that server's administrator. GDPR rights: contact your server's
-  administrator, or the publisher for Carbure Push at the contact address above.

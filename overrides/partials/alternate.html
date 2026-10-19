@@ -1,0 +1,24 @@
+{#-
+  Theme override: the language switch of Material 9.7 (partials/alternate.html) shows the
+  code of the active language (FR, EN) instead of the translate icon.
+-#}
+{%- set active = config.theme.language or "fr" -%}
+<div class="md-header__option">
+  <div class="md-select">
+    <button class="md-header__button carbure-lang" aria-label="{{ lang.t('select.language') }}">
+      {{ active | upper }}
+    </button>
+    <div class="md-select__inner">
+      <ul class="md-select__list">
+        {% for alt in config.extra.alternate %}
+          <li class="md-select__item">
+            <a href="{{ alt.link | url }}" hreflang="{{ alt.lang }}" class="md-select__link"
+              {%- if alt.lang == active %} aria-current="true"{% endif %}>
+              {{ alt.name }}
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>

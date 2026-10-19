@@ -6,7 +6,7 @@ icon: material/shield-account-outline
 
 # Privacy policy
 
-*Last updated: October 17, 2026*
+*Last updated: October 19, 2026*
 
 This policy applies to the **Carbure** mobile apps for iPhone and Android
 ("the app"), published by Ludovic Toinel, and to the **Carbure Push** notification service
