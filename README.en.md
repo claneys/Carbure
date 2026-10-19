@@ -216,7 +216,8 @@ All the ways to get help, and the FAQ: [Support](https://carbure.org/en/assistan
 
 Contributions are welcome:
 
-- read [AGENTS.md](AGENTS.md): conventions, tests and definition of done;
+- read [CONTRIBUTING.md](CONTRIBUTING.md): workflow (issue, branch, pull request),
+  conventions and tests; the rules of the code are detailed in [AGENTS.md](AGENTS.md);
 - pick a task among the open ones in [TODO.md](TODO.md);
 - set up the development environment:
   [Run it locally to develop](#3-run-it-locally-to-develop);

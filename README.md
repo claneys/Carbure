@@ -220,7 +220,8 @@ Toutes les façons d'obtenir de l'aide, et la FAQ : [Assistance](https://carbure
 
 Les contributions sont les bienvenues :
 
-- lisez [AGENTS.md](AGENTS.md) : conventions, tests et définition de « terminé » ;
+- lisez [CONTRIBUTING.md](CONTRIBUTING.md) : démarche (issue, branche, pull request),
+  conventions et tests ; les règles du code sont détaillées dans [AGENTS.md](AGENTS.md) ;
 - choisissez une tâche parmi celles ouvertes dans [TODO.md](TODO.md) ;
 - mettez en place l'environnement de développement :
   [Le lancer en local pour développer](#3-le-lancer-en-local-pour-développer) ;
