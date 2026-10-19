@@ -45,7 +45,10 @@ function answer($status, $data)
  */
 function newKey()
 {
-    $id = bin2hex(random_bytes(8));
+    // Never "dead…": the prefix of the revoked key of the tests
+    do {
+        $id = bin2hex(random_bytes(8));
+    } while (str_starts_with($id, 'dead'));
     return ['api_key' => "cpk_{$id}_" . bin2hex(random_bytes(32)), 'key_id' => $id, 'limits' => ['notifications_per_day' => 500, 'devices' => 20]];
 }
 
