@@ -504,7 +504,7 @@
                                 </div>
                                 <div class="stat-info">
                                     <div class="stat-label">{{ t('incomeLabel') }}</div>
-                                    <div class="stat-value">{{ formatAmount(stats.income) }} {{ t('currencySymbol') }}</div>
+                                    <div class="stat-value">{{ formatAmount(stats.income) }} {{ currencySymbol }}</div>
                                 </div>
                             </div>
 
@@ -514,7 +514,7 @@
                                 </div>
                                 <div class="stat-info">
                                     <div class="stat-label">{{ t('expenseLabel') }}</div>
-                                    <div class="stat-value">{{ formatAmount(Math.abs(stats.expense)) }} {{ t('currencySymbol') }}</div>
+                                    <div class="stat-value">{{ formatAmount(Math.abs(stats.expense)) }} {{ currencySymbol }}</div>
                                 </div>
                             </div>
 
@@ -524,7 +524,7 @@
                                 </div>
                                 <div class="stat-info">
                                     <div class="stat-label">{{ t('balanceLabel') }}</div>
-                                    <div class="stat-value">{{ formatAmount(stats.balance) }} {{ t('currencySymbol') }}</div>
+                                    <div class="stat-value">{{ formatAmount(stats.balance) }} {{ currencySymbol }}</div>
                                 </div>
                             </div>
                         </div>
@@ -562,7 +562,7 @@
                             <div v-if="isSearching && !searching && displayedTransactions.length > 0" class="search-total">
                                 <span>{{ t('searchTotal', { count: displayedTransactions.length }) }}</span>
                                 <strong :class="displayedTotal >= 0 ? 'positive' : 'negative'">
-                                    {{ formatAmount(displayedTotal) }} {{ t('currencySymbol') }}
+                                    {{ formatAmount(displayedTotal) }} {{ currencySymbol }}
                                 </strong>
                             </div>
                             <div v-if="ruleSuggestion" class="rule-suggestion" role="status">
@@ -581,7 +581,7 @@
                                         <span class="recurring-expected-label">{{ series.label }}</span>
                                         <span class="recurring-expected-day">{{ t('recurringDay', { day: series.day }) }}</span>
                                         <span class="recurring-expected-amount" :class="series.amount >= 0 ? 'positive' : 'negative'">
-                                            {{ series.variable ? '≈ ' : '' }}{{ formatAmount(series.variable ? series.average : series.amount) }} {{ t('currencySymbol') }}
+                                            {{ series.variable ? '≈ ' : '' }}{{ formatAmount(series.variable ? series.average : series.amount) }} {{ currencySymbol }}
                                         </span>
                                     </li>
                                 </ul>
@@ -621,7 +621,7 @@
                                         <span v-else-if="categoryName(transaction)" class="category-chip" :title="categoryName(transaction)">{{ categoryName(transaction) }}</span>
                                     </div>
                                     <div class="transaction-amount" :class="transaction.amount >= 0 ? 'positive' : 'negative'">
-                                        {{ formatAmount(transaction.amount) }} {{ t('currencySymbol') }}
+                                        {{ formatAmount(transaction.amount) }} {{ currencySymbol }}
                                     </div>
                                 </div>
                             </div>
@@ -670,7 +670,7 @@
                                 </div>
                             </div>
                             <flow-chart :flow="budgetFlow" :t="t" :color-for="categoryColor" :icon-for="categoryIcon" :format-amount="formatAmount"
-                                        :selected="flowSelection && flowSelection.key" @select="selectFlowNode"></flow-chart>
+                                        :currency-symbol="currencySymbol" :selected="flowSelection && flowSelection.key" @select="selectFlowNode"></flow-chart>
                         </section>
 
                         <!-- Transactions of the node selected in the diagram -->
@@ -692,7 +692,7 @@
                                 <div class="search-total">
                                     <span>{{ t('searchTotal', { count: flowTransactions.length }) }}</span>
                                     <strong :class="flowTransactionsTotal >= 0 ? 'positive' : 'negative'">
-                                        {{ formatAmount(flowTransactionsTotal) }} {{ t('currencySymbol') }}
+                                        {{ formatAmount(flowTransactionsTotal) }} {{ currencySymbol }}
                                     </strong>
                                 </div>
                                 <div class="transactions-list">
@@ -711,7 +711,7 @@
                                             <div class="transaction-date">{{ formatDate(transaction.rdate || transaction.date) }}<template v-if="transactionCategory(transaction)"> · {{ transactionCategory(transaction).name }}</template></div>
                                         </div>
                                         <div class="transaction-amount" :class="transaction.amount >= 0 ? 'positive' : 'negative'">
-                                            {{ formatAmount(transaction.amount) }} {{ t('currencySymbol') }}
+                                            {{ formatAmount(transaction.amount) }} {{ currencySymbol }}
                                         </div>
                                     </div>
                                 </div>
@@ -749,16 +749,16 @@
                             <div class="budget-summary-figures">
                                 <div>
                                     <div class="summary-label">{{ t('spentLabel') }}</div>
-                                    <div class="summary-value">{{ formatAmount(budgetSummary.consumed) }} {{ t('currencySymbol') }}</div>
+                                    <div class="summary-value">{{ formatAmount(budgetSummary.consumed) }} {{ currencySymbol }}</div>
                                 </div>
                                 <div>
                                     <div class="summary-label">{{ t('budgetedLabel') }}</div>
-                                    <div class="summary-value muted">{{ formatAmount(budgetSummary.budget) }} {{ t('currencySymbol') }}</div>
+                                    <div class="summary-value muted">{{ formatAmount(budgetSummary.budget) }} {{ currencySymbol }}</div>
                                 </div>
                                 <div>
                                     <div class="summary-label">{{ budgetSummary.remaining >= 0 ? t('remainingLabel') : t('overspentLabel') }}</div>
                                     <div class="summary-value" :class="budgetSummary.remaining >= 0 ? 'positive' : 'negative'">
-                                        {{ formatAmount(Math.abs(budgetSummary.remaining)) }} {{ t('currencySymbol') }}
+                                        {{ formatAmount(Math.abs(budgetSummary.remaining)) }} {{ currencySymbol }}
                                     </div>
                                 </div>
                             </div>
@@ -795,23 +795,23 @@
 
                                         <template v-if="group.key === 'expenses'">
                                             <div class="budget-card-amounts">
-                                                <span class="spent">{{ formatAmount(item.consummed) }} {{ t('currencySymbol') }}</span>
-                                                <span class="of" :title="item.budget_mode === 'children' ? t('budgetSumOfChildren') : null">/ {{ item.budget_mode === 'children' ? 'Σ ' : '' }}{{ formatAmount(item.budget) }} {{ t('currencySymbol') }}</span>
+                                                <span class="spent">{{ formatAmount(item.consummed) }} {{ currencySymbol }}</span>
+                                                <span class="of" :title="item.budget_mode === 'children' ? t('budgetSumOfChildren') : null">/ {{ item.budget_mode === 'children' ? 'Σ ' : '' }}{{ formatAmount(item.budget) }} {{ currencySymbol }}</span>
                                             </div>
                                             <div class="budget-card-foot">
                                                 <span v-if="Number(item.budget) - Number(item.consummed) >= 0">
-                                                    {{ t('remainingAmount', { amount: formatAmount(Number(item.budget) - Number(item.consummed)) + ' ' + t('currencySymbol') }) }}
+                                                    {{ t('remainingAmount', { amount: formatAmount(Number(item.budget) - Number(item.consummed)) + ' ' + currencySymbol }) }}
                                                 </span>
                                                 <span v-else class="negative">
-                                                    {{ t('overspentAmount', { amount: formatAmount(Number(item.consummed) - Number(item.budget)) + ' ' + t('currencySymbol') }) }}
+                                                    {{ t('overspentAmount', { amount: formatAmount(Number(item.consummed) - Number(item.budget)) + ' ' + currencySymbol }) }}
                                                 </span>
                                                 <span class="budget-card-percent">{{ item.progress }} %</span>
                                             </div>
                                         </template>
 
                                         <div v-else class="budget-card-amounts">
-                                            <span class="spent" :class="{ positive: group.key === 'incomes' }">{{ formatAmount(item.consummed) }} {{ t('currencySymbol') }}</span>
-                                            <span class="of" v-if="Number(item.budget) > 0">/ {{ formatAmount(item.budget) }} {{ t('currencySymbol') }}</span>
+                                            <span class="spent" :class="{ positive: group.key === 'incomes' }">{{ formatAmount(item.consummed) }} {{ currencySymbol }}</span>
+                                            <span class="of" v-if="Number(item.budget) > 0">/ {{ formatAmount(item.budget) }} {{ currencySymbol }}</span>
                                         </div>
                                     </article>
                                 </div>
@@ -832,7 +832,7 @@
                                 <div class="search-total">
                                     <span>{{ t('searchTotal', { count: budgetTransactions.length }) }}</span>
                                     <strong :class="budgetTransactions.reduce((s, t) => s + Number(t.amount), 0) >= 0 ? 'positive' : 'negative'">
-                                        {{ formatAmount(budgetTransactions.reduce((s, t) => s + Number(t.amount), 0)) }} {{ t('currencySymbol') }}
+                                        {{ formatAmount(budgetTransactions.reduce((s, t) => s + Number(t.amount), 0)) }} {{ currencySymbol }}
                                     </strong>
                                 </div>
                                 <div class="transactions-list">
@@ -851,7 +851,7 @@
                                             <div class="transaction-date">{{ formatDate(transaction.rdate || transaction.date) }}</div>
                                         </div>
                                         <div class="transaction-amount" :class="transaction.amount >= 0 ? 'positive' : 'negative'">
-                                            {{ formatAmount(transaction.amount) }} {{ t('currencySymbol') }}
+                                            {{ formatAmount(transaction.amount) }} {{ currencySymbol }}
                                         </div>
                                     </div>
                                 </div>
@@ -895,7 +895,7 @@
                                 <div class="insight-content">
                                     <div class="insight-label">{{ getInsightName(insight.name) }}</div>
                                     <div class="insight-value" :class="{ 'negative': insight.amount < 0 }">
-                                        {{ formatAmount(Math.abs(insight.amount)) }} {{ t('currencySymbol') }}
+                                        {{ formatAmount(Math.abs(insight.amount)) }} {{ currencySymbol }}
                                     </div>
                                 </div>
                                 <div v-if="isAdmin" class="insight-actions">
@@ -952,14 +952,14 @@
                             <div class="trends-stats">
                                 <div class="trends-stat">
                                     <div class="summary-label">{{ t('trendsTotalSavings') }}</div>
-                                    <div class="summary-value">{{ formatAmount(trendsStats.savings) }} {{ t('currencySymbol') }}</div>
+                                    <div class="summary-value">{{ formatAmount(trendsStats.savings) }} {{ currencySymbol }}</div>
                                     <div v-if="trendsDelta('savings')" class="trends-delta" :class="trendsDelta('savings').good ? 'good' : 'bad'">
                                         <span class="material-icons" aria-hidden="true">{{ trendsDelta('savings').icon }}</span>{{ trendsDelta('savings').text }}
                                     </div>
                                 </div>
                                 <div class="trends-stat">
                                     <div class="summary-label">{{ t('trendsAverageSavings') }}</div>
-                                    <div class="summary-value">{{ formatAmount(trendsStats.averageSavings) }} {{ t('currencySymbol') }}</div>
+                                    <div class="summary-value">{{ formatAmount(trendsStats.averageSavings) }} {{ currencySymbol }}</div>
                                     <div v-if="trendsDelta('averageSavings')" class="trends-delta" :class="trendsDelta('averageSavings').good ? 'good' : 'bad'">
                                         <span class="material-icons" aria-hidden="true">{{ trendsDelta('averageSavings').icon }}</span>{{ trendsDelta('averageSavings').text }}
                                     </div>
@@ -974,8 +974,8 @@
                                 </div>
                                 <div class="trends-stat">
                                     <div class="summary-label">{{ t('trendsAverageDebit') }}</div>
-                                    <div class="summary-value">{{ formatAmount(trendsStats.averageDebit) }} {{ t('currencySymbol') }}</div>
-                                    <div class="trends-stat-sub">{{ t('trendsVsPlanned', { amount: formatAmount(trendsStats.averagePlanned) + ' ' + t('currencySymbol') }) }}</div>
+                                    <div class="summary-value">{{ formatAmount(trendsStats.averageDebit) }} {{ currencySymbol }}</div>
+                                    <div class="trends-stat-sub">{{ t('trendsVsPlanned', { amount: formatAmount(trendsStats.averagePlanned) + ' ' + currencySymbol }) }}</div>
                                     <div v-if="trendsDelta('averageDebit', false)" class="trends-delta" :class="trendsDelta('averageDebit', false).good ? 'good' : 'bad'">
                                         <span class="material-icons" aria-hidden="true">{{ trendsDelta('averageDebit', false).icon }}</span>{{ trendsDelta('averageDebit', false).text }}
                                     </div>
@@ -998,11 +998,11 @@
                                     <div class="comparison-bars">
                                         <div class="comparison-bar">
                                             <span class="bar current" :style="{ width: row.currentWidth + '%' }"></span>
-                                            <span class="value">{{ formatAmount(row.current) }} {{ t('currencySymbol') }}</span>
+                                            <span class="value">{{ formatAmount(row.current) }} {{ currencySymbol }}</span>
                                         </div>
                                         <div class="comparison-bar">
                                             <span class="bar compare" :style="{ width: row.compareWidth + '%' }"></span>
-                                            <span class="value muted">{{ formatAmount(row.compare) }} {{ t('currencySymbol') }}</span>
+                                            <span class="value muted">{{ formatAmount(row.compare) }} {{ currencySymbol }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -1036,9 +1036,9 @@
                                 </svg>
                                 <div v-if="trendsHoverMonth && trendsHoverChart === 'flows'" class="trends-tooltip" :style="{ left: trendsHoverLeft + '%' }">
                                     <strong>{{ formatMonth(trendsHoverMonth.month) }}</strong>
-                                    <div v-for="s in trendsSeries" :key="s.key"><span class="swatch" :style="{ background: s.color }"></span>{{ s.label }}<span>{{ formatAmount(trendsHoverMonth[s.key]) }} {{ t('currencySymbol') }}</span></div>
-                                    <div><span class="swatch line"></span>{{ t('trendsPlanned') }}<span>{{ formatAmount(trendsHoverMonth.planned) }} {{ t('currencySymbol') }}</span></div>
-                                    <div class="total">{{ t('trendsSavings') }}<span>{{ formatAmount(trendsHoverMonth.savings) }} {{ t('currencySymbol') }}</span></div>
+                                    <div v-for="s in trendsSeries" :key="s.key"><span class="swatch" :style="{ background: s.color }"></span>{{ s.label }}<span>{{ formatAmount(trendsHoverMonth[s.key]) }} {{ currencySymbol }}</span></div>
+                                    <div><span class="swatch line"></span>{{ t('trendsPlanned') }}<span>{{ formatAmount(trendsHoverMonth.planned) }} {{ currencySymbol }}</span></div>
+                                    <div class="total">{{ t('trendsSavings') }}<span>{{ formatAmount(trendsHoverMonth.savings) }} {{ currencySymbol }}</span></div>
                                 </div>
                             </div>
                         </section>
@@ -1103,8 +1103,8 @@
                                 <div v-if="trendsHoverMonth && trendsHoverChart === 'rate'" class="trends-tooltip" :style="{ left: trendsHoverLeft + '%' }">
                                     <strong>{{ formatMonth(trendsHoverMonth.month) }}</strong>
                                     <div>{{ t('trendsSavingsRate') }}<span>{{ monthSavingsRate(trendsHoverMonth) === null ? '–' : monthSavingsRate(trendsHoverMonth) + ' %' }}</span></div>
-                                    <div>{{ t('trendsSavings') }}<span>{{ formatAmount(trendsHoverMonth.savings) }} {{ t('currencySymbol') }}</span></div>
-                                    <div>{{ t('trendsCredit') }}<span>{{ formatAmount(trendsHoverMonth.credit) }} {{ t('currencySymbol') }}</span></div>
+                                    <div>{{ t('trendsSavings') }}<span>{{ formatAmount(trendsHoverMonth.savings) }} {{ currencySymbol }}</span></div>
+                                    <div>{{ t('trendsCredit') }}<span>{{ formatAmount(trendsHoverMonth.credit) }} {{ currencySymbol }}</span></div>
                                 </div>
                             </div>
                         </section>
@@ -2138,7 +2138,7 @@
                                                                    :aria-describedby="alertThresholdErrorKey ? 'alert-threshold-error alert-threshold-help' : 'alert-threshold-help'"
                                                                    :disabled="savingAlertThreshold"
                                                                    @change="saveAlertThreshold" @keydown.enter.prevent="saveAlertThreshold" />
-                                                            <span class="input-unit-suffix" aria-hidden="true">€</span>
+                                                            <span class="input-unit-suffix" aria-hidden="true">{{ currencySymbol }}</span>
                                                         </div>
                                                     </div>
                                                     <p v-if="alertThresholdErrorKey" id="alert-threshold-error" class="sync-step-error" role="alert">{{ t(alertThresholdErrorKey) }}</p>
@@ -2372,7 +2372,7 @@
                                             <span v-if="row.match" class="import-match">{{ t('importMatch', { label: row.match.label, date: formatDate(row.match.date) }) }}</span>
                                         </span>
                                     </span>
-                                    <span class="import-row-amount" :class="row.amount >= 0 ? 'positive' : 'negative'">{{ formatAmount(row.amount) }} {{ t('currencySymbol') }}</span>
+                                    <span class="import-row-amount" :class="row.amount >= 0 ? 'positive' : 'negative'">{{ formatAmount(row.amount) }} {{ currencySymbol }}</span>
                                 </label>
                             </li>
                         </ul>
@@ -2402,7 +2402,7 @@
                 </div>
                 <div class="modal-body">
                     <div class="transaction-detail-amount" :class="transactionDetail.amount >= 0 ? 'positive' : 'negative'">
-                        {{ formatAmount(transactionDetail.amount) }} {{ t('currencySymbol') }}
+                        {{ formatAmount(transactionDetail.amount) }} {{ currencySymbol }}
                     </div>
                     <div class="transaction-detail-label-row">
                         <p class="transaction-detail-label">{{ transactionDetail.label }}</p>
@@ -2526,7 +2526,7 @@
                             </template>
                             <template v-else-if="insightCheck.state === 'valid'">
                                 <span class="material-icons" aria-hidden="true">check_circle</span>
-                                {{ t('insightValid', { amount: insightCheck.amount === null ? '—' : formatAmount(insightCheck.amount) + ' ' + t('currencySymbol') }) }}
+                                {{ t('insightValid', { amount: insightCheck.amount === null ? '—' : formatAmount(insightCheck.amount) + ' ' + currencySymbol }) }}
                             </template>
                             <template v-else-if="insightCheck.state === 'invalid'">
                                 <span class="material-icons" aria-hidden="true">error</span>{{ insightCheck.error }}
@@ -2842,7 +2842,7 @@
                                 <span class="account-name">{{ d.label || accountName(d) }}</span>
                                 <code class="device-token">{{ d.bankId }}</code>
                             </label>
-                            <span v-if="d.balance !== null && d.balance !== undefined" class="account-balance">{{ formatAmount(d.balance) }} {{ d.currency === 'EUR' || !d.currency ? t('currencySymbol') : d.currency }}</span>
+                            <span v-if="d.balance !== null && d.balance !== undefined" class="account-balance">{{ formatAmount(d.balance) }} {{ d.currency === currency || !d.currency ? currencySymbol : d.currency }}</span>
                             <span v-if="isFollowed(d)" class="category-chip">{{ t('accountFollowed') }}</span>
                         </li>
                     </ul>
@@ -3037,7 +3037,7 @@
                     <p class="budget-edit-category">{{ budgetToEdit.name }}</p>
                     <label v-if="Number(budgetToEdit.children) > 0" class="setup-checkbox">
                         <input type="checkbox" v-model="budgetUseChildren" />
-                        {{ t('budgetUseChildren', { amount: formatAmount(budgetToEdit.children_budget) + ' ' + t('currencySymbol') }) }}
+                        {{ t('budgetUseChildren', { amount: formatAmount(budgetToEdit.children_budget) + ' ' + currencySymbol }) }}
                     </label>
                     <template v-if="!budgetUseChildren">
                         <label for="budget-edit-amount">{{ Number(budgetToEdit.children) > 0 ? t('budgetOverrideLabel') : t('budgetEditLabel') }}</label>

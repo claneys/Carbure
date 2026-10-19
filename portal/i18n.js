@@ -22,7 +22,7 @@ const REFERENCE_LOCALE = 'fr';
 const i18n = {};
 
 /** State of the loader: active language, version of the server, keys already reported */
-const i18nState = { locale: null, version: null, demo: false, debug: false, reported: new Set(), pluralRules: {} };
+const i18nState = { locale: null, version: null, demo: false, currency: 'EUR', debug: false, reported: new Set(), pluralRules: {} };
 
 /**
  * Language before login: the browser one (the profile language applies after login)
@@ -79,6 +79,15 @@ function serverVersion() {
  */
 function serverDemo() {
     return i18nState.demo;
+}
+
+/**
+ * Currency of the amounts of the instance (GET /api/health: setting currency, ISO 4217 code),
+ * EUR if the server does not give one
+ * @returns {string}
+ */
+function serverCurrency() {
+    return i18nState.currency;
 }
 
 /**
@@ -287,6 +296,7 @@ async function loadLocale() {
     const health = await fetchServerHealth();
     i18nState.version = health && typeof health.version === 'string' ? health.version : null;
     i18nState.demo = Boolean(health && health.demo === true);
+    i18nState.currency = health && typeof health.currency === 'string' && /^[A-Z]{3}$/.test(health.currency) ? health.currency : 'EUR';
     const locales = fallbackChain(wanted);
     const results = await Promise.allSettled(locales.map(locale => fetchTexts(locale, i18nState.version)));
     results.forEach((result, index) => {
@@ -319,5 +329,5 @@ function showLocaleError() {
 
 // Export for the tests run by Node
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { i18n, t, setLocale, loadLocale, translate, resolveText, currentLocale, defaultLocale, intlLocale, serverVersion, serverDemo, showLocaleError, LOCALES, REFERENCE_LOCALE };
+    module.exports = { i18n, t, setLocale, loadLocale, translate, resolveText, currentLocale, defaultLocale, intlLocale, serverVersion, serverDemo, serverCurrency, showLocaleError, LOCALES, REFERENCE_LOCALE };
 }

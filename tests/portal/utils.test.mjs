@@ -2,7 +2,7 @@
 import './setup.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { formatAmount, formatDate, getTransactionIcon, getInsightIcon, isDebugMode } from '../../portal/utils/formatters.js';
+import { formatAmount, currencySymbol, formatDate, getTransactionIcon, getInsightIcon, isDebugMode } from '../../portal/utils/formatters.js';
 import { materialIconFor, cssColorFor, badgeStyle, CATEGORY_ICONS, CATEGORY_COLORS } from '../../portal/utils/categoryIcons.js';
 
 const spaces = text => text.replace(/\s/g, ' ');
@@ -11,6 +11,14 @@ test('formatAmount: two decimals in the locale', () => {
     assert.equal(spaces(formatAmount(1234.5, 'fr')), '1 234,50');
     assert.equal(formatAmount(-6.8, 'en'), '-6.80');
     assert.equal(formatAmount('82.4', 'en'), '82.40');
+});
+
+test('currencySymbol: the symbol of the currency in the locale, else its code', () => {
+    assert.equal(currencySymbol('EUR', 'fr-FR'), '€');
+    assert.equal(currencySymbol('USD', 'fr-FR'), '$');
+    assert.equal(currencySymbol('GBP', 'en-US'), '£');
+    assert.equal(currencySymbol('CHF', 'fr-FR'), 'CHF');
+    assert.equal(currencySymbol('not a currency', 'fr-FR'), 'not a currency');
 });
 
 test('formatDate: ISO dates and MySQL datetimes', () => {

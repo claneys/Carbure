@@ -884,9 +884,10 @@ par nginx (2 Mo pour les autres routes).
 ### `GET /health` — publique
 
 État de l'instance pour le `HEALTHCHECK` Docker et les outils de supervision, sans
-authentification ni donnée : `{"status":"ok","version":"1.2.0","database":"ok","schema":"<version du schéma>","min_mobile_version":"1.0"}`,
+authentification ni donnée : `{"status":"ok","version":"1.2.0","database":"ok","schema":"<version du schéma>","min_mobile_version":"1.0","currency":"EUR"}`,
 `500` si la base ne répond pas, `{"status":"setup","version":"…","min_mobile_version":"1.0"}` tant que Carbure n'est
 pas installé. `version` est la version de Carbure (fichier `VERSION`, `dev` hors release).
+`currency` est la devise des montants (réglage `currency`, code ISO 4217, `EUR` par défaut).
 `min_mobile_version` est la plus ancienne version de l'app iOS (son `MARKETING_VERSION`)
 que le serveur prend en charge : une app plus ancienne invite son utilisateur à la mettre
 à jour. Elle est fixée dans le code (`Carbure\Lib\MobileApp::MIN_VERSION`) et n'est relevée

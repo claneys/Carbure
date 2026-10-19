@@ -11,7 +11,7 @@
  * @component
  * @example
  * <flow-chart :flow="budgetFlow" :t="t" :color-for="categoryColor" :icon-for="categoryIcon"
- *             :format-amount="formatAmount" :selected="flowSelection && flowSelection.key"
+ *             :format-amount="formatAmount" :currency-symbol="currencySymbol" :selected="flowSelection && flowSelection.key"
  *             @select="selectFlowNode"></flow-chart>
  */
 
@@ -55,6 +55,8 @@ export default {
         iconFor: { type: Function, default: null },
         /** Amount formatter of the app */
         formatAmount: { type: Function, required: true },
+        /** Symbol of the currency of the instance */
+        currencySymbol: { type: String, default: '€' },
         /** Key of the selected node (null: none) */
         selected: { type: String, default: null }
     },
@@ -211,7 +213,7 @@ export default {
          * @returns {string}
          */
         money(value) {
-            return `${this.formatAmount(value)} ${this.t('currencySymbol')}`;
+            return `${this.formatAmount(value)} ${this.currencySymbol}`;
         },
 
         /**

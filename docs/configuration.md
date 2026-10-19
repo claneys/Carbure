@@ -23,7 +23,7 @@ relu à chaque requête), sauf le conteneur Docker pour `SYNC_INTERVAL`.
     valeur actuelle et une aide, les secrets masqués.
 
     Les clés marquées ✏️ dans les tableaux ci-dessous s'y modifient directement : `log_level`,
-    `log_retention_days`, `savings_category`, `public_url`, `woob_transactions`,
+    `log_retention_days`, `savings_category`, `public_url`, `currency`, `woob_transactions`,
     `woob_logging`, `woob_debug`, `woob_auto_update`, `woob_2fa_wait`, `woob_2fa_retries`,
     `push_api_key` et les réglages
     SMTP (`smtp_host`, `smtp_port`, `smtp_encryption`, `smtp_auth`, `smtp_username`,
@@ -47,6 +47,7 @@ ce fichier (voir [Réglages en base](#reglages-en-base)).
 | `log_retention_days` ✏️ | `0` à `3650` | Nombre de jours de conservation des fichiers de log ; les plus anciens sont supprimés à la fin de la synchronisation bancaire. `0` (ou absent) : conservés indéfiniment. `90` dans une nouvelle installation. |
 | `development` | `true` / `false` | Indicateur de mode développement, écrit à `false` par l'assistant (sans effet actuellement) |
 | `demo` | `true` / `false` | Instance de démonstration (écrit par l'image `ltoinel/carbure:demo`) : l'écran de connexion affiche le compte public de la démo. Absent par défaut ; jamais sur une instance avec de vraies données |
+| `currency` ✏️ | code ISO 4217 | Devise des montants de l'instance (`EUR`, `USD`, `GBP`, `CHF`, `CAD`…), affichée dans le portail (son symbole : €, $, £… ou son code), les notifications et les e-mails ; `EUR` par défaut ou si la valeur n'est pas un code de 3 lettres. Seul l'affichage change : aucun montant n'est converti, choisissez la devise de vos comptes |
 | `savings_category` ✏️ | nom | Catégorie dont les transactions (avec ses sous-catégories) constituent l'épargne de l'onglet Tendances ; `Epargne` par défaut, casse et accents ignorés |
 | `public_url` ✏️ | URL | Facultatif : adresse publique de Carbure (`https://carbure.exemple.fr`), annoncée aux agents IA qui se connectent par OAuth et aux applications mobiles par le QR code de **Mes appareils**. Par défaut, déduite de la requête : à renseigner si le proxy HTTPS n'envoie pas `X-Forwarded-Proto` |
 

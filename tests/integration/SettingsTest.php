@@ -266,7 +266,7 @@ class SettingsTest extends DatabaseTestCase
     {
         $this->loginAs(self::ADMIN);
         $config = Settings::update(['log_level' => 'debug', 'savings_category' => 'Économies', 'woob_debug' => true,
-                                    'woob_transactions' => '250', 'public_url' => 'https://carbure.example.fr/']);
+                                    'woob_transactions' => '250', 'public_url' => 'https://carbure.example.fr/', 'currency' => 'CHF']);
 
         $ini = parse_ini_file($this->file);
         $this->assertSame('debug', $ini['log_level']);
@@ -274,6 +274,7 @@ class SettingsTest extends DatabaseTestCase
         $this->assertSame('1', $ini['woob_debug']);
         $this->assertSame('250', $ini['woob_transactions']);
         $this->assertSame('https://carbure.example.fr', $ini['public_url']);
+        $this->assertSame('CHF', $ini['currency']);
         // The other settings are kept, the previous file too
         $this->assertSame('s3cret', $ini['db_password']);
         $this->assertStringContainsString('log_level=warning', file_get_contents($this->file . '.bak'));
@@ -297,6 +298,8 @@ class SettingsTest extends DatabaseTestCase
             'not a level' => ['log_level', 'verbose'],
             'newline' => ['savings_category', "Epargne\nwoob_path=/bin/sh"],
             'not a url' => ['public_url', 'javascript:alert(1)'],
+            'not a currency code' => ['currency', 'euro'],
+            'currency with a newline' => ['currency', "EUR\nwoob_path=/bin/sh"],
             'array' => ['log_level', ['debug']],
             'smtp host with a port' => ['smtp_host', 'smtp.example.com:25'],
             'smtp host with a space' => ['smtp_host', 'smtp example'],

@@ -20,6 +20,22 @@ export function formatAmount(amount, locale = 'fr-FR') {
 }
 
 /**
+ * Symbol of a currency in a locale (€, $, £...), its code when Intl does not know it
+ * @param {string} currency - ISO 4217 code (e.g., 'EUR', 'USD')
+ * @param {string} locale - Locale code (e.g., 'fr-FR', 'en-US')
+ * @returns {string} The symbol
+ */
+export function currencySymbol(currency, locale = 'fr-FR') {
+    try {
+        const part = new Intl.NumberFormat(locale, { style: 'currency', currency, currencyDisplay: 'narrowSymbol' })
+            .formatToParts(0).find(p => p.type === 'currency');
+        return part ? part.value : currency;
+    } catch (e) {
+        return currency;
+    }
+}
+
+/**
  * Formats a date string according to locale
  * @param {string} dateString - ISO date string
  * @param {string} locale - Locale code (e.g., 'fr-FR', 'en-US')

@@ -883,9 +883,10 @@ by nginx (2 MB for the other routes).
 ### `GET /health` — public { #get-health-publique }
 
 State of the instance for the Docker `HEALTHCHECK` and monitoring tools, with no
-authentication and no data: `{"status":"ok","version":"1.2.0","database":"ok","schema":"<schema version>","min_mobile_version":"1.0"}`,
+authentication and no data: `{"status":"ok","version":"1.2.0","database":"ok","schema":"<schema version>","min_mobile_version":"1.0","currency":"EUR"}`,
 `500` if the database does not respond, `{"status":"setup","version":"…","min_mobile_version":"1.0"}` as long as Carbure is
 not installed. `version` is the Carbure version (`VERSION` file, `dev` outside a release).
+`currency` is the currency of the amounts (setting `currency`, ISO 4217 code, `EUR` by default).
 `min_mobile_version` is the oldest version of the iOS app (its `MARKETING_VERSION`)
 that the server supports: an older app asks its user to update
 it. It is set in the code (`Carbure\Lib\MobileApp::MIN_VERSION`) and is only raised

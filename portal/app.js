@@ -127,6 +127,8 @@ const app = createApp({
             appVersion: serverVersion(),
             // Demonstration instance (GET /api/health): its public account, null otherwise
             demoAccount: serverDemo() ? DEMO_ACCOUNT : null,
+            // Currency of the amounts of the instance (GET /api/health: setting currency)
+            currency: serverCurrency(),
             // Money flow of the selected month (Budget tab)
             budgetFlow: null,
             // Node of the flow diagram whose transactions are shown, and these transactions
@@ -174,6 +176,14 @@ const app = createApp({
          */
         intlLocale() {
             return intlLocale(this.locale);
+        },
+
+        /**
+         * Symbol of the currency of the instance in the language (€, $, £...; CHF)
+         * @returns {string}
+         */
+        currencySymbol() {
+            return formatters.currencySymbol(this.currency, this.intlLocale);
         },
 
         /**

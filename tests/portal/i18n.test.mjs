@@ -295,6 +295,18 @@ test('loadLocale: a demonstration server is told by GET /api/health', async () =
     assert.equal(regular.i18n.serverDemo(), false);
 });
 
+test('loadLocale: the currency of the instance is told by GET /api/health', async () => {
+    const page = load({ health: { version: '1.9.0', currency: 'CHF' } });
+    await page.i18n.loadLocale();
+    assert.equal(page.i18n.serverCurrency(), 'CHF');
+    // Unknown or invalid: euros
+    for (const health of [null, { version: '1.8.0' }, { currency: 'chf' }, { currency: '<b>' }]) {
+        const other = load({ health });
+        await other.i18n.loadLocale();
+        assert.equal(other.i18n.serverCurrency(), 'EUR');
+    }
+});
+
 test('loadLocale: a language that cannot be loaded falls back to the reference one', async () => {
     const page = load({ stored: 'en', files: { fr: TEXTS.fr, en: 500 } });
     assert.equal(await page.i18n.loadLocale(), 'fr');

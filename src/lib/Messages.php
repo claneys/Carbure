@@ -183,6 +183,16 @@ final class Messages {
     private const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
     /** Separators of the amounts by language: [decimal, thousands] */
+    /** Code of a currency (ISO 4217) */
+    public const CURRENCY = '/^[A-Z]{3}$/';
+
+    /** Symbol of the most common currencies (the code for the others), as in the portal */
+    private const CURRENCY_SYMBOLS = [
+        'EUR' => '€', 'USD' => '$', 'GBP' => '£', 'JPY' => '¥', 'CNY' => '¥', 'CAD' => '$', 'AUD' => '$',
+        'NZD' => '$', 'INR' => '₹', 'KRW' => '₩', 'BRL' => 'R$', 'ILS' => '₪', 'TRY' => '₺', 'UAH' => '₴',
+        'RUB' => '₽', 'PLN' => 'zł', 'VND' => '₫', 'NGN' => '₦', 'PHP' => '₱', 'THB' => '฿',
+    ];
+
     private const AMOUNT_SEPARATORS = [
         'fr' => [',', ' '],
         'en' => ['.', ','],
@@ -246,7 +256,8 @@ final class Messages {
     }
 
     /**
-     * An amount in euros: fr/pt "-1 234,56 €", en "-1,234.56 €", es/it/de "-1.234,56 €".
+     * An amount in the currency of the instance: fr/pt "-1 234,56 €", en "-1,234.56 €",
+     * es/it/de "-1.234,56 €".
      *
      * @param string|null $language The language
      * @param float       $amount   The amount
@@ -255,7 +266,31 @@ final class Messages {
     public static function amount(?string $language, float $amount): string
     {
         [$decimal, $thousands] = self::AMOUNT_SEPARATORS[self::language($language)];
-        return number_format($amount, 2, $decimal, $thousands) . ' €';
+        return number_format($amount, 2, $decimal, $thousands) . ' ' . self::currencySymbol();
+    }
+
+    /**
+     * Currency of the amounts of the instance: the setting currency (ISO 4217 code: EUR,
+     * USD, CHF...), EUR when it is not set or not a currency code.
+     *
+     * @return string
+     */
+    public static function currency(): string
+    {
+        $currency = strtoupper(trim((string)(Config::has('currency') ? Config::get('currency') : '')));
+        return preg_match(self::CURRENCY, $currency) ? $currency : 'EUR';
+    }
+
+    /**
+     * Symbol of the currency of the instance (€, $, £...), its code when it has no common
+     * symbol (CHF, SEK...).
+     *
+     * @return string
+     */
+    public static function currencySymbol(): string
+    {
+        $currency = self::currency();
+        return self::CURRENCY_SYMBOLS[$currency] ?? $currency;
     }
 
     /**

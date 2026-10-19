@@ -17,6 +17,7 @@ use Carbure\Lib\Config;
 use Carbure\Lib\Db;
 use Carbure\Lib\Installer;
 use Carbure\Lib\Logger;
+use Carbure\Lib\Messages;
 use Carbure\Lib\Migrator;
 use Carbure\Lib\MobileApp;
 use Error;
@@ -70,6 +71,7 @@ final class System {
      *
      * @return array<string, string|bool|null> status (ok), version (of Carbure), database (ok), schema (version),
      *               min_mobile_version (lowest version of the mobile app supported, MobileApp::MIN_VERSION),
+     *               currency (of the amounts: setting currency, ISO 4217 code, EUR by default),
      *               demo (true, only on a demonstration instance: setting demo, Docker image carbure:demo)
      * @throws Exception If the database does not answer (HTTP 500)
      */
@@ -78,7 +80,7 @@ final class System {
     {
         Db::query("SELECT 1");
         $health = ['status' => 'ok', 'version' => self::version(), 'database' => 'ok', 'schema' => (new Migrator(Db::getConnection()))->version(),
-            'min_mobile_version' => MobileApp::MIN_VERSION];
+            'min_mobile_version' => MobileApp::MIN_VERSION, 'currency' => Messages::currency()];
         // Demonstration instance: the portal shows its public credentials on the login screen
         return Config::has('demo') ? $health + ['demo' => true] : $health;
     }

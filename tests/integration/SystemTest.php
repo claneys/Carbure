@@ -28,6 +28,8 @@ class SystemTest extends DatabaseTestCase
         $this->assertSame(\Carbure\Lib\MobileApp::MIN_VERSION, $health['min_mobile_version']);
         $this->assertMatchesRegularExpression('/^\d+(\.\d+){0,2}$/', $health['min_mobile_version']);
         $this->assertSame(trim(file_get_contents(dirname(__DIR__, 2) . '/VERSION')), $health['version']);
+        // Currency of the amounts, shown by the portal and the apps
+        $this->assertSame('EUR', $health['currency']);
         // Not a demonstration instance: no demo field
         $this->assertArrayNotHasKey('demo', $health);
     }

@@ -117,6 +117,28 @@ class MessagesTest extends TestCase
         $this->assertSame('03/01/2027', Messages::date('pt', '2027-01-03 12:00:00'));
     }
 
+    public function testTheCurrencyOfTheInstance()
+    {
+        try {
+            // Its symbol, else its code
+            \Carbure\Lib\Config::set('currency', 'usd');
+            $this->assertSame('USD', Messages::currency());
+            $this->assertSame('-1,234.56 $', Messages::amount('en', -1234.555));
+            \Carbure\Lib\Config::set('currency', 'CHF');
+            $this->assertSame('1 234,50 CHF', Messages::amount('fr', 1234.5));
+            \Carbure\Lib\Config::set('currency', 'GBP');
+            $this->assertSame('£', Messages::currencySymbol());
+
+            // Not set or not a currency code: euros
+            foreach (['', 'EURO', '€', 'E1R'] as $invalid) {
+                \Carbure\Lib\Config::set('currency', $invalid);
+                $this->assertSame('EUR', Messages::currency(), $invalid);
+            }
+        } finally {
+            \Carbure\Lib\Config::set('currency', '');
+        }
+    }
+
     /**
      * @return array Kind of notification, language, title and text expected
      */
