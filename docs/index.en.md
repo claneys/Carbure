@@ -77,7 +77,7 @@ overviews of the month.*
 - Understand how it works: [Architecture](architecture.md)
 - Integrate a client: [API reference](api.md)
 - Contribute: [Development](developpement.md)
-- Ask a question, share an idea or a tip: [GitHub Discussions](https://github.com/ltoinel/Carbure/discussions)
+- Ask a question, share an idea or a tip: [Discord server](https://discord.gg/QsxYw4Rx9D)
 
 !!! info "“Household” model"
     All users of an installation share the same bank accounts,

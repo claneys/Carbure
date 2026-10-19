@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         Thank you for the idea! French or English are both welcome.
-        To discuss an idea before it becomes a feature, you can also start a [discussion](https://github.com/ltoinel/Carbure/discussions/categories/ideas).
+        To discuss an idea before it becomes a feature, you can also share it on the [Discord server](https://discord.gg/QsxYw4Rx9D).
 
   - type: textarea
     id: problem

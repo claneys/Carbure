@@ -122,9 +122,6 @@ plugins:
               - icon: fontawesome/brands/discord
                 link: https://discord.gg/QsxYw4Rx9D
                 name: "Discord: help and chat"
-              - icon: material/forum-outline
-                link: https://github.com/ltoinel/Carbure/discussions
-                name: "Discussions: questions and ideas"
               - icon: fontawesome/brands/youtube
                 link: https://www.youtube.com/@carbure-org
                 name: "Carbure videos on YouTube"
@@ -145,9 +142,6 @@ extra:
     - icon: fontawesome/brands/discord
       link: https://discord.gg/QsxYw4Rx9D
       name: "Discord : entraide et échanges"
-    - icon: material/forum-outline
-      link: https://github.com/ltoinel/Carbure/discussions
-      name: "Discussions : questions et idées"
     - icon: fontawesome/brands/youtube
       link: https://www.youtube.com/@carbure-org
       name: "Vidéos de Carbure sur YouTube"

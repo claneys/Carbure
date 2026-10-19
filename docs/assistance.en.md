@@ -1,6 +1,6 @@
 ---
 title: "Support"
-description: "Get help with Carbure: the Discord server, GitHub Discussions, reporting a bug or a vulnerability."
+description: "Get help with Carbure: the Discord server, the FAQ, reporting a bug or a vulnerability."
 icon: material/lifebuoy
 ---
 
@@ -14,21 +14,15 @@ essentials: [Installation](installation.md), [Configuration](configuration.md),
 
 ## Discord: help and discussion { #discord-entraide-et-echanges }
 
-The Carbure Discord server is the fastest place to get help, share your setup or discuss
-upcoming features.
+The Carbure Discord server is the place to get help: installation, configuration or usage
+questions, sharing your setup, ideas and upcoming features. The answers to the questions
+that come up often join the [FAQ](faq.md).
 
 [Join the Discord server](https://discord.gg/QsxYw4Rx9D){ .md-button .md-button--primary }
 
 Never post your credentials, your tokens (`sync_token`, API key, MCP token), your
 configuration files or your bank statements there: mask them in the screenshots and logs
 you share.
-
-## GitHub Discussions: questions and ideas { #discussions-github-questions-et-idees }
-
-[Discussions](https://github.com/ltoinel/Carbure/discussions) keep a record of answers
-that anyone can browse: ask an installation or usage question there
-([Q&A](https://github.com/ltoinel/Carbure/discussions/categories/q-a) category) or
-suggest an idea.
 
 ## Videos { #videos }
 

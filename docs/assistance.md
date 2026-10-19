@@ -1,6 +1,6 @@
 ---
 title: "Assistance"
-description: "Obtenir de l'aide sur Carbure : le serveur Discord, les Discussions GitHub, signaler un bug ou une vulnérabilité."
+description: "Obtenir de l'aide sur Carbure : le serveur Discord, la FAQ, signaler un bug ou une vulnérabilité."
 icon: material/lifebuoy
 ---
 
@@ -14,21 +14,16 @@ l'essentiel : [Installation](installation.md), [Configuration](configuration.md)
 
 ## Discord : entraide et échanges
 
-Le serveur Discord de Carbure est l'endroit le plus rapide pour obtenir de l'aide,
-partager votre installation ou discuter des prochaines fonctionnalités.
+Le serveur Discord de Carbure est l'endroit où obtenir de l'aide : questions
+d'installation, de configuration ou d'usage, partage de votre installation, idées et
+prochaines fonctionnalités. Les réponses aux questions qui reviennent souvent rejoignent
+la [FAQ](faq.md).
 
 [Rejoindre le serveur Discord](https://discord.gg/QsxYw4Rx9D){ .md-button .md-button--primary }
 
 N'y publiez jamais vos identifiants, vos jetons (`sync_token`, clé d'API, jeton MCP), vos
 fichiers de configuration ni vos relevés bancaires : masquez-les dans les captures et les
 journaux que vous partagez.
-
-## Discussions GitHub : questions et idées
-
-Les [Discussions](https://github.com/ltoinel/Carbure/discussions) gardent une trace des
-réponses, consultable par tous : posez-y une question d'installation ou d'usage
-(catégorie [Q&A](https://github.com/ltoinel/Carbure/discussions/categories/q-a)) ou
-proposez une idée.
 
 ## Vidéos
 

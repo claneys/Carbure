@@ -203,11 +203,10 @@ described in the [developer documentation](https://carbure.org/en/developpement/
   <a href="https://www.youtube.com/@carbure-org"><img src="https://img.shields.io/badge/YouTube-Watch%20the%20videos-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="Watch the Carbure videos on YouTube"></a>
 </p>
 
-- **Discord**: help, questions and chat with the community, on the Carbure server
+- **Discord**: help, questions, ideas and chat with the community, on the Carbure server
   (invitation: <https://discord.gg/QsxYw4Rx9D>).
 - **Videos**: Carbure in action on the [YouTube channel](https://www.youtube.com/@carbure-org)
   (in French).
-- **Questions and ideas**: [GitHub Discussions](https://github.com/ltoinel/Carbure/discussions).
 - **Found a bug?** [Open an issue](https://github.com/ltoinel/Carbure/issues); report a
   security vulnerability privately (see [SECURITY.md](SECURITY.md)).
 

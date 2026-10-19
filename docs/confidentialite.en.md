@@ -140,7 +140,7 @@ specifically aimed at children and does not knowingly collect any data about the
 Ludovic Toinel — [contact@carbure.org](mailto:contact@carbure.org)
 
 For a question about the app that does not concern your personal data,
-you can also use [GitHub Discussions](https://github.com/ltoinel/Carbure/discussions).
+you can also use the [Discord server](https://discord.gg/QsxYw4Rx9D).
 
 This policy may change along with the app; the date of the last update appears
 at the top of the page.

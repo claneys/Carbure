@@ -6,9 +6,8 @@ icon: material/frequently-asked-questions
 
 # Frequently asked questions
 
-A question that isn't here? See [Support](assistance.md): the
-[Discord server](https://discord.gg/QsxYw4Rx9D) and
-[GitHub Discussions](https://github.com/ltoinel/Carbure/discussions).
+A question that isn't here? Ask it on the
+[Discord server](https://discord.gg/QsxYw4Rx9D) (see [Support](assistance.md)).
 
 ## Discover Carbure { #decouvrir-carbure }
 
@@ -122,7 +121,6 @@ A question that isn't here? See [Support](assistance.md): the
 ## Help { #aide }
 
 ??? question "Where can I get help or report a bug?"
-    On the [Discord server](https://discord.gg/QsxYw4Rx9D) and in
-    [GitHub Discussions](https://github.com/ltoinel/Carbure/discussions); report a bug by
+    On the [Discord server](https://discord.gg/QsxYw4Rx9D); report a bug by
     opening an [issue](https://github.com/ltoinel/Carbure/issues/new/choose), and a
     vulnerability privately. See [Support](assistance.md).

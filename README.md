@@ -207,10 +207,9 @@ unitaires du portail, tests de bout en bout Playwright) sont décrits dans la
   <a href="https://www.youtube.com/@carbure-org"><img src="https://img.shields.io/badge/YouTube-Voir%20les%20vid%C3%A9os-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="Voir les vidéos de Carbure sur YouTube"></a>
 </p>
 
-- **Discord** : entraide, questions et échanges avec la communauté, sur le serveur de
-  Carbure (invitation : <https://discord.gg/QsxYw4Rx9D>).
+- **Discord** : entraide, questions, idées et échanges avec la communauté, sur le serveur
+  de Carbure (invitation : <https://discord.gg/QsxYw4Rx9D>).
 - **Vidéos** : Carbure en action sur la [chaîne YouTube](https://www.youtube.com/@carbure-org).
-- **Questions et idées** : les [Discussions GitHub](https://github.com/ltoinel/Carbure/discussions).
 - **Un bug ?** [Ouvrez une issue](https://github.com/ltoinel/Carbure/issues) ; une faille de
   sécurité se signale en privé (voir [SECURITY.md](SECURITY.md)).
 

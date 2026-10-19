@@ -1,7 +1,7 @@
 # Contributing to Carbure
 
 Thank you for your interest! Questions and ideas go to the
-[discussions](https://github.com/ltoinel/Carbure/discussions); bugs and feature requests to
+[Discord server](https://discord.gg/QsxYw4Rx9D); bugs and feature requests to
 the [issues](https://github.com/ltoinel/Carbure/issues/new/choose); vulnerabilities are
 reported privately (see [SECURITY.md](SECURITY.md)).
 
