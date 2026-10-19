@@ -177,6 +177,50 @@ final class Woob {
     }
 
     /**
+     * First step of a synchronization (#43): list the accounts of the backend of an account
+     * and check that the bank gives this one. Some modules (creditmutuel) answer "Account not
+     * found" to a history asked before any list.
+     *
+     * Like getBankData: SSE heartbeats while waiting, and in interactive mode a pseudo-terminal
+     * (a two-factor authentication may be asked by this first call).
+     *
+     * @param string        $bankId      The bank account identifier (<account>@<backend>)
+     * @param bool          $interactive Allow woob to ask a two-factor authentication
+     * @param callable|null $onMessage   Receives each message of woob (interactive mode)
+     * @param callable|null $onDebug     Receives each line of the debug logs of woob (woob_debug)
+     * @param callable|null $onCommand   Receives the system command run (shown in the sync log)
+     * @return array<mixed> The account as listed by woob
+     * @throws Exception If woob fails, or the account is not in the list
+     */
+    public static function findAccount(string $bankId, bool $interactive = false, ?callable $onMessage = null, ?callable $onDebug = null, ?callable $onCommand = null): array
+    {
+        $backend = substr((string)strrchr($bankId, '@'), 1);
+        if (str_starts_with($bankId, '-') || !preg_match(self::BACKEND_NAME, $backend)) {
+            throw new Exception("Invalid bank account $bankId");
+        }
+        // Only their id: the check needs nothing else of the accounts
+        $command = self::path() . " bank list -b " . escapeshellarg($backend) . " -f json -s id" . self::loggingOptions();
+        Logger::debug("Calling woob : $command");
+        if ($onCommand !== null) {
+            $onCommand($command);
+        }
+
+        $stderr = '';
+        $stdout = self::executeWithHeartbeat($command, $stderr, true, $interactive ? $onMessage : null,
+            Config::get('woob_debug') ? $onDebug : null, $interactive);
+        $accounts = self::parseOutput('accounts', $stdout) ?? [];
+        self::failOnEmptyWithError($accounts, $stderr, "woob returned no account");
+
+        foreach ($accounts as $account) {
+            if (is_array($account) && ($account['id'] ?? null) === $bankId) {
+                return $account;
+            }
+        }
+        $count = count(array_filter($accounts, fn($a) => is_array($a) && !empty($a['id'])));
+        throw new Exception("Account $bankId not in the $count account(s) listed by woob for $backend");
+    }
+
+    /**
      * List the bank backends configured in woob (only their name and module:
      * the configuration, which contains the bank login, is never returned).
      *

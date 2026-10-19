@@ -6,6 +6,8 @@
  * Test double of the woob CLI used by the tests (woob_path = "php tests/fixtures/fake-woob.php").
  * Usage: fake-woob.php bank <coming|history> <account@bank> [options...]
  *        fake-woob.php bank list [-b <backend>] -f json (two accounts, "none": no account)
+ *        fake-woob.php bank list -b <backend> -f json -s id (their ids and those of the accounts
+ *                                                          below, except "unlisted@<backend>")
  *        fake-woob.php config info <module> -f json       (settings once installed, like woob 3.7)
  *        fake-woob.php config add <module> carbure_install_probe (installs the module; any
  *                                                          setting on the command line is refused:
@@ -208,6 +210,14 @@ if (($argv[1] ?? '') === 'bank' && $type === 'list') {
     }
     if ($backend === 'none') {
         fwrite(STDERR, "Error(none): Unable to load module \"none\"\n");
+        exit(0);
+    }
+    if (in_array('-s', $argv, true)) {
+        // Only the ids (first step of a synchronization): also the accounts of the tests,
+        // except "unlisted@<backend>"
+        echo json_encode(array_map(fn($account) => ['id' => "$account@$backend"],
+            ['DEMO0000001', '00087654321', '1', '111', '123', '222', '333', 'fail', 'empty', 'broken',
+             'forbidden', 'slow', 'nocoming', 'validate', '2fa'])) . "\n";
         exit(0);
     }
     echo json_encode([

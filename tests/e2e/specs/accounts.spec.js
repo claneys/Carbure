@@ -52,10 +52,12 @@ test('synchronizes one account', async ({ adminPage: page }) => {
     await expect(page.locator('.sync-log')).toContainText('Synchronization complete');
     // The system command run for each step, without a log file for woob
     const commands = page.locator('.sync-log li.sync-log-command');
-    await expect(commands).toHaveCount(2);
+    // (its accounts listed first, #43)
+    await expect(commands).toHaveCount(3);
     await expect(commands.first()).toContainText("Woob command DEMO0000001@bnp:");
-    await expect(commands.first()).toContainText("bank coming 'DEMO0000001@bnp' --count");
-    await expect(commands.first()).not.toContainText('--logging');
+    await expect(commands.first()).toContainText("bank list -b 'bnp' -f json -s id");
+    await expect(commands.nth(1)).toContainText("bank coming 'DEMO0000001@bnp' --count");
+    await expect(commands.nth(1)).not.toContainText('--logging');
 
     // The new transactions are in the month
     await openTab(page, tr('tabTransactions'));

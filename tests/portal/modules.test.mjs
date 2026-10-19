@@ -280,6 +280,7 @@ test('sync: a failure of the coming transactions does not fail the account', asy
     const context = {
         syncStatus: 'success',
         syncLog: [
+            'Syncing 1@bnp (accounts)...',
             'Syncing 1@bnp (coming)...',
             'Coming failed 1@bnp: Error while calling woob (exit code: 1): NotImplementedError',
             'Syncing 1@bnp (history)...',
@@ -291,9 +292,9 @@ test('sync: a failure of the coming transactions does not fail the account', asy
     };
     const steps = syncSteps.call(context);
     assert.deepEqual(steps.accounts[0].steps.map(s => [s.kind, s.status, s.count]),
-        [['coming', 'error', 0], ['history', 'ok', 3], ['notify', 'ok', 0]]);
-    assert.equal(steps.accounts[0].steps[0].error, 'Error while calling woob (exit code: 1): NotImplementedError');
-    assert.equal(steps.accounts[0].steps[1].message, 'new attempt in 15 s (1/1)');
+        [['accounts', 'ok', 0], ['coming', 'error', 0], ['history', 'ok', 3], ['notify', 'ok', 0]]);
+    assert.equal(steps.accounts[0].steps[1].error, 'Error while calling woob (exit code: 1): NotImplementedError');
+    assert.equal(steps.accounts[0].steps[2].message, 'new attempt in 15 s (1/1)');
     // Not an error of the synchronization
     assert.deepEqual(syncErrors.call(context), []);
 });

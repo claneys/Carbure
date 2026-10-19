@@ -320,6 +320,7 @@
     "syncStatus_error": "Sincronização concluída com erros",
     "syncStatus_busy": "Já está em curso uma sincronização, tente novamente dentro de alguns minutos",
     "syncDuration": "em {seconds} s",
+    "syncStep_accounts": "Contas do banco",
     "syncStep_coming": "Operações futuras",
     "syncStep_history": "Histórico",
     "syncStep_notify": "Notificações",

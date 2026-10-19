@@ -306,6 +306,45 @@ class WoobTest extends TestCase
         Woob::getBankData('history', '--debug@bnp');
     }
 
+    public function testTheAccountIsFoundInTheListOfItsBackend()
+    {
+        // First step of a synchronization (#43): only the accounts of its backend, only their id
+        $commands = [];
+        $account = Woob::findAccount('111@bnp', false, null, null, function ($command) use (&$commands) {
+            $commands[] = $command;
+        });
+        $this->assertSame(['id' => '111@bnp'], $account);
+        $this->assertCount(1, $commands);
+        $this->assertStringContainsString("bank list -b 'bnp' -f json -s id", $commands[0]);
+    }
+
+    public function testAnAccountNotListedByTheBankFails()
+    {
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Account unlisted@bnp not in the 15 account(s) listed by woob for bnp');
+        Woob::findAccount('unlisted@bnp');
+    }
+
+    public function testTheListOfTheAccountsFailsWithTheErrorOfWoob()
+    {
+        // The bank refuses the connection: its error, not "not in the list"
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('woob returned no account: Bug(forbidden): 403 Client Error: Forbidden');
+        Woob::findAccount('1@forbidden');
+    }
+
+    public function testFindAccountRefusesAnInvalidAccount()
+    {
+        foreach (['--debug@bnp', 'nobackend', '1@bnp; touch x', '1@-b'] as $bankId) {
+            try {
+                Woob::findAccount($bankId);
+                $this->fail("Account $bankId given to woob");
+            } catch (Exception $e) {
+                $this->assertStringStartsWith('Invalid bank account', $e->getMessage());
+            }
+        }
+    }
+
     public function testBackendNamesNeverStartWithADash()
     {
         foreach (['bnp', 'bnp_2', 'bnp-pro', '2bnp'] as $name) {

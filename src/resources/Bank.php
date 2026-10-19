@@ -801,7 +801,7 @@ final class Bank {
     }
 
     /**
-     * One synchronization of an account: coming then history. The coming transactions
+     * One synchronization of an account: its accounts listed, coming then history. The coming transactions
      * are best effort: their failure does not prevent the history, it is only noted
      * (unless the bank asks a validation, which the history would ask too).
      *
@@ -813,6 +813,16 @@ final class Bank {
      */
     private static function syncAttempt(string $bankId, bool $interactive, bool $debug): array
     {
+        try {
+            // The accounts are listed first: some modules only find the account afterwards (#43)
+            Webservice::sendProgress("Syncing $bankId (accounts)...");
+            Woob::findAccount($bankId, $interactive, ...self::woobCallbacks($bankId, $debug));
+        } catch (Exception $e) {
+            Logger::error("Error syncing $bankId: " . $e->getMessage());
+            Webservice::sendProgress("Error syncing $bankId: " . $e->getMessage());
+            return [[], $e->getMessage(), ''];
+        }
+
         [$created, $comingError] = self::syncComing($bankId, $interactive, $debug);
         try {
             if (Woob::needsTwoFactor($comingError)) {
@@ -1161,9 +1171,23 @@ final class Bank {
      */
     private static function getBankData(string $type, string $bankId, bool $interactive = false, bool $debug = false): ?array
     {
-        return Woob::getBankData($type, $bankId, $interactive,
+        return Woob::getBankData($type, $bankId, $interactive, ...self::woobCallbacks($bankId, $debug));
+    }
+
+    /**
+     * Callbacks of a woob call during a synchronization, sent in the progress: the messages
+     * of the bank, the debug logs of woob (only when asked) and the command run.
+     *
+     * @param string $bankId The bank id (account_number@bank_name)
+     * @param bool   $debug  Send the debug logs of woob in the progress
+     * @return array{0: callable, 1: callable|null, 2: callable} onMessage, onDebug, onCommand
+     */
+    private static function woobCallbacks(string $bankId, bool $debug): array
+    {
+        return [
             fn($message) => Webservice::sendProgress("Bank message $bankId: $message"),
             $debug ? fn($line) => Webservice::sendProgress("Woob debug $bankId: $line") : null,
-            fn($command) => Webservice::sendProgress("Woob command $bankId: $command"));
+            fn($command) => Webservice::sendProgress("Woob command $bankId: $command"),
+        ];
     }
 }

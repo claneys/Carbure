@@ -33,7 +33,7 @@ export function createSyncModule(getApiService) {
         computed: {
             /**
              * Steps of the synchronization built from the progress messages:
-             * per account (coming, history, notification), then categorization.
+             * per account (accounts listed, coming, history, notification), then categorization.
              * Each step: {kind, status: running|ok|error, count, error, message}
              * (message: last message of the bank, e.g. a validation to do in its app)
              * @returns {{accounts: Array<{id: string, steps: Array}>, global: Array}}
@@ -63,7 +63,7 @@ export function createSyncModule(getApiService) {
                         // Command run and debug logs of woob (woob_debug): only shown in the log
                         continue;
                     }
-                    if ((match = line.match(/^Syncing (.+) \((coming|history)\)\.\.\.$/))) {
+                    if ((match = line.match(/^Syncing (.+) \((accounts|coming|history)\)\.\.\.$/))) {
                         close('ok');
                         current = { kind: match[2], status: 'running', count: 0, created: null, error: null };
                         account(match[1]).steps.push(current);

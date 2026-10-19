@@ -85,6 +85,8 @@ sequenceDiagram
     P->>B: GET /api/bank/sync (JWT or sync_token)
     B->>B: GET_LOCK('bank_sync') — only one sync at a time
     loop For each account (number@bank)
+        B->>W: woob bank list -b <bank> -f json -s id
+        W-->>B: accounts of the bank (the account must be listed, else an error)
         B->>W: woob bank coming <account> -f json
         W-->>B: upcoming operations (type 12 kept)
         B->>T: save(): label cleanup, UUID, INSERT … ON DUPLICATE KEY

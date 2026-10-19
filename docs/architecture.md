@@ -85,6 +85,8 @@ sequenceDiagram
     P->>B: GET /api/bank/sync (JWT ou sync_token)
     B->>B: GET_LOCK('bank_sync') — une seule synchro à la fois
     loop Pour chaque compte (numéro@banque)
+        B->>W: woob bank list -b <banque> -f json -s id
+        W-->>B: comptes de la banque (le compte doit y figurer, sinon erreur)
         B->>W: woob bank coming <compte> -f json
         W-->>B: opérations à venir (type 12 conservé)
         B->>T: save() : nettoyage du libellé, UUID, INSERT … ON DUPLICATE KEY

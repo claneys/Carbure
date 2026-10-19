@@ -505,13 +505,34 @@ class BankTest extends DatabaseTestCase
         }
         $this->assertStringContainsString('Syncing 111@bnp', $output);
         $this->assertStringNotContainsString('fail@bank', $output);
-        // The system command of each step, in the progress
+        // The system command of each step, in the progress: the accounts listed first (#43)
+        $this->assertMatchesRegularExpression("/data: Syncing 111@bnp \\(accounts\\).*data: Woob command 111@bnp: .* bank list -b 'bnp' -f json -s id"
+            . ".*data: Syncing 111@bnp \\(coming\\)/s", $output);
         $this->assertMatchesRegularExpression("/data: Woob command 111@bnp: .* bank coming '111@bnp' --count/", $output);
         $this->assertMatchesRegularExpression("/data: Woob command 111@bnp: .* bank history '111@bnp' --count/", $output);
 
         $this->expectException(Error::class);
         $this->expectExceptionCode(404);
         Bank::getSync(null, 'unknown@bnp');
+    }
+
+    public function testAnAccountNotListedByTheBankIsNotSynchronized()
+    {
+        Db::query("INSERT INTO bank_account (bank_name, account_number, user_id) VALUES ('bnp', 'unlisted', " . self::ADMIN . ")");
+        $this->loginAs(self::ADMIN);
+        ob_start();
+        try {
+            Bank::getSync(null, 'unlisted@bnp');
+        } finally {
+            $output = ob_get_clean();
+        }
+
+        // Neither its coming transactions nor its history asked: the error of the list
+        $this->assertStringContainsString('data: Error syncing unlisted@bnp: Account unlisted@bnp not in the 15 account(s) listed by woob for bnp', $output);
+        $this->assertStringNotContainsString('(coming)', $output);
+        $this->assertStringNotContainsString('(history)', $output);
+        $accounts = array_column(Bank::accounts(), null, 'bankId');
+        $this->assertSame('ERROR', $accounts['unlisted@bnp']['last_sync_status']);
     }
 
     public function testInteractiveSyncRelaysTheTwoFactorAuthentication()
