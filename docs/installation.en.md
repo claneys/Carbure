@@ -211,6 +211,18 @@ When `docker compose pull` brings a new major version of MariaDB (for example fr
 the old version, hence the importance of the backup. To stay on a given version,
 pin it in `docker/docker-compose.yml` (`image: mariadb:11`).
 
+### Upgrading to 1.9.0 { #passer-a-la-190 }
+
+No database migration.
+
+- **Synchronization**: each account starts with the list of the accounts of its bank
+  (`woob bank list`) before its transactions; some modules (Crédit Mutuel) did not find the
+  account without it. An account the bank no longer lists ends in error, with a clear
+  message, instead of "Account not found".
+- **Currency**: new optional setting `currency` (ISO 4217 code, `EUR` by default) in
+  **Administration → Settings**, to show the amounts in another currency (nothing is
+  converted).
+
 ### Upgrading to 1.8.0 { #passer-a-la-180 }
 
 - The migration `2026-10-26_user_browser` is applied at startup: it records the web

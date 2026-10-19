@@ -211,6 +211,18 @@ Quand `docker compose pull` apporte une nouvelle version majeure de MariaDB (par
 l'ancienne version, d'où l'importance de la sauvegarde. Pour garder une version donnée,
 fixez-la dans `docker/docker-compose.yml` (`image: mariadb:11`).
 
+### Passer à la 1.9.0
+
+Aucune migration de la base.
+
+- **Synchronisation** : chaque compte commence par la liste des comptes de sa banque
+  (`woob bank list`) avant ses opérations ; certains modules (Crédit Mutuel) ne trouvaient
+  pas le compte sans elle. Un compte que la banque ne liste plus finit en erreur, avec un
+  message explicite, au lieu de « Account not found ».
+- **Devise** : nouveau réglage facultatif `currency` (code ISO 4217, `EUR` par défaut) dans
+  **Administration → Paramètres**, pour afficher les montants dans une autre devise
+  (aucune conversion).
+
 ### Passer à la 1.8.0
 
 - La migration `2026-10-26_user_browser` est appliquée au démarrage : elle enregistre les
