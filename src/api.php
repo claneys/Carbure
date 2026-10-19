@@ -6,7 +6,7 @@ use Carbure\Lib\Setup;
 use Carbure\Lib\Webservice;
 
 // Not installed yet: only the installation wizard of the portal answers (/api/setup)
-$env = preg_replace('/[^a-z0-9_-]/i', '', getenv('APP_ENV') ?: 'prod');
+$env = preg_replace('/[^a-z0-9_-]/i', '', getenv('APP_ENV') ?: 'prod') ?? 'prod';
 if (!is_file(dirname(__DIR__) . "/data/conf/$env.ini") && !is_file(dirname(__DIR__) . "/conf/$env.ini")) {
     require_once __DIR__ . '/lib/ClassLoader.php';
     ClassLoader::register();

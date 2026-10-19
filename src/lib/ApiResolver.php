@@ -80,7 +80,7 @@ final class ApiResolver {
     {
         // Try to load from APCu if available
         if (self::isApcuAvailable() && self::loadFromApcu()) {
-            Logger::debug("Routes loaded from APCu cache (" . count(self::$routeCache) . " routes)");
+            Logger::debug("Routes loaded from APCu cache (" . count(self::$routeCache ?? []) . " routes)");
             return;
         }
         

@@ -179,7 +179,7 @@ final class Transaction {
     {
         $groups = [];
         foreach ($rows as $row) {
-            $name = trim(preg_replace('/[^\p{L}]+/u', ' ', preg_replace('/\d+/', '', (string)$row['label'])));
+            $name = trim(preg_replace('/[^\p{L}]+/u', ' ', preg_replace('/\d+/', '', (string)$row['label']) ?? '') ?? '');
             if ($name !== '') {
                 $groups[((float)$row['amount'] < 0 ? '-' : '+') . $name][] = $row;
             }
@@ -734,7 +734,8 @@ final class Transaction {
         // for each $SETTINGS['regex_label'] we replace the label by the $SETTINGS['replace_label']
         foreach (Config::get('regex_label') as $regex => $replace) {
 
-            $label = preg_replace($regex, $replace, $label);
+            // An invalid expression of the configuration leaves the label as it is
+            $label = preg_replace($regex, $replace, $label) ?? $label;
         }
 
         return $label;

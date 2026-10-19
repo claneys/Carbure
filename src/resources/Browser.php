@@ -169,7 +169,7 @@ final class Browser {
      */
     private static function available(): bool
     {
-        return self::$table ??= (int)Db::queryOne("SELECT COUNT(*) AS n FROM information_schema.TABLES
-            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_browser'", "")['n'] > 0;
+        return self::$table ??= (int)(Db::queryOne("SELECT COUNT(*) AS n FROM information_schema.TABLES
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_browser'", "")['n'] ?? 0) > 0;
     }
 }

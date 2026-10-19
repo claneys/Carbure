@@ -80,7 +80,7 @@ final class Setup {
     public static function serve(string $root, string $env): void
     {
         $setup = new self($root, "$root/data/conf/$env.ini", "$root/data/conf/setup.code", self::requestAddresses());
-        $path = preg_replace('#^/api#', '', (strtok($_SERVER['REQUEST_URI'] ?? '/', '?') ?: '/'));
+        $path = preg_replace('#^/api#', '', (strtok($_SERVER['REQUEST_URI'] ?? '/', '?') ?: '/')) ?? '/';
         $data = json_decode(file_get_contents('php://input') ?: '[]', true);
 
         [$status, $body] = $setup->handle($_SERVER['REQUEST_METHOD'] ?? 'GET', $path, is_array($data) ? $data : []);
@@ -401,7 +401,7 @@ final class Setup {
         if (!$this->codeRequired()) {
             return;
         }
-        $given = strtoupper(preg_replace('/\s+/', '', (string)($data['code'] ?? '')));
+        $given = strtoupper(preg_replace('/\s+/', '', (string)($data['code'] ?? '')) ?? '');
         if ($given === '' || !hash_equals($this->code(), $given)) {
             usleep(500000);
             throw new SetupError("Wrong setup code: see data/conf/setup.code on the server, or the logs of the Docker container", 403);

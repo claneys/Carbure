@@ -199,10 +199,12 @@ To add a bank's CSV export:
 
 Every parameter, return value and property of the PHP code has a native type (checked by
 PHP at runtime); arrays are detailed in the PHPDoc (`array<string, mixed>`).
-PHPStan checks this (level 7 and the `tools/phpstan/NativeTypesRule.php` rule): at level 7,
-a value that may be `false` (result of a query, of `strtotime()`, of a file read) is not used
-as is, hence `Db::select()`, `Db::result()`, `Month::timestamp()` and `File::read()`, which
-throw an exception instead. The tests are analysed separately (`phpstan.tests.neon`, level 5,
+PHPStan checks this (level 8, the `tools/phpstan/NativeTypesRule.php` rule and the
+[deprecation rules](https://github.com/phpstan/phpstan-deprecation-rules)): a value that may
+be `false` (result of a query, of `strtotime()`, of a file read) is not used as is, hence
+`Db::select()`, `Db::result()`, `Month::timestamp()` and `File::read()`, which throw an
+exception instead; a value that may be `null` (missing row, failed `preg_replace()`) gets its
+default. The tests are analysed separately (`phpstan.tests.neon`, level 5,
 without Carbure's rules):
 
 ```bash

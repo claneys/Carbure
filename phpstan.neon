@@ -3,10 +3,15 @@
 # The tests are analysed by phpstan.tests.neon (also run by composer phpstan)
 # The rules of Carbure (tools/phpstan/) are loaded by the Composer autoloader
 # (run by the pre-commit hook and the CI lint job)
+# Use of deprecated PHP functions, classes and constants (phpstan-deprecation-rules)
+includes:
+    - vendor/phpstan/phpstan-deprecation-rules/rules.neon
+
 parameters:
-    # Level 7: every parameter, return value and property has a type, and the union types
-    # are checked (a value that may be false: the result of a query, of strtotime()...)
-    level: 7
+    # Level 8: every parameter, return value and property has a type, the union types are
+    # checked (a value that may be false: the result of a query, of strtotime()...) and so
+    # are the nullable values (a row that may be null, a regex that may fail...)
+    level: 8
     phpVersion: 80200
     paths:
         - src

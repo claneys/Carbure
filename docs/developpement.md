@@ -199,10 +199,12 @@ Pour ajouter l'export CSV d'une banque :
 
 Chaque paramètre, valeur de retour et propriété du code PHP a un type natif (vérifié par
 PHP à l'exécution) ; les tableaux sont détaillés dans la PHPDoc (`array<string, mixed>`).
-PHPStan le contrôle (niveau 7 et règle `tools/phpstan/NativeTypesRule.php`) : au niveau 7,
-une valeur qui peut valoir `false` (résultat d'une requête, de `strtotime()`, d'une lecture
-de fichier) n'est pas utilisée telle quelle, d'où `Db::select()`, `Db::result()`,
-`Month::timestamp()` et `File::read()`, qui lèvent une exception à la place. Les tests sont
+PHPStan le contrôle (niveau 8, règle `tools/phpstan/NativeTypesRule.php` et
+[règles de dépréciation](https://github.com/phpstan/phpstan-deprecation-rules)) : une valeur
+qui peut valoir `false` (résultat d'une requête, de `strtotime()`, d'une lecture de fichier)
+n'est pas utilisée telle quelle, d'où `Db::select()`, `Db::result()`, `Month::timestamp()` et
+`File::read()`, qui lèvent une exception à la place ; une valeur qui peut valoir `null` (ligne
+absente, `preg_replace()` en échec) a sa valeur par défaut. Les tests sont
 analysés à part (`phpstan.tests.neon`, niveau 5, sans les règles de Carbure) :
 
 ```bash

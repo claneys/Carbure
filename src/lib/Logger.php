@@ -69,7 +69,7 @@ final class Logger {
     public static function getUID(): string {
         if (self::$UID === null){
             // The id given by a proxy (X-Request-Id) follows the request, if it is safe
-            $given = $_SERVER['HTTP_X_REQUEST_ID'] ?? '';
+            $given = (string)($_SERVER['HTTP_X_REQUEST_ID'] ?? '');
             self::$UID = preg_match('/^[A-Za-z0-9._-]{8,64}$/', $given) ? $given : bin2hex(random_bytes(8));
         }
         return self::$UID;

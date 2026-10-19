@@ -97,9 +97,9 @@ final class CsvReader
             'ô' => 'o', 'ù' => 'u', 'û' => 'u', 'ü' => 'u', 'ç' => 'c',
         ]);
         if (!$keepParentheses) {
-            $name = preg_replace('/\([^)]*\)/', '', $name);
+            $name = preg_replace('/\([^)]*\)/', '', $name) ?? $name;
         }
-        return trim(preg_replace('/[^a-z0-9]+/', ' ', $name));
+        return trim(preg_replace('/[^a-z0-9]+/', ' ', $name) ?? $name);
     }
 
     /**

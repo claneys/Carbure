@@ -39,7 +39,7 @@ final class CamtReader
     {
         $xml = self::loadXml($content);
         $rows = [];
-        foreach ($xml->xpath('//Ntry') as $entry) {
+        foreach ($xml->xpath('//Ntry') ?: [] as $entry) {
             $rows[] = self::row($entry);
         }
         $account = self::text($xml->xpath('//Stmt/Acct/Id/IBAN')) ?: self::text($xml->xpath('//Stmt/Acct/Id/Othr/Id'));
@@ -55,7 +55,7 @@ final class CamtReader
      */
     private static function loadXml(string $content): SimpleXMLElement
     {
-        $content = preg_replace('/\sxmlns(:\w+)?="[^"]*"/', '', $content);
+        $content = preg_replace('/\sxmlns(:\w+)?="[^"]*"/', '', $content) ?? $content;
         $previous = libxml_use_internal_errors(true);
         // No network access, no entity substitution (XXE)
         $xml = simplexml_load_string($content, 'SimpleXMLElement', LIBXML_NONET);
@@ -110,7 +110,7 @@ final class CamtReader
     {
         $label = self::text($entry->xpath('AddtlNtryInf'));
         if ($label === '') {
-            $label = implode(' ', array_map('trim', array_map('strval', $entry->xpath('.//RmtInf/Ustrd'))));
+            $label = implode(' ', array_map('trim', array_map('strval', $entry->xpath('.//RmtInf/Ustrd') ?: [])));
         }
         if ($label === '') {
             $label = self::text($entry->xpath('.//RltdPties/Cdtr/Nm')) ?: self::text($entry->xpath('.//RltdPties/Dbtr/Nm'));

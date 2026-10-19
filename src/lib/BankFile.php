@@ -151,7 +151,7 @@ final class BankFile
             if ($date === null || $amount === null) {
                 continue;
             }
-            $raw = trim(preg_replace('/\s+/', ' ', $row['raw']));
+            $raw = trim(preg_replace('/\s+/', ' ', $row['raw']) ?? $row['raw']);
             $transactions[] = [
                 'date' => $date,
                 'rdate' => self::date($row['rdate'], $dayFirst) ?? $date,

@@ -248,8 +248,8 @@ final class Device {
      */
     private static function hasPlatform(): bool
     {
-        return self::$platformColumn ??= (int)Db::queryOne("SELECT COUNT(*) AS n FROM information_schema.COLUMNS
-            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'devices' AND COLUMN_NAME = 'platform'", "")['n'] > 0;
+        return self::$platformColumn ??= (int)(Db::queryOne("SELECT COUNT(*) AS n FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'devices' AND COLUMN_NAME = 'platform'", "")['n'] ?? 0) > 0;
     }
 
     /**
@@ -261,8 +261,8 @@ final class Device {
      */
     private static function hasDetails(): bool
     {
-        return self::$detailsColumns ??= (int)Db::queryOne("SELECT COUNT(*) AS n FROM information_schema.COLUMNS
-            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'devices' AND COLUMN_NAME = 'app_version'", "")['n'] > 0;
+        return self::$detailsColumns ??= (int)(Db::queryOne("SELECT COUNT(*) AS n FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'devices' AND COLUMN_NAME = 'app_version'", "")['n'] ?? 0) > 0;
     }
 
     /**

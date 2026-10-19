@@ -116,7 +116,7 @@ final class User {
     public static function checkNotLocked(array $user): void
     {
         if ($user['locked_until'] !== null
-            && Db::queryOne("SELECT ? > NOW() AS locked", "s", $user['locked_until'])['locked']) {
+            && (Db::queryOne("SELECT ? > NOW() AS locked", "s", $user['locked_until'])['locked'] ?? 0)) {
             throw new Error("Account locked after too many failed logins, until " . $user['locked_until']
                 . ": ask an administrator to unlock it", 423);
         }
@@ -409,7 +409,7 @@ final class User {
 
         // The household transactions are attached to their owner
         $owned = Db::queryOne("SELECT COUNT(*) AS count FROM bank_transaction WHERE user=?", "i", $id);
-        if ($owned['count'] > 0) {
+        if (($owned['count'] ?? 0) > 0) {
             throw new Error("User owns bank transactions and cannot be deleted", 409);
         }
 

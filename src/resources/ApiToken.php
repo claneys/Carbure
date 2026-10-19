@@ -71,7 +71,7 @@ final class ApiToken {
         }
 
         $userId = Jwt::getUserIdFromToken();
-        $count = Db::queryOne("SELECT COUNT(*) AS n FROM api_tokens WHERE user_id = ?", "i", $userId)['n'];
+        $count = (Db::queryOne("SELECT COUNT(*) AS n FROM api_tokens WHERE user_id = ?", "i", $userId)['n'] ?? 0);
         if ($count >= self::MAX_TOKENS) {
             throw new Error("Too many API tokens: delete the ones you no longer use", 409);
         }

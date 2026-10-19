@@ -8,6 +8,7 @@
     },
     "require-dev": {
         "phpstan/phpstan": "^2.2.16",
+        "phpstan/phpstan-deprecation-rules": "^2.0",
         "phpunit/phpunit": "^11.5"
     },
     "autoload-dev": {
@@ -28,7 +29,7 @@
         ]
     },
     "scripts-descriptions": {
-        "phpstan": "Check the types and the complexity of the PHP code, then the tests",
+        "phpstan": "Check the types, the complexity and the deprecations of the PHP code, then the tests",
         "test": "Run the unit tests (no external dependency)",
         "test:all": "Run the unit and integration tests (MariaDB/MySQL required, see tests/bootstrap.php)"
     },

@@ -194,7 +194,7 @@ final class OAuth {
     {
         Db::execute("DELETE FROM oauth_clients WHERE client_id NOT IN (SELECT client_id FROM api_tokens WHERE client_id IS NOT NULL)
                      AND created_at < NOW() - INTERVAL 1 DAY", "");
-        return Db::queryOne("SELECT COUNT(*) AS n FROM oauth_clients", "")['n'] >= self::MAX_CLIENTS;
+        return (Db::queryOne("SELECT COUNT(*) AS n FROM oauth_clients", "")['n'] ?? 0) >= self::MAX_CLIENTS;
     }
 
     /**

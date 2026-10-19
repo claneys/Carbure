@@ -1,6 +1,9 @@
 # Static analysis of the tests (composer phpstan-tests): calls to unknown methods or
 # classes, wrong arguments... at a lower level than the code (level 5), without the rules
 # of Carbure (native types, complexity), which are for the code of the application
+includes:
+    - vendor/phpstan/phpstan-deprecation-rules/rules.neon
+
 parameters:
     level: 5
     phpVersion: 80200

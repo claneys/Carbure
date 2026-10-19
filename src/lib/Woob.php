@@ -734,7 +734,8 @@ final class Woob {
     private static function emitMessages(string &$buffer, callable $onMessage, bool $data = true, int $maxLength = 300): void
     {
         while (($end = strpos($buffer, "\n")) !== false) {
-            $line = trim(preg_replace('/\e\[[0-9;?]*[A-Za-z]/', '', substr($buffer, 0, $end)));
+            $line = substr($buffer, 0, $end);
+            $line = trim(preg_replace('/\e\[[0-9;?]*[A-Za-z]/', '', $line) ?? $line);
             $buffer = substr($buffer, $end + 1);
             if ($line !== '' && (!$data || ($line[0] !== '[' && $line[0] !== '{'))) {
                 $onMessage(mb_substr($line, 0, $maxLength));

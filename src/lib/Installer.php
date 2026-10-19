@@ -250,7 +250,7 @@ final class Installer {
     {
         $quoted = !$quote && preg_match('/^[A-Za-z0-9_.\/:@-]*$/', $value) ? $value : '"' . str_replace('"', '', $value) . '"';
         $count = 0;
-        $ini = preg_replace('/^;?\s*' . preg_quote($key, '/') . '\s*=.*$/m', $key . '=' . $quoted, $ini, 1, $count);
+        $ini = preg_replace('/^;?\s*' . preg_quote($key, '/') . '\s*=.*$/m', $key . '=' . $quoted, $ini, 1, $count) ?? $ini;
         if ($count === 0) {
             $ini .= "\n$key=$quoted\n";
         }

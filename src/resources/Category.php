@@ -303,7 +303,7 @@ final class Category {
         $pattern = '%' . addcslashes($rule['keyword'], '%_\\') . '%';
         $row = Db::queryOne("SELECT COUNT(*) AS matching, SUM(category = ?) AS categorized FROM bank_transaction WHERE label LIKE ?",
             "is", $rule['category'], $pattern);
-        return ['matching' => (int)$row['matching'], 'categorized' => (int)$row['categorized']];
+        return ['matching' => (int)($row['matching'] ?? 0), 'categorized' => (int)($row['categorized'] ?? 0)];
     }
 
     /**

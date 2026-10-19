@@ -319,7 +319,7 @@ class SwaggerGenerator {
         foreach ($lines as $line) {
             $line = trim($line);
             // Remove /** */ and *
-            $line = preg_replace('/^\/?\*+\/?\s*/', '', $line);
+            $line = preg_replace('/^\/?\*+\/?\s*/', '', $line) ?? $line;
             
             // Stop at @param or other tags
             if (strpos($line, '@') === 0) {
@@ -343,7 +343,7 @@ class SwaggerGenerator {
      */
     private function generateSummary(string $methodName, string $resourceName): string {
         // Convert camelCase to readable text
-        $summary = preg_replace('/([a-z])([A-Z])/', '$1 $2', $methodName);
+        $summary = preg_replace('/([a-z])([A-Z])/', '$1 $2', $methodName) ?? $methodName;
         $summary = ucfirst($summary);
         
         return "$summary $resourceName";
