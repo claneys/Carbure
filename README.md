@@ -229,20 +229,5 @@ Les contributions sont les bienvenues :
 
 [MIT](LICENSE) © Ludovic Toinel
 
-### Composants tiers
-
-L'image Docker embarque des logiciels tiers, non modifiés, sous leur propre licence :
-
-| Composant | Licence | Source |
-|---|---|---|
-| [woob](https://woob.tech) (synchronisation bancaire) | LGPL-3.0-or-later | [gitlab.com/woob/woob](https://gitlab.com/woob/woob) (version fixée par `WOOB_VERSION` dans `docker/Dockerfile`) |
-| [curl_cffi](https://github.com/lexiforest/curl_cffi) | MIT | [github.com/lexiforest/curl_cffi](https://github.com/lexiforest/curl_cffi) |
-| PHP, nginx, Alpine Linux | Licence PHP, BSD-2-Clause, diverses (BusyBox : GPL-2.0) | Images officielles `php:8.5-fpm-alpine` |
-| Vue.js, CodeMirror, Roboto, Material Icons (portail) | MIT, MIT, OFL-1.1, Apache-2.0 | [`portal/vendor/`](portal/vendor/README.md) |
-
-Carbure appelle woob comme un programme séparé ; il peut être remplacé par une autre
-version de woob (environnement virtuel `/opt/woob`).
-
-La musique du [teaser](https://www.youtube.com/watch?v=PUCd27oJkig) est
-« Nowhere Land » de Kevin MacLeod ([incompetech.com](https://incompetech.com)), sous
-licence [Creative Commons : Attribution 4.0](https://creativecommons.org/licenses/by/4.0/deed.fr).
+Les logiciels tiers embarqués (woob, curl_cffi, PHP, nginx, bibliothèques du portail…),
+leurs licences et les crédits sont listés dans [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

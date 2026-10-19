@@ -106,7 +106,7 @@ jobs:
           name="carbure-${TAG#v}"
           mkdir -p dist build
           git archive --format=tar --prefix="$name/" HEAD \
-            src portal swagger sql conf/prod.sample.ini tools/migrate.php README.md README.en.md LICENSE \
+            src portal swagger sql conf/prod.sample.ini tools/migrate.php README.md README.en.md LICENSE THIRD-PARTY-NOTICES.md \
             | tar -x -C build
           # Version shown in the footer of the portal and by /api/health
           echo "${TAG#v}" > "build/$name/VERSION"
