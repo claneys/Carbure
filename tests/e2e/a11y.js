@@ -114,11 +114,12 @@ async function contrastReport(page, where) {
     const seen = new Set();
     for (let i = 0; i < count; i++) {
         const button = buttons.nth(i);
-        if (await button.isDisabled().catch(() => true)) {
+        // A button gone meanwhile (the page re-rendered): skipped, never the whole test timeout
+        if (await button.isDisabled({ timeout: 1000 }).catch(() => true)) {
             continue;
         }
-        const selector = await button.evaluate(el => el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\s+/).join('.') : ''))
-            .catch(() => null);
+        const selector = await button.evaluate(el => el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\s+/).join('.') : ''),
+            undefined, { timeout: 1000 }).catch(() => null);
         if (selector === null || seen.has(selector)) {
             continue;
         }
@@ -134,7 +135,7 @@ async function contrastReport(page, where) {
             const measures = await button.evaluate((el, source) => {
                 const fn = new Function(`return (${source})`)();
                 return [el, ...el.querySelectorAll('*')].map(fn).filter(Boolean);
-            }, measure.toString()).catch(() => []);
+            }, measure.toString(), { timeout: 1000 }).catch(() => []);
             for (const m of measures) {
                 if (m.ratio < (m.large ? MIN_LARGE_TEXT : MIN_TEXT)) {
                     failures.push({ where, state, selector, ...m });
