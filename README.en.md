@@ -151,15 +151,15 @@ Three ways to run Carbure, depending on what you want to do:
 ### 1. Try the demo
 
 Nothing to install: open the online demo at **[demo.carbure.org](https://demo.carbure.org/)**
-(log in as `demo` / `carbure`, fictitious data). Or run it at home: the demo image runs
+(fictitious data). Or run it at home: the demo image runs
 Carbure with its database and a sample household, wiped at each start (never for real data):
 
 ```bash
 docker run --rm -p 8080:80 ltoinel/carbure:demo
 ```
 
-Then open `http://localhost:8080/portal/` and log in as `demo` / `carbure`
-(the password of the `admin` administrator is printed in the container logs).
+Then open `http://localhost:8080/portal/`: the login page shows the demo account (the
+password of the `admin` administrator is printed in the container logs).
 
 ### 2. Install it for real
 

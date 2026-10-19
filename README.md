@@ -152,7 +152,7 @@ Trois façons de lancer Carbure, selon ce que vous voulez faire :
 ### 1. Essayer la démo
 
 Rien à installer : ouvrez la démo en ligne sur **[demo.carbure.org](https://demo.carbure.org/)**
-(compte `demo` / `carbure`, données fictives). Ou lancez-la chez vous : l'image de
+(données fictives). Ou lancez-la chez vous : l'image de
 démonstration lance Carbure avec sa base de données et un foyer d'exemple, effacé à chaque
 démarrage (jamais pour de vraies données) :
 
@@ -160,8 +160,9 @@ démarrage (jamais pour de vraies données) :
 docker run --rm -p 8080:80 ltoinel/carbure:demo
 ```
 
-Ouvrez ensuite `http://localhost:8080/portal/` et connectez-vous avec `demo` / `carbure`
-(le mot de passe de l'administrateur `admin` est affiché dans les journaux du conteneur).
+Ouvrez ensuite `http://localhost:8080/portal/` : la page de connexion indique le compte de
+démonstration (le mot de passe de l'administrateur `admin` est affiché dans les journaux du
+conteneur).
 
 ### 2. L'installer pour de bon
 
