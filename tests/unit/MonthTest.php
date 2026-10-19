@@ -31,4 +31,18 @@ class MonthTest extends TestCase
         // December: the next month is in the next year
         $this->assertSame(['2025-12-01', '2026-01-01'], Month::range('12', '2025'));
     }
+
+    public function testTimestampOfARelativeDate()
+    {
+        $this->assertSame('2026-11-01', date('Y-m-d', Month::timestamp('2026-10-01 +1 month')));
+        $this->assertSame('2026-11-01', date('Y-m-d', Month::timestamp('first day of next month', Month::timestamp('2026-10-15'))));
+    }
+
+    public function testTimestampOfAnInvalidDateThrows()
+    {
+        // Never false given to date(): 1970-01-01
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Invalid date: not a date');
+        Month::timestamp('not a date');
+    }
 }

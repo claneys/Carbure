@@ -105,6 +105,77 @@ final class Db {
     }
 
     /**
+     * Rows of a query that returns some (SELECT, SHOW...): a prepared statement when it has
+     * parameters, a plain query otherwise.
+     *
+     * @param string $sql    The SQL query, with placeholders (?) for the parameters
+     * @param string $types  The types of the parameters (s=string, i=integer, d=double, b=blob)
+     * @param mixed  ...$params The parameters to bind
+     * @return mysqli_result The rows
+     * @throws Exception If the query fails or returns no rows (an INSERT, UPDATE...)
+     */
+    public static function select(string $sql, string $types = '', mixed ...$params): mysqli_result
+    {
+        $result = $types === '' && $params === [] ? self::query($sql) : self::result(self::execute($sql, $types, ...$params));
+        if (!$result instanceof mysqli_result) {
+            throw new Exception("Database query returned no rows: $sql");
+        }
+        return $result;
+    }
+
+    /**
+     * Rows of a query on a given connection (installation, migrations: before the
+     * configuration of the instance).
+     *
+     * @param mysqli $db  The connection
+     * @param string $sql The SQL query
+     * @return mysqli_result The rows
+     * @throws Exception If the query returns no rows (mysqli throws when it fails)
+     */
+    public static function rowsOn(mysqli $db, string $sql): mysqli_result
+    {
+        $result = $db->query($sql);
+        if (!$result instanceof mysqli_result) {
+            throw new Exception("Database query returned no rows: $sql");
+        }
+        return $result;
+    }
+
+    /**
+     * Statement prepared on a given connection (installation, migrations).
+     *
+     * @param mysqli $db  The connection
+     * @param string $sql The SQL query with placeholders (?)
+     * @return mysqli_stmt The statement
+     * @throws Exception If the statement cannot be prepared
+     */
+    public static function prepareOn(mysqli $db, string $sql): mysqli_stmt
+    {
+        $stmt = $db->prepare($sql);
+        if ($stmt === false) {
+            throw new Exception("Database prepare failed: " . $db->error);
+        }
+        return $stmt;
+    }
+
+    /**
+     * Rows of an executed statement.
+     *
+     * @param mysqli_stmt $stmt The executed statement
+     * @return mysqli_result The rows
+     * @throws Exception If the statement returns no rows (an INSERT, UPDATE...) or reading them fails
+     */
+    public static function result(mysqli_stmt $stmt): mysqli_result
+    {
+        $result = $stmt->get_result();
+        if ($result === false) {
+            Logger::error("Database result failed: " . $stmt->error);
+            throw new Exception("Database result failed: " . $stmt->error);
+        }
+        return $result;
+    }
+
+    /**
      * Execute a prepared statement and return a single row.
      *
      * @param string $sql    The SQL query with placeholders (?)
@@ -114,10 +185,9 @@ final class Db {
      */
     public static function queryOne(string $sql, string $types, mixed ...$params): ?array
     {
-        $stmt = self::execute($sql, $types, ...$params);
-        $result = $stmt->get_result();
+        $result = self::result(self::execute($sql, $types, ...$params));
 
-        if ($result === false || $result->num_rows == 0) {
+        if ($result->num_rows == 0) {
             return null;
         }
 

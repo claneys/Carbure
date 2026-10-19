@@ -275,6 +275,10 @@ final class BankFile
         if (str_starts_with($content, "\xEF\xBB\xBF")) {
             $content = substr($content, 3);
         }
-        return mb_check_encoding($content, 'UTF-8') ? $content : mb_convert_encoding($content, 'UTF-8', $encoding);
+        if (mb_check_encoding($content, 'UTF-8')) {
+            return $content;
+        }
+        $converted = mb_convert_encoding($content, 'UTF-8', $encoding);
+        return $converted === false ? mb_scrub($content, 'UTF-8') : $converted;
     }
 }

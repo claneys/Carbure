@@ -60,7 +60,7 @@ final class Transaction {
                     ORDER BY rdate DESC";
             $stmt = Db::execute($sql, "ssii", $from, $to, $category, $category);
         }
-        $result = $stmt->get_result();
+        $result = Db::result($stmt);
         $transactions = array();
 
         // Collect the rows
@@ -97,7 +97,7 @@ final class Transaction {
         $sql = "SELECT * FROM bank_transaction WHERE label LIKE ? ORDER BY date DESC, rdate DESC LIMIT ?";
         $stmt = Db::execute($sql, "si", $pattern, $limit);
 
-        return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        return Db::result($stmt)->fetch_all(MYSQLI_ASSOC);
     }
 
     /**
@@ -108,7 +108,7 @@ final class Transaction {
     #[ApiRoute('/transaction/periods', method: 'GET')]
     public static function periods(): array
     {
-        return Db::query("SELECT DISTINCT YEAR(date) AS year, MONTH(date) AS month FROM bank_transaction ORDER BY year DESC, month DESC")
+        return Db::select("SELECT DISTINCT YEAR(date) AS year, MONTH(date) AS month FROM bank_transaction ORDER BY year DESC, month DESC")
             ->fetch_all(MYSQLI_ASSOC);
     }
 
@@ -130,10 +130,10 @@ final class Transaction {
     {
         $months = max(2, min(24, (int)$months));
         [$first, $to] = Month::range($month, $year);
-        $from = date('Y-m-d', strtotime("$first -$months months"));
+        $from = date('Y-m-d', Month::timestamp("$first -$months months"));
 
         $sql = "SELECT id, date, type, label, category, amount FROM bank_transaction WHERE date >= ? AND date < ? ORDER BY date, id";
-        $rows = Db::execute($sql, "ss", $from, $to)->get_result()->fetch_all(MYSQLI_ASSOC);
+        $rows = Db::select($sql, "ss", $from, $to)->fetch_all(MYSQLI_ASSOC);
 
         return self::findRecurring($rows, $first);
     }
@@ -155,7 +155,7 @@ final class Transaction {
     public static function findRecurring(array $rows, string $first): array
     {
         $current = substr($first, 0, 7);
-        $previous = date('Y-m', strtotime("$first -1 month"));
+        $previous = date('Y-m', Month::timestamp("$first -1 month"));
 
         $series = [];
         foreach (self::groupByLabel($rows) as $group) {
@@ -409,6 +409,9 @@ final class Transaction {
             $counts[$row['status']]++;
         }
         $dates = array_column($rows, 'date');
+        if ($dates === []) {
+            throw new Error("No transaction found in the file", 422);
+        }
 
         return [
             'format' => $parsed['format'],
@@ -535,10 +538,13 @@ final class Transaction {
 
         // Transactions of the period of the file (and a few days around)
         $dates = array_merge(array_column($rows, 'date'), array_column($rows, 'rdate'));
-        $from = date('Y-m-d', strtotime(min($dates) . ' -' . self::DUPLICATE_DAYS . ' days'));
-        $to = date('Y-m-d', strtotime(max($dates) . ' +' . self::DUPLICATE_DAYS . ' days'));
-        $existing = Db::execute("SELECT id, uuid, date, rdate, amount, label FROM bank_transaction WHERE date BETWEEN ? AND ? OR rdate BETWEEN ? AND ?",
-            "ssss", $from, $to, $from, $to)->get_result()->fetch_all(MYSQLI_ASSOC);
+        if ($dates === []) {
+            throw new Error("No transaction found in the file", 422);
+        }
+        $from = date('Y-m-d', Month::timestamp(min($dates) . ' -' . self::DUPLICATE_DAYS . ' days'));
+        $to = date('Y-m-d', Month::timestamp(max($dates) . ' +' . self::DUPLICATE_DAYS . ' days'));
+        $existing = Db::select("SELECT id, uuid, date, rdate, amount, label FROM bank_transaction WHERE date BETWEEN ? AND ? OR rdate BETWEEN ? AND ?",
+            "ssss", $from, $to, $from, $to)->fetch_all(MYSQLI_ASSOC);
         $matched = self::markKnown($rows, $existing);
         self::markDeleted($rows);
         self::markDuplicates($rows, $existing, $matched);
@@ -604,8 +610,8 @@ final class Transaction {
             return [];
         }
         $placeholders = implode(',', array_fill(0, count($uuids), '?'));
-        $rows = Db::execute("SELECT uuid FROM bank_transaction_deleted WHERE uuid IN ($placeholders)",
-            str_repeat('s', count($uuids)), ...$uuids)->get_result()->fetch_all(MYSQLI_ASSOC);
+        $rows = Db::select("SELECT uuid FROM bank_transaction_deleted WHERE uuid IN ($placeholders)",
+            str_repeat('s', count($uuids)), ...$uuids)->fetch_all(MYSQLI_ASSOC);
         return array_fill_keys(array_column($rows, 'uuid'), true);
     }
 
@@ -701,11 +707,11 @@ final class Transaction {
         // We change the date of the transaction if it's a Salary.
         if ($type == 1) {
 
-            $dayOfMonth = intval(date("d", strtotime($date)));
+            $dayOfMonth = intval(date("d", Month::timestamp($date)));
 
             if ($dayOfMonth > 25) {
                 // we set the date of the first day of the next month
-                $date = date("Y-m-d", strtotime("first day of next month", strtotime($date)));
+                $date = date("Y-m-d", Month::timestamp("first day of next month", Month::timestamp($date)));
             }
         }
 
@@ -745,10 +751,7 @@ final class Transaction {
         $sql = "SELECT COUNT(*) as count FROM bank_transaction WHERE pointed=0 AND date >= ? AND date < ?";
         $stmt = Db::execute($sql, "ss", ...Month::range());
 
-        $result = $stmt->get_result();
-        $count = $result->fetch_assoc()['count'];
-
-        return $count;
+        return (int)(Db::result($stmt)->fetch_assoc()['count'] ?? 0);
     }   
 
     /**
@@ -768,7 +771,7 @@ final class Transaction {
         }
 
         // Get the list of transactions without category
-        $result = Db::query($sql);
+        $result = Db::select($sql);
         $updated = 0;
 
         // The rules are loaded once for all the transactions
@@ -778,7 +781,7 @@ final class Transaction {
         while ($row = $result->fetch_assoc()) {
 
             // Get the label
-            $label = $row["label"];
+            $label = (string)$row["label"];
 
             // Get the category
             $category = Category::find($label, $keywords);
@@ -787,7 +790,7 @@ final class Transaction {
             if ($category !== null) {
 
                 // Update the transaction
-                self::updateCategory($row["id"], $category, false);
+                self::updateCategory((int)$row["id"], $category, false);
                 $updated++;
             }
         }

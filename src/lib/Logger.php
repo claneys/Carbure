@@ -372,10 +372,12 @@ final class Logger {
         if ($days <= 0) {
             return [];
         }
-        $limit = date('Ymd', strtotime("-$days days"));
+        $limit = date('Ymd', Month::timestamp("-$days days"));
         $deleted = [];
         foreach (self::files() as $name => $path) {
-            preg_match(self::FILE_PATTERN, $name, $match);
+            if (!preg_match(self::FILE_PATTERN, $name, $match)) {
+                continue;
+            }
             if ($match[1] < $limit && @unlink($path)) {
                 $deleted[] = $name;
             }

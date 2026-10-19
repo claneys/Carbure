@@ -186,7 +186,7 @@ final class Jwt {
         // Parse JWT token
         $payload = self::parseJwt($token);
         
-        if ($payload === false) {
+        if ($payload === false || !isset($payload->sub)) {
             throw new Error("Invalid JWT token");
         }
 
@@ -214,7 +214,7 @@ final class Jwt {
             return false;
         }
 
-        Logger::setContext('user', (int)$payload->sub);
+        Logger::setContext('user', (int)($payload->sub ?? 0));
         return true;
     }
 }

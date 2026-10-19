@@ -73,7 +73,7 @@ final class Insight {
     #[ApiRoute('/insight', method: 'GET', admin: true)]
     public static function get(): array
     {
-        return Db::execute("SELECT id, name, color, icon, `sql` FROM budget_insight ORDER BY id", "")->get_result()->fetch_all(MYSQLI_ASSOC);
+        return Db::select("SELECT id, name, color, icon, `sql` FROM budget_insight ORDER BY id", "")->fetch_all(MYSQLI_ASSOC);
     }
 
     /**
@@ -306,7 +306,7 @@ final class Insight {
 
         Db::query("START TRANSACTION READ ONLY");
         try {
-            $row = Db::query(self::bounded($sql))->fetch_assoc();
+            $row = Db::select(self::bounded($sql))->fetch_assoc();
         } catch (Throwable $e) {
             if (in_array(Db::getConnection()->errno, self::TIMEOUT_ERRORS, true)) {
                 throw new Error("The query takes more than " . self::$maxSeconds . " seconds", 400);

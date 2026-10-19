@@ -55,7 +55,7 @@ final class Bank {
         $sql = "SELECT MIN(id) AS id, account_number, bank_name, MAX(label) AS label FROM bank_account
                 GROUP BY account_number, bank_name ORDER BY bank_name, account_number";
         $stmt = Db::execute($sql, "");
-        $result = $stmt->get_result();
+        $result = Db::result($stmt);
         
         $accounts = array();
         if ($result->num_rows > 0) {
@@ -144,7 +144,7 @@ final class Bank {
                 FROM bank_account a JOIN users u ON u.id = a.user_id
                 ORDER BY a.bank_name, a.account_number, u.username";
         $accounts = [];
-        foreach (Db::execute($sql, "")->get_result()->fetch_all(MYSQLI_ASSOC) as $row) {
+        foreach (Db::select($sql, "")->fetch_all(MYSQLI_ASSOC) as $row) {
             $accounts[] = ['id' => $row['id'], 'bankId' => $row['account_number'] . '@' . $row['bank_name']] + $row;
         }
         return $accounts;
@@ -229,7 +229,7 @@ final class Bank {
     public static function backends(): array
     {
         $labels = [];
-        foreach (Db::execute("SELECT name, label FROM bank_backend", "")->get_result()->fetch_all(MYSQLI_ASSOC) as $row) {
+        foreach (Db::select("SELECT name, label FROM bank_backend", "")->fetch_all(MYSQLI_ASSOC) as $row) {
             $labels[$row['name']] = $row['label'];
         }
         return array_map(fn(array $backend) => $backend + ['label' => $labels[$backend['name']] ?? null], Woob::listBackends());
@@ -270,7 +270,7 @@ final class Bank {
         set_time_limit(0);
 
         // Not while a synchronization runs woob
-        if (!Db::query("SELECT GET_LOCK('bank_sync', 0) AS locked")->fetch_assoc()['locked']) {
+        if (!(Db::select("SELECT GET_LOCK('bank_sync', 0) AS locked")->fetch_assoc()['locked'] ?? 0)) {
             Webservice::sendProgress("Woob update failed: synchronization in progress");
             return;
         }
@@ -720,7 +720,7 @@ final class Bank {
         $debug = $user && Config::get('woob_debug') && User::isAdmin();
 
         // Acquire exclusive lock to prevent concurrent syncs
-        $lockAcquired = Db::query("SELECT GET_LOCK('bank_sync', 0) AS locked")->fetch_assoc()['locked'];
+        $lockAcquired = (Db::select("SELECT GET_LOCK('bank_sync', 0) AS locked")->fetch_assoc()['locked'] ?? 0);
         if (!$lockAcquired) {
             Webservice::sendProgress("Synchronization already in progress");
             return;
@@ -982,7 +982,7 @@ final class Bank {
     {
         $sql = "SELECT DISTINCT account_number, bank_name FROM bank_account ORDER BY bank_name, account_number";
         $stmt = Db::execute($sql, "");
-        $result = $stmt->get_result();
+        $result = Db::result($stmt);
         
         $bankIds = array();
         if ($result->num_rows > 0) {
@@ -1008,7 +1008,7 @@ final class Bank {
     public static function notifyBankUsers(string $bankId, bool $status, ?string $error = null): void
     {
         // The accounts are shared by the household: every user is notified
-        $users = Db::execute("SELECT id, language FROM users", "")->get_result()->fetch_all(MYSQLI_ASSOC);
+        $users = Db::select("SELECT id, language FROM users", "")->fetch_all(MYSQLI_ASSOC);
         foreach ($users as $user) {
             $userId = (int)$user['id'];
             try {
@@ -1066,13 +1066,13 @@ final class Bank {
         if (empty($transactions)) {
             return 0;
         }
-        $rules = Db::execute("SELECT keyword FROM bank_transaction_category_keyword WHERE notify = 1", "")->get_result()->fetch_all(MYSQLI_ASSOC);
+        $rules = Db::select("SELECT keyword FROM bank_transaction_category_keyword WHERE notify = 1", "")->fetch_all(MYSQLI_ASSOC);
         if (!$rules) {
             return 0;
         }
 
         // The household is notified: every user
-        $users = Db::execute("SELECT id, language FROM users", "")->get_result()->fetch_all(MYSQLI_ASSOC);
+        $users = Db::select("SELECT id, language FROM users", "")->fetch_all(MYSQLI_ASSOC);
         $sent = 0;
         foreach ($transactions as $transaction) {
             $label = strtoupper((string)$transaction['label']);
@@ -1132,7 +1132,7 @@ final class Bank {
         list($accountNumber, $bankName) = explode('@', $bankId, 2);
         // The accounts are shared by the household: every user with a threshold is alerted
         $sql = "SELECT id, language, alert_threshold FROM users WHERE alert_threshold > 0";
-        $users = Db::execute($sql, "")->get_result()->fetch_all(MYSQLI_ASSOC);
+        $users = Db::select($sql, "")->fetch_all(MYSQLI_ASSOC);
 
         $sent = 0;
         foreach ($users as $user) {

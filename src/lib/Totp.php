@@ -56,7 +56,7 @@ final class Totp {
         }
         $text = '';
         foreach (str_split($bits, 5) as $chunk) {
-            $text .= self::BASE32[bindec(str_pad($chunk, 5, '0'))];
+            $text .= self::BASE32[(int)bindec(str_pad($chunk, 5, '0'))];
         }
         return $bytes === '' ? '' : $text;
     }

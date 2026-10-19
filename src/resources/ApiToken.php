@@ -47,7 +47,7 @@ final class ApiToken {
         $sql = "SELECT id, name, token_hint, created_at, last_used_at, expires_at,
                        (expires_at IS NOT NULL AND expires_at <= NOW()) AS expired
                 FROM api_tokens WHERE user_id = ? ORDER BY created_at DESC, id DESC";
-        return Db::execute($sql, "i", Jwt::getUserIdFromToken())->get_result()->fetch_all(MYSQLI_ASSOC);
+        return Db::select($sql, "i", Jwt::getUserIdFromToken())->fetch_all(MYSQLI_ASSOC);
     }
 
     /**

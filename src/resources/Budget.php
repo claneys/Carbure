@@ -40,7 +40,7 @@ final class Budget {
         // Total of the month for each category, in one pass
         $sql = "SELECT category, SUM(amount) AS total FROM bank_transaction
                 WHERE date >= ? AND date < ? GROUP BY category";
-        $totals = array_column(Db::execute($sql, "ss", $from, $to)->get_result()->fetch_all(MYSQLI_ASSOC), 'total', 'category');
+        $totals = array_column(Db::select($sql, "ss", $from, $to)->fetch_all(MYSQLI_ASSOC), 'total', 'category');
 
         // Sub-categories of each category
         $children = self::children();
@@ -53,7 +53,7 @@ final class Budget {
                 FROM bank_transaction_category c
                 LEFT JOIN budget b ON b.category = c.id AND b.date >= ? AND b.date < ?
                 WHERE c.parent_category = ?";
-        $categories = Db::execute($sql, "ssi", $from, $to, $category)->get_result()->fetch_all(MYSQLI_ASSOC);
+        $categories = Db::select($sql, "ssi", $from, $to, $category)->fetch_all(MYSQLI_ASSOC);
 
         // Consumption of a category = its transactions + those of its sub-categories
         $budget = [];
@@ -96,7 +96,7 @@ final class Budget {
     {
         $children = [];
         $sql = "SELECT id, parent_category FROM bank_transaction_category WHERE parent_category <> 0 AND id <> parent_category";
-        foreach (Db::execute($sql, "")->get_result()->fetch_all(MYSQLI_ASSOC) as $row) {
+        foreach (Db::select($sql, "")->fetch_all(MYSQLI_ASSOC) as $row) {
             $children[$row['parent_category']][] = $row['id'];
         }
         return $children;
@@ -112,7 +112,7 @@ final class Budget {
     private static function budgets(string $from, string $to): array
     {
         $sql = "SELECT category, amount FROM budget WHERE date >= ? AND date < ?";
-        return array_map('floatval', array_column(Db::execute($sql, "ss", $from, $to)->get_result()->fetch_all(MYSQLI_ASSOC), 'amount', 'category'));
+        return array_map('floatval', array_column(Db::select($sql, "ss", $from, $to)->fetch_all(MYSQLI_ASSOC), 'amount', 'category'));
     }
 
     /**
@@ -171,14 +171,14 @@ final class Budget {
     {
         [$targetMonth, $targetYear] = Month::resolve($month, $year);
         $target = sprintf('%04d-%02d-01', $targetYear, $targetMonth);
-        $source = date('Y-m-d', strtotime("$target -1 month"));
-        [$from, $to] = Month::range(date('n', strtotime($source)), date('Y', strtotime($source)));
+        $source = date('Y-m-d', Month::timestamp("$target -1 month"));
+        [$from, $to] = Month::range(date('n', Month::timestamp($source)), date('Y', Month::timestamp($source)));
 
-        $rows = Db::execute("SELECT category, amount FROM budget WHERE date >= ? AND date < ?",
-            "ss", $from, $to)->get_result()->fetch_all(MYSQLI_ASSOC);
+        $rows = Db::select("SELECT category, amount FROM budget WHERE date >= ? AND date < ?",
+            "ss", $from, $to)->fetch_all(MYSQLI_ASSOC);
 
         $key = sprintf('%04d-%02d', $targetYear, $targetMonth);
-        $sourceKey = date('Y-m', strtotime($source));
+        $sourceKey = date('Y-m', Month::timestamp($source));
         $overwrite = filter_var($overwrite, FILTER_VALIDATE_BOOLEAN);
         if (empty($rows)) {
             return ['month' => $key, 'source' => $sourceKey, 'copied' => 0, 'overwrite' => $overwrite];
@@ -226,14 +226,14 @@ final class Budget {
     {
         $months = max(1, min(60, (int)$months));
         $offset = max(0, min(120, (int)$offset));
-        $last = date('Y-m-01', strtotime(date('Y-m-01') . " -$offset months"));
-        $from = date('Y-m-01', strtotime("$last -" . ($months - 1) . ' months'));
-        $to = date('Y-m-01', strtotime("$last +1 month"));
+        $last = date('Y-m-01', Month::timestamp(date('Y-m-01') . " -$offset months"));
+        $from = date('Y-m-01', Month::timestamp("$last -" . ($months - 1) . ' months'));
+        $to = date('Y-m-01', Month::timestamp("$last +1 month"));
 
         // Empty months are kept with zero values
         $trends = [];
         for ($i = 0; $i < $months; $i++) {
-            $month = date('Y-m', strtotime("$from +$i months"));
+            $month = date('Y-m', Month::timestamp("$from +$i months"));
             $trends[$month] = ['month' => $month, 'debit' => 0, 'credit' => 0, 'offBudget' => 0, 'planned' => 0, 'savings' => 0];
         }
 
@@ -266,7 +266,7 @@ final class Budget {
             WHERE t.date >= ? AND t.date < ?
             GROUP BY month";
         $savings = implode(',', self::savingsCategories());
-        foreach (Db::execute($sql, "sss", $savings, $from, $to)->get_result()->fetch_all(MYSQLI_ASSOC) as $row) {
+        foreach (Db::select($sql, "sss", $savings, $from, $to)->fetch_all(MYSQLI_ASSOC) as $row) {
             foreach (['debit', 'credit', 'offBudget', 'savings'] as $key) {
                 $trends[$row['month']][$key] = round((float)$row[$key], 2);
             }
@@ -287,7 +287,7 @@ final class Budget {
     {
         // Parent of each category: 0 for a top-level one
         $top = [];
-        foreach (Db::execute("SELECT id, parent_category FROM bank_transaction_category WHERE id <> 0", "")->get_result()->fetch_all(MYSQLI_ASSOC) as $c) {
+        foreach (Db::select("SELECT id, parent_category FROM bank_transaction_category WHERE id <> 0", "")->fetch_all(MYSQLI_ASSOC) as $c) {
             $parent = (int)$c['parent_category'];
             $top[(int)$c['id']] = ($parent === 0 || $parent === (int)$c['id']) ? 0 : $parent;
         }
@@ -321,7 +321,7 @@ final class Budget {
         $own = [];
         $children = [];
         $sql = "SELECT DATE_FORMAT(date, '%Y-%m') AS month, category, amount FROM budget WHERE date >= ? AND date < ?";
-        foreach (Db::execute($sql, "ss", $from, $to)->get_result()->fetch_all(MYSQLI_ASSOC) as $row) {
+        foreach (Db::select($sql, "ss", $from, $to)->fetch_all(MYSQLI_ASSOC) as $row) {
             $id = (int)$row['category'];
             if (!isset($top[$id])) {
                 continue;
@@ -454,10 +454,10 @@ final class Budget {
                 LEFT JOIN bank_transaction_category c ON c.id = t.category
                 WHERE t.date >= ? AND t.date < ?
                 ORDER BY t.rdate DESC, t.id DESC";
-        $rows = Db::execute($sql, "ss", $from, $to)->get_result()->fetch_all(MYSQLI_ASSOC);
+        $rows = Db::select($sql, "ss", $from, $to)->fetch_all(MYSQLI_ASSOC);
 
         $categories = [];
-        foreach (Db::execute("SELECT id, name, type, icon, color FROM bank_transaction_category", "")->get_result()->fetch_all(MYSQLI_ASSOC) as $c) {
+        foreach (Db::select("SELECT id, name, type, icon, color FROM bank_transaction_category", "")->fetch_all(MYSQLI_ASSOC) as $c) {
             $categories[(int)$c['id']] = $c;
         }
 
@@ -494,7 +494,7 @@ final class Budget {
         $normalize = fn($name) => strtolower(trim((string)preg_replace('/[^A-Za-z0-9 ]/', '', strtr((string)$name, $accents))));
         $wanted = $normalize(Config::has('savings_category') ? Config::get('savings_category') : 'Epargne');
 
-        $categories = Db::execute("SELECT id, name, parent_category FROM bank_transaction_category", "")->get_result()->fetch_all(MYSQLI_ASSOC);
+        $categories = Db::select("SELECT id, name, parent_category FROM bank_transaction_category", "")->fetch_all(MYSQLI_ASSOC);
         $roots = [];
         foreach ($categories as $category) {
             if ((int)$category['id'] !== 0 && $normalize($category['name']) === $wanted) {
@@ -524,7 +524,7 @@ final class Budget {
         [$month, $year] = Month::resolve($month, $year);
 
         // Each query runs in a read-only transaction; a failing query gives 0
-        $insights = Db::execute("SELECT * FROM budget_insight ORDER BY id", "")->get_result()->fetch_all(MYSQLI_ASSOC);
+        $insights = Db::select("SELECT * FROM budget_insight ORDER BY id", "")->fetch_all(MYSQLI_ASSOC);
         foreach ($insights as &$insight) {
             $insight["amount"] = Insight::amount($insight["sql"], $month, $year) ?? 0;
             unset($insight["sql"]);

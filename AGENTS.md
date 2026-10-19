@@ -99,7 +99,9 @@ git config core.hooksPath .githooks   # pre-commit lint, pre-push unit tests
 - **Types**: every parameter, return value and property has a native type (no
   `declare(strict_types=1)`: request params are coerced), arrays typed in the PHPDoc
   (`array<string, mixed>`, `list<…>`). PHPStan (Composer dev dependency, `phpstan.neon`,
-  level 6 + rule `tools/phpstan/NativeTypesRule.php`) checks it in pre-commit and CI; no
+  level 7 + rule `tools/phpstan/NativeTypesRule.php`; tests: `phpstan.tests.neon`, level 5)
+  checks it in pre-commit and CI: rows through `Db::select()`/`Db::result()` (never a
+  `false` result), dates through `Month::timestamp()`, files through `File::read()`; no
   `@phpstan-ignore`, no baseline. Route params come as strings from the query string:
   never a bare `bool` (`"false"` would be `true`), keep what the iOS app sends valid.
 - **Complexity**: cyclomatic complexity ≤ 10 per function/method (rule

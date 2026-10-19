@@ -275,12 +275,16 @@ final class Webservice {
         // Merge GET parameters with payload data
         $data = array_merge($_GET, $data);
         
-        // Call the method with or without parameters
+        // Call the method with or without parameters (a route of ApiResolver: always callable)
+        $callable = [$resource, $method];
+        if (!is_callable($callable)) {
+            throw new Error("Unknown service $name.$method", 404);
+        }
         if (empty($data)) {
-            $response = call_user_func(array($resource, $method));
+            $response = call_user_func($callable);
         } else {
             Logger::debug("Data", self::maskSensitive($data));
-            $response = call_user_func_array(array($resource, $method), $data);
+            $response = call_user_func_array($callable, $data);
         }
 
         if ($raw) {

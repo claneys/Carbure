@@ -15,6 +15,7 @@ namespace Carbure\Resources;
 use Carbure\Lib\ApiRoute;
 use Carbure\Lib\Config;
 use Carbure\Lib\Db;
+use Carbure\Lib\File;
 use Carbure\Lib\Installer;
 use Carbure\Lib\Logger;
 use Carbure\Lib\Messages;
@@ -45,7 +46,7 @@ final class System {
         if (!is_file($file) || !is_writable($file)) {
             throw new Exception("The configuration file cannot be written by the web server");
         }
-        $ini = Installer::setIni(file_get_contents($file), 'jwtsecret', bin2hex(random_bytes(32)));
+        $ini = Installer::setIni(File::read($file), 'jwtsecret', bin2hex(random_bytes(32)));
         if (file_put_contents($file, $ini) === false) {
             throw new Exception("The configuration file cannot be written by the web server");
         }
@@ -107,7 +108,7 @@ final class System {
     {
         $files = [];
         foreach (Logger::files() as $name => $file) {
-            $files[] = ['name' => $name, 'size' => filesize($file), 'modified' => date('Y-m-d H:i:s', filemtime($file))];
+            $files[] = ['name' => $name, 'size' => filesize($file), 'modified' => date('Y-m-d H:i:s', (int)filemtime($file))];
         }
         usort($files, fn($a, $b) => strcmp($b['modified'], $a['modified']) ?: strcmp($b['name'], $a['name']));
         return $files;
@@ -152,19 +153,9 @@ final class System {
         $levels = ['DEBUG' => 0, 'INFO' => 1, 'WARN' => 2, 'WARNING' => 2, 'ERROR' => 3];
         $minimum = $levels[strtoupper((string)$level)] ?? 0;
 
-        // The last 2 MB at most
-        $size = filesize($path);
-        $read = min($size, 2 * 1024 * 1024);
-        $handle = fopen($path, 'rb');
-        fseek($handle, $size - $read);
-        $content = (string)fread($handle, $read);
-        fclose($handle);
-
-        // An entry is a JSON line, or, in the files written before, a text starting with
-        // "yy:mm:dd HH:MM:SS : LEVEL : uid : caller : message" (on several lines)
-        $parts = preg_split('/^(?=\{"time"|\d{2}:\d{2}:\d{2} \d{2}:\d{2}:\d{2} : [A-Z]+ : )/m', $content);
+        [$content, $truncated] = self::tail($path);
         $entries = [];
-        foreach (array_reverse($parts) as $part) {
+        foreach (array_reverse(self::logParts($content)) as $part) {
             $entry = self::logEntry($part);
             if ($entry === null || ($levels[$entry['level']] ?? 0) < $minimum) {
                 continue;
@@ -180,7 +171,40 @@ final class System {
             }
         }
 
-        return ['file' => $file, 'entries' => $entries, 'truncated' => $read < $size];
+        return ['file' => $file, 'entries' => $entries, 'truncated' => $truncated];
+    }
+
+    /**
+     * The last 2 MB of a log file at most.
+     *
+     * @param string $path The log file
+     * @return array{string, bool} Its end, and whether its beginning is left out
+     * @throws Error If the file cannot be read (500)
+     */
+    private static function tail(string $path): array
+    {
+        $size = (int)filesize($path);
+        $read = min($size, 2 * 1024 * 1024);
+        $handle = fopen($path, 'rb');
+        if ($handle === false) {
+            throw new Error("Log file not readable", 500);
+        }
+        fseek($handle, $size - $read);
+        $content = $read > 0 ? (string)fread($handle, $read) : '';
+        fclose($handle);
+        return [$content, $read < $size];
+    }
+
+    /**
+     * Entries of a log file: a JSON line, or, in the files written before, a text starting
+     * with "yy:mm:dd HH:MM:SS : LEVEL : uid : caller : message" (on several lines).
+     *
+     * @param string $content The content of the file
+     * @return list<string> The text of each entry
+     */
+    private static function logParts(string $content): array
+    {
+        return preg_split('/^(?=\{"time"|\d{2}:\d{2}:\d{2} \d{2}:\d{2}:\d{2} : [A-Z]+ : )/m', $content) ?: [];
     }
 
     /**

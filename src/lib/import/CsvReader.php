@@ -66,7 +66,7 @@ final class CsvReader
      */
     public static function lines(string $content): array
     {
-        return array_values(array_filter(preg_split('/\r\n|\r|\n/', $content), fn(string $l): bool => trim($l) !== ''));
+        return array_values(array_filter(preg_split('/\r\n|\r|\n/', $content) ?: [], fn(string $l): bool => trim($l) !== ''));
     }
 
     /**

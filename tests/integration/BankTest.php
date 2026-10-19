@@ -728,6 +728,7 @@ class BankTest extends DatabaseTestCase
             // A user in the portal, interactive or not: never waits
             foreach ([null, 'true'] as $interactive) {
                 $this->loginAs(self::ADMIN);
+                $output = '';
                 ob_start();
                 try {
                     Bank::getSync(null, 'validate@bank', $interactive);

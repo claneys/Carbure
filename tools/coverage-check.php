@@ -17,7 +17,12 @@ if (!is_file($file)) {
     exit(2);
 }
 
-$metrics = simplexml_load_file($file)->project->metrics;
+$xml = simplexml_load_file($file);
+if ($xml === false) {
+    fwrite(STDERR, "Invalid coverage report: $file\n");
+    exit(2);
+}
+$metrics = $xml->project->metrics;
 $statements = (int)$metrics['statements'];
 $covered = (int)$metrics['coveredstatements'];
 $percent = $statements > 0 ? round($covered / $statements * 100, 2) : 0;

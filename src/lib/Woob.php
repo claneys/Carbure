@@ -905,6 +905,6 @@ final class Woob {
         }
 
         Logger::debug("Synchronized $type: " . count($data) . " transactions");
-        return $data;
+        return array_values($data);
     }
 }

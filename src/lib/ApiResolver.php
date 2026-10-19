@@ -105,6 +105,9 @@ final class ApiResolver {
         foreach ($resourceFiles as $file) {
             // Loaded by the class loader (class name = file name)
             $className = self::RESOURCES_NAMESPACE . basename($file, '.php');
+            if (!class_exists($className)) {
+                continue;
+            }
             
             // Get all methods of the class
             try {

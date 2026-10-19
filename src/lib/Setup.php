@@ -80,7 +80,7 @@ final class Setup {
     public static function serve(string $root, string $env): void
     {
         $setup = new self($root, "$root/data/conf/$env.ini", "$root/data/conf/setup.code", self::requestAddresses());
-        $path = preg_replace('#^/api#', '', strtok($_SERVER['REQUEST_URI'] ?? '/', '?'));
+        $path = preg_replace('#^/api#', '', (strtok($_SERVER['REQUEST_URI'] ?? '/', '?') ?: '/'));
         $data = json_decode(file_get_contents('php://input') ?: '[]', true);
 
         [$status, $body] = $setup->handle($_SERVER['REQUEST_METHOD'] ?? 'GET', $path, is_array($data) ? $data : []);
@@ -350,7 +350,7 @@ final class Setup {
         @mkdir(dirname($this->codeFile), 0750, true);
         // A file created by hand may be empty: a new code is written then
         if (is_file($this->codeFile) && trim((string)file_get_contents($this->codeFile)) !== '') {
-            return trim(file_get_contents($this->codeFile));
+            return trim(File::read($this->codeFile));
         }
         // No ambiguous characters (0/O, 1/I/L): it is typed by hand
         $alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';

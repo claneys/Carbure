@@ -81,8 +81,8 @@ final class Browser {
         if (!self::available()) {
             return [];
         }
-        $rows = Db::execute("SELECT id, label, created_at, last_login, token_hash FROM user_browser
-            WHERE user_id = ? ORDER BY last_login DESC, id DESC", "i", $userId)->get_result()->fetch_all(MYSQLI_ASSOC);
+        $rows = Db::select("SELECT id, label, created_at, last_login, token_hash FROM user_browser
+            WHERE user_id = ? ORDER BY last_login DESC, id DESC", "i", $userId)->fetch_all(MYSQLI_ASSOC);
         $current = self::cookieToken();
         $currentHash = $current === null ? null : hash('sha256', $current);
         return array_map(function (array $row) use ($currentHash): array {

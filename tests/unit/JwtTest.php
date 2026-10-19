@@ -31,7 +31,7 @@ class JwtTest extends TestCase
         $this->assertGreaterThan(time(), $data['exp']);
 
         $payload = Jwt::parseJwt($data['token']);
-        $this->assertSame(42, $payload->sub);
+        $this->assertSame(42, $payload === false ? null : $payload->sub);
     }
 
     public function testTamperedPayloadIsRejected()

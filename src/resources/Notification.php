@@ -158,8 +158,7 @@ final class Notification {
     public static function preferences(int $userId): array
     {
         $preferences = array_combine(self::KINDS, array_map([self::class, 'defaults'], self::KINDS));
-        $rows = Db::execute("SELECT kind, push, email FROM user_notification WHERE user_id = ?", "i", $userId)
-            ->get_result()->fetch_all(MYSQLI_ASSOC);
+        $rows = Db::select("SELECT kind, push, email FROM user_notification WHERE user_id = ?", "i", $userId)->fetch_all(MYSQLI_ASSOC);
         foreach ($rows as $row) {
             if (isset($preferences[$row['kind']])) {
                 $preferences[$row['kind']] = ['push' => (bool)$row['push'], 'email' => (bool)$row['email']];

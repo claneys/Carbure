@@ -39,6 +39,9 @@ jobs:
       - name: PHP types (PHPStan)
         run: vendor/bin/phpstan analyse --memory-limit=1G --no-progress --error-format=github
 
+      - name: PHP tests analysis (PHPStan)
+        run: vendor/bin/phpstan analyse -c phpstan.tests.neon --memory-limit=1G --no-progress --error-format=github
+
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22

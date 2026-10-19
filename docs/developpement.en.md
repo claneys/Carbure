@@ -21,7 +21,7 @@ icon: material/code-braces
 | `tests/e2e/` | Portal end-to-end tests (Playwright) |
 | `tools/migrate.php` | Schema migrations (`--status`, `--dry-run`, `--baseline`) |
 | `tools/coverage-check.php` | Coverage threshold check |
-| `composer.json`, `phpstan.neon`, `phpunit.xml`, `tools/phpstan/` | Development tools (PHPStan and PHPUnit 11, installed by Composer in `vendor/`) and Carbure's rules; the API itself has no dependencies |
+| `composer.json`, `phpstan.neon`, `phpstan.tests.neon`, `phpunit.xml`, `tools/phpstan/` | Development tools (PHPStan and PHPUnit 11, installed by Composer in `vendor/`) and Carbure's rules; the API itself has no dependencies |
 | `docker/` | `Dockerfile`, `docker-compose.yml` (with MariaDB), nginx and PHP-FPM configuration, `entrypoint.sh` |
 | `data/` (not versioned) | Instance data: `conf/` (`prod.ini`), `logs/`, `cache/`, `woob/` (banks and credentials) |
 | `VERSION` | Carbure version (`dev` in the repository, written by the release build) |
@@ -199,7 +199,11 @@ To add a bank's CSV export:
 
 Every parameter, return value and property of the PHP code has a native type (checked by
 PHP at runtime); arrays are detailed in the PHPDoc (`array<string, mixed>`).
-PHPStan checks this (level 6 and the `tools/phpstan/NativeTypesRule.php` rule):
+PHPStan checks this (level 7 and the `tools/phpstan/NativeTypesRule.php` rule): at level 7,
+a value that may be `false` (result of a query, of `strtotime()`, of a file read) is not used
+as is, hence `Db::select()`, `Db::result()`, `Month::timestamp()` and `File::read()`, which
+throw an exception instead. The tests are analysed separately (`phpstan.tests.neon`, level 5,
+without Carbure's rules):
 
 ```bash
 composer install     # once: PHPStan and PHPUnit in vendor/ (development tools)

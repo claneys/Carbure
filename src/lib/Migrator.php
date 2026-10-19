@@ -59,7 +59,7 @@ final class Migrator {
     public function applied(): array
     {
         $this->ensureTable();
-        $versions = array_column($this->db->query("SELECT version FROM schema_migrations")->fetch_all(MYSQLI_ASSOC), 'version');
+        $versions = array_column(Db::rowsOn($this->db, "SELECT version FROM schema_migrations")->fetch_all(MYSQLI_ASSOC), 'version');
         sort($versions, SORT_STRING);
         return $versions;
     }
@@ -100,7 +100,7 @@ final class Migrator {
         $done = [];
 
         foreach ($this->pending() as $version) {
-            $sql = file_get_contents("$this->directory/$version.sql");
+            $sql = File::read("$this->directory/$version.sql");
 
             if ($this->alreadyApplied($sql)) {
                 $log("$version: already applied, recorded");
@@ -163,7 +163,7 @@ final class Migrator {
      */
     private function record(string $version): void
     {
-        $stmt = $this->db->prepare("INSERT IGNORE INTO schema_migrations (version) VALUES (?)");
+        $stmt = Db::prepareOn($this->db, "INSERT IGNORE INTO schema_migrations (version) VALUES (?)");
         $stmt->bind_param("s", $version);
         $stmt->execute();
     }
@@ -179,7 +179,7 @@ final class Migrator {
         if (!preg_match('/^--\s*applied-if:\s*(.+)$/mi', $sql, $match)) {
             return false;
         }
-        $row = $this->db->query(trim($match[1]))->fetch_row();
+        $row = Db::rowsOn($this->db, trim($match[1]))->fetch_row();
         return $row && (int)$row[0] > 0;
     }
 

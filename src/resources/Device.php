@@ -95,7 +95,7 @@ final class Device {
                 WHERE user_id=? 
                 ORDER BY lastLogin DESC";
         $stmt = Db::execute($sql, "i", $userId);
-        $result = $stmt->get_result();
+        $result = Db::result($stmt);
 
         $devices = array();
         if ($result->num_rows > 0) {
@@ -119,10 +119,10 @@ final class Device {
                 FROM devices 
                 WHERE token=?";
         $stmt = Db::execute($sql, "s", $token);
-        $result = $stmt->get_result();
+        $result = Db::result($stmt);
 
         if ($result->num_rows == 1) {
-            return $result->fetch_assoc();
+            return $result->fetch_assoc() ?: null;
         }
 
         return null;

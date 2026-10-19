@@ -17,7 +17,7 @@ done
 
 # Types of the PHP code (PHPStan, see phpstan.neon): the whole code is analysed, a change
 # of signature can break a caller in another file (result cached: fast after the first run)
-if echo "$files" | grep -qE '\.php$|^phpstan\.neon$'; then
+if echo "$files" | grep -qE '\.php$|^phpstan(\.tests)?\.neon$'; then
     if command -v "$PHP" >/dev/null 2>&1; then
         if [ ! -f vendor/bin/phpstan ]; then
             echo "pre-commit: PHPStan not installed, run: composer install" >&2
@@ -25,6 +25,10 @@ if echo "$files" | grep -qE '\.php$|^phpstan\.neon$'; then
         else
             "$PHP" vendor/bin/phpstan analyse --memory-limit=1G --no-progress || {
                 echo "pre-commit: PHP types (PHPStan) not valid" >&2
+                status=1
+            }
+            "$PHP" vendor/bin/phpstan analyse -c phpstan.tests.neon --memory-limit=1G --no-progress || {
+                echo "pre-commit: PHP tests (PHPStan, phpstan.tests.neon) not valid" >&2
                 status=1
             }
         fi

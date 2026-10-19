@@ -25,7 +25,7 @@ final class Category {
     {
         // Get the category
         $sql = "SELECT * FROM bank_transaction_category";
-        $result = Db::query($sql);
+        $result = Db::select($sql);
 
         $categories = array();
 
@@ -211,7 +211,7 @@ final class Category {
                 FROM bank_transaction_category_keyword k
                 JOIN bank_transaction_category c ON c.id = k.category
                 ORDER BY c.name, k.keyword";
-        return Db::execute($sql, "")->get_result()->fetch_all(MYSQLI_ASSOC);
+        return Db::select($sql, "")->fetch_all(MYSQLI_ASSOC);
     }
 
     /**
@@ -336,7 +336,7 @@ final class Category {
     {
         $keywords = self::loadKeywords();
         $updated = 0;
-        foreach (Db::execute("SELECT id, label, category FROM bank_transaction", "")->get_result()->fetch_all(MYSQLI_ASSOC) as $row) {
+        foreach (Db::select("SELECT id, label, category FROM bank_transaction", "")->fetch_all(MYSQLI_ASSOC) as $row) {
             $category = self::find($row['label'], $keywords);
             if ($category !== null && (int)$category !== (int)$row['category']) {
                 Db::execute("UPDATE bank_transaction SET category = ? WHERE id = ?", "ii", $category, $row['id']);
@@ -357,7 +357,7 @@ final class Category {
     private static function applyRule(string $keyword, int $category): int
     {
         $pattern = '%' . addcslashes($keyword, '%_\\') . '%';
-        return Db::execute("UPDATE bank_transaction SET category = ? WHERE label LIKE ? AND category <> ?",
+        return (int)Db::execute("UPDATE bank_transaction SET category = ? WHERE label LIKE ? AND category <> ?",
             "isi", $category, $pattern, $category)->affected_rows;
     }
 
@@ -390,6 +390,6 @@ final class Category {
     public static function loadKeywords(): array
     {
         $sql = "SELECT keyword, category FROM bank_transaction_category_keyword ORDER BY id";
-        return Db::execute($sql, "")->get_result()->fetch_all(MYSQLI_ASSOC);
+        return Db::select($sql, "")->fetch_all(MYSQLI_ASSOC);
     }
 }

@@ -14,7 +14,10 @@
         "psr-0": {"": "tools/phpstan/"}
     },
     "scripts": {
-        "phpstan": "@php vendor/bin/phpstan analyse --memory-limit=1G",
+        "phpstan": [
+            "@php vendor/bin/phpstan analyse --memory-limit=1G",
+            "@php vendor/bin/phpstan analyse -c phpstan.tests.neon --memory-limit=1G"
+        ],
         "test": [
             "Composer\\Config::disableProcessTimeout",
             "@php vendor/bin/phpunit --testsuite unit"
@@ -25,7 +28,7 @@
         ]
     },
     "scripts-descriptions": {
-        "phpstan": "Check the types and the complexity of the PHP code",
+        "phpstan": "Check the types and the complexity of the PHP code, then the tests",
         "test": "Run the unit tests (no external dependency)",
         "test:all": "Run the unit and integration tests (MariaDB/MySQL required, see tests/bootstrap.php)"
     },

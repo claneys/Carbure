@@ -21,6 +21,7 @@ namespace Carbure\Resources;
 use Carbure\Lib\ApiRoute;
 use Carbure\Lib\Db;
 use Carbure\Lib\Jwt;
+use Carbure\Lib\Month;
 use Carbure\Lib\Setting;
 use Carbure\Lib\Webservice;
 use Error;
@@ -216,7 +217,7 @@ final class Mcp {
                 $userId = ApiToken::authenticate($token);
             } else {
                 $payload = Jwt::parseJwt($token);
-                $userId = $payload === false ? null : (int)$payload->sub;
+                $userId = $payload === false || !isset($payload->sub) ? null : (int)$payload->sub;
             }
         }
 
@@ -448,7 +449,7 @@ final class Mcp {
     private static function spendingByCategory(mixed $from, mixed $to): array
     {
         $to = $to ?: date('Y-m');
-        $from = $from ?: date('Y-m', strtotime(date('Y-m-01') . ' -11 months'));
+        $from = $from ?: date('Y-m', Month::timestamp(date('Y-m-01') . ' -11 months'));
         foreach ([$from, $to] as $month) {
             if (!is_string($month) || !preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month)) {
                 throw new Error("Months must be in the YYYY-MM format", 400);
@@ -459,13 +460,13 @@ final class Mcp {
         }
 
         $start = "$from-01";
-        $end = date('Y-m-d', strtotime("$to-01 +1 month"));
+        $end = date('Y-m-d', Month::timestamp("$to-01 +1 month"));
         $sql = "SELECT t.category, SUM(t.amount) AS total, COUNT(*) AS transactions
                 FROM bank_transaction t
                 WHERE t.date >= ? AND t.date < ?
                 GROUP BY t.category
                 ORDER BY total";
-        $rows = Db::execute($sql, "ss", $start, $end)->get_result()->fetch_all(MYSQLI_ASSOC);
+        $rows = Db::select($sql, "ss", $start, $end)->fetch_all(MYSQLI_ASSOC);
 
         $categories = array_column(self::categories(), null, 'id');
         $result = [];
@@ -515,6 +516,6 @@ final class Mcp {
      */
     private static function encode(array $message): string
     {
-        return json_encode($message, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE);
+        return json_encode($message, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR);
     }
 }

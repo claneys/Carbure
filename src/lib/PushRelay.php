@@ -312,7 +312,7 @@ final class PushRelay {
     /**
      * Send a request to the relay.
      *
-     * @param string            $method HTTP method
+     * @param non-empty-string  $method HTTP method
      * @param string            $path   Path (/v1/...)
      * @param array<mixed>|null $body   JSON body
      * @param string|null       $apiKey API key (Bearer)

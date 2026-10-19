@@ -11,7 +11,8 @@ class UserTest extends DatabaseTestCase
     {
         $token = User::login('admin', 'adminpass');
 
-        $this->assertSame(self::ADMIN, Jwt::parseJwt($token['token'])->sub);
+        $payload = Jwt::parseJwt($token['token']);
+        $this->assertSame(self::ADMIN, $payload === false ? null : $payload->sub);
     }
 
     public function testLoginRecordsTheDate()

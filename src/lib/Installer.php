@@ -56,7 +56,7 @@ final class Installer {
      */
     public static function state(mysqli $db, string $root): array
     {
-        if ($db->query("SHOW TABLES LIKE 'users'")->num_rows === 0) {
+        if (Db::rowsOn($db, "SHOW TABLES LIKE 'users'")->num_rows === 0) {
             return ['state' => 'none', 'version' => null, 'pending' => [], 'hasAdmin' => false];
         }
 
@@ -81,7 +81,7 @@ final class Installer {
      */
     public static function installSchema(mysqli $db, string $root): ?string
     {
-        self::runScript($db, file_get_contents("$root/sql/carbure.sql"));
+        self::runScript($db, File::read("$root/sql/carbure.sql"));
         $migrator = new Migrator($db, "$root/sql/migrations");
         // sql/carbure.sql is up to date: every migration is already in it
         $migrator->baseline();
@@ -132,23 +132,23 @@ final class Installer {
      */
     public static function starter(mysqli $db, string $root, mixed $language = 'fr', bool $insights = true): array
     {
-        $starter = json_decode(file_get_contents("$root/sql/starter.json"), true, 512, JSON_THROW_ON_ERROR);
+        $starter = json_decode(File::read("$root/sql/starter.json"), true, 512, JSON_THROW_ON_ERROR);
         $language = self::language($language);
 
         $db->begin_transaction();
         try {
-            $stmt = $db->prepare("INSERT INTO bank_transaction_category (id, name, parent_category, type, icon, color) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt = Db::prepareOn($db, "INSERT INTO bank_transaction_category (id, name, parent_category, type, icon, color) VALUES (?, ?, ?, ?, ?, ?)");
             foreach ($starter['categories'] as $category) {
                 $stmt->bind_param('isisss', $category['id'], $category[$language], $category['parent'], $category['type'], $category['icon'], $category['color']);
                 $stmt->execute();
             }
-            $stmt = $db->prepare("INSERT INTO bank_transaction_category_keyword (keyword, category, notify) VALUES (?, ?, 0)");
+            $stmt = Db::prepareOn($db, "INSERT INTO bank_transaction_category_keyword (keyword, category, notify) VALUES (?, ?, 0)");
             foreach ($starter['rules'] as [$keyword, $category]) {
                 $stmt->bind_param('si', $keyword, $category);
                 $stmt->execute();
             }
             $added = $insights ? $starter['insights'] : [];
-            $stmt = $db->prepare("INSERT INTO budget_insight (name, color, icon, `sql`) VALUES (?, ?, ?, ?)");
+            $stmt = Db::prepareOn($db, "INSERT INTO budget_insight (name, color, icon, `sql`) VALUES (?, ?, ?, ?)");
             foreach ($added as $insight) {
                 $stmt->bind_param('ssss', $insight[$language], $insight['color'], $insight['icon'], $insight['sql']);
                 $stmt->execute();
@@ -181,7 +181,7 @@ final class Installer {
      */
     public static function hasAdmin(mysqli $db): bool
     {
-        return $db->query("SELECT id FROM users WHERE is_admin = 1 LIMIT 1")->num_rows > 0;
+        return Db::rowsOn($db, "SELECT id FROM users WHERE is_admin = 1 LIMIT 1")->num_rows > 0;
     }
 
     /**
@@ -207,7 +207,7 @@ final class Installer {
         $hash = password_hash($password, PASSWORD_DEFAULT);
         $email = $email === '' ? null : $email;
         $language = self::language($language);
-        $stmt = $db->prepare("INSERT INTO users (username, password, email, is_admin, language) VALUES (?, ?, ?, 1, ?)");
+        $stmt = Db::prepareOn($db, "INSERT INTO users (username, password, email, is_admin, language) VALUES (?, ?, ?, 1, ?)");
         $stmt->bind_param('ssss', $username, $hash, $email, $language);
         $stmt->execute();
     }
@@ -223,7 +223,7 @@ final class Installer {
     public static function config(string $root, array $settings): array
     {
         $syncToken = bin2hex(random_bytes(24));
-        $ini = file_get_contents("$root/conf/prod.sample.ini");
+        $ini = File::read("$root/conf/prod.sample.ini");
         foreach ([
             'log_level' => 'warning',
             'development' => 'false',

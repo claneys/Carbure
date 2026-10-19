@@ -28,7 +28,7 @@ require_once dirname(__DIR__) . '/src/autoload.php';
 
 $options = getopt('', ['status', 'dry-run', 'baseline', 'help']);
 if (isset($options['help'])) {
-    echo preg_replace('/^ \* ?/m', '', explode('*/', explode('/**', file_get_contents(__FILE__), 2)[1], 2)[0]), "\n";
+    echo preg_replace('/^ \* ?/m', '', explode('*/', explode('/**', (string)file_get_contents(__FILE__), 2)[1], 2)[0]), "\n";
     exit(0);
 }
 

@@ -43,7 +43,7 @@ final class QifReader
     {
         $rows = [];
         $record = [];
-        foreach (preg_split('/\r\n|\r|\n/', $content) as $line) {
+        foreach (preg_split('/\r\n|\r|\n/', $content) ?: [] as $line) {
             $line = rtrim($line);
             if ($line === '' || $line[0] === '!') {
                 continue;

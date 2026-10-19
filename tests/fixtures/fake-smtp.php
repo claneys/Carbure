@@ -30,7 +30,7 @@ if ($server === false) {
     exit(1);
 }
 
-while (true) {
+for (;;) {
     $client = @stream_socket_accept($server, -1);
     if ($client === false) {
         continue;

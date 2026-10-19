@@ -212,7 +212,7 @@ final class BudgetAlert {
      */
     private static function subscribers(): array
     {
-        $users = Db::execute("SELECT id, language, budget_threshold FROM users", "")->get_result()->fetch_all(MYSQLI_ASSOC);
+        $users = Db::select("SELECT id, language, budget_threshold FROM users", "")->fetch_all(MYSQLI_ASSOC);
         $subscribers = [];
         foreach ($users as $user) {
             $channels = Notification::preferences((int)$user['id'])[self::KIND];

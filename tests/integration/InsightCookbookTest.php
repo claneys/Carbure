@@ -145,7 +145,7 @@ class InsightCookbookTest extends DatabaseTestCase
         // Nothing in 2010: no error, a number or nothing
         $result = Insight::check($recipe['sql'], 6, 2010);
         $this->assertTrue($result['valid'], $result['error'] ?? '');
-        $this->assertTrue($result['amount'] === null || is_float($result['amount']));
+        $this->assertContains(get_debug_type($result['amount']), ['null', 'float']);
     }
 
     public function testRecipeOfTheCurrentMonthProjectsTheSpending()

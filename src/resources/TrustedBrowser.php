@@ -42,9 +42,8 @@ final class TrustedBrowser {
      */
     public static function list(int $userId): array
     {
-        return Db::execute("SELECT id, label, created_at, expires_at, last_used_at FROM mfa_trusted_browser
-            WHERE user_id = ? AND expires_at > NOW() ORDER BY created_at DESC, id DESC", "i", $userId)
-            ->get_result()->fetch_all(MYSQLI_ASSOC);
+        return Db::select("SELECT id, label, created_at, expires_at, last_used_at FROM mfa_trusted_browser
+            WHERE user_id = ? AND expires_at > NOW() ORDER BY created_at DESC, id DESC", "i", $userId)->fetch_all(MYSQLI_ASSOC);
     }
 
     /**

@@ -77,7 +77,11 @@ class SwaggerGenerator {
     private function processResourceFile(string $file): void {
         // Tags and summaries name the class without its namespace (User, not Carbure\Resources\User)
         $resourceName = basename($file, '.php');
-        $class = new ReflectionClass(ApiResolver::RESOURCES_NAMESPACE . $resourceName);
+        $className = ApiResolver::RESOURCES_NAMESPACE . $resourceName;
+        if (!class_exists($className)) {
+            return;
+        }
+        $class = new ReflectionClass($className);
 
         // Get all public static methods
         $methods = $class->getMethods(ReflectionMethod::IS_PUBLIC | ReflectionMethod::IS_STATIC);

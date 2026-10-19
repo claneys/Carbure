@@ -301,7 +301,7 @@ final class User {
         } else {
             $stmt = Db::execute($sql . " WHERE id=?", "i", Jwt::getUserIdFromToken());
         }
-        $result = $stmt->get_result();
+        $result = Db::result($stmt);
 
         $users = array();
         if ($result->num_rows > 0) {
@@ -349,7 +349,7 @@ final class User {
         // Check if username already exists
         $sql = "SELECT id FROM users WHERE username=?";
         $stmt = Db::execute($sql, "s", $username);
-        $result = $stmt->get_result();
+        $result = Db::result($stmt);
 
         if ($result->num_rows > 0) {
             throw new Error("Username already exists", 409);
@@ -358,7 +358,7 @@ final class User {
         // Check if email already exists
         $sql = "SELECT id FROM users WHERE email=?";
         $stmt = Db::execute($sql, "s", $email);
-        $result = $stmt->get_result();
+        $result = Db::result($stmt);
 
         if ($result->num_rows > 0) {
             throw new Error("Email already exists", 409);
@@ -401,7 +401,7 @@ final class User {
         // Check if user exists
         $sql = "SELECT id FROM users WHERE id=?";
         $stmt = Db::execute($sql, "i", $id);
-        $result = $stmt->get_result();
+        $result = Db::result($stmt);
 
         if ($result->num_rows == 0) {
             throw new Error("User not found", 404);
@@ -506,7 +506,7 @@ final class User {
      */
     private static function findForUpdate(int $id): array
     {
-        $result = Db::execute("SELECT * FROM users WHERE id=?", "i", $id)->get_result();
+        $result = Db::select("SELECT * FROM users WHERE id=?", "i", $id);
         $user = $result->num_rows == 0 ? null : $result->fetch_assoc();
         if (!$user) {
             throw new Error("User not found", 404);
@@ -528,7 +528,7 @@ final class User {
         if (!$email || $email === $current) {
             return;
         }
-        $result = Db::execute("SELECT id FROM users WHERE email=? AND id!=?", "si", $email, $id)->get_result();
+        $result = Db::select("SELECT id FROM users WHERE email=? AND id!=?", "si", $email, $id);
         if ($result->num_rows > 0) {
             throw new Error("Email already exists", 409);
         }

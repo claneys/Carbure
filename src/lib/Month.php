@@ -11,6 +11,8 @@
 
 namespace Carbure\Lib;
 
+use Exception;
+
 final class Month {
 
     /**
@@ -39,6 +41,24 @@ final class Month {
     }
 
     /**
+     * Timestamp of a date or a relative date ("2026-10-01 +1 month", "-30 days"), like
+     * strtotime() but never false.
+     *
+     * @param string   $datetime The date
+     * @param int|null $base     The timestamp the relative dates are computed from (now by default)
+     * @return int The timestamp
+     * @throws Exception If the date is not valid
+     */
+    public static function timestamp(string $datetime, ?int $base = null): int
+    {
+        $timestamp = strtotime($datetime, $base);
+        if ($timestamp === false) {
+            throw new Exception("Invalid date: $datetime");
+        }
+        return $timestamp;
+    }
+
+    /**
      * Dates of the month as a range: date >= from AND date < to (uses the index on the dates).
      *
      * @param int|string|null $month The month (current month by default)
@@ -48,6 +68,6 @@ final class Month {
     public static function range(int|string|null $month = null, int|string|null $year = null): array
     {
         $from = self::first($month, $year);
-        return [$from, date('Y-m-d', strtotime("$from +1 month"))];
+        return [$from, date('Y-m-d', self::timestamp("$from +1 month"))];
     }
 }

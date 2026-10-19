@@ -21,7 +21,7 @@ icon: material/code-braces
 | `tests/e2e/` | Tests de bout en bout du portail (Playwright) |
 | `tools/migrate.php` | Migrations du schéma (`--status`, `--dry-run`, `--baseline`) |
 | `tools/coverage-check.php` | Contrôle du seuil de couverture |
-| `composer.json`, `phpstan.neon`, `phpunit.xml`, `tools/phpstan/` | Outils de développement (PHPStan et PHPUnit 11, installés par Composer dans `vendor/`) et règles de Carbure ; l'API elle-même n'a aucune dépendance |
+| `composer.json`, `phpstan.neon`, `phpstan.tests.neon`, `phpunit.xml`, `tools/phpstan/` | Outils de développement (PHPStan et PHPUnit 11, installés par Composer dans `vendor/`) et règles de Carbure ; l'API elle-même n'a aucune dépendance |
 | `docker/` | `Dockerfile`, `docker-compose.yml` (avec MariaDB), configuration nginx et PHP-FPM, `entrypoint.sh` |
 | `data/` (non versionné) | Données de l'instance : `conf/` (`prod.ini`), `logs/`, `cache/`, `woob/` (banques et identifiants) |
 | `VERSION` | Version de Carbure (`dev` dans le dépôt, écrite par le build de release) |
@@ -199,7 +199,11 @@ Pour ajouter l'export CSV d'une banque :
 
 Chaque paramètre, valeur de retour et propriété du code PHP a un type natif (vérifié par
 PHP à l'exécution) ; les tableaux sont détaillés dans la PHPDoc (`array<string, mixed>`).
-PHPStan le contrôle (niveau 6 et règle `tools/phpstan/NativeTypesRule.php`) :
+PHPStan le contrôle (niveau 7 et règle `tools/phpstan/NativeTypesRule.php`) : au niveau 7,
+une valeur qui peut valoir `false` (résultat d'une requête, de `strtotime()`, d'une lecture
+de fichier) n'est pas utilisée telle quelle, d'où `Db::select()`, `Db::result()`,
+`Month::timestamp()` et `File::read()`, qui lèvent une exception à la place. Les tests sont
+analysés à part (`phpstan.tests.neon`, niveau 5, sans les règles de Carbure) :
 
 ```bash
 composer install     # une fois : PHPStan et PHPUnit dans vendor/ (outils de développement)

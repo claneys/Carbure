@@ -146,7 +146,7 @@ final class Backup {
      */
     private static function usernames(): array
     {
-        $users = Db::execute("SELECT id, username FROM users", "")->get_result()->fetch_all(MYSQLI_ASSOC);
+        $users = Db::select("SELECT id, username FROM users", "")->fetch_all(MYSQLI_ASSOC);
         return array_column($users, 'username', 'id');
     }
 
@@ -161,7 +161,7 @@ final class Backup {
     {
         $dataset = BackupData::DATASETS[$name];
         $columns = implode(', ', array_map(fn(string $column): string => "`$column`", array_keys($dataset['columns'])));
-        $result = Db::execute("SELECT $columns FROM `{$dataset['table']}` ORDER BY `{$dataset['key']}`", "")->get_result();
+        $result = Db::select("SELECT $columns FROM `{$dataset['table']}` ORDER BY `{$dataset['key']}`", "");
 
         $userColumns = BackupData::userColumns($name);
         $rows = [];
@@ -318,9 +318,8 @@ final class Backup {
             Db::query("DELETE a FROM budget_alert a LEFT JOIN bank_transaction_category c ON c.id = a.category WHERE c.id IS NULL");
         }
         foreach (self::CATEGORY_REFERENCES as [$table, $column, $name]) {
-            $missing = Db::execute("SELECT DISTINCT t.`$column` AS id FROM `$table` t
-                LEFT JOIN bank_transaction_category c ON c.id = t.`$column` WHERE c.id IS NULL ORDER BY id LIMIT 10", "")
-                ->get_result()->fetch_all(MYSQLI_ASSOC);
+            $missing = Db::select("SELECT DISTINCT t.`$column` AS id FROM `$table` t
+                LEFT JOIN bank_transaction_category c ON c.id = t.`$column` WHERE c.id IS NULL ORDER BY id LIMIT 10", "")->fetch_all(MYSQLI_ASSOC);
             if ($missing !== []) {
                 throw new Error("The $name refer to categories that do not exist: " . implode(', ', array_column($missing, 'id'))
                     . ". Import the categories that contain them, or the $name with the categories. Nothing was changed.", 400);

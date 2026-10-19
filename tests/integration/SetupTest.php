@@ -237,7 +237,7 @@ class SetupTest extends TestCase
 
         $amounts = [];
         foreach ($db->query("SELECT name, `sql` FROM budget_insight ORDER BY id")->fetch_all(MYSQLI_ASSOC) as $insight) {
-            $sql = str_replace(['{month}', '{year}'], [$month, $year], $insight['sql']);
+            $sql = str_replace(['{month}', '{year}'], [(string)$month, (string)$year], $insight['sql']);
             $amounts[$insight['name']] = $db->query($sql)->fetch_assoc()['amount'];
         }
         $this->assertSame(array_column($starter['insights'], 'en'), array_keys($amounts));
@@ -263,7 +263,7 @@ class SetupTest extends TestCase
             ('c4', '{$at(3)}', '{$at(3)}', 1, 'VIR LIVRET A', 32, -500.00, 1),
             ('c5', '{$at(3)}', '{$at(3)}', 1, 'VIR SALAIRE', 28, 2000.00, 1)");
         $cushion = $db->query("SELECT `sql` FROM budget_insight WHERE name = 'Safety cushion'")->fetch_row()[0];
-        $sql = str_replace(['{month}', '{year}'], [$month, $year], $cushion);
+        $sql = str_replace(['{month}', '{year}'], [(string)$month, (string)$year], $cushion);
         $this->assertEquals(150, $db->query($sql)->fetch_assoc()['amount']);
     }
 
