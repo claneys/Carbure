@@ -21,12 +21,6 @@ keeps track of what was done).
       5. remove the `[apns]` section and `data/conf/certs/*.p8` from the NAS (no longer used);
       6. later: a release workflow publishing the image of Carbure Push to a registry.
 
-- [ ] **Discord changelog (#263)**: in Discord, channel **#changelog** → Edit Channel →
-      Integrations → Webhooks → New Webhook (name "Carbure"), copy its URL, then add it on
-      GitHub as the repository secret `DISCORD_CHANGELOG_WEBHOOK` (Settings → Secrets and
-      variables → Actions). The next release is then announced there (without the secret,
-      the job only leaves a notice).
-
 - [ ] **Demo image (#219)**: `ltoinel/carbure:demo` and `ltoinel/carbure:<version>-demo` are
       pushed by the release workflow from the next release (1.6.0): until then the
       `docker run … ltoinel/carbure:demo` command of the README and of the docs fails. After
