@@ -340,9 +340,12 @@ valeurs sur une ligne sans espace, choix vérifiés), `label` (facultatif : nom 
 connexion, 100 caractères max, par exemple « Compte joint »). Les identifiants sont
 confiés à woob, ni stockés ni journalisés par Carbure (`settings` est masqué dans les
 logs), et jamais passés sur la ligne de commande de woob. Renvoie
-`backend`, `label` et les `accounts` trouvés (même format que `/bank/discover`). `409` si
-une banque de ce nom existe déjà dans woob ou si son module n'est pas installé et le dépôt
-de woob pas encore approuvé, `400` si un paramètre manque ou si woob refuse.
+`backend`, `label`, les `accounts` trouvés (même format que `/bank/discover`) et
+`two_factor`. Si la banque demande une authentification forte dès la première connexion
+(woob ne la lance qu'en mode interactif), la banque reste configurée : `accounts` est vide,
+`two_factor` vaut `true`, et ses comptes se listent avec `GET /bank/discover/interactive`.
+`409` si une banque de ce nom existe déjà dans woob ou si son module n'est pas installé et
+le dépôt de woob pas encore approuvé, `400` si un paramètre manque ou si woob refuse.
 
 ### `PUT /bank/backend` — administrateur
 
@@ -392,6 +395,17 @@ prendre plusieurs secondes (connexion aux banques).
 | Paramètre | Description |
 |---|---|
 | `backend` (facultatif) | Seulement les comptes de cette connexion (backend woob, `woob bank list -b <backend>`) ; `400` si le nom est invalide |
+
+### `GET /bank/discover/interactive` — administrateur (flux SSE)
+
+Comptes d'une connexion (`backend`, obligatoire, `400` si le nom est invalide) quand la
+banque demande une authentification forte : woob est lancé sur un pseudo-terminal, déclenche
+la demande et attend la validation dans l'application de la banque (parfois plusieurs
+minutes). Chaque message de la banque est envoyé (`data: Bank message <backend>:
+<message>`), puis le résultat : `Accounts <liste JSON>` (même format que `/bank/discover`)
+ou `Discovery failed: <cause>` (dont `synchronization in progress` : jamais pendant une
+synchronisation). Le portail l'utilise après `POST /bank/backend` avec `two_factor`, ou
+quand `GET /bank/discover` échoue sur une demande d'authentification forte.
 
 ### `GET /bank/sync` — flux SSE { #bank-sync }
 

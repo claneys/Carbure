@@ -1,5 +1,6 @@
 // Accounts tab (administrators): followed bank accounts and synchronization (fake woob)
 const { test, expect, tr, openTab, escapeRegExp, woobFile, trustWoobRepository } = require('../fixtures');
+const fs = require('fs');
 
 /** Row of a followed account, by its bank id (account_number@bank) */
 const account = (page, bankId) => page.locator('.account-item').filter({ has: page.locator('code', { hasText: new RegExp(`^${escapeRegExp(bankId)}$`) }) });
@@ -323,6 +324,49 @@ test('connects a second login of a bank already connected', async ({ adminPage: 
     await expect(page.locator('.toast')).toHaveText(tr('accountsFollowedToast', { count: 1 }));
     await expect(account(page, '00087654321@bnp_2')).toBeVisible();
     await expect(account(page, 'DEMO0000001@bnp')).toBeVisible();
+});
+
+test('connects a bank that asks a strong authentication, then lists its accounts once approved (#299)', async ({ adminPage: page }) => {
+    // The fake woob waits for the approval in the bank app
+    fs.writeFileSync(woobFile('carbure-fake-woob-2fa-wait'), '');
+    const modal = await connectModal(page, 'bnp');
+    const setup = modal.locator('fieldset.bank-setup');
+    await setup.getByLabel('Numéro client *').fill('2fa');
+    await setup.getByLabel('Code secret *').fill('123456');
+    await setup.getByLabel(tr('bankConnectionLabel')).fill('Crédit Mutuel');
+    await modal.getByRole('button', { name: tr('bankConnect') }).click();
+
+    // The bank stays connected; woob waits for the approval, the message of the bank shown
+    await expect(page.locator('.toast')).toHaveText(tr('bankConnected2fa'));
+    const add = page.getByRole('dialog', { name: tr('addAccountsTitle', { bank: 'Crédit Mutuel (bnp_2)' }) });
+    await expect(add.getByText(tr('discover2faWaiting'))).toBeVisible();
+    await expect(add.getByRole('status').filter({ hasText: 'Veuillez valider la connexion dans votre application bancaire.' })).toBeVisible();
+    await expect(add.getByRole('checkbox')).toHaveCount(0);
+
+    // Approved in the bank app: its accounts, to follow
+    fs.writeFileSync(woobFile('carbure-fake-woob-validated'), '');
+    await expect(add.getByRole('checkbox')).toHaveCount(2);
+    await expect(add.getByText(tr('discover2faWaiting'))).toHaveCount(0);
+    await add.getByRole('checkbox', { name: /Livret A/ }).check();
+    await add.getByRole('button', { name: tr('followSelected', { count: 1 }) }).click();
+
+    await expect(page.locator('.toast')).toHaveText(tr('accountsFollowedToast', { count: 1 }));
+    await expect(account(page, '00087654321@bnp_2')).toBeVisible();
+});
+
+test('a bank connected outside of the portal that asks a strong authentication lists its accounts once approved', async ({ adminPage: page }) => {
+    // The bank answers the plain listing with a strong authentication to start (woob without a terminal)
+    await page.route(url => url.pathname.endsWith('/api/bank/discover') && url.searchParams.get('backend') === 'bnp', route => route.fulfill({
+        status: 500,
+        json: { error: 'Error while calling woob (exit code: 1): Error(bnp): You have to run bank in interactive mode to perform a two-factor authentication', code: 500 }
+    }));
+    await openTab(page, tr('tabAccounts'));
+    await page.getByRole('button', { name: tr('addAccountsTo', { bank: 'BNP Paribas (bnp)' }) }).click();
+
+    // Listed again with the strong authentication allowed
+    const add = page.getByRole('dialog', { name: tr('addAccountsTitle', { bank: 'BNP Paribas (bnp)' }) });
+    await expect(add.getByRole('checkbox')).toHaveCount(2);
+    await expect(add.getByRole('alert')).toHaveCount(0);
 });
 
 test('renames a connected bank', async ({ adminPage: page }) => {

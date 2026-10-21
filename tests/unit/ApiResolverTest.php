@@ -91,6 +91,7 @@ class ApiResolverTest extends TestCase
         'GET /bank/accounts' => 'admin',
         'GET /bank/backends' => 'admin',
         'GET /bank/discover' => 'admin',
+        'GET /bank/discover/interactive' => 'admin',
         'GET /bank/module' => 'admin',
         'GET /bank/modules' => 'admin',
         'GET /bank/sync' => 'public',

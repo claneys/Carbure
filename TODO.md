@@ -158,8 +158,8 @@ keeps track of what was done).
 
 - [ ] Strong authentication: handle the validations by **code** (SMS OTP, woob
       `BrowserQuestion`), which wait for input on stdin (closed today by
-      `Woob::executeWithHeartbeat`); and offer the interactive mode to "Find my accounts in woob" /
-      "Connect the bank" (`Woob::listAccounts`), which also fail on a bank that requires 2FA.
+      `Woob::executeWithHeartbeat`), in the synchronization and in the listing of the
+      accounts of a bank (`GET /bank/discover/interactive`, #299: validations in the bank app only).
 
 - [ ] MySQL connection in `utf8mb4` (`Db` does not call `set_charset`: the connection uses
       the default charset of the server). Before adding it, check in production what PHP

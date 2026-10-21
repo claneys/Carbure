@@ -42,7 +42,16 @@ Une question qui n'est pas ici ? Posez-la sur le
     Lancez la synchronisation depuis le portail : la demande de validation
     (authentification forte) s'y affiche, et la synchronisation attend que vous validiez
     dans l'application de votre banque ou saisissiez le code reçu. La synchronisation
-    planifiée ne la déclenche jamais.
+    planifiée ne la déclenche jamais. À la connexion d'une banque, c'est la liste de ses
+    comptes qui attend la validation.
+
+??? question "J'ai connecté ma banque avec woob dans le terminal du conteneur, le portail ne la voit pas"
+    Dans l'image Docker, Carbure lance woob en `www-data` avec sa configuration dans
+    `/data/woob`. Un `docker exec` lancé tel quel tourne en root avec une autre
+    configuration, invisible de Carbure. Lancez woob comme Carbure :
+    `docker compose exec -u www-data carbure env HOME=/data/woob woob bank list`. Le plus
+    simple reste de connecter la banque depuis le portail, qui gère l'authentification
+    forte.
 
 ??? question "La synchronisation échoue, que faire ?"
     Consultez le journal de la synchronisation et la page **Logs** de l'administration,

@@ -41,7 +41,15 @@ A question that isn't here? Ask it on the
     Start the synchronization from the portal: the approval request (strong customer
     authentication) is shown there, and the synchronization waits until you approve it in
     your bank's app or enter the code you received. Scheduled synchronization never
-    triggers it.
+    triggers it. When a bank is connected, the list of its accounts waits for the approval.
+
+??? question "I connected my bank with woob in the container's terminal, the portal does not see it"
+    In the Docker image, Carbure runs woob as `www-data` with its configuration in
+    `/data/woob`. A plain `docker exec` runs as root with another configuration, which
+    Carbure does not see. Run woob as Carbure does:
+    `docker compose exec -u www-data carbure env HOME=/data/woob woob bank list`. The
+    simplest is still to connect the bank from the portal, which handles the strong
+    authentication.
 
 ??? question "The synchronization fails, what should I do?"
     Check the synchronization log and the **Logs** page of the administration, then update

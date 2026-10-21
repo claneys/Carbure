@@ -326,6 +326,65 @@ test('accounts: a connected bank shown by the name given to it, else by its bank
     assert.equal(methods.backendName.call(context, { name: 'bnp_2', module: 'bnp', label: 'Compte joint' }), 'Compte joint (bnp_2)');
 });
 
+/** `this` of the portal for the methods of the accounts module, with the given API service */
+async function accountsContext(api) {
+    const { createAccountsModule } = await import('../../portal/modules/accountsModule.js');
+    const { createSyncModule } = await import('../../portal/modules/syncModule.js');
+    const accounts = createAccountsModule(() => api);
+    const context = { ...accounts.data(), bankAccounts: [] };
+    for (const [name, method] of Object.entries({ ...createSyncModule(() => api).methods, ...accounts.methods })) {
+        context[name] = method.bind(context);
+    }
+    return context;
+}
+
+test('accounts: a bank asking a strong authentication is listed again interactively, its messages shown', async () => {
+    const shown = [];
+    const context = await accountsContext({
+        discoverBankAccounts: async () => {
+            throw new Error('Error while calling woob (exit code: 1): Error(cm): You have to run bank in interactive mode to perform a two-factor authentication');
+        },
+        discoverBankAccountsInteractive: async (backend, onMessage, signal) => {
+            assert.equal(backend, 'cm');
+            assert.ok(signal instanceof AbortSignal);
+            onMessage('Validez dans votre application');
+            shown.push([context.discoverTwoFactor, context.discoverMessage, context.discovering]);
+            return [{ bankId: '1@cm', followed: false }];
+        },
+    });
+
+    await context.openAddAccounts('cm');
+    assert.deepEqual(shown, [[true, 'Validez dans votre application', true]]);
+    assert.deepEqual(context.discoveredAccounts, [{ bankId: '1@cm', followed: false }]);
+    assert.equal(context.discoverError, null);
+    assert.equal(context.discovering, false);
+
+    // Just connected with two_factor: straight to the interactive listing
+    let plain = 0;
+    context.discoverBankAccounts = async () => plain++;
+    await context.openAddAccounts('cm', null, true);
+    assert.equal(plain, 0);
+    assert.equal(context.discoveredAccounts.length, 1);
+});
+
+test('accounts: closing the modal stops woob waiting for the approval of the bank', async () => {
+    let signal = null;
+    const context = await accountsContext({
+        discoverBankAccountsInteractive: (backend, onMessage, abort) => new Promise((resolve, reject) => {
+            signal = abort;
+            abort.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+        }),
+    });
+
+    const opening = context.openAddAccounts('cm', null, true);
+    context.closeAddAccounts();
+    await opening;
+    assert.equal(signal.aborted, true);
+    // Not an error to show
+    assert.equal(context.discoverError, null);
+    assert.equal(context.showAddAccountsModal, false);
+});
+
 test('accounts: renaming a connected bank updates it in the list', async () => {
     const { createAccountsModule } = await import('../../portal/modules/accountsModule.js');
     const calls = [];
