@@ -5,7 +5,7 @@
 # temporary packages, the final image only keeps what runs Carbure.
 
 # --- woob and its Python dependencies, built apart --------------------------------
-FROM php:8.5-fpm-alpine AS woob
+FROM php:8.5.12-fpm-alpine AS woob
 
 ARG WOOB_VERSION=3.7
 
@@ -23,7 +23,8 @@ RUN python3 -m venv /opt/woob \
     && find /opt/woob -name "__pycache__" -type d -prune -exec rm -rf {} +
 
 # --- Carbure ---------------------------------------------------------------------
-FROM php:8.5-fpm-alpine
+# PHP 8.5.12 at least: earlier versions are vulnerable to PHP2Shell (CVE-2026-109618, CVE-2026-109619)
+FROM php:8.5.12-fpm-alpine
 
 # Version of Carbure (the release tag), shown in the portal footer and by /api/health
 ARG CARBURE_VERSION=dev
