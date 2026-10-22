@@ -304,7 +304,8 @@ uncategorized transactions remain visible. The same flows are available as a tab
 
 ![Trends of expenses, income and savings over several months](assets/screenshot-trends.png)
 
-Over **3, 6 or 12 months** up to the current month, optionally **compared** with the previous
+Over **3, 6, 12, 24, 36 or 60 months** up to the current month, or over a **custom period**
+(from a chosen month to a chosen month, 20 years at most), optionally **compared** with the previous
 period or with the same period last year:
 
 | Measure | Calculation |
@@ -320,6 +321,10 @@ The savings category is "Épargne" (case and accents ignored), or the one set in
 `savings_category` setting. The key figures (total and average savings, savings rate, average
 spending compared with the planned budget) show the difference from the compared period. Each chart
 is also available as a table.
+
+Administrators add **custom charts** (12 at most, shared by the household): the month by month
+trend of a category (with its subcategories), of a subcategory or of an insight, with its
+average over the period and, for a category, its planned budget.
 
 ## Insights { #insights }
 

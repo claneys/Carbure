@@ -650,8 +650,8 @@ précédent, `AAAA-MM`), `copied` (budgets écrits) et `overwrite`.
 
 | Paramètre | Requis | Description |
 |---|---|---|
-| `months` | non | Nombre de mois (1 à 60, défaut 24) |
-| `offset` | non | Nombre de mois entre le mois courant et le dernier mois de la période (défaut 0). Sert aux comparaisons : `offset=months` pour la période précédente, `offset=12` pour la même période l'an dernier |
+| `months` | non | Nombre de mois (1 à 240, défaut 24) |
+| `offset` | non | Nombre de mois entre le mois courant et le dernier mois de la période (0 à 240, défaut 0). Sert aux comparaisons : `offset=months` pour la période précédente, `offset=12` pour la même période l'an dernier |
 
 Renvoie un élément par mois (du plus ancien au plus récent, mois vides inclus) :
 
@@ -671,6 +671,49 @@ curl "https://exemple.fr/api/budget/trends?months=6&offset=12" -H "Authorization
 ```json
 [{ "month": "2025-05", "debit": 2130.37, "credit": 5114, "offBudget": -500, "planned": 2330, "savings": 2983.63 }]
 ```
+
+### `GET /budget/trends/series`
+
+Évolution mensuelle d'une catégorie ou d'un insight, pour les graphiques personnalisés de
+l'onglet Tendances.
+
+| Paramètre | Requis | Description |
+|---|---|---|
+| `type` | oui | `category` ou `insight` |
+| `id` | oui | Identifiant de la catégorie ou de l'insight (entier positif) |
+| `months` | non | Nombre de mois (1 à 240, défaut 24) |
+| `offset` | non | Nombre de mois entre le mois courant et le dernier mois de la période (0 à 240, défaut 0) |
+
+Renvoie un élément par mois (du plus ancien au plus récent, mois vides à `0`) :
+
+| Champ | Description |
+|---|---|
+| `month` | `AAAA-MM` |
+| `amount` | Catégorie : total de ses transactions et de celles de ses sous-catégories, positif pour une dépense d'une catégorie `DEBIT` (un remboursement le diminue), brut pour les autres types. Insight : valeur de sa requête pour le mois (`0` en cas d'échec) |
+| `planned` | Catégorie : budget du mois comme dans l'onglet Budget (montant défini, ou somme des sous-catégories), `null` sans budget. Insight : toujours `null` |
+
+`400` pour un type ou un identifiant invalide, `404` pour une catégorie ou un insight inconnu.
+
+```bash
+curl "https://exemple.fr/api/budget/trends/series?type=category&id=1&months=36" -H "Authorization: Bearer $TOKEN"
+```
+
+```json
+[{ "month": "2026-09", "amount": 412.5, "planned": 450 }, { "month": "2026-10", "amount": 127.4, "planned": null }]
+```
+
+### `GET /budget/trends/charts`
+
+Graphiques personnalisés de l'onglet Tendances, partagés par le foyer, dans l'ordre
+d'affichage : `type`, `id`, `name`, `icon`, `color` de la catégorie ou de l'insight. Les
+graphiques dont la catégorie ou l'insight a été supprimé sont ignorés.
+
+### `PUT /budget/trends/charts` (administrateur)
+
+Remplace la liste. Corps : `{"charts": [{"type": "category", "id": 1}, {"type": "insight", "id": 2}]}`
+(12 graphiques au plus, sans doublon, catégories et insights existants ; sinon `400`). Renvoie
+la liste enregistrée, comme `GET`. Elle est stockée dans le réglage `trend_charts`
+(ex. `["c1","i2"]`), sans migration.
 
 ## Insights
 

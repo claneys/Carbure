@@ -403,3 +403,24 @@ test('the registration of an app in the profile is readable', async ({ userPage:
 
     expect(await contrastProblems(page, tr('mfaSetupButton'))).toEqual([]);
 });
+
+test('the custom charts of the trends, their range and their modal are readable', async ({ adminPage: page, api }) => {
+    const problems = [];
+    await api.put('/api/budget/trends/charts', { data: { charts: [{ type: 'category', id: 1 }, { type: 'insight', id: 1 }] } });
+    await openTab(page, tr('tabTrends'));
+    await expect(page.locator('.trend-custom-chart')).toHaveCount(2);
+    await page.getByRole('button', { name: tr('trendsCustomRange') }).click();
+    await expect(page.getByLabel(tr('trendsFrom'), { exact: true })).toBeVisible();
+    await page.waitForLoadState('networkidle');
+    problems.push(...await contrastProblems(page, tr('trendsCustomRange')));
+
+    await page.getByRole('button', { name: tr('trendChartAdd') }).click();
+    const dialog = page.getByRole('dialog', { name: tr('trendChartAdd') });
+    await expect(dialog).toBeVisible();
+    problems.push(...await contrastProblems(page, tr('trendChartAdd')));
+    await dialog.getByRole('combobox', { name: tr('trendChartType') }).selectOption('insight');
+    await expect(dialog.getByRole('combobox', { name: tr('trendChartInsight') })).toBeVisible();
+    problems.push(...await contrastProblems(page, tr('trendChartInsight')));
+
+    expect(problems).toEqual([]);
+});

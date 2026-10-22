@@ -257,7 +257,7 @@ class BudgetTest extends DatabaseTestCase
         $this->assertEquals(80, $trends[0]['debit']);
         $this->assertEquals(-60, $trends[0]['offBudget']);
 
-        $this->assertCount(60, Budget::getTrends(500));
+        $this->assertCount(240, Budget::getTrends(500));
     }
 
     public function testInsights()

@@ -649,8 +649,8 @@ month, `YYYY-MM`), `copied` (budgets written) and `overwrite`.
 
 | Parameter | Required | Description |
 |---|---|---|
-| `months` | no | Number of months (1 to 60, default 24) |
-| `offset` | no | Number of months between the current month and the last month of the period (default 0). Used for comparisons: `offset=months` for the previous period, `offset=12` for the same period last year |
+| `months` | no | Number of months (1 to 240, default 24) |
+| `offset` | no | Number of months between the current month and the last month of the period (0 to 240, default 0). Used for comparisons: `offset=months` for the previous period, `offset=12` for the same period last year |
 
 Returns one item per month (oldest to newest, empty months included):
 
@@ -670,6 +670,48 @@ curl "https://exemple.fr/api/budget/trends?months=6&offset=12" -H "Authorization
 ```json
 [{ "month": "2025-05", "debit": 2130.37, "credit": 5114, "offBudget": -500, "planned": 2330, "savings": 2983.63 }]
 ```
+
+### `GET /budget/trends/series` { #get-budgettrendsseries }
+
+Monthly trend of a category or of an insight, for the custom charts of the Trends tab.
+
+| Parameter | Required | Description |
+|---|---|---|
+| `type` | yes | `category` or `insight` |
+| `id` | yes | Id of the category or of the insight (positive integer) |
+| `months` | no | Number of months (1 to 240, default 24) |
+| `offset` | no | Number of months between the current month and the last month of the period (0 to 240, default 0) |
+
+Returns one item per month (oldest to newest, empty months at `0`):
+
+| Field | Description |
+|---|---|
+| `month` | `YYYY-MM` |
+| `amount` | Category: total of its transactions and of those of its subcategories, positive for spending in a `DEBIT` category (a refund lowers it), raw for the other types. Insight: value of its query for the month (`0` when it fails) |
+| `planned` | Category: budget of the month as in the Budget tab (amount set, or sum of the subcategories), `null` without a budget. Insight: always `null` |
+
+`400` for an invalid type or id, `404` for an unknown category or insight.
+
+```bash
+curl "https://exemple.fr/api/budget/trends/series?type=category&id=1&months=36" -H "Authorization: Bearer $TOKEN"
+```
+
+```json
+[{ "month": "2026-09", "amount": 412.5, "planned": 450 }, { "month": "2026-10", "amount": 127.4, "planned": null }]
+```
+
+### `GET /budget/trends/charts` { #get-budgettrendscharts }
+
+Custom charts of the Trends tab, shared by the household, in display order: `type`, `id`,
+`name`, `icon`, `color` of the category or of the insight. Charts whose category or insight
+was deleted are left out.
+
+### `PUT /budget/trends/charts` (administrator) { #put-budgettrendscharts-administrateur }
+
+Replaces the list. Body: `{"charts": [{"type": "category", "id": 1}, {"type": "insight", "id": 2}]}`
+(12 charts at most, no duplicates, existing categories and insights; otherwise `400`). Returns
+the saved list, as `GET` does. It is stored in the `trend_charts` setting
+(e.g. `["c1","i2"]`), without a migration.
 
 ## Insights { #insights }
 

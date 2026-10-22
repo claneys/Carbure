@@ -205,7 +205,9 @@ Des exemples de requêtes sont dans [Recettes d'insights](insights.md).
 
 ![Écran Tendances du portail web Carbure](assets/screenshot-trends.png)
 
-- Période de **3, 6 ou 12 mois** se terminant au mois courant.
+- Période de **3, 6, 12, 24, 36 ou 60 mois** se terminant au mois courant, ou
+  **Personnalisée** : du mois choisi au mois choisi (mois courant au plus tard, 240 mois au
+  plus). Au-delà de 12 mois, l'axe n'affiche qu'une partie des mois, puis les années.
 - **Comparer à** : sans comparaison, la période précédente ou la même période l'an
   dernier.
 - **Chiffres clés** : épargne cumulée, épargne moyenne par mois, taux d'épargne,
@@ -219,6 +221,11 @@ Des exemples de requêtes sont dans [Recettes d'insights](insights.md).
   sous-catégories, moins les retraits (barres bleues, rouges pour un mois de retrait net).
   Le nom de la catégorie se règle avec `savings_category` (casse et accents ignorés). Le
   taux d'épargne est `épargne / revenus`.
+- **Graphiques personnalisés** : un graphique par catégorie (sous-catégories incluses),
+  sous-catégorie ou insight choisi, en barres mensuelles avec la moyenne de la période, le
+  budget prévu (catégories) et une infobulle au survol. Les administrateurs les ajoutent
+  (**Ajouter un graphique**, 12 au plus), les déplacent et les retirent ; la liste est
+  partagée par le foyer.
 - Vue **tableau** des données mois par mois.
 
 ## Règles (administrateurs)

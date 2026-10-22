@@ -212,3 +212,9 @@ keeps track of what was done).
       only the French starter category; an installation in another language (`Savings`,
       `Ahorro`, `Risparmio`, `Sparen`, `Poupança`) has to set it in Settings. Use the
       starter category id (31) or a default per language.
+- [ ] iOS app and MCP: the custom charts of the Trends tab (`GET /budget/trends/charts`,
+      `GET /budget/trends/series`) and the periods up to 240 months are portal-only; show
+      them in the iOS Trends screen, and expose the series to the MCP `get_trends` tool.
+- [ ] Translations of the custom charts and custom range of the Trends tab (`trendChart*`,
+      `trendsCustomRange`, `trendsFrom`, `trendsTo`, `trendsApplyRange`, `trendsRangeInvalid`)
+      in `de`, `es`, `it`, `pt`: to be proofread by native speakers.

@@ -205,7 +205,9 @@ Sample queries are in [Insight recipes](insights.md).
 
 ![Trends screen of the Carbure web portal](assets/screenshot-trends.png)
 
-- Period of **3, 6 or 12 months** ending with the current month.
+- Period of **3, 6, 12, 24, 36 or 60 months** ending with the current month, or
+  **Custom**: from a chosen month to a chosen month (the current month at the latest, 240
+  months at most). Beyond 12 months, the axis shows only some of the months, then the years.
 - **Compare with**: no comparison, the previous period or the same period last
   year.
 - **Key figures**: total savings, average savings per month, savings rate,
@@ -219,6 +221,10 @@ Sample queries are in [Insight recipes](insights.md).
   sub-categories, minus withdrawals (blue bars, red for a month of net withdrawal).
   The category name is set with `savings_category` (case and accents ignored). The
   savings rate is `savings / income`.
+- **Custom charts**: one chart per chosen category (subcategories included), subcategory
+  or insight, as monthly bars with the average of the period, the planned budget
+  (categories) and a tooltip on hover. Administrators add them (**Add a chart**, 12 at
+  most), move and remove them; the list is shared by the household.
 - **Table** view of the data month by month.
 
 ## Rules (administrators) { #regles-administrateurs }

@@ -550,6 +550,42 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
     }
 
     /**
+     * Fetches the monthly series of a category (sub-categories included) or of an insight
+     * @param {string} type - 'category' or 'insight'
+     * @param {number} id - Category or insight id
+     * @param {number} months - Number of months
+     * @param {number} offset - Months between the current month and the end of the period
+     * @returns {Promise<Array>} Array of {month, amount, planned}, oldest first
+     * @throws {Error} If request fails
+     */
+    async function fetchTrendSeries(type, id, months = 12, offset = 0) {
+        const params = new URLSearchParams({ type, id: String(id), months: String(months), offset: String(offset) });
+        const data = await request(`${baseUrl}/budget/trends/series?${params}`, {}, 'Failed to fetch the series');
+        return Array.isArray(data) ? data : [];
+    }
+
+    /**
+     * Fetches the custom charts of the Trends tab
+     * @returns {Promise<Array>} Array of {type, id, name, icon, color}
+     * @throws {Error} If request fails
+     */
+    async function fetchTrendCharts() {
+        const data = await request(`${baseUrl}/budget/trends/charts`, {}, 'Failed to fetch the charts');
+        return Array.isArray(data) ? data : [];
+    }
+
+    /**
+     * Replaces the custom charts of the Trends tab (administrators)
+     * @param {Array<{type: string, id: number}>} charts - Charts in display order
+     * @returns {Promise<Array>} The saved charts: {type, id, name, icon, color}
+     * @throws {Error} If request fails
+     */
+    async function saveTrendCharts(charts) {
+        const data = await request(`${baseUrl}/budget/trends/charts`, { method: 'PUT', body: JSON.stringify({ charts }) }, 'Failed to save the charts');
+        return Array.isArray(data) ? data : [];
+    }
+
+    /**
      * Sets the category of a transaction (the transaction is checked too)
      * @param {number} id - Transaction ID
      * @param {number} category - Category ID
@@ -1259,6 +1295,9 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
         deleteRule,
         applyRules,
         fetchTrends,
+        fetchTrendSeries,
+        fetchTrendCharts,
+        saveTrendCharts,
         deleteDevice,
         fetchBrowsers,
         deleteBrowser,
