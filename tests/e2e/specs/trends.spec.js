@@ -72,6 +72,8 @@ test('an administrator adds a category chart and an insight chart, moves and rem
     await expect(food).toBeVisible();
     // 82.40 + 45 this month: the hover tooltip of the last month
     const chart = page.locator('.trend-custom-chart', { has: food });
+    // Scaled to the width of the card like the built-in charts (viewBox kept by the template)
+    await expect(chart.locator('svg[role="img"]')).toHaveAttribute('viewBox', /^0 0 960 \d+$/);
     await chart.locator('.hit').last().hover();
     await expect(chart.locator('.trends-tooltip')).toContainText(euros(127.4));
     // Its budget is the one of its sub-categories (300 + 100)

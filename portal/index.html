@@ -1150,7 +1150,7 @@
                                 </div>
                             </div>
                             <div class="trends-chart" @mouseleave="trendChartHover = null">
-                                <svg :viewBox="'0 0 960 ' + chart.geometry.height" preserveAspectRatio="xMidYMid meet" role="img" :aria-label="trendChartTitle(chart).name">
+                                <svg :view-box.camel="'0 0 960 ' + chart.geometry.height" preserveAspectRatio="xMidYMid meet" role="img" :aria-label="trendChartTitle(chart).name">
                                     <g class="grid">
                                         <template v-for="tick in chart.geometry.ticks" :key="tick.value">
                                             <line :x1="68" :x2="chart.geometry.width - 12" :y1="tick.y" :y2="tick.y" />
