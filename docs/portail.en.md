@@ -235,6 +235,9 @@ the chosen category.
   editing a rule also applies it immediately to the whole history (which replaces a
   category chosen by hand on a matching transaction); new transactions
   are categorized at each synchronization.
+- **Keep the existing categories** switch: when on, resynchronizing and creating or
+  editing a rule only touch the transactions without a category (the button's help, the
+  rule's window and the message shown say so).
 - A click on a rule opens its window: edit the keyword and the category, see how many
   transactions contain the keyword (and how many are already in the category),
   delete it (trash), and tick **Send a notification**: each new

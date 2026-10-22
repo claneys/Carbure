@@ -212,3 +212,17 @@ test('notifications and test email requests', async () => {
     assert.deepEqual(JSON.parse(calls[5].options.body), { alertThreshold: '150.5' });
     assert.deepEqual(JSON.parse(calls[6].options.body), { budgetCategory: '' });
 });
+
+test('rule settings: read with GET, keep_categorized changed with PUT /category/keyword/settings', async () => {
+    const calls = mockFetch(() => json({ keep_categorized: true }));
+    const api = createApiService(BASE, 't');
+
+    assert.deepEqual(await api.fetchRuleSettings(), { keep_categorized: true });
+    assert.equal(calls[0].url, `${BASE}/category/keyword/settings`);
+    assert.equal(calls[0].options.method, undefined);
+
+    assert.deepEqual(await api.updateRuleSettings(true), { keep_categorized: true });
+    assert.equal(calls[1].url, `${BASE}/category/keyword/settings`);
+    assert.equal(calls[1].options.method, 'PUT');
+    assert.deepEqual(JSON.parse(calls[1].options.body), { keep_categorized: true });
+});

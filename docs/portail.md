@@ -235,6 +235,10 @@ la catégorie choisie.
   modifier une règle l'applique aussi immédiatement à tout l'historique (ce qui remplace une
   catégorie choisie à la main sur une transaction concernée) ; les nouvelles transactions
   sont catégorisées à chaque synchronisation.
+- Interrupteur **Conserver les catégories existantes** : activé, la resynchronisation et
+  la création ou la modification d'une règle ne touchent que les transactions sans
+  catégorie (l'aide du bouton, la fenêtre de la règle et le message affiché le
+  rappellent).
 - Un clic sur une règle ouvre sa fenêtre : modifier le mot-clé et la catégorie, voir combien
   de transactions contiennent le mot-clé (et combien sont déjà dans la catégorie), la
   supprimer (corbeille), et cocher **Envoyer une notification** : chaque nouvelle

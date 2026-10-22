@@ -759,7 +759,20 @@ Applies every rule to every transaction in the database, including those already
 categorized (the first rule found in the label wins). Returns
 `{ "updated": <number of transactions whose category changed> }`. Creating or updating a
 rule (`POST`/`PUT /category/keyword`) also applies it immediately to the whole history and
-returns `applied`, the number of recategorized transactions.
+returns `applied`, the number of recategorized transactions. With the
+`keep_categorized` setting (below), these three routes only touch uncategorized
+transactions.
+
+### `GET /category/keyword/settings` { #get-categorykeywordsettings }
+
+`{ "keep_categorized": false }`: `true` if the rules leave the already categorized
+transactions of the history alone (off by default).
+
+### `PUT /category/keyword/settings` — administrator { #put-categorykeywordsettings-administrateur }
+
+`keep_categorized` (`true`/`false`): turns the setting on or off, returns the new state.
+When on, resynchronizing and creating or updating a rule only categorize the transactions
+without a category; categories chosen by hand or imported are never overwritten.
 
 ## Devices { #appareils }
 

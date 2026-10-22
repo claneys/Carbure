@@ -77,3 +77,37 @@ test('applies all the rules to the whole history', async ({ adminPage: page }) =
 
     await expect(page.locator('.toast')).toHaveText(tr('rulesApplied', { count: 0 }));
 });
+
+test('keeps the existing categories: the rules only categorize the uncategorized transactions', async ({ adminPage: page, api }) => {
+    await openTab(page, tr('tabRules'));
+    const toggle = page.getByRole('switch', { name: tr('rulesKeepCategorized') });
+    await expect(toggle).not.toBeChecked();
+    await expect(page.getByText(tr('rulesKeepCategorizedOffHelp'))).toBeVisible();
+
+    await page.locator('.rules-switch-row label.toggle-switch').click();
+    await expect(page.locator('.toast')).toHaveText(tr('rulesKeepCategorizedOn'));
+    await expect(toggle).toBeChecked();
+    await expect(page.getByText(tr('rulesKeepCategorizedOnHelp'))).toBeVisible();
+
+    // "CB" is in every card label: only "CB BOULANGERIE PAUL", uncategorized, takes the rule
+    await page.getByRole('button', { name: tr('addRuleTitle') }).click();
+    const modal = page.getByRole('dialog', { name: tr('addRuleTitle') });
+    await expect(modal.getByText(tr('ruleAppliesToUncategorized'))).toBeVisible();
+    await modal.getByLabel(new RegExp(tr('ruleKeyword'))).fill('CB');
+    await pickCategory(modal, 'Alimentation');
+    await modal.getByRole('button', { name: tr('save') }).click();
+    await expect(page.locator('.toast')).toHaveText(tr('ruleSavedApplied', { count: 1 }));
+
+    const { month, year } = currentMonth();
+    const transactions = await (await api.get(`/api/transaction?month=${month}&year=${year}`)).json();
+    const category = label => Number(transactions.find(t => t.label === label).category);
+    expect([category('CB BOULANGERIE PAUL'), category('CB SUPERMARCHE CASINO'), category('CB RESTAURANT LE PETIT ZINC')]).toEqual([1, 2, 3]);
+
+    await page.getByRole('button', { name: tr('applyRulesHelpUncategorized') }).click();
+    await expect(page.locator('.toast')).toHaveText(tr('rulesAppliedUncategorized', { count: 0 }));
+
+    // Kept after a reload
+    await page.reload();
+    await openTab(page, tr('tabRules'));
+    await expect(page.getByRole('switch', { name: tr('rulesKeepCategorized') })).toBeChecked();
+});

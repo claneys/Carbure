@@ -45,7 +45,10 @@ class CategoryTest extends DatabaseTestCase
         $this->loginAs(self::USER);
         $this->assertCount(5, Category::get());
         $this->assertAdminOnly(['POST /category', 'PUT /category', 'DELETE /category', 'POST /category/keyword',
-            'DELETE /category/keyword', 'POST /category/keyword/apply', 'PUT /category/keyword', 'GET /category/keyword/count']);
+            'DELETE /category/keyword', 'POST /category/keyword/apply', 'PUT /category/keyword', 'GET /category/keyword/count',
+            'PUT /category/keyword/settings']);
+        // Read by every user: off by default
+        $this->assertSame(['keep_categorized' => false], json_decode($this->callRoute('GET', '/category/keyword/settings'), true));
 
         // Refused before the method is called: the category is still there
         try {
@@ -157,6 +160,47 @@ class CategoryTest extends DatabaseTestCase
         Db::query("UPDATE bank_transaction SET category = 4 WHERE uuid = 'u2'");
         $this->assertGreaterThanOrEqual(1, Category::applyKeywords()['updated']);
         $this->assertEquals(3, Db::queryOne("SELECT category FROM bank_transaction WHERE uuid='u2'", "")['category']);
+    }
+
+    public function testKeepCategorizedSetting()
+    {
+        $this->assertSame(['keep_categorized' => false], Category::keywordSettings());
+        // Coerced like a query string value: "false" is false, "1" is true
+        $this->assertSame(['keep_categorized' => true], Category::updateKeywordSettings('1'));
+        $this->assertSame(['keep_categorized' => true], json_decode($this->callRoute('GET', '/category/keyword/settings'), true));
+        $this->assertSame(['keep_categorized' => false], Category::updateKeywordSettings('false'));
+        $this->assertSame(['keep_categorized' => true], json_decode($this->callRoute('PUT', '/category/keyword/settings', ['keep_categorized' => 'true']), true));
+        $this->assertTrue(Category::keepCategorized());
+    }
+
+    public function testRulesKeepCategorizedTransactions()
+    {
+        Category::updateKeywordSettings(true);
+        Db::execute("INSERT INTO bank_transaction (uuid, date, rdate, type, label, category, amount, card, pointed, user) VALUES
+            ('u6', ?, ?, 7, 'CB SUPERMARCHE NOUVEAU', 0, -20.00, '', 0, 1)", "ss", $this->day(4), $this->day(4));
+        $category = fn($uuid) => (int)Db::queryOne("SELECT category FROM bank_transaction WHERE uuid=?", "s", $uuid)['category'];
+
+        // New rule: only the uncategorized "CB SUPERMARCHE NOUVEAU" (u6) takes it
+        $rule = Category::createKeyword('CB SUPER', 3);
+        $this->assertSame(1, $rule['applied']);
+        $this->assertSame([2, 2, 3], [$category('u1'), $category('u5'), $category('u6')]);
+
+        // Modified rule: the transactions categorized meanwhile stay where they are
+        $updated = Category::updateKeyword($rule['id'], 'CB SUPER', 1);
+        $this->assertSame(0, $updated['applied']);
+        $this->assertSame([2, 2, 3], [$category('u1'), $category('u5'), $category('u6')]);
+
+        // Resynchronize: a category chosen by hand (u2) is kept, the uncategorized u6 gets the
+        // first matching rule (SUPERMARCHE, created before CB SUPER)
+        Db::query("UPDATE bank_transaction SET category = 4 WHERE uuid = 'u2'");
+        Db::query("UPDATE bank_transaction SET category = 0 WHERE uuid = 'u6'");
+        $this->assertSame(['updated' => 1], Category::applyKeywords());
+        $this->assertSame([4, 2, 2], [$category('u2'), $category('u1'), $category('u6')]);
+
+        // Turned off again: the rules overwrite the categorized transactions (u2 back to EDF)
+        Category::updateKeywordSettings(false);
+        $this->assertSame(['updated' => 1], Category::applyKeywords());
+        $this->assertSame([3, 2, 2], [$category('u2'), $category('u1'), $category('u6')]);
     }
 
     public function testCreateDuplicateKeyword()

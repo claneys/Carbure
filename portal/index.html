@@ -1151,7 +1151,9 @@
                                     <p class="rules-help">{{ t('rulesHelp') }}</p>
                                 </div>
                                 <div class="panel-actions">
-                                    <button class="btn-secondary" @click="applyRules" :disabled="applyingRules" :title="t('applyRulesHelp')" :aria-label="t('applyRulesHelp')">
+                                    <button class="btn-secondary" @click="applyRules" :disabled="applyingRules"
+                                            :title="t(keepCategorized ? 'applyRulesHelpUncategorized' : 'applyRulesHelp')"
+                                            :aria-label="t(keepCategorized ? 'applyRulesHelpUncategorized' : 'applyRulesHelp')">
                                         <span class="material-icons" aria-hidden="true">auto_fix_high</span>
                                         {{ t('applyRules') }}
                                     </button>
@@ -1159,6 +1161,14 @@
                                         <span class="material-icons" aria-hidden="true">add</span>
                                     </button>
                                 </div>
+                            </div>
+                            <div class="rules-switch-row">
+                                <label class="toggle-switch" :class="{ on: keepCategorized }">
+                                    <input type="checkbox" role="switch" :checked="keepCategorized" :disabled="switchingKeepCategorized" @change="toggleKeepCategorized" />
+                                    <span class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></span>
+                                    <span class="toggle-label">{{ t('rulesKeepCategorized') }}</span>
+                                </label>
+                                <span class="rules-help">{{ t(keepCategorized ? 'rulesKeepCategorizedOnHelp' : 'rulesKeepCategorizedOffHelp') }}</span>
                             </div>
                         </section>
 
@@ -2652,7 +2662,7 @@
                                          :icon-for="categoryIcon" :color-for="categoryColor"></category-picker>
                     </div>
                     <p class="rules-help">
-                        <span class="material-icons inline-icon" aria-hidden="true">info</span>{{ t('ruleAppliesToAll') }}
+                        <span class="material-icons inline-icon" aria-hidden="true">info</span>{{ t(keepCategorized ? 'ruleAppliesToUncategorized' : 'ruleAppliesToAll') }}
                     </p>
                     <label class="setup-checkbox">
                         <input type="checkbox" v-model="newRule.notify" />

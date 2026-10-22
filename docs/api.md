@@ -760,7 +760,21 @@ Applique toutes les règles à toutes les transactions de la base, déjà catég
 comprises (la première règle trouvée dans le libellé l'emporte). Renvoie
 `{ "updated": <nombre de transactions dont la catégorie a changé> }`. Créer ou modifier une
 règle (`POST`/`PUT /category/keyword`) l'applique aussi immédiatement à tout l'historique et
-renvoie `applied`, le nombre de transactions recatégorisées.
+renvoie `applied`, le nombre de transactions recatégorisées. Avec le réglage
+`keep_categorized` (ci-dessous), ces trois routes ne touchent que les transactions non
+catégorisées.
+
+### `GET /category/keyword/settings`
+
+`{ "keep_categorized": false }` : `true` si les règles laissent intactes les transactions
+déjà catégorisées de l'historique (désactivé par défaut).
+
+### `PUT /category/keyword/settings` — administrateur
+
+`keep_categorized` (`true`/`false`) : active ou désactive le réglage, renvoie le nouvel état.
+Activé, la resynchronisation et la création ou la modification d'une règle ne catégorisent
+que les transactions sans catégorie ; les catégories choisies à la main ou importées ne
+sont jamais écrasées.
 
 ## Appareils
 

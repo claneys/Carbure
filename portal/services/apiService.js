@@ -873,11 +873,30 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
     }
 
     /**
-     * Applies the rules to the transactions without category
+     * Applies the rules to the transactions of the database (the categorized ones
+     * too, unless the rules keep them)
      * @returns {Promise<{updated: number}>}
      */
     async function applyRules() {
         return request(`${baseUrl}/category/keyword/apply`, { method: 'POST' }, 'Failed to apply rules');
+    }
+
+    /**
+     * Reads the settings of the rules
+     * @returns {Promise<{keep_categorized: boolean}>}
+     */
+    async function fetchRuleSettings() {
+        return request(`${baseUrl}/category/keyword/settings`, {}, 'Failed to read the rule settings');
+    }
+
+    /**
+     * Lets the rules recategorize the categorized transactions of the history or not (administrators)
+     * @param {boolean} keepCategorized - True to leave the categorized transactions alone
+     * @returns {Promise<{keep_categorized: boolean}>}
+     */
+    async function updateRuleSettings(keepCategorized) {
+        return request(`${baseUrl}/category/keyword/settings`,
+            { method: 'PUT', body: JSON.stringify({ keep_categorized: keepCategorized }) }, 'Failed to change the rule settings');
     }
 
     /**
@@ -1258,6 +1277,8 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
         countRule,
         deleteRule,
         applyRules,
+        fetchRuleSettings,
+        updateRuleSettings,
         fetchTrends,
         deleteDevice,
         fetchBrowsers,

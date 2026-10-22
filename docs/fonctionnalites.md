@@ -248,6 +248,10 @@ Une règle associe un **mot-clé** à une catégorie : toute transaction dont le
 - À chaque synchronisation, les règles classent les nouvelles transactions sans catégorie.
 - **Resynchroniser** applique toutes les règles à toute la base et indique le nombre de
   transactions recatégorisées.
+- **Conserver les catégories existantes** (interrupteur de l'onglet Règles, désactivé par
+  défaut) : la création ou la modification d'une règle et la resynchronisation ne
+  catégorisent plus que les transactions sans catégorie. Les catégories choisies à la main
+  ou reprises d'un import ne sont jamais écrasées.
 - **Envoyer une notification** sur une règle : chaque nouvelle transaction qui
   correspond est signalée à tout le foyer, en push ou par email selon les préférences de
   chacun (voir [Notifications](#notifications) ; une cloche marque ces règles). Utile pour

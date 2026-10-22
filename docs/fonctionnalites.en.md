@@ -248,6 +248,9 @@ A rule associates a **keyword** with a category: any transaction whose label
 - At each synchronization, the rules classify the new transactions without a category.
 - **Resynchronize** applies all the rules to the whole database and shows the number of
   recategorized transactions.
+- **Keep the existing categories** (switch of the Rules tab, off by default): creating or
+  editing a rule and resynchronizing only categorize the transactions without a category.
+  Categories chosen by hand or brought by an import are never overwritten.
 - **Send a notification** on a rule: each new matching transaction
   is reported to the whole household, by push or by email according to each person's
   preferences (see [Notifications](#notifications); a bell marks these rules). Useful for

@@ -26,7 +26,10 @@ export function createRulesModule(getApiService) {
                 ruleCount: null,
                 showRuleModal: false,
                 savingRule: false,
-                applyingRules: false
+                applyingRules: false,
+                // The rules leave the categorized transactions of the history alone
+                keepCategorized: false,
+                switchingKeepCategorized: false
             };
         },
 
@@ -84,10 +87,13 @@ export function createRulesModule(getApiService) {
 
                 this.loadingRules = true;
                 try {
-                    [this.rules, this.ruleCategories] = await Promise.all([
+                    let settings;
+                    [this.rules, this.ruleCategories, settings] = await Promise.all([
                         apiService.fetchRules(),
-                        apiService.fetchCategories()
+                        apiService.fetchCategories(),
+                        apiService.fetchRuleSettings()
                     ]);
+                    this.keepCategorized = !!settings.keep_categorized;
                 } catch (error) {
                     this.error = error.message;
                 } finally {
@@ -133,7 +139,7 @@ export function createRulesModule(getApiService) {
 
                 this.savingRule = true;
                 try {
-                    // The rule applies at once to the whole history
+                    // The rule applies at once to the history (its uncategorized transactions only if set so)
                     const saved = this.newRule.id
                         ? await getApiService().updateRule(this.newRule.id, this.newRule.keyword, this.newRule.category, this.newRule.notify)
                         : await getApiService().createRule(this.newRule.keyword, this.newRule.category, this.newRule.notify);
@@ -168,18 +174,34 @@ export function createRulesModule(getApiService) {
             },
 
             /**
-             * Applies the rules to the transactions without category
+             * Applies the rules to the transactions of the database
              * @returns {Promise<void>}
              */
             async applyRules() {
                 this.applyingRules = true;
                 try {
                     const result = await getApiService().applyRules();
-                    this.showToast(this.t('rulesApplied', { count: result.updated }));
+                    this.showToast(this.t(this.keepCategorized ? 'rulesAppliedUncategorized' : 'rulesApplied', { count: result.updated }));
                 } catch (error) {
                     this.showToast(error.message);
                 } finally {
                     this.applyingRules = false;
+                }
+            },
+
+            /**
+             * Lets the rules recategorize the categorized transactions of the history or not
+             * @returns {Promise<void>}
+             */
+            async toggleKeepCategorized() {
+                this.switchingKeepCategorized = true;
+                try {
+                    this.keepCategorized = !!(await getApiService().updateRuleSettings(!this.keepCategorized)).keep_categorized;
+                    this.showToast(this.t(this.keepCategorized ? 'rulesKeepCategorizedOn' : 'rulesKeepCategorizedOff'));
+                } catch (error) {
+                    this.showToast(error.message);
+                } finally {
+                    this.switchingKeepCategorized = false;
                 }
             }
         }

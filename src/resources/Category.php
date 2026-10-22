@@ -11,6 +11,7 @@ namespace Carbure\Resources;
 
 use Carbure\Lib\ApiRoute;
 use Carbure\Lib\Db;
+use Carbure\Lib\Setting;
 use Error;
 
 final class Category {
@@ -246,7 +247,7 @@ final class Category {
             : Db::execute("INSERT INTO bank_transaction_category_keyword (keyword, category) VALUES (?, ?)", "si", $keyword, $category);
 
         $id = $stmt->insert_id;
-        // The rule applies at once to the whole history
+        // The rule applies at once to the history (uncategorized transactions only if set so)
         $applied = self::applyRule($keyword, $category);
 
         return ['id' => $id, 'keyword' => $keyword, 'category' => $category, 'notify' => $notify, 'applied' => $applied];
@@ -326,8 +327,45 @@ final class Category {
     }
 
     /**
+     * Settings of the rules: keep_categorized = the rules (resynchronization, new or
+     * modified rule) only categorize the uncategorized transactions of the history.
+     *
+     * @return array{keep_categorized: bool} keep_categorized
+     */
+    #[ApiRoute('/category/keyword/settings', method: 'GET')]
+    public static function keywordSettings(): array
+    {
+        return ['keep_categorized' => self::keepCategorized()];
+    }
+
+    /**
+     * Change the settings of the rules (administrators).
+     *
+     * @param bool|int|string|null $keep_categorized True to leave the categorized transactions of the history alone (or "true", "1"...)
+     * @return array{keep_categorized: bool} keep_categorized
+     */
+    #[ApiRoute('/category/keyword/settings', method: 'PUT', admin: true)]
+    public static function updateKeywordSettings(bool|int|string|null $keep_categorized): array
+    {
+        Setting::set('rules_keep_categorized', filter_var($keep_categorized, FILTER_VALIDATE_BOOLEAN) ? '1' : '0');
+        return ['keep_categorized' => self::keepCategorized()];
+    }
+
+    /**
+     * Check if the rules leave the categorized transactions of the history alone
+     * (off until an administrator turns it on: the rules apply to every transaction).
+     *
+     * @return bool True if only the uncategorized transactions are categorized
+     */
+    public static function keepCategorized(): bool
+    {
+        return Setting::get('rules_keep_categorized', '0') === '1';
+    }
+
+    /**
      * Apply the rules to every transaction of the database (categorized ones
-     * included): the first rule found in a label gives its category.
+     * included, unless keep_categorized is on): the first rule found in a label
+     * gives its category.
      *
      * @return array{updated: int} The number of transactions whose category changed
      */
@@ -335,8 +373,9 @@ final class Category {
     public static function applyKeywords(): array
     {
         $keywords = self::loadKeywords();
+        $sql = "SELECT id, label, category FROM bank_transaction" . (self::keepCategorized() ? " WHERE category = 0" : "");
         $updated = 0;
-        foreach (Db::select("SELECT id, label, category FROM bank_transaction", "")->fetch_all(MYSQLI_ASSOC) as $row) {
+        foreach (Db::select($sql, "")->fetch_all(MYSQLI_ASSOC) as $row) {
             $category = self::find($row['label'], $keywords);
             if ($category !== null && (int)$category !== (int)$row['category']) {
                 Db::execute("UPDATE bank_transaction SET category = ? WHERE id = ?", "ii", $category, $row['id']);
@@ -348,7 +387,7 @@ final class Category {
 
     /**
      * Apply one rule to every transaction whose label contains its keyword
-     * (categorized ones included).
+     * (categorized ones included, unless keep_categorized is on).
      *
      * @param string $keyword  The keyword (upper case)
      * @param int    $category The category of the rule
@@ -357,8 +396,9 @@ final class Category {
     private static function applyRule(string $keyword, int $category): int
     {
         $pattern = '%' . addcslashes($keyword, '%_\\') . '%';
-        return (int)Db::execute("UPDATE bank_transaction SET category = ? WHERE label LIKE ? AND category <> ?",
-            "isi", $category, $pattern, $category)->affected_rows;
+        $sql = "UPDATE bank_transaction SET category = ? WHERE label LIKE ? AND category <> ?"
+            . (self::keepCategorized() ? " AND category = 0" : "");
+        return (int)Db::execute($sql, "isi", $category, $pattern, $category)->affected_rows;
     }
 
     /**
