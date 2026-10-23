@@ -167,6 +167,111 @@ class TrendChartTest extends DatabaseTestCase
         $this->assertEquals(200, $series[1]['planned']);
     }
 
+    public function testCategoriesRollUpTheSubCategories()
+    {
+        // Alimentation: Supermarché -80 this month, plus -20 in Alimentation itself
+        $this->addTransaction('t1', 1, -20);
+        $result = TrendChart::categories(1);
+
+        $this->assertSame([date('Y-m')], $result['months']);
+        $this->assertSame([
+            ['id' => 1, 'name' => 'Alimentation', 'icon' => 'restaurant', 'color' => 'green', 'parent_category' => 0, 'total' => 100.0, 'amounts' => [100.0]],
+            ['id' => 3, 'name' => 'Énergie', 'icon' => 'bolt', 'color' => 'yellow', 'parent_category' => 0, 'total' => 50.0, 'amounts' => [50.0]],
+        ], $result['categories']);
+
+        // A sub-category counts for its parent whatever its own type
+        Db::query("INSERT INTO bank_transaction_category (id, name, parent_category, type, icon, color) VALUES (5, 'Remboursements', 1, 'CREDIT', 'undo', 'green')");
+        $this->addTransaction('t2', 5, 15);
+        $this->assertSame([[1, 85.0], [3, 50.0]], array_map(fn($c) => [$c['id'], $c['total']], TrendChart::categories(1)['categories']));
+        // ... so it is not an income at level top, but it is at level sub
+        $this->assertSame([4], array_column(TrendChart::categories(1, 0, 'CREDIT')['categories'], 'id'));
+        $this->assertSame([[4, 2000.0], [5, 15.0]], array_map(fn($c) => [$c['id'], $c['total']], TrendChart::categories(1, 0, 'CREDIT', 'sub')['categories']));
+    }
+
+    public function testCategoriesSubLevel()
+    {
+        $this->addTransaction('t1', 1, -20);
+        $categories = TrendChart::categories(3, 0, 'DEBIT', 'sub')['categories'];
+
+        // Each category with its own transactions, the largest total first
+        $this->assertSame([2, 3, 1], array_column($categories, 'id'));
+        $this->assertSame([80.0, 50.0, 20.0], array_column($categories, 'total'));
+        $this->assertSame([1, 0, 0], array_column($categories, 'parent_category'));
+        // Empty months are kept as zero
+        $this->assertSame([0.0, 0.0, 80.0], $categories[0]['amounts']);
+    }
+
+    public function testCategoriesSigns()
+    {
+        // An expense refunded counts against the spending; equal totals sorted by name
+        $this->addTransaction('t1', 2, 30);
+        $this->assertSame([['Alimentation', 50.0], ['Énergie', 50.0]],
+            array_map(fn($c) => [$c['name'], $c['total']], TrendChart::categories(1)['categories']));
+
+        // Income: the signed sum
+        $this->assertSame([[4, 2000.0]], array_map(fn($c) => [$c['id'], $c['total']], TrendChart::categories(1, 0, 'CREDIT')['categories']));
+
+        // Off-budget: the signed sum too, the uncategorized transactions (category 0, also
+        // off-budget) left out
+        Db::query("INSERT INTO bank_transaction_category (id, name, parent_category, type, icon, color) VALUES (5, 'Virements', 0, 'HORS-BUDGET', 'sync_alt', 'grey')");
+        $this->addTransaction('t2', 5, -100);
+        $this->addTransaction('t3', 5, 40);
+        $this->assertSame([[5, -60.0, [-60.0]]],
+            array_map(fn($c) => [$c['id'], $c['total'], $c['amounts']], TrendChart::categories(1, 0, 'HORS-BUDGET', 'sub')['categories']));
+    }
+
+    public function testCategoriesWithoutAmountAreLeftOut()
+    {
+        // Transactions that cancel each other out in their month
+        $this->addTransaction('t1', 3, 50);
+        $this->assertSame([1], array_column(TrendChart::categories(1)['categories'], 'id'));
+
+        // Months without any transaction
+        $result = TrendChart::categories(2, 1);
+        $this->assertCount(2, $result['months']);
+        $this->assertSame([], $result['categories']);
+    }
+
+    public function testCategoriesBoundsAndOffset()
+    {
+        $result = TrendChart::categories(241);
+        $this->assertCount(240, $result['months']);
+        $this->assertSame(date('Y-m'), $result['months'][239]);
+        $this->assertCount(240, $result['categories'][0]['amounts']);
+        // The transaction of January 2020 is in a long period
+        $alimentation = array_combine($result['months'], $result['categories'][0]['amounts']);
+        $this->assertSame(5.0, $alimentation['2020-01']);
+        $this->assertSame(85.0, $result['categories'][0]['total']);
+        $this->assertCount(1, TrendChart::categories(0)['months']);
+
+        // An offset to January 2020
+        $this->assertSame(['months' => ['2020-01'], 'categories' => [
+            ['id' => 1, 'name' => 'Alimentation', 'icon' => 'restaurant', 'color' => 'green', 'parent_category' => 0, 'total' => 5.0, 'amounts' => [5.0]],
+        ]], TrendChart::categories(1, $this->monthsAgo('2020-01')));
+
+        // The offset is kept up to 240 months
+        $last = date('Y-m', strtotime(date('Y-m-01') . ' -240 months'));
+        $this->assertSame([$last], TrendChart::categories(1, 241)['months']);
+    }
+
+    public function testCategoriesErrors()
+    {
+        foreach (['debit', 'EXPENSE', ''] as $type) {
+            $this->assertSame(400, $this->error(fn() => TrendChart::categories(12, 0, $type)), $type);
+        }
+        foreach (['TOP', 'all', ''] as $level) {
+            $this->assertSame(400, $this->error(fn() => TrendChart::categories(12, 0, 'DEBIT', $level)), $level);
+        }
+
+        // Through the API, as a user
+        $this->loginAs(self::USER);
+        $this->assertSame(400, $this->error(fn() => $this->callRoute('GET', '/budget/trends/categories', ['level' => 'all'])));
+        $result = json_decode($this->callRoute('GET', '/budget/trends/categories', ['type' => 'DEBIT', 'level' => 'sub', 'months' => '2']), true);
+        $this->assertSame([date('Y-m', strtotime(date('Y-m-01') . ' -1 month')), date('Y-m')], $result['months']);
+        $this->assertSame([2, 3], array_column($result['categories'], 'id'));
+        $this->assertEquals([0, 80], $result['categories'][0]['amounts']);
+    }
+
     public function testSaveAndGetCharts()
     {
         $this->assertSame([], TrendChart::get());

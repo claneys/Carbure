@@ -18,6 +18,7 @@ import { createInsightsModule } from './modules/insightsModule.js';
 import { createUserModule } from './modules/userModule.js';
 import { createProfileModule } from './modules/profileModule.js';
 import { createTrendsModule } from './modules/trendsModule.js';
+import { createTrendCategoriesModule } from './modules/trendCategoriesModule.js';
 import { createRulesModule } from './modules/rulesModule.js';
 import { createSyncModule } from './modules/syncModule.js';
 import { createAccountsModule } from './modules/accountsModule.js';
@@ -96,6 +97,7 @@ const app = createApp({
         createUserModule(() => apiService),
         createProfileModule(() => apiService),
         createTrendsModule(() => apiService),
+        createTrendCategoriesModule(() => apiService),
         createRulesModule(() => apiService),
         createSyncModule(() => apiService),
         createAccountsModule(() => apiService),

@@ -3,14 +3,16 @@
  *
  * Monthly trends of the household (incomes, expenses, off-budget, planned budget
  * and savings) over a period of up to 20 years, drawn as inline SVG charts, and the
- * custom charts of the household: the monthly series of a category or of an insight.
+ * custom charts of the household: the monthly series of a category or of an insight,
+ * drawn as bars, a line or an area (kind chosen in the "By category" chart,
+ * trendCategoriesModule.js).
  *
  * @module trendsModule
  */
 
 /** Chart geometry (SVG user units) */
-const WIDTH = 960;
-const MARGIN = { top: 12, right: 12, bottom: 36, left: 68 };
+export const WIDTH = 960;
+export const MARGIN = { top: 12, right: 12, bottom: 36, left: 68 };
 const FLOWS_HEIGHT = 300;
 const SAVINGS_HEIGHT = 200;
 const RATE_HEIGHT = 200;
@@ -26,7 +28,7 @@ export const MAX_TREND_MONTHS = 240;
 export const MAX_TREND_CHARTS = 12;
 
 /** Beyond this number of months, the savings rate line has no point markers */
-const MAX_RATE_MARKERS = 60;
+export const MAX_RATE_MARKERS = 60;
 
 /** Series of the flows chart, in the fixed categorical order (validated palette) */
 const FLOW_SERIES = [
@@ -64,7 +66,7 @@ function periodStats(months) {
  * @param {number} ticks - Wanted number of intervals
  * @returns {{max: number, step: number}}
  */
-function niceScale(max, ticks = 4) {
+export function niceScale(max, ticks = 4) {
     if (max <= 0) {
         return { max: ticks, step: 1 };
     }
@@ -102,8 +104,46 @@ function barPath(x, y0, y1, width) {
  * @param {number} max - Widest bar
  * @returns {number}
  */
-function barWidthFor(group, ratio, max) {
+export function barWidthFor(group, ratio, max) {
     return Math.min(max, Math.max(Math.min(3, group * 0.8), group * ratio));
+}
+
+/**
+ * Points of a line through the middle of the slots of the months; a single month gives a
+ * flat line across its slot
+ * @param {Array<number>} values - Value of each month
+ * @param {number} group - Width of the slot of a month
+ * @param {Function} y - Vertical position of a value
+ * @returns {Array<{x: number, y: number}>}
+ */
+export function slotPoints(values, group, y) {
+    const points = values.map((value, i) => ({ x: MARGIN.left + (i + 0.5) * group, y: y(value) }));
+    return points.length === 1
+        ? [{ x: MARGIN.left, y: points[0].y }, { x: MARGIN.left + group, y: points[0].y }]
+        : points;
+}
+
+/**
+ * Points attribute of an SVG polyline
+ * @param {Array<{x: number, y: number}>} points - Points
+ * @returns {string} "x,y x,y …"
+ */
+export function pointsAttribute(points) {
+    return points.map(p => `${p.x},${p.y}`).join(' ');
+}
+
+/**
+ * SVG path of the area between an upper and a lower line of the same months
+ * @param {Array<{x: number, y: number}>} upper - Upper line, left to right
+ * @param {Array<{x: number, y: number}>} lower - Lower line, left to right
+ * @returns {string} Empty without points
+ */
+export function areaPath(upper, lower) {
+    if (!upper.length) {
+        return '';
+    }
+    const edge = points => points.map(p => `${p.x},${p.y}`).join(' L');
+    return `M${edge(upper)} L${edge([...lower].reverse())} Z`;
 }
 
 /**
@@ -426,7 +466,7 @@ export function createTrendsModule(getApiService) {
              * @returns {Array<Object>} The charts, each with its geometry (seriesChart())
              */
             trendChartViews() {
-                return this.trendCharts.map(chart => ({ ...chart, geometry: this.seriesChart(chart.series || []) }));
+                return this.trendCharts.map(chart => ({ ...chart, geometry: this.seriesChart(chart.series || [], this.trendsChartKind) }));
             }
         },
 
@@ -449,7 +489,8 @@ export function createTrendsModule(getApiService) {
                             apiService.fetchTrends(this.trendsMonths, this.trendsOffset),
                             offset ? apiService.fetchTrends(this.trendsMonths, offset) : Promise.resolve([])
                         ]),
-                        this.loadTrendCharts()
+                        this.loadTrendCharts(),
+                        this.loadTrendCategories()
                     ]);
                 } catch (error) {
                     this.error = error.message;
@@ -603,12 +644,14 @@ export function createTrendsModule(getApiService) {
             },
 
             /**
-             * Geometry of a custom chart: bars of the amount of each month (around zero),
-             * average line and dashed planned budget (segments of the months that have one)
+             * Geometry of a custom chart: the amount of each month (bars around zero, a
+             * line or an area down to zero), average line and dashed planned budget
+             * (segments of the months that have one)
              * @param {Array<{month: string, amount: number, planned: number|null}>} series - Months of the series
+             * @param {string} kind - bars (default), lines or areas
              * @returns {Object}
              */
-            seriesChart(series) {
+            seriesChart(series, kind = 'bars') {
                 const plotWidth = WIDTH - MARGIN.left - MARGIN.right;
                 const plotHeight = SERIES_HEIGHT - MARGIN.top - MARGIN.bottom;
                 const group = plotWidth / Math.max(1, series.length);
@@ -621,6 +664,7 @@ export function createTrendsModule(getApiService) {
                 const y = value => MARGIN.top + ((top - value) / (top - bottom)) * plotHeight;
                 const barWidth = barWidthFor(group, 0.6, 48);
                 const average = values.reduce((sum, value) => sum + value, 0) / Math.max(1, values.length);
+                const line = kind === 'bars' ? [] : slotPoints(values, group, y);
 
                 const ticks = [];
                 for (let value = bottom; value <= top + 1e-9; value += step) {
@@ -629,11 +673,17 @@ export function createTrendsModule(getApiService) {
                 return {
                     width: WIDTH,
                     height: SERIES_HEIGHT,
-                    bars: series.map((m, i) => ({
+                    kind,
+                    bars: kind !== 'bars' ? [] : series.map((m, i) => ({
                         key: m.month,
                         positive: values[i] >= 0,
                         d: barPath(MARGIN.left + i * group + (group - barWidth) / 2, y(0), y(values[i]), barWidth)
                     })),
+                    line: pointsAttribute(line),
+                    // Point markers of a line while they do not cover it
+                    markers: kind === 'lines' && series.length > 1 && series.length <= MAX_RATE_MARKERS
+                        ? line.map((p, i) => ({ ...p, key: series[i].month })) : [],
+                    area: kind === 'areas' ? areaPath(line, line.map(p => ({ x: p.x, y: y(0) }))) : '',
                     planned: this.plannedSegments(planned, group, y),
                     hasPlanned: planned.some(value => value !== null),
                     average,

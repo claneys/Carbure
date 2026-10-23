@@ -322,6 +322,14 @@ La catégorie d'épargne est « Épargne » (casse et accents ignorés), ou cell
 moyennes face au budget planifié) indiquent l'écart avec la période comparée. Chaque graphique
 existe aussi en tableau.
 
+La carte **Par catégorie** compare toutes les catégories d'un type (dépenses, revenus ou
+hors budget) sur un même graphique, catégories principales (sous-catégories incluses) ou
+sous-catégories : chaque catégorie se masque ou se réaffiche d'un clic sur sa pastille
+(**Tout** / **Aucun**), l'échelle s'adaptant aux catégories affichées. Le graphique se
+dessine en **lignes**, en **barres** empilées ou en **aires** empilées ; ce choix, les
+catégories masquées, le type et le niveau sont retenus par le navigateur, et le type de
+graphique s'applique aussi aux graphiques personnalisés.
+
 Les administrateurs ajoutent des **graphiques personnalisés** (12 au plus, partagés par le
 foyer) : l'évolution mois par mois d'une catégorie (avec ses sous-catégories), d'une
 sous-catégorie ou d'un insight, avec sa moyenne sur la période et, pour une catégorie, son

@@ -3,9 +3,10 @@
 /**
  * TrendChart.php
  *
- * Custom charts of the Trends tab: the monthly series of a category (with its
- * sub-categories) or of an insight, and the list of the charts shown to the household
- * (chosen by the administrators, setting trend_charts).
+ * Charts of the Trends tab: the monthly amounts of every category of a type (to compare
+ * them on one chart), the monthly series of a category (with its sub-categories) or of
+ * an insight, and the list of the custom charts shown to the household (chosen by the
+ * administrators, setting trend_charts).
  *
  * @author     Ludovic Toinel
  * @copyright  2026 Carbure App
@@ -40,6 +41,64 @@ final class TrendChart {
      * Prefix of each type in the stored list
      */
     private const PREFIXES = ['category' => 'c', 'insight' => 'i'];
+
+    /**
+     * Category types of the comparison chart: expenses, incomes, off-budget
+     */
+    public const CATEGORY_TYPES = ['DEBIT', 'CREDIT', 'HORS-BUDGET'];
+
+    /**
+     * Levels of the comparison chart: top-level categories (their sub-categories included)
+     * or each category with its own transactions
+     */
+    public const LEVELS = ['top', 'sub'];
+
+    /**
+     * Monthly amounts of the categories of a type over a period, to compare them on one
+     * chart: only the categories that have at least one month different from zero,
+     * the largest total first. Uncategorized transactions (category 0) are left out.
+     *
+     * - level top: the transactions of a sub-category count for its top-level category,
+     *   whose type is the one compared;
+     * - level sub: every category with its own transactions only.
+     *
+     * An expense category (DEBIT) gives the money spent as a positive amount, the others
+     * their signed sum.
+     *
+     * @param int|string|null $months The number of months (1 to 240)
+     * @param int|string|null $offset Number of months between the current month and the last month
+     *                                of the period (0 to 240)
+     * @param string          $type   DEBIT (default), CREDIT or HORS-BUDGET
+     * @param string          $level  top (default) or sub
+     * @return array{months: list<string>, categories: list<array<string, mixed>>} The months
+     *         (Y-m, oldest first) and the categories: id, name, icon, color, parent_category,
+     *         total and amounts (one per month)
+     * @throws Error If the type or the level is unknown (400)
+     */
+    #[ApiRoute('/budget/trends/categories', method: 'GET')]
+    public static function categories(int|string|null $months = 24, int|string|null $offset = 0, string $type = 'DEBIT', string $level = 'top'): array
+    {
+        if (!in_array($type, self::CATEGORY_TYPES, true)) {
+            throw new Error("Unknown type: expected DEBIT, CREDIT or HORS-BUDGET", 400);
+        }
+        if (!in_array($level, self::LEVELS, true)) {
+            throw new Error("Unknown level: expected top or sub", 400);
+        }
+        [$list, $from, $to] = Budget::period($months, $offset);
+
+        $rolled = self::rollUp(self::monthlySums($from, $to), self::comparedCategories($type, $level));
+        $sign = $type === 'DEBIT' ? -1 : 1;
+
+        $rows = [];
+        foreach ($rolled as ['row' => $row, 'sums' => $sums]) {
+            $amounts = array_map(fn(string $month): float => round($sign * ($sums[$month] ?? 0.0), 2) + 0.0, $list);
+            if (array_filter($amounts, fn(float $amount): bool => $amount !== 0.0) !== []) {
+                $rows[] = $row + ['total' => round(array_sum($amounts), 2) + 0.0, 'amounts' => $amounts];
+            }
+        }
+        usort($rows, fn(array $a, array $b): int => [$b['total'], $a['name']] <=> [$a['total'], $b['name']]);
+        return ['months' => $list, 'categories' => $rows];
+    }
 
     /**
      * Monthly series of a category or of an insight over a period, oldest first.
@@ -283,5 +342,86 @@ final class TrendChart {
             $series[] = ['month' => $month, 'amount' => Insight::amount((string)$insight['sql'], $number, $year) ?? 0.0, 'planned' => null];
         }
         return $series;
+    }
+
+    /**
+     * Net amount of the transactions of each category for each month of a period, in a
+     * single grouped query (uncategorized transactions left out).
+     *
+     * @param string $from First day of the period (Y-m-d)
+     * @param string $to   First day after the period (Y-m-d)
+     * @return array<int, array<string, float>> category => month (Y-m) => signed sum
+     */
+    private static function monthlySums(string $from, string $to): array
+    {
+        $sql = "SELECT category, DATE_FORMAT(date, '%Y-%m') AS month, SUM(amount) AS total FROM bank_transaction
+                WHERE category <> 0 AND date >= ? AND date < ? GROUP BY category, month";
+        $sums = [];
+        foreach (Db::select($sql, "ss", $from, $to)->fetch_all(MYSQLI_ASSOC) as $row) {
+            $sums[(int)$row['category']][(string)$row['month']] = (float)$row['total'];
+        }
+        return $sums;
+    }
+
+    /**
+     * Categories counted by the comparison chart: for each category of the household,
+     * the one its transactions count for (itself, or its top-level category at level
+     * top), kept when that one has the compared type.
+     *
+     * @param string $type  The compared type
+     * @param string $level top or sub
+     * @return array<int, array{target: int, row: array<string, mixed>}> category => the
+     *         category it counts for and the description of that one (id, name, icon,
+     *         color, parent_category)
+     */
+    private static function comparedCategories(string $type, string $level): array
+    {
+        $all = [];
+        foreach (Db::select("SELECT id, name, icon, color, type, parent_category FROM bank_transaction_category WHERE id <> 0", "")->fetch_all(MYSQLI_ASSOC) as $row) {
+            $all[(int)$row['id']] = $row;
+        }
+
+        $compared = [];
+        foreach ($all as $id => $row) {
+            $parent = (int)$row['parent_category'];
+            $target = $level === 'top' && $parent !== $id && isset($all[$parent]) ? $parent : $id;
+            if ($all[$target]['type'] === $type) {
+                $compared[$id] = ['target' => $target, 'row' => self::categoryRow($all[$target])];
+            }
+        }
+        return $compared;
+    }
+
+    /**
+     * Description of a category in the comparison chart.
+     *
+     * @param array<string, mixed> $row The category (bank_transaction_category)
+     * @return array<string, mixed> id, name, icon, color, parent_category
+     */
+    private static function categoryRow(array $row): array
+    {
+        return ['id' => (int)$row['id'], 'name' => (string)$row['name'], 'icon' => $row['icon'] ?? null,
+            'color' => $row['color'] ?? null, 'parent_category' => (int)$row['parent_category']];
+    }
+
+    /**
+     * Adds up the monthly sums of the categories into the categories they count for.
+     *
+     * @param array<int, array<string, float>>                          $sums       category => month => sum
+     * @param array<int, array{target: int, row: array<string, mixed>}> $categories Result of comparedCategories()
+     * @return array<int, array{row: array<string, mixed>, sums: array<string, float>}> counted
+     *         category => its description and its sums (month => sum)
+     */
+    private static function rollUp(array $sums, array $categories): array
+    {
+        $rolled = [];
+        foreach (array_intersect_key($sums, $categories) as $id => $byMonth) {
+            $target = $categories[$id]['target'];
+            $rolled[$target] ??= ['row' => $categories[$id]['row'], 'sums' => []];
+            foreach ($byMonth as $month => $sum) {
+                $rolled[$target]['sums'][$month] = ($rolled[$target]['sums'][$month] ?? 0.0) + $sum;
+            }
+        }
+        return $rolled;
     }
 }

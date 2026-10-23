@@ -565,6 +565,25 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
     }
 
     /**
+     * Fetches the monthly amounts of the categories of a type, to compare them on one chart
+     * @param {string} type - 'DEBIT', 'CREDIT' or 'HORS-BUDGET'
+     * @param {string} level - 'top' (sub-categories counted in their parent) or 'sub'
+     * @param {number} months - Number of months
+     * @param {number} offset - Months between the current month and the end of the period
+     * @returns {Promise<{months: Array<string>, categories: Array<Object>}>} The months (oldest
+     *          first) and the categories {id, name, icon, color, parent_category, total, amounts}
+     * @throws {Error} If request fails
+     */
+    async function fetchTrendCategories(type = 'DEBIT', level = 'top', months = 12, offset = 0) {
+        const params = new URLSearchParams({ type, level, months: String(months), offset: String(offset) });
+        const data = await request(`${baseUrl}/budget/trends/categories?${params}`, {}, 'Failed to fetch the categories');
+        return {
+            months: Array.isArray(data?.months) ? data.months : [],
+            categories: Array.isArray(data?.categories) ? data.categories : []
+        };
+    }
+
+    /**
      * Fetches the custom charts of the Trends tab
      * @returns {Promise<Array>} Array of {type, id, name, icon, color}
      * @throws {Error} If request fails
@@ -1296,6 +1315,7 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
         applyRules,
         fetchTrends,
         fetchTrendSeries,
+        fetchTrendCategories,
         fetchTrendCharts,
         saveTrendCharts,
         deleteDevice,

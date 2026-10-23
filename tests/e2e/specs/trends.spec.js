@@ -111,3 +111,67 @@ test('the custom charts are shown to the members, without the administration but
     await expect(page.getByRole('button', { name: tr('trendChartAdd') })).toHaveCount(0);
     await expect(page.getByRole('button', { name: `${tr('trendChartRemove')} Alimentation` })).toHaveCount(0);
 });
+
+test('compares the categories on one chart, as bars, lines or areas', async ({ userPage: page }) => {
+    await openTab(page, tr('tabTrends'));
+    const card = page.locator('.trend-categories-card');
+    await expect(card.getByRole('heading', { name: tr('trendCategoriesTitle') })).toBeVisible();
+    // Expenses of the top-level categories, largest first: rent 3 months, food 2 months
+    const chips = card.getByRole('list', { name: tr('trendCategoriesLegend') }).getByRole('button');
+    await expect(chips).toHaveText(['Logement', 'Alimentation']);
+    await expect(card.getByRole('button', { name: tr('trendsKindBars') })).toHaveAttribute('aria-pressed', 'true');
+    await expect(card.locator('.category-bar')).toHaveCount(5);
+
+    await card.getByRole('button', { name: tr('trendsKindLines') }).click();
+    await expect(card.getByRole('button', { name: tr('trendsKindLines') })).toHaveAttribute('aria-pressed', 'true');
+    await expect(card.getByRole('button', { name: tr('trendsKindBars') })).toHaveAttribute('aria-pressed', 'false');
+    await expect(card.locator('.category-line')).toHaveCount(2);
+    await expect(card.locator('.category-bar')).toHaveCount(0);
+
+    await card.getByRole('button', { name: tr('trendsKindAreas') }).click();
+    await expect(card.locator('.category-area')).toHaveCount(2);
+    await expect(card.locator('.category-line')).toHaveCount(0);
+
+    // The tooltip of the current month: largest amount first, then the total
+    await card.locator('.hit').last().hover();
+    const tooltip = card.locator('.trends-tooltip');
+    await expect(tooltip.locator('div').first()).toContainText('Logement');
+    await expect(tooltip.locator('.total')).toContainText(euros(1077.40));
+
+    // Sub-categories and income
+    await card.getByRole('combobox', { name: tr('trendCategoriesLevel') }).selectOption('sub');
+    await expect(chips).toHaveText(['Logement', 'Supermarché', 'Restaurant']);
+    await card.getByRole('combobox', { name: tr('trendCategoriesType') }).selectOption('CREDIT');
+    await expect(chips).toHaveText(['Salaire']);
+});
+
+test('filters the categories of the chart, the choices are kept', async ({ userPage: page, api }) => {
+    await api.put('/api/budget/trends/charts', { data: { charts: [{ type: 'category', id: 1 }] } });
+    await openTab(page, tr('tabTrends'));
+    const card = page.locator('.trend-categories-card');
+    const rent = card.getByRole('button', { name: 'Logement' });
+
+    await rent.click();
+    await expect(rent).toHaveAttribute('aria-pressed', 'false');
+    // Alimentation only: this month and the previous one
+    await expect(card.locator('.category-bar')).toHaveCount(2);
+
+    await card.getByRole('button', { name: tr('trendCategoriesNone') }).click();
+    await expect(card.getByText(tr('trendCategoriesNoneShown'))).toBeVisible();
+    await expect(card.getByRole('img', { name: tr('trendCategoriesTitle') })).toHaveCount(0);
+    await expect(card.getByRole('button', { name: tr('trendCategoriesNone') })).toBeDisabled();
+
+    await card.getByRole('button', { name: tr('trendCategoriesAll') }).click();
+    await expect(card.locator('.category-bar')).toHaveCount(5);
+    await rent.click();
+    await card.getByRole('button', { name: tr('trendsKindLines') }).click();
+    // The kind applies to the custom charts too
+    await expect(page.locator('.trend-custom-chart .series-line')).toHaveCount(1);
+    await expect(page.locator('.trend-custom-chart .series-bar')).toHaveCount(0);
+
+    await page.reload();
+    await openTab(page, tr('tabTrends'));
+    await expect(card.getByRole('button', { name: tr('trendsKindLines') })).toHaveAttribute('aria-pressed', 'true');
+    await expect(rent).toHaveAttribute('aria-pressed', 'false');
+    await expect(card.locator('.category-line')).toHaveCount(1);
+});

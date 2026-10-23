@@ -102,6 +102,7 @@ class ApiResolverTest extends TestCase
         'GET /budget/insights' => 'user',
         'GET /budget/insights/history' => 'user',
         'GET /budget/trends' => 'user',
+        'GET /budget/trends/categories' => 'user',
         'GET /budget/trends/charts' => 'user',
         'GET /budget/trends/series' => 'user',
         'GET /category' => 'user',

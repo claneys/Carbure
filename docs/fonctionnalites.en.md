@@ -322,6 +322,13 @@ The savings category is "Épargne" (case and accents ignored), or the one set in
 spending compared with the planned budget) show the difference from the compared period. Each chart
 is also available as a table.
 
+The **By category** card compares every category of a type (expenses, income or
+off-budget) on one chart, main categories (subcategories included) or subcategories: a
+click on the chip of a category hides or shows it again (**All** / **None**), the scale
+fitting the categories shown. The chart is drawn as **lines**, stacked **bars** or stacked
+**areas**; this choice, the hidden categories, the type and the level are remembered by the
+browser, and the kind of chart also applies to the custom charts.
+
 Administrators add **custom charts** (12 at most, shared by the household): the month by month
 trend of a category (with its subcategories), of a subcategory or of an insight, with its
 average over the period and, for a category, its planned budget.

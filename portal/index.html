@@ -1121,6 +1121,72 @@
                             </div>
                         </section>
 
+                        <!-- Categories of a type compared on one chart -->
+                        <section class="trends-card trend-categories-card">
+                            <div class="trends-chart-head">
+                                <h2 class="card-title">{{ t('trendCategoriesTitle') }}</h2>
+                                <div class="trends-controls">
+                                    <label class="trends-compare">
+                                        <select :value="trendCategoryType" @change="setTrendCategoryType($event.target.value)" :aria-label="t('trendCategoriesType')">
+                                            <option v-for="option in trendCategoryTypes" :key="option.value" :value="option.value">{{ t(option.label) }}</option>
+                                        </select>
+                                    </label>
+                                    <label class="trends-compare">
+                                        <select :value="trendCategoryLevel" @change="setTrendCategoryLevel($event.target.value)" :aria-label="t('trendCategoriesLevel')">
+                                            <option value="top">{{ t('trendCategoriesTop') }}</option>
+                                            <option value="sub">{{ t('trendCategoriesSub') }}</option>
+                                        </select>
+                                    </label>
+                                    <div class="trends-period trend-chart-kinds" role="group" :aria-label="t('trendsChartKind')">
+                                        <button v-for="kind in trendChartKinds" :key="kind.key" :class="{ active: trendsChartKind === kind.key }"
+                                                :aria-pressed="trendsChartKind === kind.key ? 'true' : 'false'" @click="setTrendsChartKind(kind.key)">
+                                            <span class="material-icons" aria-hidden="true">{{ kind.icon }}</span>{{ t(kind.label) }}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div v-if="trendCategoryItems.length" class="trend-category-filter">
+                                <ul class="trend-category-chips" :aria-label="t('trendCategoriesLegend')">
+                                    <li v-for="category in trendCategoryItems" :key="category.id">
+                                        <button class="trend-category-chip" :class="{ off: !category.visible }" :aria-pressed="category.visible ? 'true' : 'false'"
+                                                @click="toggleTrendCategory(category.id)">
+                                            <span class="swatch" :style="{ background: category.visible ? category.color : 'transparent', borderColor: category.color }"></span>{{ category.name }}
+                                        </button>
+                                    </li>
+                                </ul>
+                                <div class="trend-category-actions">
+                                    <button class="btn-secondary" @click="showAllTrendCategories" :disabled="trendCategoryVisible.length === trendCategoryItems.length">{{ t('trendCategoriesAll') }}</button>
+                                    <button class="btn-secondary" @click="hideAllTrendCategories" :disabled="!trendCategoryVisible.length">{{ t('trendCategoriesNone') }}</button>
+                                </div>
+                            </div>
+                            <p v-if="!trendCategoryItems.length" class="trends-empty">{{ loadingTrendCategories ? t('loadingTrends') : t('trendCategoriesEmpty') }}</p>
+                            <p v-else-if="!trendCategoryVisible.length" class="trends-empty">{{ t('trendCategoriesNoneShown') }}</p>
+                            <div v-else class="trends-chart" @mouseleave="trendCategoryHover = null">
+                                <svg viewBox="0 0 960 300" preserveAspectRatio="xMidYMid meet" role="img" :aria-label="t('trendCategoriesTitle')">
+                                    <g class="grid">
+                                        <template v-for="tick in trendCategoryChart.ticks" :key="tick.value">
+                                            <line :x1="68" :x2="trendCategoryChart.width - 12" :y1="tick.y" :y2="tick.y" />
+                                            <text x="60" :y="tick.y + 4" text-anchor="end">{{ tick.label }}</text>
+                                        </template>
+                                    </g>
+                                    <rect v-if="trendCategoryHover !== null" class="hover-band" :x="trendCategoryChart.columns[trendCategoryHover].x" :y="trendCategoryChart.columns[trendCategoryHover].y"
+                                          :width="trendCategoryChart.columns[trendCategoryHover].width" :height="trendCategoryChart.columns[trendCategoryHover].height" />
+                                    <path v-for="area in trendCategoryChart.areas" :key="area.key" class="category-area" :d="area.d" :fill="area.color" :stroke="area.color" />
+                                    <path v-for="bar in trendCategoryChart.bars" :key="bar.key" class="category-bar" :d="bar.d" :fill="bar.color" />
+                                    <line class="zero-line" x1="68" :x2="trendCategoryChart.width - 12" :y1="trendCategoryChart.zero" :y2="trendCategoryChart.zero" />
+                                    <polyline v-for="line in trendCategoryChart.lines" :key="line.key" class="category-line" :points="line.points" :stroke="line.color" />
+                                    <text v-for="label in trendCategoryChart.labels" :key="label.key" class="axis-label" :x="label.x" :y="label.y" text-anchor="middle">{{ label.text }}</text>
+                                    <rect v-for="col in trendCategoryChart.columns" :key="col.key" class="hit" :x="col.x" :y="col.y" :width="col.width" :height="col.height"
+                                          @mouseenter="trendCategoryHover = col.index" />
+                                </svg>
+                                <div v-if="trendCategoryHoverMonth" class="trends-tooltip" :style="{ left: trendCategoryHoverLeft + '%' }">
+                                    <strong>{{ formatMonth(trendCategoryHoverMonth.month) }}</strong>
+                                    <div v-for="row in trendCategoryHoverMonth.rows" :key="row.id"><span class="swatch" :style="{ background: row.color }"></span>{{ row.name }}<span>{{ formatAmount(row.amount) }} {{ currencySymbol }}</span></div>
+                                    <div class="total">{{ t('trendCategoriesTotal') }}<span>{{ formatAmount(trendCategoryHoverMonth.total) }} {{ currencySymbol }}</span></div>
+                                </div>
+                            </div>
+                        </section>
+
                         <!-- Custom charts: a category or an insight month by month -->
                         <section v-for="chart in trendChartViews" :key="chart.key" class="trends-card trend-custom-chart" :data-chart="chart.key">
                             <div class="trends-chart-head">
@@ -1161,6 +1227,9 @@
                                           :width="chart.geometry.columns[trendChartHover.index].width" :height="chart.geometry.columns[trendChartHover.index].height" />
                                     <line class="zero-line" x1="68" :x2="chart.geometry.width - 12" :y1="chart.geometry.zero" :y2="chart.geometry.zero" />
                                     <path v-for="bar in chart.geometry.bars" :key="bar.key" class="series-bar" :d="bar.d" :fill="bar.positive ? '#2a78d6' : '#e34948'" />
+                                    <path v-if="chart.geometry.area" class="series-area" :d="chart.geometry.area" />
+                                    <polyline v-if="chart.geometry.line" class="series-line" :points="chart.geometry.line" />
+                                    <circle v-for="p in chart.geometry.markers" :key="p.key" class="series-point" :cx="p.x" :cy="p.y" r="3.5" />
                                     <line class="average-line" x1="68" :x2="chart.geometry.width - 12" :y1="chart.geometry.averageY" :y2="chart.geometry.averageY" />
                                     <polyline v-for="(points, i) in chart.geometry.planned" :key="i" class="planned-line" :points="points" />
                                     <text v-for="label in chart.geometry.labels" :key="label.key" class="axis-label" :x="label.x" :y="label.y" text-anchor="middle">{{ label.text }}</text>

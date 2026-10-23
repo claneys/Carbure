@@ -702,6 +702,41 @@ curl "https://exemple.fr/api/budget/trends/series?type=category&id=1&months=36" 
 [{ "month": "2026-09", "amount": 412.5, "planned": 450 }, { "month": "2026-10", "amount": 127.4, "planned": null }]
 ```
 
+### `GET /budget/trends/categories`
+
+Évolution mensuelle de toutes les catégories d'un type, pour les comparer sur un même
+graphique (carte « Par catégorie » de l'onglet Tendances).
+
+| Paramètre | Requis | Description |
+|---|---|---|
+| `type` | non | `DEBIT` (défaut), `CREDIT` ou `HORS-BUDGET` |
+| `level` | non | `top` (défaut) : catégories de premier niveau, sous-catégories comptées dans leur parent (le type est celui du parent) ; `sub` : chaque catégorie séparément |
+| `months` | non | Nombre de mois (1 à 240, défaut 24) |
+| `offset` | non | Nombre de mois entre le mois courant et le dernier mois de la période (0 à 240, défaut 0) |
+
+Renvoie `months` (les mois `AAAA-MM` de la période, du plus ancien au plus récent) et
+`categories` : `id`, `name`, `icon`, `color`, `parent_category`, `total` de la période et
+`amounts` (un montant par mois de `months`, mois vides à `0`). Les montants sont positifs
+pour les dépenses d'une catégorie `DEBIT` (un remboursement les diminue), bruts pour les
+autres types. Seules les catégories ayant un montant sur la période sont renvoyées, de la
+plus grosse à la plus petite ; la catégorie `0` (non catégorisé) est exclue.
+
+`400` pour un type ou un niveau inconnu.
+
+```bash
+curl "https://exemple.fr/api/budget/trends/categories?type=DEBIT&level=top&months=3" -H "Authorization: Bearer $TOKEN"
+```
+
+```json
+{
+  "months": ["2026-08", "2026-09", "2026-10"],
+  "categories": [
+    { "id": 4, "name": "Logement", "icon": "home", "color": "blue", "parent_category": 0, "total": 2850, "amounts": [950, 950, 950] },
+    { "id": 1, "name": "Alimentation", "icon": "restaurant", "color": "green", "parent_category": 0, "total": 247.4, "amounts": [0, 120, 127.4] }
+  ]
+}
+```
+
 ### `GET /budget/trends/charts`
 
 Graphiques personnalisés de l'onglet Tendances, partagés par le foyer, dans l'ordre

@@ -51,6 +51,21 @@ test('every tab is readable, buttons on hover included', async ({ adminPage: pag
     expect(problems).toEqual([]);
 });
 
+test('the chart of the categories is readable: kinds, chips shown and hidden, hint', async ({ userPage: page }) => {
+    const problems = [];
+    await openTab(page, tr('tabTrends'));
+    const card = page.locator('.trend-categories-card');
+    await card.getByRole('button', { name: tr('trendsKindLines') }).click();
+    await card.getByRole('button', { name: 'Logement' }).click();
+    await expect(card.getByRole('button', { name: 'Logement' })).toHaveAttribute('aria-pressed', 'false');
+    problems.push(...await contrastProblems(page, `${tr('trendCategoriesTitle')} (filtered)`));
+
+    await card.getByRole('button', { name: tr('trendCategoriesNone') }).click();
+    await expect(card.getByText(tr('trendCategoriesNoneShown'))).toBeVisible();
+    problems.push(...await contrastProblems(page, `${tr('trendCategoriesTitle')} (none)`));
+    expect(problems).toEqual([]);
+});
+
 test('the import of a backup is readable: its files, an invalid one, the confirmation', async ({ adminPage: page }) => {
     const problems = [];
     await page.locator('.tabs').getByRole('button', { name: tr('tabAdministration'), exact: true }).click();

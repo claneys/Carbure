@@ -700,6 +700,41 @@ curl "https://exemple.fr/api/budget/trends/series?type=category&id=1&months=36" 
 [{ "month": "2026-09", "amount": 412.5, "planned": 450 }, { "month": "2026-10", "amount": 127.4, "planned": null }]
 ```
 
+### `GET /budget/trends/categories` { #get-budgettrendscategories }
+
+Monthly trend of every category of a type, to compare them on one chart ("By category"
+card of the Trends tab).
+
+| Parameter | Required | Description |
+|---|---|---|
+| `type` | no | `DEBIT` (default), `CREDIT` or `HORS-BUDGET` |
+| `level` | no | `top` (default): top-level categories, subcategories counted in their parent (the type is the one of the parent); `sub`: every category on its own |
+| `months` | no | Number of months (1 to 240, default 24) |
+| `offset` | no | Number of months between the current month and the last month of the period (0 to 240, default 0) |
+
+Returns `months` (the `YYYY-MM` months of the period, oldest to newest) and `categories`:
+`id`, `name`, `icon`, `color`, `parent_category`, `total` of the period and `amounts` (one
+amount per month of `months`, empty months at `0`). The amounts are positive for spending
+in a `DEBIT` category (a refund lowers them), raw for the other types. Only the categories
+with an amount in the period are returned, largest first; category `0` (uncategorized) is
+left out.
+
+`400` for an unknown type or level.
+
+```bash
+curl "https://exemple.fr/api/budget/trends/categories?type=DEBIT&level=top&months=3" -H "Authorization: Bearer $TOKEN"
+```
+
+```json
+{
+  "months": ["2026-08", "2026-09", "2026-10"],
+  "categories": [
+    { "id": 4, "name": "Logement", "icon": "home", "color": "blue", "parent_category": 0, "total": 2850, "amounts": [950, 950, 950] },
+    { "id": 1, "name": "Alimentation", "icon": "restaurant", "color": "green", "parent_category": 0, "total": 247.4, "amounts": [0, 120, 127.4] }
+  ]
+}
+```
+
 ### `GET /budget/trends/charts` { #get-budgettrendscharts }
 
 Custom charts of the Trends tab, shared by the household, in display order: `type`, `id`,

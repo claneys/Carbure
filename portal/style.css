@@ -3438,6 +3438,119 @@ button .material-icons {
     stroke-width: 2;
 }
 
+/* "By category" chart: kinds of chart, toggle chips of the categories, series */
+.trend-chart-kinds button {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.trend-chart-kinds .material-icons {
+    font-size: 18px;
+}
+
+.trend-category-filter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px 16px;
+    margin-bottom: 8px;
+}
+
+.trend-category-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.trend-category-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border: 1px solid var(--divider);
+    border-radius: 16px;
+    background: var(--surface);
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: normal;
+    box-shadow: none;
+}
+
+.trend-category-chip:hover {
+    background: var(--hover-surface);
+    box-shadow: none;
+    transform: none;
+}
+
+/* A hidden category: hollow swatch and struck-through name, still readable */
+.trend-category-chip.off {
+    color: var(--text-secondary);
+    text-decoration: line-through;
+}
+
+/* The secondary text is too light on the hover surface */
+.trend-category-chip.off:hover {
+    color: var(--text-primary);
+}
+
+.trend-category-chip .swatch {
+    width: 12px;
+    height: 12px;
+    border: 2px solid;
+    box-sizing: border-box;
+}
+
+.trend-category-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.trend-category-actions button {
+    padding: 4px 12px;
+    font-size: 13px;
+}
+
+.trends-empty {
+    padding: 32px 0;
+    text-align: center;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.trends-chart .category-line,
+.trends-chart .series-line {
+    fill: none;
+    stroke-width: 2;
+    stroke-linejoin: round;
+}
+
+.trends-chart .series-line {
+    stroke: #2a78d6;
+}
+
+.trends-chart .category-area {
+    fill-opacity: 0.85;
+    stroke-width: 1;
+}
+
+.trends-chart .series-area {
+    fill: #2a78d6;
+    fill-opacity: 0.25;
+}
+
+.trends-chart .series-point {
+    fill: #2a78d6;
+    stroke: var(--surface);
+    stroke-width: 2;
+}
+
 /* Category column of the transactions (same width on every row) */
 .transaction-category {
     width: 190px;

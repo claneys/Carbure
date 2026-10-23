@@ -221,8 +221,15 @@ Sample queries are in [Insight recipes](insights.md).
   sub-categories, minus withdrawals (blue bars, red for a month of net withdrawal).
   The category name is set with `savings_category` (case and accents ignored). The
   savings rate is `savings / income`.
+- **By category**: every category of a type (Expenses, Income, Off-budget selector) on
+  one chart, main categories (subcategories included) or subcategories. One chip per
+  category, largest first, hides or shows it again; **All** and **None** show or hide them
+  all. **Lines**, **Bars** (stacked) and **Areas** (stacked) buttons; the scale covers the
+  categories shown, the tooltip gives the amount of each and their total. These choices are
+  remembered by the browser.
 - **Custom charts**: one chart per chosen category (subcategories included), subcategory
-  or insight, as monthly bars with the average of the period, the planned budget
+  or insight, as monthly bars, lines or areas (the choice of the By category card) with the
+  average of the period, the planned budget
   (categories) and a tooltip on hover. Administrators add them (**Add a chart**, 12 at
   most), move and remove them; the list is shared by the household.
 - **Table** view of the data month by month.

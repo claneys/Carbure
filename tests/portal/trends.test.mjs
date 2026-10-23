@@ -6,6 +6,7 @@ import {
     createTrendsModule, rangeToPeriod, periodToRange, labelStep, monthIndex, monthKey, trendChartKey,
     TREND_PERIODS, MAX_TREND_MONTHS
 } from '../../portal/modules/trendsModule.js';
+import { createTrendCategoriesModule } from '../../portal/modules/trendCategoriesModule.js';
 import { createApiService } from '../../portal/services/apiService.js';
 
 const BASE = 'https://carbure.example.com/api';
@@ -18,15 +19,20 @@ function months(count) {
 }
 
 /**
- * `this` of the portal for the trends methods
+ * `this` of the portal for the trends methods (the "By category" chart included, with no
+ * category unless the fake API gives some)
  * @param {Object} api - Fake API service
  */
 function context(api = {}) {
-    const module = createTrendsModule(() => api);
+    const fake = { fetchTrendCategories: async () => ({ months: [], categories: [] }), ...api };
+    const module = createTrendsModule(() => fake);
+    const categories = createTrendCategoriesModule(() => fake, () => null);
     const toasts = [];
     const self = {
         ...module.data(),
+        ...categories.data(),
         ...module.methods,
+        ...categories.methods,
         intlLocale: 'fr-FR',
         toasts,
         showToast: message => toasts.push(message),
@@ -115,6 +121,56 @@ test('a custom chart has a bar per month, the average and the planned budget of 
 
     const empty = self.seriesChart([]);
     assert.deepEqual([empty.bars, empty.planned, empty.hasPlanned, empty.average], [[], [], false, 0]);
+});
+
+test('a custom chart is drawn as a line or an area through the middle of the months', () => {
+    const self = context();
+    const series = [
+        { month: '2026-08', amount: 100, planned: null },
+        { month: '2026-09', amount: -20, planned: 150 },
+        { month: '2026-10', amount: 160, planned: 150 },
+    ];
+    const bars = self.seriesChart(series);
+    assert.deepEqual([bars.kind, bars.line, bars.area, bars.markers], ['bars', '', '', []]);
+
+    const lines = self.seriesChart(series, 'lines');
+    assert.deepEqual(lines.bars, []);
+    assert.equal(lines.area, '');
+    const points = lines.line.split(' ').map(point => point.split(',').map(Number));
+    const group = (960 - 68 - 12) / 3;
+    assert.deepEqual(points.map(([x]) => x), [68 + group / 2, 68 + 1.5 * group, 68 + 2.5 * group]);
+    // A negative month goes below zero, the highest month is the highest point
+    assert.ok(points[1][1] > lines.zero);
+    assert.ok(points[2][1] < points[0][1]);
+    assert.deepEqual(lines.markers.map(marker => marker.key), ['2026-08', '2026-09', '2026-10']);
+    // The kind does not change the scale, the average nor the planned budget
+    assert.deepEqual([lines.ticks, lines.average, lines.planned], [bars.ticks, bars.average, bars.planned]);
+
+    const areas = self.seriesChart(series, 'areas');
+    assert.deepEqual([areas.bars, areas.markers], [[], []]);
+    assert.equal(areas.line, lines.line);
+    // Closed on the zero line, right to left
+    assert.match(areas.area, new RegExp(`^M${points[0][0]},${points[0][1]} L.* L${points[0][0]},${areas.zero} Z$`));
+
+    // A single month: a flat line across its slot, without marker
+    const single = self.seriesChart([series[0]], 'lines');
+    assert.match(single.line, /^68,([\d.]+) 948,\1$/);
+    assert.deepEqual(single.markers, []);
+    // Beyond 60 months, no marker: they would cover the line
+    const long = months(61).map(month => ({ ...month, amount: 1, planned: null }));
+    assert.equal(self.seriesChart(long, 'lines').markers.length, 0);
+    assert.equal(self.seriesChart(long.slice(1), 'lines').markers.length, 60);
+    assert.equal(self.seriesChart([], 'areas').area, '');
+});
+
+test('the kind of chart chosen applies to every custom chart', () => {
+    const self = context();
+    self.trendCharts = [{ key: 'category-1', series: [{ month: '2026-10', amount: 5, planned: null }] }, { key: 'search-x' }];
+    const views = () => createTrendsModule(() => ({})).computed.trendChartViews.call(self);
+    assert.deepEqual(views().map(view => view.geometry.kind), ['bars', 'bars']);
+    self.trendsChartKind = 'areas';
+    assert.deepEqual(views().map(view => view.geometry.kind), ['areas', 'areas']);
+    assert.notEqual(views()[0].geometry.area, '');
 });
 
 test('a planned budget of a single month is a flat line over its slot', () => {
