@@ -11,7 +11,7 @@
 <p align="center">
   <strong>Take back control of your budget.</strong><br>
   Bank accounts synced automatically, expenses categorized, budgets tracked day by day —<br>
-  on the web, on iPhone and soon on Android. Self-hosted, free and open source.
+  on the web, on iPhone and on Android. Self-hosted, free and open source.
 </p>
 
 <p align="center">
@@ -20,6 +20,12 @@
 
 <p align="center">
   <a href="https://demo.carbure.org/"><strong>▶ Try the online demo</strong></a> (log in as <code>demo</code> / <code>carbure</code>)
+</p>
+
+<p align="center">
+  <a href="https://apps.apple.com/fr/app/carbure/id6824057363"><img src="https://img.shields.io/badge/App_Store-iPhone-000000?style=for-the-badge&logo=apple&logoColor=white" alt="Download on the App Store (iPhone)"></a>
+  <a href="https://play.google.com/store/apps/details?id=org.carbure.app"><img src="https://img.shields.io/badge/Google_Play-Android-01875F?style=for-the-badge&logo=googleplay&logoColor=white" alt="Get it on Google Play (Android)"></a><br>
+  <sub>📱 Free mobile apps, no ads nor data collection, connected to <strong>your</strong> server</sub>
 </p>
 
 <p align="center">
@@ -100,12 +106,20 @@
 > cover French banks. The portal is available in French, English, Spanish,
 > Italian, German and Portuguese; amounts are in euros.
 
-> 📱 **Mobile apps**: the Carbure apps for **iPhone** and **Android** will soon be available on
-> the App Store and Google Play: transactions, check-off, budgets, insights, trends, sync,
-> Face ID or fingerprint login and push notifications
-> ([features](https://carbure.org/en/applications-mobiles/)). Meanwhile, the web portal
-> installs as an app on a computer or a phone
+> 📱 **Mobile apps**: the Carbure apps are available on the
+> [**App Store**](https://apps.apple.com/fr/app/carbure/id6824057363) (iPhone, iOS 26 or later) and on
+> [**Google Play**](https://play.google.com/store/apps/details?id=org.carbure.app) (Android 8.0 or later):
+> transactions, check-off, budgets, insights, trends, sync, Face ID or fingerprint login and
+> push notifications ([features](https://carbure.org/en/applications-mobiles/)).
+> Free, no ads nor subscription, no data collected; available in France for now. They connect
+> to **your** Carbure server. The web portal also installs as an app on a computer or a phone
 > (Chrome/Edge "Install", Safari "Add to Dock" or "Add to Home Screen"), over HTTPS.
+
+<p align="center">
+  <img src="docs/assets/mobile/ios-transactions.png" alt="Transactions of the month in the iPhone app" width="220">
+  <img src="docs/assets/mobile/android-budgets.png" alt="Budgets of the month in the Android app" width="220">
+  <img src="docs/assets/mobile/ios-tendances.png" alt="Trends over 24 months in the iPhone app" width="220">
+</p>
 
 ## How does it compare?
 

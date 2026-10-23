@@ -16,12 +16,6 @@ service, except push notifications (see [below](#notifications-push)).
 ![Trends over 24 months in the iPhone app](assets/mobile/ios-tendances.png){ loading=lazy }
 { .mobile-screens }
 
-!!! info "Availability"
-    The apps will soon be available on the **App Store** and on **Google Play**. In the
-    meantime, the web portal
-    [can be installed as an app](portail.md#installer-le-portail-comme-une-application)
-    on your phone.
-
 The apps are made for **day-to-day tracking**: viewing, checking, categorizing, adjusting
 a budget, starting a sync. Administration (bank accounts, rules, categories, insights,
 users, settings) and statement import remain in the [web portal](portail.md).
@@ -33,6 +27,23 @@ users, settings) and statement import remain in the [web portal](portail.md).
 | Passwordless login | Face ID / Touch ID | fingerprint or face (strong biometrics) |
 | Push notifications | Apple (APNs) | Google (Firebase Cloud Messaging) |
 | Theme | system, light or dark | system, light or dark |
+
+## Download { #telecharger }
+
+[App Store (iPhone)](https://apps.apple.com/fr/app/carbure/id6824057363){ .md-button .md-button--primary }
+[Google Play (Android)](https://play.google.com/store/apps/details?id=org.carbure.app){ .md-button .md-button--primary }
+
+- **Free**, no ads nor subscription; **no data collected** (see
+  [Privacy](confidentialite.md)).
+- Available **in France** for now.
+- **Requirement**: a Carbure server [installed](installation.md) and reachable from the
+  phone, or the [online demo](https://demo.carbure.org/) to try it.
+- The web portal [can also be installed as an app](portail.md#installer-le-portail-comme-une-application)
+  on your phone.
+
+A rating or a review on the stores helps the project a lot. For help, join the
+[Discord](https://discord.gg/QsxYw4Rx9D); for a bug, open an
+[issue on GitHub](https://github.com/ltoinel/Carbure/issues).
 
 ## Login { #connexion }
 

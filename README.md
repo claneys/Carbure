@@ -11,7 +11,7 @@
 <p align="center">
   <strong>Reprenez le contrôle de votre budget.</strong><br>
   Vos comptes bancaires synchronisés automatiquement, vos dépenses catégorisées,<br>
-  vos budgets suivis au jour le jour — sur le web, sur iPhone et bientôt sur Android. Hébergé chez vous, gratuit et open source.
+  vos budgets suivis au jour le jour — sur le web, sur iPhone et sur Android. Hébergé chez vous, gratuit et open source.
 </p>
 
 <p align="center">
@@ -20,6 +20,12 @@
 
 <p align="center">
   <a href="https://demo.carbure.org/"><strong>▶ Essayer la démo en ligne</strong></a> (compte <code>demo</code> / <code>carbure</code>)
+</p>
+
+<p align="center">
+  <a href="https://apps.apple.com/fr/app/carbure/id6824057363"><img src="https://img.shields.io/badge/App_Store-iPhone-000000?style=for-the-badge&logo=apple&logoColor=white" alt="Télécharger sur l'App Store (iPhone)"></a>
+  <a href="https://play.google.com/store/apps/details?id=org.carbure.app"><img src="https://img.shields.io/badge/Google_Play-Android-01875F?style=for-the-badge&logo=googleplay&logoColor=white" alt="Disponible sur Google Play (Android)"></a><br>
+  <sub>📱 Applications mobiles gratuites, sans publicité ni collecte de données, connectées à <strong>votre</strong> serveur</sub>
 </p>
 
 <p align="center">
@@ -101,12 +107,21 @@
 > couvrent surtout les banques françaises. Le portail existe en français, anglais, espagnol,
 > italien, allemand et portugais ; les montants sont en euros.
 
-> 📱 **Applications mobiles** : les applications Carbure pour **iPhone** et **Android** seront
-> prochainement disponibles sur l'App Store et Google Play : transactions, pointage, budgets,
-> aperçus, tendances, synchronisation, connexion par Face ID ou empreinte et notifications push
-> ([fonctionnalités](https://carbure.org/applications-mobiles/)). En attendant, le portail web
-> s'installe comme une application sur ordinateur ou téléphone (Chrome/Edge « Installer »,
+> 📱 **Applications mobiles** : les applications Carbure sont disponibles sur
+> l'[**App Store**](https://apps.apple.com/fr/app/carbure/id6824057363) (iPhone, iOS 26 minimum) et sur
+> [**Google Play**](https://play.google.com/store/apps/details?id=org.carbure.app) (Android 8.0 minimum) :
+> transactions, pointage, budgets, aperçus, tendances, synchronisation, connexion par Face ID
+> ou empreinte et notifications push ([fonctionnalités](https://carbure.org/applications-mobiles/)).
+> Gratuites, sans publicité ni abonnement, aucune donnée collectée ; disponibles en France pour
+> le moment. Elles se connectent à **votre** serveur Carbure. Le portail web s'installe aussi
+> comme une application sur ordinateur ou téléphone (Chrome/Edge « Installer »,
 > Safari « Ajouter au Dock » ou « Sur l'écran d'accueil »), en HTTPS.
+
+<p align="center">
+  <img src="docs/assets/mobile/ios-transactions.png" alt="Transactions du mois dans l'app iPhone" width="220">
+  <img src="docs/assets/mobile/android-budgets.png" alt="Budgets du mois dans l'app Android" width="220">
+  <img src="docs/assets/mobile/ios-tendances.png" alt="Tendances sur 24 mois dans l'app iPhone" width="220">
+</p>
 
 ## Comment se situe Carbure ?
 

@@ -70,9 +70,9 @@ A question that isn't here? Ask it on the
 
 ??? question "Is there a mobile app?"
     Yes, native **iPhone and Android** apps (transactions, checking, budgets,
-    overviews, trends, synchronization, Face ID or fingerprint). Until they are published
-    on the App Store and Google Play, the portal can be installed as an app on the phone.
-    See [Mobile apps](applications-mobiles.md).
+    overviews, trends, synchronization, Face ID or fingerprint), free, on the
+    [App Store](https://apps.apple.com/fr/app/carbure/id6824057363) and on [Google Play](https://play.google.com/store/apps/details?id=org.carbure.app). See
+    [Mobile apps](applications-mobiles.md).
 
 ??? question "How do I connect the app to my server?"
     In the portal, **My profile → My devices** shows a QR code: scan it with the phone's

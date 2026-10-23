@@ -4692,6 +4692,18 @@ a.footer-brand:hover {
     justify-content: center;
 }
 
+/* App Store and Google Play links, under the QR code; wrapped at 320 px */
+.app-store-help {
+    margin-top: 16px;
+}
+
+.app-store-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+}
+
 /* Model, system and app versions of a mobile device, under its name */
 .device-model {
     font-size: 13px;
@@ -5509,7 +5521,8 @@ a.footer-brand:hover {
     margin-bottom: 16px;
 }
 
-a.api-docs-open {
+a.api-docs-open,
+a.app-store-link {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -5523,12 +5536,14 @@ a.api-docs-open {
     text-decoration: underline;
 }
 
-a.api-docs-open:hover {
+a.api-docs-open:hover,
+a.app-store-link:hover {
     background: var(--hover-surface);
     color: var(--text-primary);
 }
 
-a.api-docs-open .material-icons {
+a.api-docs-open .material-icons,
+a.app-store-link .material-icons {
     font-size: 18px;
 }
 

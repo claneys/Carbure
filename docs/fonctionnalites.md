@@ -363,8 +363,8 @@ administrateur inscrit l'instance après avoir accepté son consentement (voir
 [Configuration](configuration.md#push)) :
 
 !!! info "Applications mobiles"
-    Les applications Carbure pour iPhone et Android seront prochainement disponibles sur
-    l'App Store et Google Play.
+    Les applications Carbure sont disponibles sur l'[App Store](https://apps.apple.com/fr/app/carbure/id6824057363)
+    (iPhone) et sur [Google Play](https://play.google.com/store/apps/details?id=org.carbure.app) (Android).
 
 | Quand | Qui la reçoit | Contenu |
 |---|---|---|

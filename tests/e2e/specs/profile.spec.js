@@ -98,10 +98,17 @@ test('switches the portal to English', async ({ userPage: page }) => {
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
 });
 
-test('shows the QR code that opens the mobile apps on this server', async ({ userPage: page, baseURL, api }) => {
+test('shows the QR code that opens the mobile apps on this server, and the store links', async ({ userPage: page, baseURL, api }) => {
     await openProfile(page, 'myDevices');
     const card = page.getByRole('group', { name: tr('appLinkTitle') });
     await expect(card.getByRole('img', { name: tr('appLinkQrLabel') })).toBeVisible();
+    // The store pages, for a phone without the app, open in a new tab
+    await expect(card.getByText(tr('appStoreHelp'))).toBeVisible();
+    await expect(card.getByRole('link', { name: tr('appStoreIos') }))
+        .toHaveAttribute('href', 'https://apps.apple.com/fr/app/carbure/id6824057363');
+    await expect(card.getByRole('link', { name: tr('appStoreAndroid') }))
+        .toHaveAttribute('href', 'https://play.google.com/store/apps/details?id=org.carbure.app');
+    await expect(card.getByRole('link', { name: tr('appStoreIos') })).toHaveAttribute('target', '_blank');
     // Without public_url, the address of the portal: 127.0.0.1 cannot be reached by a phone
     const portalApi = `${new URL(baseURL).origin}/api`;
     await expect(card.locator('.app-link-server code')).toHaveText(portalApi);

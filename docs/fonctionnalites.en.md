@@ -363,8 +363,8 @@ administrator registers the instance after accepting its consent terms (see
 [Configuration](configuration.md#push)):
 
 !!! info "Mobile apps"
-    The Carbure apps for iPhone and Android will soon be available on
-    the App Store and Google Play.
+    The Carbure apps are available on the [App Store](https://apps.apple.com/fr/app/carbure/id6824057363)
+    (iPhone) and on [Google Play](https://play.google.com/store/apps/details?id=org.carbure.app) (Android).
 
 | When | Who receives it | Content |
 |---|---|---|

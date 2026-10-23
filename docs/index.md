@@ -20,9 +20,9 @@ vous. Les opérations sont récupérées automatiquement auprès des banques fra
 - dans les [**applications iPhone et Android**](applications-mobiles.md) Carbure :
   transactions, pointage, budgets, aperçus, tendances et synchronisation, connexion par
   Face ID ou empreinte, et notifications push (par le service Carbure Push) après chaque
-  synchronisation, pour les dépenses importantes et les budgets atteints — bientôt
-  disponibles sur l'App Store et Google Play ; en attendant, le portail s'installe comme
-  une application sur ordinateur ou téléphone ;
+  synchronisation, pour les dépenses importantes et les budgets atteints — disponibles
+  sur l'[App Store](https://apps.apple.com/fr/app/carbure/id6824057363) et sur [Google Play](https://play.google.com/store/apps/details?id=org.carbure.app) ; le portail s'installe
+  aussi comme une application sur ordinateur ou téléphone ;
 - par un **agent IA** (Claude, ChatGPT, Cursor, Copilot, Gemini…) grâce au serveur MCP
   intégré, en lecture seule.
 

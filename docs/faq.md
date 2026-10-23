@@ -72,9 +72,9 @@ Une question qui n'est pas ici ? Posez-la sur le
 
 ??? question "Y a-t-il une application mobile ?"
     Oui, des applications natives **iPhone et Android** (transactions, pointage, budgets,
-    aperçus, tendances, synchronisation, Face ID ou empreinte). En attendant leur
-    publication sur l'App Store et Google Play, le portail s'installe comme une application
-    sur le téléphone. Voir [Applications mobiles](applications-mobiles.md).
+    aperçus, tendances, synchronisation, Face ID ou empreinte), gratuites, sur
+    l'[App Store](https://apps.apple.com/fr/app/carbure/id6824057363) et sur [Google Play](https://play.google.com/store/apps/details?id=org.carbure.app). Voir
+    [Applications mobiles](applications-mobiles.md).
 
 ??? question "Comment connecter l'application à mon serveur ?"
     Dans le portail, **Mon profil → Mes appareils** affiche un QR code : scannez-le avec

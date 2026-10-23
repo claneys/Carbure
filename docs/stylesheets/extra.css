@@ -239,12 +239,15 @@
 @media screen and (max-width: 76.234375em) {
   .md-nav--primary .md-nav__source {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 0.8rem;
     padding-left: 0.8rem;
   }
 
+  /* The GitHub and Docker blocks take a row each, below the links */
   .md-nav--primary .md-nav__source .md-source {
+    flex: 1 1 100%;
     min-width: 0;
   }
 }
@@ -317,4 +320,31 @@
 
 .md-select__link[aria-current="true"] {
   font-weight: 700;
+}
+
+/* ===== Header: mobile apps and Docker Hub image (overrides/partials/source.html) ===== */
+
+/* Store links: the icon alone in the same white pill as the demo link */
+.carbure-store {
+  padding: 0.25rem 0.5rem;
+}
+
+/* Docker Hub pull count, styled like Material's GitHub facts, with a download arrow */
+.md-source__fact--pulls::before {
+  -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 20h14v-2H5zM19 9h-4V3H9v6H5l7 7z"/></svg>');
+  mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 20h14v-2H5zM19 9h-4V3H9v6H5l7 7z"/></svg>');
+}
+
+/* Not enough room next to the search box: the Docker block is shown in the header from
+   1600 px, the store links from 1220 px; below 76.25em both are in the menu drawer */
+@media screen and (min-width: 60em) and (max-width: 99.99em) {
+  .md-header__source .carbure-docker {
+    display: none;
+  }
+}
+
+@media screen and (min-width: 60em) and (max-width: 76.234375em) {
+  .md-header__source .carbure-store {
+    display: none;
+  }
 }
