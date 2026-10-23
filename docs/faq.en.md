@@ -236,8 +236,8 @@ A question that isn't here? Ask it on the
 ??? question "Can it be installed on YunoHost?"
     Soon: a [`carbure_ynh`](https://github.com/ltoinel/carbure_ynh) package is in
     preparation to install Carbure in a few clicks on a [YunoHost](https://yunohost.org)
-    server, on a domain of its own. It is not in the catalog nor tested yet: it waits for
-    Carbure 1.10.0. Want to test it? Say so in
+    server, on a domain of its own. It is not in the catalog nor tested on a real server yet;
+    it installs Carbure 1.10.0. Want to test it? Say so in
     [issue #45](https://github.com/ltoinel/Carbure/issues/45).
 
 ??? question "How do I reach it from outside or from my phone?"

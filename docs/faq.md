@@ -247,8 +247,8 @@ Une question qui n'est pas ici ? Posez-la sur le
     Bientôt : un paquet [`carbure_ynh`](https://github.com/ltoinel/carbure_ynh) est en
     préparation pour installer Carbure en quelques clics sur un serveur
     [YunoHost](https://yunohost.org), sur un domaine dédié. Il n'est pas encore au catalogue
-    ni testé : il attend Carbure 1.10.0. Volontaire pour le tester ? Dites-le dans le
-    [ticket #45](https://github.com/ltoinel/Carbure/issues/45).
+    ni testé sur un vrai serveur ; il installe Carbure 1.10.0. Volontaire pour le tester ?
+    Dites-le dans le [ticket #45](https://github.com/ltoinel/Carbure/issues/45).
 
 ??? question "Comment y accéder depuis l'extérieur ou depuis mon téléphone ?"
     Placez Carbure derrière un **proxy inverse en HTTPS** (celui du NAS, Caddy, Traefik,

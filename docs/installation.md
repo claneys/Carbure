@@ -358,8 +358,10 @@ docker compose exec -u www-data carbure php tools/migrate.php --status # version
 !!! warning "Travail en cours"
     Le paquet YunoHost de Carbure est en cours d'écriture : il n'est **pas encore dans le
     catalogue** de YunoHost et n'a **pas encore été testé** sur un serveur YunoHost. Il
-    attend Carbure 1.10.0, la première version qui sait s'installer sans l'assistant web
-    (`tools/install.php`). Suivi : [ticket #45](https://github.com/ltoinel/Carbure/issues/45).
+    installe Carbure 1.10.0, la première version qui sait s'installer sans l'assistant web
+    (`tools/install.php`) : pour l'essayer, `sudo yunohost app install
+    https://github.com/ltoinel/carbure_ynh` sur un serveur de test. Suivi :
+    [ticket #45](https://github.com/ltoinel/Carbure/issues/45).
 
 Le paquet [`carbure_ynh`](https://github.com/ltoinel/carbure_ynh) installera Carbure en
 quelques clics depuis l'interface d'administration de [YunoHost](https://yunohost.org) :

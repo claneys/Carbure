@@ -201,8 +201,8 @@ behind an HTTPS reverse proxy ([installation](https://carbure.org/en/installatio
 
 > 🚧 **YunoHost**: a [`carbure_ynh`](https://github.com/ltoinel/carbure_ynh) package is in
 > preparation, to install Carbure in a few clicks on a [YunoHost](https://yunohost.org)
-> server. It is not in the catalog nor tested yet: it waits for Carbure 1.10.0
-> ([follow-up and tests](https://github.com/ltoinel/Carbure/issues/45),
+> server. It is not in the catalog nor tested on a real server yet; it installs Carbure
+> 1.10.0 ([follow-up and tests](https://github.com/ltoinel/Carbure/issues/45),
 > [installation](https://carbure.org/en/installation/#avec-yunohost-en-preparation)).
 
 ### 3. Run it locally to develop
