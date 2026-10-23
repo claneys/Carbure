@@ -393,6 +393,23 @@ From a public address, the wizard asks for the installation code written to
 `data/conf/setup.code` (and to the PHP error log). See
 [Security](securite.md#assistant-dinstallation).
 
+!!! tip "Install without the wizard (script)"
+    `tools/install.php` does the same installation from the command line, for a script
+    (package of a distribution, YunoHost…). The passwords go through the environment,
+    never the command line (visible in the list of the processes):
+
+    ```bash
+    CARBURE_DB_PASSWORD='…' CARBURE_ADMIN_PASSWORD='…' \
+      php tools/install.php --db-name=carbure --db-user=carbure --admin=marie \
+        --email=marie@example.org --language=en --starter
+    ```
+
+    Run it as the user of the web server, which must be able to write in `data/`.
+    Exit code: `0` installed, `1` failed (nothing is written), `2` already installed
+    (`data/conf/prod.ini` exists: nothing changes). `php tools/install.php --help` lists
+    the options (`--db-host`, `--db-port`, `--woob-path`, `--public-url`, `--backup-confirmed` to migrate
+    an existing database…).
+
 ### 4. Add a bank { #4-ajouter-une-banque }
 
 From the portal's **Accounts** tab (**+** button): choose the bank among those

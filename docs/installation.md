@@ -393,6 +393,23 @@ Depuis une adresse publique, l'assistant demande le code d'installation écrit d
 `data/conf/setup.code` (et dans le journal d'erreurs PHP). Voir
 [Sécurité](securite.md#assistant-dinstallation).
 
+!!! tip "Installer sans l'assistant (script)"
+    `tools/install.php` fait la même installation en ligne de commande, pour un script
+    (paquet d'une distribution, YunoHost…). Les mots de passe passent par l'environnement,
+    jamais par la ligne de commande (visible dans la liste des processus) :
+
+    ```bash
+    CARBURE_DB_PASSWORD='…' CARBURE_ADMIN_PASSWORD='…' \
+      php tools/install.php --db-name=carbure --db-user=carbure --admin=marie \
+        --email=marie@example.org --language=fr --starter
+    ```
+
+    Lancez-le avec l'utilisateur du serveur web, qui doit pouvoir écrire dans `data/`.
+    Code de sortie : `0` installé, `1` échec (rien n'est écrit), `2` déjà installé
+    (`data/conf/prod.ini` existe : rien ne change). `php tools/install.php --help` liste
+    les options (`--db-host`, `--db-port`, `--woob-path`, `--public-url`, `--backup-confirmed` pour migrer
+    une base existante…).
+
 ### 4. Ajouter une banque
 
 Depuis l'onglet **Comptes** du portail (bouton **+**) : choisissez la banque parmi celles
