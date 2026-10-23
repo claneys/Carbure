@@ -163,8 +163,9 @@ A question that isn't here? Ask it on the
 ??? question "How do I get warned about a large expense or a budget overrun?"
     In **My profile → Notifications**: the **Large expense** threshold (an amount; empty =
     no alert), and for budgets a threshold from 50 to 200% (100% by default, 80% to be
-    warned before), on all budgets or one of them. A budget alert is sent only once per
-    category and per month. See [Budget alerts](fonctionnalites.md#alertes-de-budget).
+    warned before) on all the budgets, which can be turned off, plus **thresholds per
+    category** that replace it (for instance 80% on groceries). A budget alert is sent only
+    once per category and per month. See [Budget alerts](fonctionnalites.md#alertes-de-budget).
 
 ??? question "Can I receive the notifications by email?"
     Yes, if an administrator configures an SMTP server (**Administration → Settings**,

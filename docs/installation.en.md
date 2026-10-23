@@ -215,6 +215,27 @@ When `docker compose pull` brings a new major version of MariaDB (for example fr
 the old version, hence the importance of the backup. To stay on a given version,
 pin it in `docker/docker-compose.yml` (`image: mariadb:11`).
 
+### Upgrading to 1.10.0 { #passer-a-la-1100 }
+
+- The `2026-10-27_budget_alert_threshold` migration is applied at startup: budget alerts
+  get a **global threshold** (all the budgets), which can be turned off, and **thresholds
+  per category** (**My profile → Notifications**). The settings are kept: a user who
+  watched one budget keeps that budget, at their threshold, without a global threshold. The
+  code works before it, as before.
+- **End-of-month salary**: a received transfer dated **on the 25th or later** is attached to
+  the next month (before: from the 26th). The day is set with `next_month_day`
+  (**Administration → Settings**, `0` to never move a transfer); only the transactions
+  imported or synchronized after the upgrade are concerned.
+- **New release**: a banner tells administrators when a release of Carbure is published.
+  The server asks the public API of GitHub for the latest release once a day, sending
+  nothing about the instance; `update_check=false` turns it off.
+- **First installation with Docker Compose**: `docker compose pull && docker compose up -d`
+  uses the published image (without `pull`, Compose built the image from the clone).
+- **Scripted installation**: `tools/install.php` installs Carbure without the web wizard
+  (see [Run the wizard](#3-lancer-lassistant)); the YunoHost package in preparation uses it.
+- The mobile apps are published: App Store and Google Play links in **My profile → My
+  devices**.
+
 ### Upgrading to 1.9.0 { #passer-a-la-190 }
 
 No database migration.

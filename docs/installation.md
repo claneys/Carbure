@@ -215,6 +215,27 @@ Quand `docker compose pull` apporte une nouvelle version majeure de MariaDB (par
 l'ancienne version, d'où l'importance de la sauvegarde. Pour garder une version donnée,
 fixez-la dans `docker/docker-compose.yml` (`image: mariadb:11`).
 
+### Passer à la 1.10.0
+
+- La migration `2026-10-27_budget_alert_threshold` est appliquée au démarrage : les alertes
+  de budget ont un **seuil global** (tous les budgets), désactivable, et des **seuils par
+  catégorie** (**Mon profil → Notifications**). Les réglages sont repris : un utilisateur
+  qui surveillait un seul budget garde ce budget, à son seuil, sans seuil global. Le code
+  fonctionne avant elle, comme avant.
+- **Salaire de fin de mois** : un virement reçu daté **du 25 ou après** est rattaché au mois
+  suivant (auparavant à partir du 26). Le jour se règle avec `next_month_day`
+  (**Administration → Paramètres**, `0` pour ne jamais déplacer un virement) ; seules les
+  transactions importées ou synchronisées après la mise à jour sont concernées.
+- **Nouvelle version** : un bandeau prévient les administrateurs quand une version de
+  Carbure est publiée. Le serveur demande la dernière version à l'API publique de GitHub
+  une fois par jour, sans rien envoyer sur l'instance ; `update_check=false` le désactive.
+- **Première installation avec Docker Compose** : `docker compose pull && docker compose up -d`
+  utilise l'image publiée (sans `pull`, Compose construisait l'image depuis le clone).
+- **Installation scriptée** : `tools/install.php` installe Carbure sans l'assistant web
+  (voir [Lancer l'assistant](#3-lancer-lassistant)) ; il sert au paquet YunoHost en préparation.
+- Les applications mobiles sont publiées : liens App Store et Google Play dans **Mon profil
+  → Mes appareils**.
+
 ### Passer à la 1.9.0
 
 Aucune migration de la base.

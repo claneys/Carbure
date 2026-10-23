@@ -21,11 +21,11 @@ keeps track of what was done).
       5. remove the `[apns]` section and `data/conf/certs/*.p8` from the NAS (no longer used);
       6. later: a release workflow publishing the image of Carbure Push to a registry.
 
-- [ ] **Release notes of 1.10.0 — month of a salary (#300)**: a received transfer dated
-      **on the 25th** now counts for the next month (before: from the 26th). The day is the
-      new setting `next_month_day` (Administration → Settings, 25 by default, 0: never).
-      Only the transactions imported or synchronized after the upgrade are concerned; say
-      it in the upgrade notes ("Passer à la 1.10.0", fr and en).
+- [ ] **YunoHost package (#45, `ltoinel/carbure_ynh`)**: after the 1.10.0 release, merge the
+      pull request of its autoupdate Action (version and sha256 of the archive), then
+      install it on a test YunoHost server (Debian 12): install, upgrade, backup/restore,
+      change of domain, a real bank synchronization, the mobile apps on the domain; then
+      `package_check`, and propose it to the YunoHost-Apps organization.
 
 - [ ] **Demo image (#219)**: `ltoinel/carbure:demo` and `ltoinel/carbure:<version>-demo` are
       pushed by the release workflow from the next release (1.6.0): until then the

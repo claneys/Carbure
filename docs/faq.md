@@ -171,7 +171,8 @@ Une question qui n'est pas ici ? Posez-la sur le
 ??? question "Comment être prévenu d'une grosse dépense ou d'un budget dépassé ?"
     Dans **Mon profil → Notifications** : le seuil **Dépense importante** (un montant ;
     vide = pas d'alerte), et pour les budgets un seuil de 50 à 200 % (100 % par défaut, 80 %
-    pour être prévenu avant), sur tous les budgets ou l'un d'eux. Une alerte de budget
+    pour être prévenu avant) sur tous les budgets, désactivable, plus des **seuils par
+    catégorie** qui le remplacent (par exemple 80 % sur les courses). Une alerte de budget
     part une seule fois par catégorie et par mois. Voir
     [Alertes de budget](fonctionnalites.md#alertes-de-budget).
 
