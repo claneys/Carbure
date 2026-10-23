@@ -1,5 +1,6 @@
-// Banners of the administrators: database update and weak session secret.
-// The e2e database is up to date: the state of the schema is simulated.
+// Banners of the administrators: database update, weak session secret and new release of
+// Carbure. The e2e database is up to date and the server a development version: the state
+// of the schema and the latest release are simulated.
 const { test, expect, tr } = require('../fixtures');
 const { startFakeSmtp } = require('../fake-smtp');
 const { startFakePushRelay } = require('../fake-push-relay');
@@ -16,6 +17,39 @@ async function outdated(page) {
         json: { version: '2026-11-01_example', applied: ['2026-11-01_example'] },
     }));
 }
+
+test('an administrator is told about a new release, until he hides it', async ({ page, adminPage }) => {
+    const release = { enabled: true, current: '1.9.1', latest: '1.10.0', url: 'https://github.com/ltoinel/Carbure/releases/tag/v1.10.0', available: true, checked_at: '2026-11-01 10:00:00' };
+    await page.route('**/api/system/release', route => route.fulfill({ json: release }));
+    await page.reload();
+
+    const banner = page.locator('.release-banner');
+    await expect(banner).toContainText(tr('releaseAvailable', { version: '1.10.0', current: '1.9.1' }));
+    const notes = banner.getByRole('link', { name: tr('releaseNotes') });
+    await expect(notes).toHaveAttribute('href', release.url);
+    await expect(notes).toHaveAttribute('target', '_blank');
+
+    // Hidden for this version, also after a reload
+    await banner.getByRole('button', { name: tr('releaseDismiss') }).click();
+    await expect(banner).toHaveCount(0);
+    await page.reload();
+    await expect(page.locator('.schema-banner')).toHaveCount(0);
+
+    // A newer release: shown again
+    release.latest = '1.11.0';
+    release.url = 'https://github.com/ltoinel/Carbure/releases/tag/v1.11.0';
+    await page.reload();
+    await expect(page.locator('.release-banner')).toBeVisible();
+});
+
+test('a user is never told about the releases', async ({ page, userPage }) => {
+    let asked = false;
+    await page.route('**/api/system/release', route => { asked = true; return route.fulfill({ status: 403, json: { error: 'Forbidden', code: 403 } }); });
+    await page.reload();
+    await expect(page.locator('.tabs')).toBeVisible();
+    await expect(page.locator('.release-banner')).toHaveCount(0);
+    expect(asked).toBe(false);
+});
 
 test('an administrator updates the database from the banner', async ({ page, adminPage }) => {
     await outdated(page);

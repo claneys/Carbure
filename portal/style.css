@@ -4971,6 +4971,11 @@ a.footer-brand:hover {
     gap: 6px;
 }
 
+/* New release: its link and its button wrap under the text on a narrow screen */
+.release-banner {
+    flex-wrap: wrap;
+}
+
 /* Edit and delete buttons side by side in the tables */
 .row-actions {
     display: inline-flex;

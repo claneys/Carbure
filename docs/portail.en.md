@@ -107,6 +107,14 @@ taskbar or the home screen.
     the migrations (`POST /system/migrate`); the data is kept. With Docker,
     they are applied anyway at each container start.
 
+!!! note "New release of Carbure"
+    When a new release of Carbure is published, a **Carbure X.Y.Z is available** banner is
+    shown to administrators, with the installed version, the **See what's new** link (the
+    release notes on GitHub) and the **Hide until the next version** button (remembered in
+    this browser). The server checks at most once a day (`update_check` setting, see
+    [Configuration](configuration.md#global)); to upgrade, see
+    [Installation](installation.md#mettre-a-jour).
+
 ## Transactions { #transactions }
 
 ![Transactions screen of the Carbure web portal](assets/en/screenshot-transactions.png)

@@ -501,6 +501,8 @@ users open **AI agent** from their menu.
   the API with the administrator's session.
 - **Database update**: when a new version changes the database, a banner
   reports it and applies it in one click (automatic with Docker).
+- **New release**: a banner reports that a new release of Carbure is published, with a
+  link to its notes (checked once a day by the server, `update_check` setting).
 - **Session key**: a banner reports a key that is too weak and renews it in one click
   (everyone signs in again).
 

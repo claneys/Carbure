@@ -935,6 +935,14 @@ name, 404 if it does not exist.
 Database schema version and migrations to apply:
 `{"version": "2026-10-13_base", "pending": []}`.
 
+### `GET /system/release` — administrator { #get-systemrelease-administrateur }
+
+Latest published release of Carbure, asked to the API of GitHub at most once a day
+(`update_check` setting): `{"enabled": true, "current": "1.9.1", "latest": "1.10.0",
+"url": "https://github.com/ltoinel/Carbure/releases/tag/v1.10.0", "available": true,
+"checked_at": "2026-11-01 10:00:00"}`. `available`: `latest` is newer than `current` (never
+for a development version); `latest`, `url` and `checked_at` are `null` until known.
+
 ### `POST /system/migrate` — administrator { #post-systemmigrate-administrateur }
 
 Applies the pending migrations (**Update** button in the portal):

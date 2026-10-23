@@ -99,7 +99,9 @@
   jeton d'accès.
 - 🔒 **Tout reste chez vous** : Carbure tourne sur votre propre serveur (un NAS suffit). Pas de
   compte à créer, pas d'agrégateur, pas de cloud : vos identifiants et vos données bancaires
-  restent dans votre base locale. Seules sorties réseau : votre banque (woob) et, si vous
+  restent dans votre base locale. Seules sorties réseau : votre banque (woob), une fois par
+  jour l'API publique de GitHub pour signaler une nouvelle version aux administrateurs (rien
+  n'est envoyé sur votre instance ; réglage `update_check` pour la désactiver) et, si vous
   les activez, le relais Carbure Push (notifications des apps iPhone et Android) et votre
   serveur SMTP.
 

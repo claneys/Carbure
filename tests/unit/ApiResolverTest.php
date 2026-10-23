@@ -119,6 +119,7 @@ class ApiResolverTest extends TestCase
         'GET /system/logs/retention' => 'admin',
         'GET /system/push' => 'admin',
         'GET /system/push-status' => 'admin',
+        'GET /system/release' => 'admin',
         'GET /system/schema' => 'admin',
         'GET /system/sync' => 'admin',
         'GET /token' => 'user',

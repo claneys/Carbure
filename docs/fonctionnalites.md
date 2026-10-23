@@ -501,6 +501,9 @@ utilisateurs ouvrent **Agent IA** depuis leur menu.
   l'API avec la session de l'administrateur.
 - **Mise à jour de la base** : quand une nouvelle version modifie la base, un bandeau le
   signale et l'applique en un clic (automatique avec Docker).
+- **Nouvelle version** : un bandeau signale la publication d'une nouvelle version de Carbure,
+  avec le lien vers ses notes (vérifié une fois par jour par le serveur, réglage
+  `update_check`).
 - **Clé des sessions** : un bandeau signale une clé trop faible et la renouvelle en un clic
   (tout le monde se reconnecte).
 

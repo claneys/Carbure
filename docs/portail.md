@@ -107,6 +107,14 @@ tâches ou l'écran d'accueil.
     les migrations (`POST /system/migrate`) ; les données sont conservées. Avec Docker,
     elles sont de toute façon appliquées à chaque démarrage du conteneur.
 
+!!! note "Nouvelle version de Carbure"
+    Quand une nouvelle version de Carbure est publiée, un bandeau **Carbure X.Y.Z est
+    disponible** s'affiche pour les administrateurs, avec la version installée, le lien
+    **Voir les nouveautés** (les notes de version sur GitHub) et le bouton **Masquer
+    jusqu'à la prochaine version** (retenu dans ce navigateur). Le serveur vérifie au plus
+    une fois par jour (réglage `update_check`, voir [Configuration](configuration.md#global)) ;
+    pour mettre à jour, voir [Installation](installation.md#mettre-a-jour).
+
 ## Transactions
 
 ![Écran Transactions du portail web Carbure](assets/screenshot-transactions.png)

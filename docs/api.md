@@ -936,6 +936,15 @@ invalide, 404 s'il n'existe pas.
 Version du schéma de la base et migrations à appliquer :
 `{"version": "2026-10-13_base", "pending": []}`.
 
+### `GET /system/release` — administrateur
+
+Dernière version publiée de Carbure, demandée à l'API de GitHub au plus une fois par jour
+(réglage `update_check`) : `{"enabled": true, "current": "1.9.1", "latest": "1.10.0",
+"url": "https://github.com/ltoinel/Carbure/releases/tag/v1.10.0", "available": true,
+"checked_at": "2026-11-01 10:00:00"}`. `available` : `latest` est plus récente que
+`current` (jamais pour une version de développement) ; `latest`, `url` et `checked_at` sont
+`null` tant qu'elles ne sont pas connues.
+
 ### `POST /system/migrate` — administrateur
 
 Applique les migrations en attente (bouton **Mettre à jour** du portail) :

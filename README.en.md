@@ -98,9 +98,10 @@
   with an access token.
 - 🔒 **Everything stays with you**: Carbure runs on your own server (a NAS is enough). No
   account to create, no aggregator, no cloud: your bank credentials and data stay in your
-  local database. The only outbound connections are to your bank (woob) and, if you enable
-  them, the Carbure Push relay (notifications of the iPhone and Android apps) and your SMTP
-  server.
+  local database. The only outbound connections are to your bank (woob), once a day to the
+  public API of GitHub to tell the administrators about a new release (nothing about your
+  instance is sent; `update_check` setting to turn it off) and, if you enable them, the
+  Carbure Push relay (notifications of the iPhone and Android apps) and your SMTP server.
 
 > 🌍 **Bank coverage**: Carbure relies on [woob](https://woob.tech/) modules, which mainly
 > cover French banks. The portal is available in French, English, Spanish,

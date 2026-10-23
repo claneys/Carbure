@@ -23,7 +23,7 @@ relu à chaque requête), sauf le conteneur Docker pour `SYNC_INTERVAL`.
     valeur actuelle et une aide, les secrets masqués.
 
     Les clés marquées ✏️ dans les tableaux ci-dessous s'y modifient directement : `log_level`,
-    `log_retention_days`, `savings_category`, `public_url`, `currency`, `next_month_day`, `woob_transactions`,
+    `log_retention_days`, `savings_category`, `public_url`, `currency`, `next_month_day`, `update_check`, `woob_transactions`,
     `woob_logging`, `woob_debug`, `woob_auto_update`, `woob_2fa_wait`, `woob_2fa_retries`,
     `push_api_key` et les réglages
     SMTP (`smtp_host`, `smtp_port`, `smtp_encryption`, `smtp_auth`, `smtp_username`,
@@ -48,6 +48,7 @@ ce fichier (voir [Réglages en base](#reglages-en-base)).
 | `development` | `true` / `false` | Indicateur de mode développement, écrit à `false` par l'assistant (sans effet actuellement) |
 | `demo` | `true` / `false` | Instance de démonstration (écrit par l'image `ltoinel/carbure:demo`) : l'écran de connexion affiche le compte public de la démo. Absent par défaut ; jamais sur une instance avec de vraies données |
 | `currency` ✏️ | code ISO 4217 | Devise des montants de l'instance (`EUR`, `USD`, `GBP`, `CHF`, `CAD`…), affichée dans le portail (son symbole : €, $, £… ou son code), les notifications et les e-mails ; `EUR` par défaut ou si la valeur n'est pas un code de 3 lettres. Seul l'affichage change : aucun montant n'est converti, choisissez la devise de vos comptes |
+| `update_check` ✏️ | `true` / `false` | Bandeau des administrateurs quand une nouvelle version de Carbure est publiée : le serveur demande la dernière version à l'API publique de GitHub (`api.github.com`) au plus une fois par jour, sans rien envoyer sur l'instance (une requête anonyme, comme un téléchargement), et garde la réponse en base. `true` par défaut (ou si la clé est absente) ; `false` : jamais demandé. Jamais pour une version de développement |
 | `next_month_day` ✏️ | `0` à `31` | Jour du mois à partir duquel un **virement reçu** (le salaire) compte pour le mois suivant : daté de ce jour ou après, il est rattaché au 1er du mois suivant, le mois qu'il finance ; sa date réelle reste visible dans le détail de la transaction. `25` par défaut (ou si la valeur n'est pas un nombre) ; `0` : jamais déplacé. S'applique aux transactions importées ou synchronisées ensuite, pas à celles déjà enregistrées. Voir [Mois de rattachement](fonctionnalites.md#deroulement-dune-synchronisation) |
 | `savings_category` ✏️ | nom | Catégorie dont les transactions (avec ses sous-catégories) constituent l'épargne de l'onglet Tendances ; `Epargne` par défaut, casse et accents ignorés |
 | `public_url` ✏️ | URL | Facultatif : adresse publique de Carbure (`https://carbure.exemple.fr`), annoncée aux agents IA qui se connectent par OAuth et aux applications mobiles par le QR code de **Mes appareils**. Par défaut, déduite de la requête : à renseigner si le proxy HTTPS n'envoie pas `X-Forwarded-Proto` |

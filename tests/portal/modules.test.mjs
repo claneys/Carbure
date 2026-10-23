@@ -1106,3 +1106,42 @@ test('config: status of the push service, the relay and the API key as shown', a
     assert.equal(context.pushStatus, null);
     assert.equal(context.pushStatusError, 'Failed to load the status of the push service');
 });
+
+test('profile: banner of a new release for the administrators, hidden for that version', async () => {
+    const { createProfileModule } = await import('../../portal/modules/profileModule.js');
+    let answer = { enabled: true, current: '1.9.1', latest: '1.10.0', url: 'https://github.com/ltoinel/Carbure/releases/tag/v1.10.0', available: true };
+    const api = { fetchRelease: async () => { if (!answer) { throw new Error('Forbidden'); } return answer; } };
+    const stored = {};
+    globalThis.localStorage = { getItem: key => stored[key] ?? null, setItem: (key, value) => { stored[key] = value; } };
+    try {
+        const { methods, data, computed } = createProfileModule(() => api);
+        const context = { ...data(), ...methods };
+        Object.defineProperty(context, 'releaseBanner', { get: computed.releaseBanner.bind(context) });
+
+        assert.equal(context.releaseBanner, false);
+        await context.loadRelease();
+        assert.equal(context.releaseBanner, true);
+
+        // Hidden for 1.10.0, in this browser
+        context.dismissRelease();
+        assert.equal(context.releaseBanner, false);
+        assert.equal(stored.releaseDismissed, '1.10.0');
+        assert.equal(createProfileModule(() => api).data().releaseDismissed, '1.10.0');
+
+        // A newer one: shown again
+        answer = { ...answer, latest: '1.11.0' };
+        await context.loadRelease();
+        assert.equal(context.releaseBanner, true);
+
+        // Nothing newer, or the route refused: no banner
+        answer = { ...answer, available: false };
+        await context.loadRelease();
+        assert.equal(context.releaseBanner, false);
+        answer = null;
+        await context.loadRelease();
+        assert.equal(context.releaseStatus, null);
+        assert.equal(context.releaseBanner, false);
+    } finally {
+        delete globalThis.localStorage;
+    }
+});

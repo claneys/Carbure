@@ -229,6 +229,14 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
     }
 
     /**
+     * Whether a newer release of Carbure is published (administrators)
+     * @returns {Promise<Object>} {enabled, current, latest, url, available, checked_at}
+     */
+    async function fetchRelease() {
+        return request(`${baseUrl}/system/release`, {}, 'Failed to read the latest release');
+    }
+
+    /**
      * Version of the database schema and migrations to apply (administrators)
      * @returns {Promise<Object>} {version, pending}
      */
@@ -1240,6 +1248,7 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
         fetchMcpSettings,
         updateMcpSettings,
         fetchSchemaStatus,
+        fetchRelease,
         migrateSchema,
         fetchPeriods,
         fetchLogFiles,
