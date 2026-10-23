@@ -161,7 +161,7 @@ Trois façons de lancer Carbure, selon ce que vous voulez faire :
 | | Pour | En bref |
 |---|---|---|
 | [**1. Démo**](#1-essayer-la-démo) | essayer Carbure avec un foyer d'exemple | `docker run --rm -p 8080:80 ltoinel/carbure:demo` |
-| [**2. Production**](#2-linstaller-pour-de-bon) | gérer le vrai budget de votre foyer | `docker compose up -d`, puis l'assistant d'installation |
+| [**2. Production**](#2-linstaller-pour-de-bon) | gérer le vrai budget de votre foyer | `docker compose pull && docker compose up -d` (image `ltoinel/carbure`), puis l'assistant d'installation |
 | [**3. Développement**](#3-le-lancer-en-local-pour-développer) | modifier le code | `./start.sh` |
 
 ### 1. Essayer la démo
@@ -181,12 +181,19 @@ conteneur).
 
 ### 2. L'installer pour de bon
 
-Avec Docker et l'image de production (nginx, PHP et woob inclus) et MariaDB :
+Avec Docker, l'image de production [`ltoinel/carbure`](https://hub.docker.com/r/ltoinel/carbure)
+(nginx, PHP et woob inclus, sans données d'exemple, à ne pas confondre avec `:demo`) et
+MariaDB. Le dépôt n'apporte que `docker/docker-compose.yml` ; `docker compose pull`
+télécharge l'image publiée de la dernière release (sans lui, Compose construirait l'image à
+partir du code du dépôt) :
 
 ```bash
 git clone https://github.com/ltoinel/Carbure.git && cd Carbure/docker
-docker compose up -d
+docker compose pull && docker compose up -d
 ```
+
+Pour maîtriser les mises à jour, remplacez `latest` par une version
+(`image: ltoinel/carbure:1.9.1`, voir les [tags](https://carbure.org/installation/#recuperer-limage)).
 
 Ouvrez `http://localhost:8080/` : **l'assistant d'installation** s'occupe de tout (base de
 données, compte administrateur, et en option des catégories, règles et insights de

@@ -1,5 +1,7 @@
-# Carbure with MariaDB, from the docker/ directory: docker compose up -d, then open
-# http://localhost:8080/ and follow the installation wizard (everything is filled in).
+# Carbure with MariaDB, from the docker/ directory: docker compose pull && docker compose up -d,
+# then open http://localhost:8080/ and follow the installation wizard (everything is filled in).
+# pull first: with both image and build, Compose would build the image from this clone (build
+# is kept for the CI and ./start.sh) instead of using the published release.
 # Optional: choose the database password in docker/.env (DB_PASSWORD=...).
 # The data of Carbure (configuration, logs, banks) is in the data/ directory of the project.
 services:

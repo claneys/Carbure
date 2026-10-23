@@ -111,8 +111,12 @@ The log contains the `admin` password: keep it readable by you only.
 
 ```bash
 git clone https://github.com/ltoinel/Carbure.git && cd Carbure/docker
-docker compose up -d
+docker compose pull && docker compose up -d
 ```
+
+`docker compose pull` downloads the published image of the
+[latest release](#recuperer-limage): without it, Compose would build the image from the code of
+the repository (`docker/docker-compose.yml` is also used by the tests).
 
 Open `http://<host>:8080/`: the setup wizard appears, already filled in with the
 database from `docker/docker-compose.yml`. Click **Continue**, choose the administrator

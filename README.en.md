@@ -159,7 +159,7 @@ Three ways to run Carbure, depending on what you want to do:
 | | For | In short |
 |---|---|---|
 | [**1. Demo**](#1-try-the-demo) | trying Carbure with a sample household | `docker run --rm -p 8080:80 ltoinel/carbure:demo` |
-| [**2. Production**](#2-install-it-for-real) | managing your household's real budget | `docker compose up -d`, then the setup wizard |
+| [**2. Production**](#2-install-it-for-real) | managing your household's real budget | `docker compose pull && docker compose up -d` (image `ltoinel/carbure`), then the setup wizard |
 | [**3. Development**](#3-run-it-locally-to-develop) | changing the code | `./start.sh` |
 
 ### 1. Try the demo
@@ -177,12 +177,19 @@ password of the `admin` administrator is printed in the container logs).
 
 ### 2. Install it for real
 
-With Docker and the production image (nginx, PHP and woob included) and MariaDB:
+With Docker, the production image [`ltoinel/carbure`](https://hub.docker.com/r/ltoinel/carbure)
+(nginx, PHP and woob included, no sample data, not to be confused with `:demo`) and
+MariaDB. The repository only provides `docker/docker-compose.yml`; `docker compose pull`
+downloads the published image of the latest release (without it, Compose would build the
+image from the code of the repository):
 
 ```bash
 git clone https://github.com/ltoinel/Carbure.git && cd Carbure/docker
-docker compose up -d
+docker compose pull && docker compose up -d
 ```
+
+To control upgrades, replace `latest` with a version
+(`image: ltoinel/carbure:1.9.1`, see the [tags](https://carbure.org/en/installation/#recuperer-limage)).
 
 Open `http://localhost:8080/`: **the setup wizard** handles everything (database,
 administrator account, and optional starter categories, rules and insights) in three

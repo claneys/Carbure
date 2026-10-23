@@ -111,8 +111,12 @@ Le journal contient le mot de passe `admin` : gardez-le lisible par vous seul.
 
 ```bash
 git clone https://github.com/ltoinel/Carbure.git && cd Carbure/docker
-docker compose up -d
+docker compose pull && docker compose up -d
 ```
+
+`docker compose pull` télécharge l'image publiée de la
+[dernière release](#recuperer-limage) : sans lui, Compose construirait l'image à partir du code
+du dépôt (`docker/docker-compose.yml` sert aussi aux tests).
 
 Ouvrez `http://<hôte>:8080/` : l'assistant d'installation s'affiche, déjà rempli avec la
 base de données de `docker/docker-compose.yml`. Cliquez sur **Continuer**, choisissez le mot de
