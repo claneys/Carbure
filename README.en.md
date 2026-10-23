@@ -198,6 +198,12 @@ clicks, with no command to run. Database upgrades are automatic too. On a Synolo
 follow the [tutorial](https://carbure.org/en/synology/); to reach it from your phone, put it
 behind an HTTPS reverse proxy ([installation](https://carbure.org/en/installation/)).
 
+> 🚧 **YunoHost**: a [`carbure_ynh`](https://github.com/ltoinel/carbure_ynh) package is in
+> preparation, to install Carbure in a few clicks on a [YunoHost](https://yunohost.org)
+> server. It is not in the catalog nor tested yet: it waits for Carbure 1.10.0
+> ([follow-up and tests](https://github.com/ltoinel/Carbure/issues/45),
+> [installation](https://carbure.org/en/installation/#avec-yunohost-en-preparation)).
+
 ### 3. Run it locally to develop
 
 With Git and Docker, from a clone of the repository:

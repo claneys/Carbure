@@ -203,6 +203,12 @@ elles aussi, automatiques. Sur un NAS Synology, suivez le
 [tutoriel](https://carbure.org/synology/) ; pour y accéder depuis votre téléphone,
 placez-le derrière un proxy inverse en HTTPS ([installation](https://carbure.org/installation/)).
 
+> 🚧 **YunoHost** : un paquet [`carbure_ynh`](https://github.com/ltoinel/carbure_ynh) est en
+> préparation, pour installer Carbure en quelques clics sur un serveur
+> [YunoHost](https://yunohost.org). Il n'est pas encore au catalogue ni testé : il attend
+> Carbure 1.10.0 ([suivi et tests](https://github.com/ltoinel/Carbure/issues/45),
+> [installation](https://carbure.org/installation/#avec-yunohost-en-preparation)).
+
 ### 3. Le lancer en local pour développer
 
 Avec Git et Docker, depuis un clone du dépôt :

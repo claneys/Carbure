@@ -332,6 +332,30 @@ docker compose exec -u www-data carbure php tools/migrate.php --status # databas
     BNP) can be copied into `/data/woob/.local/share/woob/modules/3.7/woob_modules/`;
     `curl_cffi`, required by the recent BNP module, is already installed in the image.
 
+## With YunoHost (in preparation) { #avec-yunohost-en-preparation }
+
+!!! warning "Work in progress"
+    The YunoHost package of Carbure is being written: it is **not in the YunoHost catalog
+    yet** and has **not been tested** on a YunoHost server yet. It waits for Carbure 1.10.0,
+    the first version that can be installed without the web wizard (`tools/install.php`).
+    Follow-up: [issue #45](https://github.com/ltoinel/Carbure/issues/45).
+
+The [`carbure_ynh`](https://github.com/ltoinel/carbure_ynh) package will install Carbure in
+a few clicks from the administration interface of [YunoHost](https://yunohost.org):
+
+- on a **domain of its own** (for instance `budget.example.org`), not in a sub-path;
+- **without the wizard**: the chosen YunoHost user becomes the Carbure administrator, with
+  the password typed at the installation; the database and the starter categories, rules
+  and insights are created;
+- with **woob** in a virtualenv, and a **daily synchronization** of every account;
+- upgrades apply the migrations of the database and update the bank modules; the YunoHost
+  backups include the database and the data folder (configuration, logs, woob).
+
+Carbure keeps its own accounts (no single sign-on with YunoHost), which the mobile apps
+need, and the application stays public for them. You have a YunoHost server and want to
+help test it? Say so in [issue #45](https://github.com/ltoinel/Carbure/issues/45) or on
+[Discord](https://discord.gg/QsxYw4Rx9D).
+
 ## On an existing web server { #sur-un-serveur-web-existant }
 
 ### Prerequisites { #prerequis }
