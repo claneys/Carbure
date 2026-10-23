@@ -105,7 +105,8 @@
 
 > 🌍 **Banques couvertes** : Carbure s'appuie sur les modules [woob](https://woob.tech/), qui
 > couvrent surtout les banques françaises. Le portail existe en français, anglais, espagnol,
-> italien, allemand et portugais ; les montants sont en euros.
+> italien, allemand et portugais ; les montants sont en euros par défaut, ou dans la devise
+> de l'instance (réglage `currency`, affichage seulement).
 
 > 📱 **Applications mobiles** : les applications Carbure sont disponibles sur
 > l'[**App Store**](https://apps.apple.com/fr/app/carbure/id6824057363) (iPhone, iOS 26 minimum) et sur

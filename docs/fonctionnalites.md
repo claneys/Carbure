@@ -518,7 +518,9 @@ utilisateurs ouvrent **Agent IA** depuis leur menu.
 
 ## Limites connues
 
-- Les **montants sont en euros** ; pas de gestion de plusieurs devises.
+- **Une seule devise** par instance (réglage `currency`, l'euro par défaut), seulement
+  affichée : pas de conversion ni de plusieurs devises ; les apps mobiles affichent
+  toujours des euros.
 - Les banques couvertes sont celles de **woob**, surtout françaises.
 - Les opérations récurrentes sont **détectées**, pas **planifiées** : pas d'échéancier de
   factures ni de prévision du solde.

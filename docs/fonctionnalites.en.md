@@ -518,7 +518,8 @@ users open **AI agent** from their menu.
 
 ## Known limitations { #limites-connues }
 
-- **Amounts are in euros**; no support for multiple currencies.
+- **One currency** per instance (`currency` setting, euro by default), only displayed:
+  no conversion, no multiple currencies; the mobile apps always show euros.
 - The banks covered are those of **woob**, mostly French.
 - Recurring transactions are **detected**, not **scheduled**: no bill
   schedule and no balance forecast.

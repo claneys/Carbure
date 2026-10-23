@@ -104,7 +104,8 @@
 
 > 🌍 **Bank coverage**: Carbure relies on [woob](https://woob.tech/) modules, which mainly
 > cover French banks. The portal is available in French, English, Spanish,
-> Italian, German and Portuguese; amounts are in euros.
+> Italian, German and Portuguese; amounts are in euros by default, or in the currency of the
+> instance (`currency` setting, display only).
 
 > 📱 **Mobile apps**: the Carbure apps are available on the
 > [**App Store**](https://apps.apple.com/fr/app/carbure/id6824057363) (iPhone, iOS 26 or later) and on
