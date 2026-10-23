@@ -21,6 +21,12 @@ keeps track of what was done).
       5. remove the `[apns]` section and `data/conf/certs/*.p8` from the NAS (no longer used);
       6. later: a release workflow publishing the image of Carbure Push to a registry.
 
+- [ ] **Release notes of 1.10.0 — month of a salary (#300)**: a received transfer dated
+      **on the 25th** now counts for the next month (before: from the 26th). The day is the
+      new setting `next_month_day` (Administration → Settings, 25 by default, 0: never).
+      Only the transactions imported or synchronized after the upgrade are concerned; say
+      it in the upgrade notes ("Passer à la 1.10.0", fr and en).
+
 - [ ] **Demo image (#219)**: `ltoinel/carbure:demo` and `ltoinel/carbure:<version>-demo` are
       pushed by the release workflow from the next release (1.6.0): until then the
       `docker run … ltoinel/carbure:demo` command of the README and of the docs fails. After

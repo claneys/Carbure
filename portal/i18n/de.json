@@ -511,6 +511,7 @@
     "configHelp_savings_category": "Kategorie der Ersparnisse (mit ihren Unterkategorien) für den Geldfluss und die Trends.",
     "configHelp_public_url": "Öffentliche Adresse des Servers, falls der HTTPS-Proxy sie nicht übermittelt (OAuth, KI-Agenten).",
     "configHelp_currency": "Währung der Beträge (ISO-4217-Code: EUR, USD, CHF…) im Portal, in den Benachrichtigungen und E-Mails; kein Betrag wird umgerechnet.",
+    "configHelp_next_month_day": "Tag des Monats, ab dem eine eingehende Überweisung (das Gehalt) für den Folgemonat zählt: ab diesem Datum wird sie dem 1. des Folgemonats zugeordnet (das tatsächliche Datum bleibt erhalten). 1 bis 31, 0, um sie nie zu verschieben; standardmäßig 25. Gilt für danach importierte oder synchronisierte Transaktionen.",
     "configHelp_regex_label": "Bereinigung der Buchungstexte: Eine Änderung ändert die Kennungen der Transaktionen (Duplikate bei der nächsten Synchronisierung).",
     "configHelp_jwtsecret": "Signatur der Sitzungen: wird über das Sicherheitsbanner erneuert.",
     "configHelp_password_salt": "Prüfung der alten SHA-256-Passwörter.",

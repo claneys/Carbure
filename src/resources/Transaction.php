@@ -20,6 +20,7 @@ use Carbure\Lib\Logger;
 use Carbure\Lib\Month;
 use Carbure\Lib\Webservice;
 use Error;
+use Exception;
 
 // Credit or Debit
 // 1 : VIREMENT
@@ -694,8 +695,14 @@ final class Transaction {
         return md5($rdate . $labelPart . $amount);
     }
 
+    /** Day of the month from which a received transfer counts for the next month, when
+     *  next_month_day is not set */
+    const NEXT_MONTH_DAY = 25;
+
     /**
-     * Fix the date of a transaction.
+     * Fix the date of a transaction: a received transfer (type 1, typically the salary)
+     * dated from the day next_month_day of the month is attached to the 1st of the next
+     * month, the month it pays for. rdate keeps the real date (and the UUID).
      *
      * @param int|string       $type   The type of the transaction
      * @param int|float|string $amount The amount of the transaction
@@ -704,18 +711,29 @@ final class Transaction {
      */
     private static function fixPrelevementDate(int|string $type, int|float|string $amount, string $date): string
     {
-        // We change the date of the transaction if it's a Salary.
-        if ($type == 1) {
-
-            $dayOfMonth = intval(date("d", Month::timestamp($date)));
-
-            if ($dayOfMonth > 25) {
-                // we set the date of the first day of the next month
-                $date = date("Y-m-d", Month::timestamp("first day of next month", Month::timestamp($date)));
-            }
+        $day = self::nextMonthDay();
+        if ($type == 1 && $day > 0 && intval(date("d", Month::timestamp($date))) >= $day) {
+            $date = date("Y-m-d", Month::timestamp("first day of next month", Month::timestamp($date)));
         }
 
         return $date;
+    }
+
+    /**
+     * The setting next_month_day: 1 to 31, 0 to never move a transfer; 25 when it is not
+     * set or not a number.
+     *
+     * @return int
+     */
+    private static function nextMonthDay(): int
+    {
+        // Not Config::has(): it takes "0" for an unset setting
+        try {
+            $value = Config::get('next_month_day');
+        } catch (Exception $e) {
+            return self::NEXT_MONTH_DAY;
+        }
+        return is_numeric($value) ? max(0, min(31, (int)$value)) : self::NEXT_MONTH_DAY;
     }
 
     /**

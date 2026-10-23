@@ -89,9 +89,11 @@ Pour chaque compte suivi :
    plusieurs fois ou par deux utilisateurs. Des opérations **identiques reçues ensemble**
    (deux cafés le même jour, au même prix) sont bien gardées toutes les deux : elles sont
    distinguées par leur rang.
-4. **Mois de rattachement** : un **virement daté après le 25** est rattaché au **1er du mois
-   suivant** (un salaire versé le 28 compte pour le mois qu'il finance) ; la date réelle
-   reste visible dans le détail de la transaction.
+4. **Mois de rattachement** : un **virement reçu daté du 25 ou après** est rattaché au
+   **1er du mois suivant** (un salaire versé le 28 compte pour le mois qu'il finance) ; la
+   date réelle reste visible dans le détail de la transaction. Le jour se règle dans
+   **Administration → Paramètres** (`next_month_day`, de 1 à 31, 0 pour ne jamais déplacer
+   un virement, voir [Configuration](configuration.md#global)).
 5. **Notifications** : voir [Notifications](#notifications).
 
 Puis, une fois tous les comptes traités, les **règles de catégorisation** classent les

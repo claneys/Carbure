@@ -89,9 +89,11 @@ For each followed account:
    several times or by two users. **Identical transactions received together**
    (two coffees on the same day, at the same price) are indeed both kept: they are
    told apart by their rank.
-4. **Month of attribution**: a **transfer dated after the 25th** is attributed to the **1st of
-   the following month** (a salary paid on the 28th counts for the month it funds); the actual date
-   remains visible in the transaction details.
+4. **Month of attribution**: a **received transfer dated on the 25th or later** is attributed
+   to the **1st of the following month** (a salary paid on the 28th counts for the month it
+   funds); the actual date remains visible in the transaction details. The day is set in
+   **Administration → Settings** (`next_month_day`, 1 to 31, 0 to never move a transfer, see
+   [Configuration](configuration.md#global)).
 5. **Notifications**: see [Notifications](#notifications).
 
 Then, once all accounts are processed, the **categorization rules** classify the

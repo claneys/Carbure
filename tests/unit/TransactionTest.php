@@ -1,6 +1,8 @@
 <?php
 
+use Carbure\Lib\Config;
 use Carbure\Resources\Transaction;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 class TransactionTest extends TestCase
@@ -67,9 +69,44 @@ class TransactionTest extends TestCase
     {
         $fix = new ReflectionMethod(Transaction::class, 'fixPrelevementDate');
 
+        // next_month_day not set: from the 25th
         $this->assertSame('2026-02-01', $fix->invoke(null, 1, 2000, '2026-01-28'));
+        $this->assertSame('2026-02-01', $fix->invoke(null, 1, 2000, '2026-01-25'));
+        $this->assertSame('2026-01-24', $fix->invoke(null, 1, 2000, '2026-01-24'));
         $this->assertSame('2026-01-10', $fix->invoke(null, 1, 2000, '2026-01-10'));
+        $this->assertSame('2027-01-01', $fix->invoke(null, 1, 2000, '2026-12-31'));
+        // Only the received transfers
         $this->assertSame('2026-01-28', $fix->invoke(null, 7, -20, '2026-01-28'));
+    }
+
+    #[DataProvider('nextMonthDays')]
+    public function testNextMonthDaySetting(mixed $setting, string $date, string $expected)
+    {
+        $fix = new ReflectionMethod(Transaction::class, 'fixPrelevementDate');
+        Config::set('next_month_day', $setting);
+        try {
+            $this->assertSame($expected, $fix->invoke(null, 1, 2000, $date));
+        } finally {
+            // Back to not set (25): Config has no removal
+            Config::set('next_month_day', '');
+        }
+    }
+
+    /**
+     * @return array<string, array{mixed, string, string}> setting, date, attached date
+     */
+    public static function nextMonthDays(): array
+    {
+        return [
+            'from the 28th, the 27th stays' => ['28', '2026-01-27', '2026-01-27'],
+            'from the 28th, the 28th moves' => ['28', '2026-01-28', '2026-02-01'],
+            'from the 31st, a 30-day month never moves' => ['31', '2026-04-30', '2026-04-30'],
+            'from the 1st, every transfer moves' => ['1', '2026-01-01', '2026-02-01'],
+            '0 disables it' => ['0', '2026-01-31', '2026-01-31'],
+            'above 31 is bounded' => ['40', '2026-01-31', '2026-02-01'],
+            'not a number: 25' => ['end', '2026-01-25', '2026-02-01'],
+            'empty: 25' => ['', '2026-01-25', '2026-02-01'],
+        ];
     }
 
     /**

@@ -948,7 +948,7 @@ Le fichier de configuration, par section : `file` (chemin dans l'instance), `wri
 ### `PUT /system/config` — administrateur
 
 `values` : les nouvelles valeurs par clé, uniquement parmi les réglages modifiables
-(`log_level`, `log_retention_days`, `savings_category`, `public_url`, `woob_transactions`, `woob_logging`,
+(`log_level`, `log_retention_days`, `savings_category`, `public_url`, `currency`, `next_month_day`, `woob_transactions`, `woob_logging`,
 `woob_debug`, `woob_auto_update`, `woob_2fa_wait`, `woob_2fa_retries`, `push_api_key`, `smtp_host`, `smtp_port`, `smtp_encryption`, `smtp_auth`,
 `smtp_username`, `smtp_password`, `smtp_from`, `smtp_from_name`). Toutes les valeurs sont vérifiées avant d'écrire quoi que
 ce soit (`400` sinon, fichier inchangé) ; l'ancien fichier est gardé en `.bak`. Renvoie la

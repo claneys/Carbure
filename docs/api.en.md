@@ -947,7 +947,7 @@ The configuration file, by section: `file` (path in the instance), `writable`, a
 ### `PUT /system/config` — administrator { #put-systemconfig-administrateur }
 
 `values`: the new values by key, only among the editable settings
-(`log_level`, `log_retention_days`, `savings_category`, `public_url`, `woob_transactions`, `woob_logging`,
+(`log_level`, `log_retention_days`, `savings_category`, `public_url`, `currency`, `next_month_day`, `woob_transactions`, `woob_logging`,
 `woob_debug`, `woob_auto_update`, `woob_2fa_wait`, `woob_2fa_retries`, `push_api_key`, `smtp_host`, `smtp_port`, `smtp_encryption`, `smtp_auth`,
 `smtp_username`, `smtp_password`, `smtp_from`, `smtp_from_name`). All values are checked before anything
 is written (`400` otherwise, file unchanged); the old file is kept as `.bak`. Returns the

@@ -511,6 +511,7 @@
     "configHelp_savings_category": "Catégorie de l'épargne (et ses sous-catégories) pour le flux et les tendances.",
     "configHelp_public_url": "Adresse publique du serveur, si le proxy HTTPS ne la transmet pas (OAuth, agents IA).",
     "configHelp_currency": "Devise des montants (code ISO 4217 : EUR, USD, CHF…) dans le portail, les notifications et les e-mails ; aucun montant n'est converti.",
+    "configHelp_next_month_day": "Jour du mois à partir duquel un virement reçu (le salaire) compte pour le mois suivant : daté de ce jour ou après, il est rattaché au 1er du mois suivant (sa date réelle est conservée). De 1 à 31, 0 pour ne jamais le déplacer ; 25 par défaut. S'applique aux transactions importées ou synchronisées ensuite.",
     "configHelp_regex_label": "Nettoyage des libellés : le modifier change les identifiants des transactions (doublons à la synchronisation suivante).",
     "configHelp_jwtsecret": "Signature des sessions : se renouvelle avec le bandeau de sécurité.",
     "configHelp_password_salt": "Vérification des anciens mots de passe SHA-256.",

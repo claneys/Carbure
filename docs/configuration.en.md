@@ -22,7 +22,7 @@ Git and must never be published. After a manual change, nothing needs to be rest
     current value and help, secrets masked.
 
     The keys marked ✏️ in the tables below can be changed there directly: `log_level`,
-    `log_retention_days`, `savings_category`, `public_url`, `currency`, `woob_transactions`,
+    `log_retention_days`, `savings_category`, `public_url`, `currency`, `next_month_day`, `woob_transactions`,
     `woob_logging`, `woob_debug`, `woob_auto_update`, `woob_2fa_wait`, `woob_2fa_retries`,
     `push_api_key` and the
     SMTP settings (`smtp_host`, `smtp_port`, `smtp_encryption`, `smtp_auth`, `smtp_username`,
@@ -47,6 +47,7 @@ this file (see [Settings in the database](#reglages-en-base)).
 | `development` | `true` / `false` | Development mode flag, written as `false` by the wizard (currently has no effect) |
 | `demo` | `true` / `false` | Demo instance (written by the `ltoinel/carbure:demo` image): the login screen shows the public demo account. Missing by default; never on an instance with real data |
 | `currency` ✏️ | ISO 4217 code | Currency of the amounts of the instance (`EUR`, `USD`, `GBP`, `CHF`, `CAD`…), shown in the portal (its symbol: €, $, £… or its code), the notifications and the emails; `EUR` by default or when the value is not a 3-letter code. Only the display changes: no amount is converted, choose the currency of your accounts |
+| `next_month_day` ✏️ | `0` to `31` | Day of the month from which a **received transfer** (the salary) counts for the next month: dated on this day or later, it is attached to the 1st of the next month, the month it pays for; its actual date remains visible in the transaction details. `25` by default (or when the value is not a number); `0`: never moved. Applies to the transactions imported or synchronized afterwards, not to those already saved. See [Month of attribution](fonctionnalites.md#deroulement-dune-synchronisation) |
 | `savings_category` ✏️ | name | Category whose transactions (including its subcategories) make up the savings in the Trends tab; `Epargne` by default, case and accents ignored |
 | `public_url` ✏️ | URL | Optional: public address of Carbure (`https://carbure.exemple.fr`), advertised to AI agents that connect through OAuth and to the mobile apps by the QR code of **My devices**. By default, inferred from the request: set it if the HTTPS proxy does not send `X-Forwarded-Proto` |
 

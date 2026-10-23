@@ -511,6 +511,7 @@
     "configHelp_savings_category": "Categoria da poupança (e respetivas subcategorias) para o fluxo e as tendências.",
     "configHelp_public_url": "Endereço público do servidor, se o proxy HTTPS não o transmitir (OAuth, agentes de IA).",
     "configHelp_currency": "Moeda dos montantes (código ISO 4217: EUR, USD, CHF…) no portal, nas notificações e nos e-mails; nenhum montante é convertido.",
+    "configHelp_next_month_day": "Dia do mês a partir do qual uma transferência recebida (o salário) conta para o mês seguinte: com esta data ou posterior, é atribuída ao dia 1 do mês seguinte (a data real é mantida). De 1 a 31, 0 para nunca a mover; 25 por predefinição. Aplica-se às transações importadas ou sincronizadas depois.",
     "configHelp_regex_label": "Limpeza dos descritivos: alterá-la muda os identificadores das transações (duplicados na sincronização seguinte).",
     "configHelp_jwtsecret": "Assinatura das sessões: renova-se com o aviso de segurança.",
     "configHelp_password_salt": "Verificação das palavras-passe antigas SHA-256.",
