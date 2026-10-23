@@ -6657,6 +6657,56 @@ textarea:focus-visible,
     flex: 1 1 180px;
 }
 
+/* The fields of a row aligned on their bottom (a checkbox or a button next to a field) */
+.notification-setting-row-end {
+    align-items: flex-end;
+}
+
+/* "All the budgets": the checkbox and its label on one line, at the height of a field */
+.notification-setting-check {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+}
+
+.notification-setting-check label {
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 400;
+}
+
+/* Thresholds of categories, under the global one */
+.budget-thresholds {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 12px 0 0;
+    padding: 0;
+    border: none;
+}
+
+.budget-thresholds legend {
+    padding: 0;
+    margin-bottom: 4px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.budget-threshold-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.budget-threshold-add {
+    align-self: flex-start;
+}
+
 .notification-setting label {
     color: var(--text-secondary);
     font-size: 12px;

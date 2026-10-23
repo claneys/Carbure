@@ -404,12 +404,14 @@ n'empêche ni l'autre ni la synchronisation.
 - **Quoi** : les dépenses du mois de chaque catégorie de dépenses qui a un budget,
   sous-catégories comprises, calculées comme l'écran **Budgets** ; une sous-catégorie qui a
   son propre budget est vérifiée aussi.
-- **Budget surveillé** : tous les budgets (par défaut) ou l'un d'eux, choisi par chacun
-  dans **Mon profil → Notifications** parmi les budgets du mois de l'onglet **Budget** ;
-  la suppression de la catégorie revient à tous les budgets.
-- **Seuil** : choisi par chacun dans **Mon profil → Notifications**, en pourcentage du
-  budget, de 50 à 200 % (100 % par défaut ; 80 % pour être prévenu avant). Sous 100 %, le
-  titre devient « Budget presque atteint ».
+- **Seuils**, choisis par chacun dans **Mon profil → Notifications**, en pourcentage du
+  budget, de 50 à 200 % (80 % pour être prévenu avant). Sous 100 %, le titre devient
+  « Budget presque atteint ».
+    - **Tous les budgets** : un seuil global (100 % par défaut), qui peut être désactivé ;
+    - **Seuils par catégorie** : une catégorie qui a un budget reçoit son propre seuil, qui
+      remplace le seuil global pour elle. Par exemple 100 % partout et 80 % sur les courses
+      et les loisirs ; ou, le seuil global désactivé, seulement les courses à 80 % et le
+      logement à 100 %. Supprimer la catégorie supprime son seuil.
 - **Une fois** par catégorie, mois et utilisateur, pas à chaque synchronisation. Si le budget
   est ensuite relevé et de nouveau atteint, l'alerte repart pour le nouveau montant.
 
@@ -442,7 +444,7 @@ dépassent leur budget ce mois-ci ? », « Comment évolue notre épargne ? ».
 - **Mon profil**, en quatre sous-onglets : **Profil** (e-mail, prénom, nom, mot de passe,
   langue appliquée à chaque connexion sur tous les navigateurs, thème), **Double
   authentification** (application d'authentification, codes de secours),
-  **Notifications** (canaux push de l'app mobile et email, seuil d'alerte, budget surveillé
+  **Notifications** (canaux push de l'app mobile et email, seuil d'alerte, seuils des budgets
   et son seuil) et **Mes appareils** (applications mobiles iOS et Android, supprimables ;
   navigateurs web des connexions au portail, celui en cours signalé, supprimables ;
   navigateurs web de confiance, révocables).

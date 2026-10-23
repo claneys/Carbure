@@ -468,10 +468,13 @@ Four sub-tabs, like the administration: **Profile**, **Two-factor authentication
   invalid value is flagged below the field and is not sent):
   - **Large expense**: amount **from which** a new expense, detected
     during a synchronization, is notified (empty = disabled);
-  - **Budget exceeded**: the **Budget watched**, *All the budgets* (default) or one
-    of the budgets of the month set in the **Budget** tab, in its order (a sub-category is shown as
-    "Category › Sub-category"), and the percentage of this budget to **Alert at**
-    (integer from 50 to 200, 100 by default).
+  - **Budget exceeded**: the **All the budgets** checkbox (checked by default) and the
+    percentage of the budget to **Alert at** (integer from 50 to 200, 100 by default),
+    disabled with the checkbox; then the **Thresholds per category**: **Add a threshold
+    for a category** creates a row with the first budget of the month without a threshold
+    (at the global threshold), where to choose the budget among those of the **Budget** tab,
+    in its order (a sub-category is shown as "Category › Sub-category"), and its percentage;
+    the bin removes the row. The threshold of a category replaces the global one for it.
 
   All the boxes of the push column are disabled and grayed out, with the reason below the
   table, as long as the administrator has not registered the instance with the Carbure Push service

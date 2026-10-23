@@ -470,7 +470,8 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
     /**
      * Channels of each kind of notification of the authenticated user
      * @returns {Promise<Object>} {preferences: {kind: {push, email}}, smtp, address, email_available,
-     *          push_available, budget_threshold, alert_threshold, budget_category, budgets: [{id, name}]}
+     *          push_available, budget_threshold, budget_all, budget_thresholds: [{category, threshold}],
+     *          alert_threshold, budget_category, budgets: [{id, name}]}
      */
     async function fetchNotifications() {
         return request(`${baseUrl}/user/notifications`, {}, 'Failed to read the notifications');
@@ -497,6 +498,24 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
             if (settings[key] !== undefined && settings[key] !== null) {
                 body[key] = String(settings[key]);
             }
+        }
+        return request(`${baseUrl}/user/notifications`, { method: 'PUT', body: JSON.stringify(body) }, 'Failed to save the notifications');
+    }
+
+    /**
+     * Changes the budget alert thresholds of the authenticated user, those not sent kept
+     * @param {Object} settings - budgetAll (the global threshold is on, for all the budgets)
+     *                            and/or budgetThresholds ([{category, threshold}], the
+     *                            thresholds of categories, replacing the previous ones)
+     * @returns {Promise<Object>} The notifications, as fetchNotifications
+     */
+    async function updateBudgetAlerts(settings) {
+        const body = {};
+        if (settings.budgetAll !== undefined) {
+            body.budgetAll = Boolean(settings.budgetAll);
+        }
+        if (settings.budgetThresholds !== undefined) {
+            body.budgetThresholds = settings.budgetThresholds.map(({ category, threshold }) => ({ category: String(category), threshold: String(threshold) }));
         }
         return request(`${baseUrl}/user/notifications`, { method: 'PUT', body: JSON.stringify(body) }, 'Failed to save the notifications');
     }
@@ -1215,6 +1234,7 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
         updateNotifications,
         updateAlertSettings,
         updateBudgetThreshold,
+        updateBudgetAlerts,
         fetchFlowTransactions,
         unlockUser,
         fetchMcpSettings,

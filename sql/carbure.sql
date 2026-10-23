@@ -199,6 +199,7 @@ CREATE TABLE `users` (
   `alert_threshold` decimal(10,2) DEFAULT NULL,
   `budget_threshold` smallint(5) unsigned NOT NULL DEFAULT 100 COMMENT 'Percent of a budget whose spending of the month alerts (50 to 200)',
   `budget_alert_category` tinyint(3) unsigned DEFAULT NULL COMMENT 'Category whose budget alerts (NULL: all the budgets)',
+  `budget_alert_all` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Global budget alert threshold on (all the budgets)',
   `last_login` datetime DEFAULT NULL,
   `failed_logins` tinyint(3) unsigned NOT NULL DEFAULT 0,
   `locked_until` datetime DEFAULT NULL,
@@ -293,6 +294,20 @@ CREATE TABLE `budget_alert` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
+-- Table `budget_alert_threshold`: budget alert threshold of a user for one category, used
+-- instead of his global threshold (users.budget_threshold)
+
+CREATE TABLE `budget_alert_threshold` (
+  `user_id` int(10) unsigned NOT NULL,
+  `category` tinyint(3) unsigned NOT NULL,
+  `threshold` smallint(5) unsigned NOT NULL COMMENT 'Percent of the budget of the category that alerts (50 to 200)',
+  PRIMARY KEY (`user_id`, `category`),
+  KEY `budget_alert_threshold_category` (`category`),
+  CONSTRAINT `fk_budget_alert_threshold_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_budget_alert_threshold_category` FOREIGN KEY (`category`) REFERENCES `bank_transaction_category` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
 -- Table `schema_migrations`: version of this schema (base of version 1.0, then the
 -- migrations included since)
 
@@ -343,7 +358,8 @@ INSERT IGNORE INTO `schema_migrations` (`version`) VALUES
 ('2026-10-23_user_budget_alert_category'),
 ('2026-10-24_user_mfa'),
 ('2026-10-25_device_model'),
-('2026-10-26_user_browser');
+('2026-10-26_user_browser'),
+('2026-10-27_budget_alert_threshold');
 
 SET FOREIGN_KEY_CHECKS = 1;
 COMMIT;

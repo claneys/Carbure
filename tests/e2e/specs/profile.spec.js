@@ -294,35 +294,57 @@ test('alerts by email when the spending of a budget reaches the threshold', asyn
         // Opt-in: off on every channel, 100 % by default
         await expect(notification(page, 'budget', 'push')).not.toBeChecked();
         await expect(notification(page, 'budget', 'email')).not.toBeChecked();
-        const threshold = page.getByLabel(tr('budgetThreshold'));
+        // The global threshold (the thresholds of categories share its label)
+        const threshold = page.locator('#budget-threshold');
         await expect(threshold).toHaveValue('100');
 
-        // All the budgets by default; the budgets of the Budget tab offered in its order,
-        // a sub-category after its parent
-        const watched = page.getByLabel(tr('budgetWatched'));
-        await expect(watched.locator('option:checked')).toHaveText(tr('budgetWatchedAll'));
-        await expect(watched.locator('option')).toHaveText([tr('budgetWatchedAll'), 'Logement', 'Alimentation', 'Alimentation › Supermarché', 'Alimentation › Restaurant']);
-        await watched.selectOption({ label: 'Logement' });
-        await expect(page.locator('.toast')).toHaveText(tr('notificationsSaved'));
+        // All the budgets at the global threshold by default, no threshold of a category
+        const all = page.getByLabel(tr('budgetAll'));
+        await expect(all).toBeChecked();
+        await expect(page.locator('.budget-threshold-list')).toHaveCount(0);
 
-        // A threshold out of range: refused, not sent
+        // A global threshold out of range: refused, not sent
         await threshold.fill('30');
         await threshold.press('Enter');
         await expect(page.locator('#budget-threshold-error')).toHaveText(tr('budgetThresholdInvalid'));
         await expect(threshold).toHaveAttribute('aria-invalid', 'true');
-
-        await threshold.fill('90');
+        await threshold.fill('100');
         await threshold.press('Enter');
-        await expect(page.locator('.toast')).toHaveText(tr('notificationsSaved'));
         await expect(page.locator('#budget-threshold-error')).toHaveCount(0);
+
+        // A threshold for a category: the first budget, at the global threshold; the
+        // budgets of the Budget tab offered in its order, a sub-category after its parent
+        await page.getByRole('button', { name: tr('budgetThresholdAdd') }).click();
+        await expect(page.locator('.toast')).toHaveText(tr('notificationsSaved'));
+        const category = page.locator('#budget-row-category-0');
+        await expect(category.locator('option:checked')).toHaveText('Logement');
+        await expect(category.locator('option')).toHaveText(['Logement', 'Alimentation', 'Alimentation › Supermarché', 'Alimentation › Restaurant']);
+        const rowThreshold = page.locator('#budget-row-threshold-0');
+        await expect(rowThreshold).toHaveValue('100');
+
+        // Out of range: refused, not sent
+        await rowThreshold.fill('30');
+        await rowThreshold.press('Enter');
+        await expect(page.locator('#budget-rows-error')).toHaveText(tr('budgetThresholdInvalid'));
+        await expect(rowThreshold).toHaveAttribute('aria-invalid', 'true');
+        await rowThreshold.fill('90');
+        await rowThreshold.press('Enter');
+        await expect(page.locator('.toast')).toHaveText(tr('notificationsSaved'));
+        await expect(page.locator('#budget-rows-error')).toHaveCount(0);
+
+        // Only this category: the global threshold off (its field disabled)
+        await all.uncheck();
+        await expect(page.locator('.toast')).toHaveText(tr('notificationsSaved'));
+        await expect(threshold).toBeDisabled();
         await notification(page, 'budget', 'email').check();
         await expect(page.locator('.toast')).toHaveText(tr('notificationsSaved'));
 
         // Saved on the server
         await page.reload();
         await openProfile(page, 'notificationsTitle');
-        await expect(page.getByLabel(tr('budgetThreshold'))).toHaveValue('90');
-        await expect(page.getByLabel(tr('budgetWatched')).locator('option:checked')).toHaveText('Logement');
+        await expect(page.getByLabel(tr('budgetAll'))).not.toBeChecked();
+        await expect(page.locator('#budget-row-category-0 option:checked')).toHaveText('Logement');
+        await expect(page.locator('#budget-row-threshold-0')).toHaveValue('90');
         await expect(notification(page, 'budget', 'email')).toBeChecked();
 
         // An import of the current month: Logement (950 € of 1 000 €) reaches 90 %

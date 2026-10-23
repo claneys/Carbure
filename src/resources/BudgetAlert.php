@@ -4,7 +4,7 @@
  * BudgetAlert.php
  *
  * Alerts of the users when the spending of the month of a budgeted category reaches
- * their threshold (a percentage of the budget, users.budget_threshold, 100 by default).
+ * their threshold (a percentage of the budget, 100 by default).
  *
  * - Checked after each synchronization and each import of a statement file, for the
  *   current month only: an import of past months does not alert on old budgets.
@@ -14,8 +14,12 @@
  *   sub-categories.
  * - Sent with the kind "budget" of the notification preferences, off on every channel
  *   by default (opt-in).
- * - Each user watches all the budgets, or one category with a budget
- *   (users.budget_alert_category, NULL: all; all before its migration is applied).
+ * - Thresholds of each user: a global one for all the budgets (users.budget_threshold),
+ *   which can be turned off (users.budget_alert_all), and thresholds of categories
+ *   (budget_alert_threshold), used instead of the global one for their category: 80 % on
+ *   two categories and 100 % on the others, or only two categories. Before the migration
+ *   2026-10-27_budget_alert_threshold, all the budgets or the one of
+ *   users.budget_alert_category, at users.budget_threshold.
  * - Once per user, category and month (table budget_alert); alerted again when the
  *   budget of the category is raised above the amount already alerted and the new
  *   amount is reached too.
@@ -46,6 +50,9 @@ final class BudgetAlert {
 
     /** Highest threshold accepted, in percent */
     const MAX_THRESHOLD = 200;
+
+    /** Most categories with a threshold of their own, for one user */
+    const MAX_CATEGORY_THRESHOLDS = 50;
 
     /**
      * Check the budgets of the current month and alert the users whose threshold is
@@ -205,14 +212,161 @@ final class BudgetAlert {
     }
 
     /**
-     * Users who receive the budget alerts: at least one channel of the kind "budget"
-     * on, with their language, threshold and category watched (null: all).
+     * Thresholds of the budget alerts of a user: the global one (all the budgets, null
+     * when it is off) and those of the categories that have their own.
      *
-     * @return list<array{id: int, language: string, threshold: int, category: int|null}>
+     * @param int $userId The user
+     * @return array{all: int|null, categories: array<int, int>} Thresholds in percent, by category
+     */
+    public static function rules(int $userId): array
+    {
+        try {
+            $user = Db::queryOne("SELECT budget_threshold, budget_alert_all FROM users WHERE id = ?", "i", $userId);
+            $rows = Db::select("SELECT category, threshold FROM budget_alert_threshold WHERE user_id = ? ORDER BY category",
+                "i", $userId)->fetch_all(MYSQLI_ASSOC);
+        } catch (Exception $e) {
+            return self::legacyRules($userId);
+        }
+        $categories = [];
+        foreach ($rows as $row) {
+            $categories[(int)$row['category']] = (int)$row['threshold'];
+        }
+        $threshold = $user === null ? self::DEFAULT_THRESHOLD : (int)$user['budget_threshold'];
+        return ['all' => $user !== null && !(int)$user['budget_alert_all'] ? null : $threshold, 'categories' => $categories];
+    }
+
+    /**
+     * Thresholds of a user before the migration 2026-10-27_budget_alert_threshold: his
+     * threshold on all the budgets, or on the one he watched.
+     *
+     * @param int $userId The user
+     * @return array{all: int|null, categories: array<int, int>}
+     */
+    private static function legacyRules(int $userId): array
+    {
+        try {
+            $row = Db::queryOne("SELECT budget_threshold FROM users WHERE id = ?", "i", $userId);
+        } catch (Exception $e) {
+            $row = null;
+        }
+        $threshold = $row === null ? self::DEFAULT_THRESHOLD : (int)$row['budget_threshold'];
+        $category = self::watchedCategory($userId);
+        return $category === null ? ['all' => $threshold, 'categories' => []] : ['all' => null, 'categories' => [$category => $threshold]];
+    }
+
+    /**
+     * Whether the thresholds of categories can be saved: the migration
+     * 2026-10-27_budget_alert_threshold is applied.
+     *
+     * @return bool
+     */
+    public static function thresholdsReady(): bool
+    {
+        try {
+            Db::queryOne("SELECT 1 FROM budget_alert_threshold LIMIT 1", "");
+            return true;
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * The only category of thresholds without the global one, as the budget watched of
+     * the clients older than the thresholds of categories (null: none, or several).
+     *
+     * @param array{all: int|null, categories: array<int, int>} $rules The thresholds of a user
+     * @return int|null
+     */
+    public static function watchedOf(array $rules): ?int
+    {
+        return $rules['all'] === null && count($rules['categories']) === 1 ? (int)array_key_first($rules['categories']) : null;
+    }
+
+    /**
+     * Stored values of the thresholds of categories sent by a user.
+     *
+     * @param array<mixed> $thresholds [{category, threshold}]: an expense category and an
+     *                                 integer from MIN_THRESHOLD to MAX_THRESHOLD
+     * @return array<int, int> Thresholds by category
+     * @throws Error If one is not valid, or a category is given twice (400)
+     */
+    public static function thresholdsValue(array $thresholds): array
+    {
+        if (count($thresholds) > self::MAX_CATEGORY_THRESHOLDS) {
+            throw new Error("At most " . self::MAX_CATEGORY_THRESHOLDS . " budget alert thresholds of categories", 400);
+        }
+        $values = [];
+        foreach ($thresholds as $item) {
+            [$id, $threshold] = self::thresholdItem($item);
+            if (isset($values[$id])) {
+                throw new Error("A category has two budget alert thresholds", 400);
+            }
+            $values[$id] = $threshold;
+        }
+        return $values;
+    }
+
+    /**
+     * One threshold of a category sent by a user.
+     *
+     * @param mixed $item {category, threshold}
+     * @return array{0: int, 1: int} The category and the threshold
+     * @throws Error If it is not valid (400)
+     */
+    private static function thresholdItem(mixed $item): array
+    {
+        $category = is_array($item) ? ($item['category'] ?? null) : null;
+        $threshold = is_array($item) ? ($item['threshold'] ?? null) : null;
+        if (!(is_int($category) || is_string($category)) || !(is_int($threshold) || is_float($threshold) || is_string($threshold))) {
+            throw new Error("Each budget alert threshold is {category, threshold}", 400);
+        }
+        $id = self::categoryValue($category);
+        if ($id === null) {
+            throw new Error("The budget alert threshold of a category needs an expense category", 400);
+        }
+        return [$id, self::thresholdValue($threshold)];
+    }
+
+    /**
+     * Save the thresholds of a user, all at once; budget_alert_category keeps the budget
+     * watched of the older clients.
+     *
+     * @param int             $userId     The user
+     * @param bool            $all        The global threshold is on
+     * @param array<int, int> $categories Thresholds by category
+     * @return void
+     * @throws Error If the migration 2026-10-27_budget_alert_threshold is not applied (409)
+     */
+    public static function saveRules(int $userId, bool $all, array $categories): void
+    {
+        $db = Db::getConnection();
+        $db->begin_transaction();
+        try {
+            $watched = !$all && count($categories) === 1 ? (int)array_key_first($categories) : null;
+            Db::execute("UPDATE users SET budget_alert_all = ?, budget_alert_category = ? WHERE id = ?", "iii",
+                (int)$all, $watched, $userId);
+            Db::execute("DELETE FROM budget_alert_threshold WHERE user_id = ?", "i", $userId);
+            $rows = [];
+            foreach ($categories as $category => $threshold) {
+                $rows[] = [$userId, $category, $threshold];
+            }
+            Db::executeMany("INSERT INTO budget_alert_threshold (user_id, category, threshold) VALUES (?, ?, ?)", "iii", $rows);
+            $db->commit();
+        } catch (Exception $e) {
+            $db->rollback();
+            throw new Error("Apply the pending database migrations first: the budget alert thresholds cannot be saved yet", 409);
+        }
+    }
+
+    /**
+     * Users who receive the budget alerts: at least one channel of the kind "budget"
+     * on, with their language and thresholds.
+     *
+     * @return list<array{id: int, language: string, rules: array{all: int|null, categories: array<int, int>}}>
      */
     private static function subscribers(): array
     {
-        $users = Db::select("SELECT id, language, budget_threshold FROM users", "")->fetch_all(MYSQLI_ASSOC);
+        $users = Db::select("SELECT id, language FROM users", "")->fetch_all(MYSQLI_ASSOC);
         $subscribers = [];
         foreach ($users as $user) {
             $channels = Notification::preferences((int)$user['id'])[self::KIND];
@@ -220,8 +374,7 @@ final class BudgetAlert {
                 $subscribers[] = [
                     'id' => (int)$user['id'],
                     'language' => (string)$user['language'],
-                    'threshold' => (int)$user['budget_threshold'],
-                    'category' => self::watchedCategory((int)$user['id']),
+                    'rules' => self::rules((int)$user['id']),
                 ];
             }
         }
@@ -229,21 +382,22 @@ final class BudgetAlert {
     }
 
     /**
-     * Alert a user for a category he watches when his threshold is reached and he was
-     * not alerted yet for this month (or for a lower budget).
+     * Alert a user for a category when his threshold for it (its own, or the global one)
+     * is reached and he was not alerted yet for this month (or for a lower budget).
      *
-     * @param array{id: int, language: string, threshold: int, category: int|null} $user     The user
-     * @param array{id: int, name: string, budget: float, spent: float}             $category The category
-     * @param string                                                                $month    First day of the month (Y-m-d)
+     * @param array{id: int, language: string, rules: array{all: int|null, categories: array<int, int>}} $user     The user
+     * @param array{id: int, name: string, budget: float, spent: float}                                 $category The category
+     * @param string                                                                                    $month    First day of the month (Y-m-d)
      * @return bool Whether the user was alerted
      */
     private static function alert(array $user, array $category, string $month): bool
     {
-        if ($user['category'] !== null && $user['category'] !== $category['id']) {
+        $threshold = $user['rules']['categories'][$category['id']] ?? $user['rules']['all'];
+        if ($threshold === null) {
             return false;
         }
         $percent = self::percent($category['spent'], $category['budget']);
-        if ($percent < $user['threshold'] || self::alreadySent($user['id'], $category['id'], $month, $category['budget'])) {
+        if ($percent < $threshold || self::alreadySent($user['id'], $category['id'], $month, $category['budget'])) {
             return false;
         }
 

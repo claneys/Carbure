@@ -5,8 +5,9 @@
  * (synchronization result, rule marked "notify", large expense, budget exceeded), the
  * channels it is sent on (push to the iOS app, when the administrator configured the
  * push service; email to the address of the profile), and the settings shown under the
- * label of their kind: the amount of a large expense, the budget watched and the
- * threshold of the budget alerts (percent of a budget). Each change is saved at once.
+ * label of their kind: the amount of a large expense, and for the budget alerts a global
+ * threshold (percent of every budget, which can be turned off) and thresholds of
+ * categories, used instead of it for their category. Each change is saved at once.
  *
  * @module notificationsModule
  */
@@ -102,9 +103,13 @@ export function createNotificationsModule(getApiService) {
                 alertThreshold: '',
                 alertThresholdErrorKey: '',
                 savingAlertThreshold: false,
-                // Budget watched by the budget alerts ('' = all the budgets)
-                budgetCategory: '',
-                savingBudgetCategory: false
+                // Global budget threshold on (all the budgets), and the thresholds of
+                // categories: [{key, category (id as a string), threshold}]
+                budgetAll: true,
+                budgetRows: [],
+                budgetRowsErrorKey: '',
+                savingBudgetRules: false,
+                nextBudgetRowKey: 0
             };
         },
 
@@ -123,6 +128,15 @@ export function createNotificationsModule(getApiService) {
              */
             pushUnavailable() {
                 return pushUnavailableReason(this.notifications);
+            },
+
+            /**
+             * Budgets that no threshold of a category uses yet, to add one
+             * @returns {Array<{id: number, name: string}>}
+             */
+            freeBudgets() {
+                const used = new Set(this.budgetRows.map(row => row.category));
+                return (this.notifications?.budgets || []).filter(budget => !used.has(String(budget.id)));
             }
         },
 
@@ -153,7 +167,40 @@ export function createNotificationsModule(getApiService) {
                 const amount = this.notifications.alert_threshold;
                 this.alertThreshold = amount ? String(Number(amount)) : '';
                 this.alertThresholdErrorKey = '';
-                this.budgetCategory = this.notifications.budget_category ? String(this.notifications.budget_category) : '';
+                this.budgetAll = this.notifications.budget_all ?? true;
+                this.budgetRows = (this.notifications.budget_thresholds || []).map(({ category, threshold }) => (
+                    { key: this.nextBudgetRowKey++, category: String(category), threshold: String(threshold) }));
+                this.budgetRowsErrorKey = '';
+            },
+
+            /**
+             * Budgets a threshold of a category can be moved to: its own and those no
+             * other threshold uses
+             * @param {Object} row - The threshold of a category
+             * @returns {Array<{id: number, name: string}>}
+             */
+            budgetRowOptions(row) {
+                const used = new Set(this.budgetRows.filter(other => other !== row).map(other => other.category));
+                return (this.notifications?.budgets || []).filter(budget => !used.has(String(budget.id)));
+            },
+
+            /**
+             * Whether the threshold typed for a category is refused
+             * @param {Object} row - The threshold of a category
+             * @returns {boolean}
+             */
+            budgetRowInvalid(row) {
+                return !!budgetThresholdError(row.threshold);
+            },
+
+            /**
+             * Name of the category of a threshold, for the label of its button
+             * @param {Object} row - The threshold of a category
+             * @returns {string}
+             */
+            budgetRowName(row) {
+                const budget = (this.notifications?.budgets || []).find(item => String(item.id) === row.category);
+                return budget ? budget.name : row.category;
             },
 
             /**
@@ -248,21 +295,65 @@ export function createNotificationsModule(getApiService) {
             },
 
             /**
-             * Saves the budget watched by the budget alerts ('' = all the budgets); back
-             * to the previous one if refused
+             * Saves the budget alert settings sent; back to the saved ones if refused
+             * @param {Object} settings - budgetAll and/or budgetThresholds
              * @returns {Promise<void>}
              */
-            async saveBudgetCategory() {
-                this.savingBudgetCategory = true;
+            async saveBudgetRules(settings) {
+                this.savingBudgetRules = true;
                 try {
-                    this.notifications = await getApiService().updateAlertSettings({ budgetCategory: this.budgetCategory });
+                    this.notifications = await getApiService().updateBudgetAlerts(settings);
                     this.showToast(this.t('notificationsSaved'));
                 } catch (error) {
                     this.showToast(error.message);
                 } finally {
                     this.readAlertSettings();
-                    this.savingBudgetCategory = false;
+                    this.savingBudgetRules = false;
                 }
+            },
+
+            /**
+             * Turns the global budget threshold (all the budgets) on or off
+             * @returns {Promise<void>}
+             */
+            async saveBudgetAll() {
+                await this.saveBudgetRules({ budgetAll: this.budgetAll });
+            },
+
+            /**
+             * Checks and saves the thresholds of categories; an invalid threshold is not
+             * sent and its error is shown under the list
+             * @returns {Promise<void>}
+             */
+            async saveBudgetRows() {
+                this.budgetRowsErrorKey = this.budgetRows.map(row => budgetThresholdError(row.threshold)).find(Boolean) || '';
+                if (this.budgetRowsErrorKey) {
+                    return;
+                }
+                await this.saveBudgetRules({ budgetThresholds: this.budgetRows.map(({ category, threshold }) => ({ category, threshold: Number(threshold) })) });
+            },
+
+            /**
+             * Adds a threshold for the first budget without one, at the global threshold
+             * @returns {Promise<void>}
+             */
+            async addBudgetRow() {
+                const budget = this.freeBudgets[0];
+                if (!budget) {
+                    return;
+                }
+                this.budgetRows.push({ key: this.nextBudgetRowKey++, category: String(budget.id), threshold: String(this.budgetThreshold) });
+                await this.saveBudgetRows();
+            },
+
+            /**
+             * Removes the threshold of a category: its budget follows the global threshold again
+             * @param {Object} row - The threshold of a category
+             * @returns {Promise<void>}
+             */
+            async removeBudgetRow(row) {
+                this.budgetRows = this.budgetRows.filter(other => other !== row);
+                await this.saveBudgetRows();
             }
         }
     };

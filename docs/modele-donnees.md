@@ -22,6 +22,8 @@ erDiagram
     users ||--o{ budget_alert : "alerté"
     bank_transaction_category ||--o{ budget_alert : "alerte"
     bank_transaction_category |o--o{ users : "budget surveillé"
+    users ||--o{ budget_alert_threshold : "seuils"
+    bank_transaction_category ||--o{ budget_alert_threshold : "seuil"
     users ||--o{ bank_account : "a ajouté"
     users ||--o{ bank_transaction : "rattachement"
     bank_transaction_category ||--o{ bank_transaction : "catégorise"
@@ -47,6 +49,7 @@ erDiagram
         decimal alert_threshold "seuil d'alerte, NULL = désactivé"
         smallint budget_threshold "seuil des budgets en %, 100"
         tinyint budget_alert_category FK "budget surveillé, NULL = tous"
+        tinyint budget_alert_all "seuil global activé, 1"
         datetime last_login
         tinyint failed_logins
         datetime locked_until "NULL = non bloqué"
@@ -64,6 +67,11 @@ erDiagram
         varchar kind PK "sync, rule, expense, budget"
         tinyint push "1 par défaut"
         tinyint email "0 par défaut"
+    }
+    budget_alert_threshold {
+        int user_id PK
+        tinyint category PK
+        smallint threshold "seuil en %, 50 à 200"
     }
     budget_alert {
         int user_id PK
@@ -184,6 +192,7 @@ erDiagram
 | `mfa_trusted_browser` | Navigateurs de confiance (6 mois) : empreinte SHA-256 du jeton du cookie (`token_hash`), `label` (User-Agent), `created_at`, `expires_at`, `last_used_at`. Supprimés avec l'utilisateur, quand son mot de passe change ou que sa double authentification est désactivée ou réinitialisée. |
 | `user_browser` | Navigateurs web des connexions au portail : empreinte SHA-256 du jeton du cookie `carbure_browser` (`token_hash`, unique par utilisateur : plusieurs utilisateurs du foyer partagent le cookie d'un navigateur), `label` (User-Agent), `created_at`, `last_login`. Oubliés après 6 mois sans connexion ou à la demande de l'utilisateur, supprimés avec lui. Ni notification ni dispense de la double authentification. |
 | `user_notification` | Canaux choisis par un utilisateur pour un type de notification (`kind` : `sync`, `rule`, `expense`, `budget`) : `push` vers ses appareils, `email` vers l'adresse de son profil. Sans ligne pour un type : push oui, email non, sauf `budget` (ni l'un ni l'autre). Supprimés avec l'utilisateur. |
+| `budget_alert_threshold` | Seuil des alertes de budget d'un utilisateur pour une catégorie (`threshold`, de 50 à 200 %), à la place de son seuil global (`users.budget_threshold`, appliqué à tous les budgets si `users.budget_alert_all`). Supprimé avec l'utilisateur ou la catégorie. |
 | `budget_alert` | Alertes de budget envoyées : une par utilisateur, catégorie et mois (`month`, premier jour), avec le budget (`budget`), les dépenses (`spent`) et le pourcentage (`percent`) au moment de l'alerte. Une nouvelle alerte ne part que si le budget du mois dépasse celui déjà alerté. Supprimées avec l'utilisateur ou la catégorie. |
 | `api_tokens` | Jetons d'accès des agents IA (serveur MCP) : seule l'empreinte SHA-256 (`token_hash`) est stockée, `token_hint` (début du jeton) sert à le reconnaître ; `expires_at` `NULL` = sans expiration. Un jeton obtenu par OAuth porte son `client_id` et l'empreinte de son jeton de rafraîchissement (`refresh_hash`) ; `client_id` `NULL` = créé dans le portail. Supprimés avec l'utilisateur. |
 | `oauth_clients` | Agents IA enregistrés par OAuth (RFC 7591) : `client_id`, empreinte du secret (`NULL` pour un client public, PKCE seul), nom et URI de retour autorisées (tableau JSON). |
@@ -223,6 +232,7 @@ main, ou par `sql/carbure.sql`). Voir [Développement](developpement.md#migratio
 | `2026-10-21_user_budget_threshold` | Seuil des alertes de budget (`users.budget_threshold`) |
 | `2026-10-22_budget_alert` | Alertes de budget envoyées (table `budget_alert`) |
 | `2026-10-23_user_budget_alert_category` | Budget surveillé par les alertes de budget (`users.budget_alert_category`, `NULL` = tous) |
+| `2026-10-27_budget_alert_threshold` | Seuil global désactivable et seuils par catégorie des alertes de budget (`users.budget_alert_all`, table `budget_alert_threshold`) ; le budget surveillé devient un seuil de catégorie |
 
 ## Modèle « foyer »
 

@@ -2144,16 +2144,14 @@
                                                     <p v-if="alertThresholdErrorKey" id="alert-threshold-error" class="sync-step-error" role="alert">{{ t(alertThresholdErrorKey) }}</p>
                                                     <small id="alert-threshold-help">{{ t('alertThresholdHelp') }}</small>
                                                 </div>
-                                                <!-- Budget exceeded: the budget watched and the percent of it that alerts -->
+                                                <!-- Budget exceeded: the global threshold (all the budgets, can be turned off), then
+                                                     the thresholds of categories, used instead of it for their category -->
                                                 <div v-else-if="kind === 'budget'" class="notification-settings">
-                                                    <div class="notification-setting-row">
-                                                        <div class="notification-setting notification-setting-grow">
-                                                            <label for="budget-category">{{ t('budgetWatched') }}</label>
-                                                            <select id="budget-category" v-model="budgetCategory" :disabled="savingBudgetCategory"
-                                                                    aria-describedby="budget-threshold-help" @change="saveBudgetCategory">
-                                                                <option value="">{{ t('budgetWatchedAll') }}</option>
-                                                                <option v-for="budget in notifications.budgets || []" :key="budget.id" :value="String(budget.id)">{{ budget.name }}</option>
-                                                            </select>
+                                                    <div class="notification-setting-row notification-setting-row-end">
+                                                        <div class="notification-setting notification-setting-check notification-setting-grow">
+                                                            <input id="budget-all" type="checkbox" v-model="budgetAll" :disabled="savingBudgetRules"
+                                                                   aria-describedby="budget-threshold-help" @change="saveBudgetAll" />
+                                                            <label for="budget-all">{{ t('budgetAll') }}</label>
                                                         </div>
                                                         <div class="notification-setting">
                                                             <label for="budget-threshold">{{ t('budgetThreshold') }}</label>
@@ -2162,7 +2160,7 @@
                                                                        :min="budgetThresholdMin" :max="budgetThresholdMax" v-model="budgetThreshold"
                                                                        :aria-invalid="budgetThresholdErrorKey ? 'true' : null"
                                                                        :aria-describedby="budgetThresholdErrorKey ? 'budget-threshold-error budget-threshold-help' : 'budget-threshold-help'"
-                                                                       :disabled="savingBudgetThreshold"
+                                                                       :disabled="savingBudgetThreshold || !budgetAll"
                                                                        @change="saveBudgetThreshold" @keydown.enter.prevent="saveBudgetThreshold" />
                                                                 <span class="input-unit-suffix" aria-hidden="true">%</span>
                                                             </div>
@@ -2170,6 +2168,43 @@
                                                     </div>
                                                     <p v-if="budgetThresholdErrorKey" id="budget-threshold-error" class="sync-step-error" role="alert">{{ t(budgetThresholdErrorKey) }}</p>
                                                     <small id="budget-threshold-help">{{ t((notifications.budgets || []).length ? 'budgetThresholdHelp' : 'budgetWatchedNone') }}</small>
+
+                                                    <fieldset class="budget-thresholds">
+                                                        <legend>{{ t('budgetCategoryThresholds') }}</legend>
+                                                        <ul v-if="budgetRows.length" class="budget-threshold-list">
+                                                            <li v-for="(row, index) in budgetRows" :key="row.key" class="notification-setting-row notification-setting-row-end">
+                                                                <div class="notification-setting notification-setting-grow">
+                                                                    <label :for="'budget-row-category-' + index">{{ t('budgetWatched') }}</label>
+                                                                    <select :id="'budget-row-category-' + index" v-model="row.category" :disabled="savingBudgetRules" @change="saveBudgetRows">
+                                                                        <option v-for="budget in budgetRowOptions(row)" :key="budget.id" :value="String(budget.id)">{{ budget.name }}</option>
+                                                                    </select>
+                                                                </div>
+                                                                <div class="notification-setting">
+                                                                    <label :for="'budget-row-threshold-' + index">{{ t('budgetThreshold') }}</label>
+                                                                    <div class="input-unit">
+                                                                        <input :id="'budget-row-threshold-' + index" type="number" inputmode="numeric" step="1"
+                                                                               :min="budgetThresholdMin" :max="budgetThresholdMax" v-model="row.threshold"
+                                                                               :aria-invalid="budgetRowsErrorKey && budgetRowInvalid(row) ? 'true' : null"
+                                                                               :aria-describedby="budgetRowsErrorKey ? 'budget-rows-error budget-rows-help' : 'budget-rows-help'"
+                                                                               :disabled="savingBudgetRules"
+                                                                               @change="saveBudgetRows" @keydown.enter.prevent="saveBudgetRows" />
+                                                                        <span class="input-unit-suffix" aria-hidden="true">%</span>
+                                                                    </div>
+                                                                </div>
+                                                                <button type="button" class="btn-icon btn-icon-delete" :disabled="savingBudgetRules"
+                                                                        :title="t('budgetThresholdRemove', { category: budgetRowName(row) })"
+                                                                        :aria-label="t('budgetThresholdRemove', { category: budgetRowName(row) })"
+                                                                        @click="removeBudgetRow(row)">
+                                                                    <span class="material-icons" aria-hidden="true">delete</span>
+                                                                </button>
+                                                            </li>
+                                                        </ul>
+                                                        <p v-if="budgetRowsErrorKey" id="budget-rows-error" class="sync-step-error" role="alert">{{ t(budgetRowsErrorKey) }}</p>
+                                                        <button type="button" class="btn-secondary budget-threshold-add" :disabled="savingBudgetRules || !freeBudgets.length" @click="addBudgetRow">
+                                                            <span class="material-icons" aria-hidden="true">add</span>{{ t('budgetThresholdAdd') }}
+                                                        </button>
+                                                        <small id="budget-rows-help">{{ t('budgetCategoryThresholdsHelp') }}</small>
+                                                    </fieldset>
                                                 </div>
                                             </th>
                                             <td v-for="channel in notificationChannels" :key="channel">
