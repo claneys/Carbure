@@ -5,7 +5,10 @@
  *
  * Test double of the woob CLI used by the tests (woob_path = "php tests/fixtures/fake-woob.php").
  * Usage: fake-woob.php bank <coming|history> <account@bank> [options...]
- *        fake-woob.php bank list [-b <backend>] -f json (two accounts, "none": no account)
+ *        fake-woob.php bank list [-b <backend>] -f json (two accounts, "none": no account; "2fa" or
+ *                                                          a bank added with the login "2fa": a
+ *                                                          two-factor authentication first, only
+ *                                                          on a terminal)
  *        fake-woob.php bank list -b <backend> -f json -s id (their ids and those of the accounts
  *                                                          below, except "unlisted@<backend>")
  *        fake-woob.php config info <module> -f json       (settings once installed, like woob 3.7)
@@ -202,6 +205,20 @@ if (($argv[1] ?? '') === 'bank' && $type === 'list') {
     if ($backend === ($added['backend'] ?? null) && ($added['params']['login'] ?? '') === 'wrong') {
         fwrite(STDERR, "Error(" . $added['backend'] . "): BrowserIncorrectPassword: Identifiant ou mot de passe incorrect\n");
         exit(1);
+    }
+    // A bank that asks a two-factor authentication (#299): the backend "2fa", or a bank added
+    // with the login "2fa"; only possible when the output is a terminal, like woob
+    if ($backend === '2fa' || ($backend === ($added['backend'] ?? null) && ($added['params']['login'] ?? '') === '2fa')) {
+        if (!stream_isatty(STDOUT)) {
+            fwrite(STDERR, "Error($backend): You have to run bank in interactive mode to perform a two-factor authentication\n");
+            exit(1);
+        }
+        echo "\e[1mVeuillez valider la connexion dans votre application bancaire.\e[0m\n";
+        // With the file carbure-fake-woob-2fa-wait, the validation waits for the file
+        // carbure-fake-woob-validated (30 s at most), as woob waits for the bank app
+        for ($i = 0; is_file(fake_woob_file('2fa-wait')) && !is_file(fake_woob_file('validated')) && $i < 300; $i++) {
+            usleep(100000);
+        }
     }
     if ($backend === 'forbidden') {
         echo "[]\n";

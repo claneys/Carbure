@@ -287,7 +287,10 @@ or imported from a file, are grouped at the end under **Other accounts**.
        a readable name ("Compte joint", "BNP pro"…), shown instead of the name of the
        bank; its technical name in woob (`bnp`, `bnp_2`…) is generated automatically.
        If the bank rejects the credentials, its message is shown and the form stays
-       open.
+       open. If it asks for a **strong authentication** right at the connection (Crédit
+       Mutuel, CIC…), the bank stays connected and the list of its accounts opens waiting:
+       the message of the bank is shown there, you approve the connection in its app
+       without closing the window, then the accounts appear.
     2. **Connected banks**: each connection (woob backend) shows its name (or else
        the bank's) and its name in woob; the pencil button **renames** it (an empty
        name restores the bank's); the trash **removes** it, after confirmation

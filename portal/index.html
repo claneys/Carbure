@@ -2881,9 +2881,20 @@
                 </div>
                 <div class="modal-body">
                     <p class="rules-help">{{ t('addAccountsHelp') }}</p>
-                    <div v-if="discovering" class="transactions-hint" role="status">
-                        <span class="material-icons spin inline-icon" aria-hidden="true">sync</span>{{ t('discovering') }}
-                    </div>
+                    <template v-if="discovering">
+                        <div class="transactions-hint" role="status">
+                            <span class="material-icons spin inline-icon" aria-hidden="true">sync</span>{{ t('discovering') }}
+                        </div>
+                        <!-- The bank asks a two-factor authentication: approved in its app (#299) -->
+                        <p v-if="discoverTwoFactor" class="sync-2fa-hint">
+                            <span class="material-icons inline-icon" aria-hidden="true">phonelink_lock</span>
+                            {{ t('discover2faWaiting') }}
+                        </p>
+                        <p v-if="discoverMessage" class="sync-2fa-hint" role="status">
+                            <span class="material-icons inline-icon" aria-hidden="true">sms</span>
+                            {{ discoverMessage }}
+                        </p>
+                    </template>
                     <div v-else-if="discoverError" class="sync-step-error discover-error" role="alert">
                         {{ discoverError }}
                         <a class="woob-issues-link" :href="woobIssuesUrl(addAccountsBackend)" target="_blank" rel="noopener">

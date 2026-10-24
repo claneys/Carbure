@@ -168,6 +168,30 @@ test('the accounts of one bank connection are asked to woob with its name', asyn
     assert.equal(calls[1].url, `${BASE}/bank/discover`);
 });
 
+test('the accounts of a bank asking a strong authentication: its messages, then the accounts', async () => {
+    const stream = 'data: Bank message cm: Validez dans votre application\n\n: heartbeat\n\n'
+        + 'data: Accounts [{"bankId":"1@cm","label":"Compte chèques"}]\n\n';
+    const calls = mockFetch(() => new Response(new Blob([stream]).stream(), { status: 200 }));
+    const messages = [];
+
+    const accounts = await createApiService(BASE, 't').discoverBankAccountsInteractive('cm', message => messages.push(message));
+    assert.equal(calls[0].url, `${BASE}/bank/discover/interactive?backend=cm`);
+    assert.deepEqual(messages, ['Validez dans votre application']);
+    assert.deepEqual(accounts, [{ bankId: '1@cm', label: 'Compte chèques' }]);
+});
+
+test('the interactive listing of the accounts reports the failure of woob, or an answer cut short', async () => {
+    const answer = body => () => new Response(new Blob([body]).stream(), { status: 200 });
+    const api = createApiService(BASE, 't');
+
+    mockFetch(answer('data: Discovery failed: synchronization in progress\n\n'));
+    await assert.rejects(api.discoverBankAccountsInteractive('cm', () => {}), { message: 'synchronization in progress' });
+    mockFetch(answer('data: Bank message cm: Validez\n\n'));
+    await assert.rejects(api.discoverBankAccountsInteractive('cm', () => {}), { message: 'The connection to the bank was interrupted' });
+    mockFetch(() => json({ error: 'Forbidden - Administrator only' }, 403));
+    await assert.rejects(api.discoverBankAccountsInteractive('cm', () => {}), { message: 'Forbidden - Administrator only' });
+});
+
 test('notifications and test email requests', async () => {
     const calls = mockFetch(() => json({}));
     const api = createApiService(BASE, 't');

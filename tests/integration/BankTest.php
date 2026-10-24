@@ -118,7 +118,8 @@ class BankTest extends DatabaseTestCase
         $own = Bank::get()[0]['id'];
 
         $this->assertAdminOnly(['GET /bank/accounts', 'POST /bank', 'PUT /bank', 'DELETE /bank', 'GET /bank/backends',
-            'GET /bank/modules', 'GET /bank/discover', 'GET /bank/module', 'POST /bank/backend', 'PUT /bank/backend']);
+            'GET /bank/modules', 'GET /bank/discover', 'GET /bank/discover/interactive', 'GET /bank/module', 'POST /bank/backend',
+            'PUT /bank/backend']);
 
         // Refused before the method is called: the account is still there
         try {
@@ -267,6 +268,7 @@ class BankTest extends DatabaseTestCase
             $result = Bank::createBackend('bnp', 'mybnp', ['login' => '12345678', 'password' => '123456', 'unknown' => 'x']);
             $this->assertSame('mybnp', $result['backend']);
             $this->assertNull($result['label']);
+            $this->assertFalse($result['two_factor']);
             $this->assertSame(['DEMO0000001@mybnp', '00087654321@mybnp'], array_column($result['accounts'], 'bankId'));
             // Every setting of the module is given (defaults included; an optional one left
             // empty is not, woob refusing it: identity), in the configuration file of woob as
@@ -387,6 +389,25 @@ class BankTest extends DatabaseTestCase
         }
     }
 
+    public function testCreateBackendKeepsABankAskingATwoFactorAuthentication()
+    {
+        $this->loginAs(self::ADMIN);
+        $removed = carbure_test_tmp('carbure-fake-woob-removed');
+        @unlink($removed);
+        try {
+            // The bank asks a two-factor authentication, which woob only starts on a terminal
+            // (#299): the bank stays configured, its accounts to list interactively
+            $result = Bank::createBackend('bnp', 'my2fa', ['login' => '2fa', 'password' => '123456'], 'Crédit Mutuel');
+            $this->assertSame(['backend' => 'my2fa', 'label' => 'Crédit Mutuel', 'accounts' => [], 'two_factor' => true], $result);
+            $this->assertFileDoesNotExist($removed);
+            $this->assertStringContainsString("[my2fa]\n_module = bnp\nlogin = 2fa\n", (string)file_get_contents(carbure_test_tmp('carbure-fake-woob-backends')));
+            $this->assertSame('Crédit Mutuel', Db::queryOne("SELECT label FROM bank_backend WHERE name = ?", "s", 'my2fa')['label']);
+        } finally {
+            @unlink($removed);
+            @unlink(carbure_test_tmp('carbure-fake-woob-backends'));
+        }
+    }
+
     public function testCreateBackendBlockedByTheBank()
     {
         $this->loginAs(self::ADMIN);
@@ -480,6 +501,67 @@ class BankTest extends DatabaseTestCase
         $this->expectException(Error::class);
         $this->expectExceptionCode(400);
         Bank::discover('cic pro; id');
+    }
+
+    /**
+     * Run the interactive discovery of the accounts of a bank and return the SSE output.
+     */
+    private function discoverInteractive(string $backend): string
+    {
+        ob_start();
+        try {
+            Bank::discoverInteractive($backend);
+        } finally {
+            $output = ob_get_clean();
+        }
+        return $output;
+    }
+
+    public function testDiscoverInteractiveRelaysTheTwoFactorAuthentication()
+    {
+        @unlink(carbure_test_tmp('carbure-fake-woob-backends'));
+        $this->loginAs(self::ADMIN);
+        Bank::create('DEMO0000001', '2fa');
+
+        // Without a terminal, woob refuses to start the authentication
+        try {
+            Bank::discover('2fa');
+            $this->fail('Two-factor authentication started without a terminal');
+        } catch (Exception $e) {
+            $this->assertTrue(Woob::needsTwoFactor($e->getMessage()));
+        }
+
+        // On a terminal: the message of the bank, then its accounts (the followed one marked)
+        $output = $this->discoverInteractive('2fa');
+        $this->assertStringContainsString("data: Bank message 2fa: Veuillez valider la connexion dans votre application bancaire.\n\n", $output);
+        $this->assertSame(1, preg_match('/^data: Accounts (.+)$/m', $output, $m));
+        $accounts = json_decode($m[1], true);
+        $this->assertSame(['DEMO0000001@2fa', '00087654321@2fa'], array_column($accounts, 'bankId'));
+        $this->assertSame(['Compte chèques', 'Livret A'], array_column($accounts, 'label'));
+        $this->assertSame([true, false], array_column($accounts, 'followed'));
+        $this->assertStringNotContainsString('Discovery failed', $output);
+    }
+
+    public function testDiscoverInteractiveFailures()
+    {
+        $this->loginAs(self::ADMIN);
+
+        // The bank refuses woob: the cause, as the last event
+        $this->assertStringEndsWith("data: Discovery failed: woob returned no account: Bug(forbidden): 403 Client Error: Forbidden\n\n",
+            $this->discoverInteractive('forbidden'));
+
+        // Never while a synchronization runs woob (another connection holds the lock)
+        $other = new mysqli(Config::get('db_hostname'), Config::get('db_username'), Config::get('db_password'), Config::get('db_name'), (int)Config::get('db_port'));
+        $other->query("SELECT GET_LOCK('bank_sync', 0)");
+        try {
+            $this->assertSame("data: Discovery failed: synchronization in progress\n\n", $this->discoverInteractive('2fa'));
+        } finally {
+            $other->close();
+        }
+
+        $this->expectException(Error::class);
+        $this->expectExceptionCode(400);
+        Bank::discoverInteractive('-2fa');
     }
 
     public function testSyncRecordsTheLastResultOfEachAccount()

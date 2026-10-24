@@ -80,6 +80,15 @@ A question that isn't here? Ask it on the
     authentication) is shown there, and the synchronization waits for you to approve in
     your banking app or to type the code you received. The scheduled synchronization never
     triggers it: it tries again later (settings `woob_2fa_wait` and `woob_2fa_retries`).
+    When a bank is connected, the list of its accounts waits for the approval.
+
+??? question "I connected my bank with woob in the container's terminal, the portal does not see it"
+    In the Docker image, Carbure runs woob as `www-data` with its configuration in
+    `/data/woob`. A plain `docker exec` runs as root with another configuration, which
+    Carbure does not see. Run woob as Carbure does:
+    `docker compose exec -u www-data carbure env HOME=/data/woob woob bank list`. The
+    simplest is still to connect the bank from the portal, which handles the strong
+    authentication.
 
 ??? question "Are the accounts synchronized automatically?"
     Yes, if you schedule the synchronization: with Docker, the `SYNC_INTERVAL` variable

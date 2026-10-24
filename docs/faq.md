@@ -83,7 +83,16 @@ Une question qui n'est pas ici ? Posez-la sur le
     (authentification forte) s'y affiche, et la synchronisation attend que vous validiez
     dans l'application de votre banque ou saisissiez le code reçu. La synchronisation
     planifiée ne la déclenche jamais : elle réessaie plus tard (réglages `woob_2fa_wait` et
-    `woob_2fa_retries`).
+    `woob_2fa_retries`). À la connexion d'une banque, c'est la liste de ses comptes qui
+    attend la validation.
+
+??? question "J'ai connecté ma banque avec woob dans le terminal du conteneur, le portail ne la voit pas"
+    Dans l'image Docker, Carbure lance woob en `www-data` avec sa configuration dans
+    `/data/woob`. Un `docker exec` lancé tel quel tourne en root avec une autre
+    configuration, invisible de Carbure. Lancez woob comme Carbure :
+    `docker compose exec -u www-data carbure env HOME=/data/woob woob bank list`. Le plus
+    simple reste de connecter la banque depuis le portail, qui gère l'authentification
+    forte.
 
 ??? question "Les comptes se synchronisent-ils tout seuls ?"
     Oui, si vous planifiez la synchronisation : avec Docker, la variable `SYNC_INTERVAL`

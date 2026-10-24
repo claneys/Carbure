@@ -710,6 +710,48 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
     }
 
     /**
+     * Accounts of one bank connection, with a two-factor authentication allowed: woob may
+     * ask a validation in the bank app first (Server-Sent Events, can take minutes)
+     * @param {string} backend - Bank connection (woob backend)
+     * @param {Function} onMessage - Called with each message of the bank
+     * @param {AbortSignal|null} signal - Stops the request (the modal is closed)
+     * @returns {Promise<Array>} Array of {bankId, account_number, bank_name, label, balance, currency, followed}
+     * @throws {Error} If the request fails, woob fails or the answer ends without the accounts
+     */
+    async function discoverBankAccountsInteractive(backend, onMessage, signal = null) {
+        const response = await authFetch(`${baseUrl}/bank/discover/interactive?backend=${encodeURIComponent(backend)}`, { headers: getHeaders(), signal });
+        if (!response.ok || !response.body) {
+            let message = `Failed to query woob (${response.status})`;
+            try {
+                message = JSON.parse(await response.text()).error || message;
+            } catch (e) {
+                // Keep default error message
+            }
+            throw new Error(message);
+        }
+
+        let accounts = null;
+        let failure = null;
+        await readEvents(response, data => {
+            const bankMessage = data.match(/^Bank message .+?: (.*)$/);
+            if (data.startsWith('Accounts ')) {
+                accounts = JSON.parse(data.slice('Accounts '.length));
+            } else if (data.startsWith('Discovery failed: ')) {
+                failure = data.slice('Discovery failed: '.length);
+            } else if (bankMessage) {
+                onMessage(bankMessage[1]);
+            }
+        });
+        if (failure !== null) {
+            throw new Error(failure);
+        }
+        if (!Array.isArray(accounts)) {
+            throw new Error('The connection to the bank was interrupted');
+        }
+        return accounts;
+    }
+
+    /**
      * Starts a bank synchronization and reports each progress message.
      * The API answers with Server-Sent Events: "data: <message>" blocks, and
      * ": heartbeat" comments while woob is working.
@@ -1266,6 +1308,7 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
         updateBankAccount,
         deleteBankAccount,
         discoverBankAccounts,
+        discoverBankAccountsInteractive,
         fetchBankBackends,
         fetchBankModules,
         fetchBankModuleFields,

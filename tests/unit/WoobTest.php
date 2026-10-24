@@ -207,6 +207,25 @@ class WoobTest extends TestCase
         $this->assertSame(['DEMO0000001@cic_pro', '00087654321@cic_pro'], array_column(Woob::listAccounts('cic_pro'), 'id'));
     }
 
+    public function testAccountsOfABankAskingATwoFactorAuthentication()
+    {
+        // Without a terminal, woob refuses to start the authentication of the first connection (#299)
+        try {
+            Woob::listAccounts('2fa');
+            $this->fail('Two-factor authentication started without a terminal');
+        } catch (Exception $e) {
+            $this->assertTrue(Woob::needsTwoFactor($e->getMessage()));
+        }
+
+        // In interactive mode: the message of the bank, then its accounts
+        $messages = [];
+        $accounts = Woob::listAccounts('2fa', true, function ($message) use (&$messages) {
+            $messages[] = $message;
+        });
+        $this->assertSame(['DEMO0000001@2fa', '00087654321@2fa'], array_column($accounts, 'id'));
+        $this->assertSame(['Veuillez valider la connexion dans votre application bancaire.'], $messages);
+    }
+
     public function testBackendIsEscaped()
     {
         // Without escaping, the shell would run the injected command
