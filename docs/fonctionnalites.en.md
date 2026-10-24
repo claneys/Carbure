@@ -89,9 +89,11 @@ For each followed account:
    several times or by two users. **Identical transactions received together**
    (two coffees on the same day, at the same price) are indeed both kept: they are
    told apart by their rank.
-4. **Month of attribution**: a **transfer dated after the 25th** is attributed to the **1st of
-   the following month** (a salary paid on the 28th counts for the month it funds); the actual date
-   remains visible in the transaction details.
+4. **Month of attribution**: a **received transfer dated on the 25th or later** is attributed
+   to the **1st of the following month** (a salary paid on the 28th counts for the month it
+   funds); the actual date remains visible in the transaction details. The day is set in
+   **Administration → Settings** (`next_month_day`, 1 to 31, 0 to never move a transfer, see
+   [Configuration](configuration.md#global)).
 5. **Notifications**: see [Notifications](#notifications).
 
 Then, once all accounts are processed, the **categorization rules** classify the
@@ -366,8 +368,8 @@ administrator registers the instance after accepting its consent terms (see
 [Configuration](configuration.md#push)):
 
 !!! info "Mobile apps"
-    The Carbure apps for iPhone and Android will soon be available on
-    the App Store and Google Play.
+    The Carbure apps are available on the [App Store](https://apps.apple.com/fr/app/carbure/id6824057363)
+    (iPhone) and on [Google Play](https://play.google.com/store/apps/details?id=org.carbure.app) (Android).
 
 | When | Who receives it | Content |
 |---|---|---|
@@ -405,12 +407,14 @@ prevents neither the other nor the synchronization.
 - **What**: the month's expenses of each expense category that has a budget,
   subcategories included, calculated like the **Budgets** screen; a subcategory that has
   its own budget is checked too.
-- **Watched budget**: all budgets (by default) or one of them, chosen by each person
-  in **My profile → Notifications** among the month's budgets of the **Budget** tab;
-  deleting the category falls back to all budgets.
-- **Threshold**: chosen by each person in **My profile → Notifications**, as a percentage of the
-  budget, from 50 to 200% (100% by default; 80% to be warned ahead of time). Below 100%, the
-  title becomes "Budget almost reached".
+- **Thresholds**, chosen by each person in **My profile → Notifications**, as a percentage
+  of the budget, from 50 to 200% (80% to be warned ahead of time). Below 100%, the title
+  becomes "Budget almost reached".
+    - **All the budgets**: a global threshold (100% by default), which can be turned off;
+    - **Thresholds per category**: a category with a budget gets its own threshold, which
+      replaces the global one for it. For instance 100% everywhere and 80% on groceries and
+      leisure; or, with the global threshold off, only groceries at 80% and housing at 100%.
+      Deleting the category deletes its threshold.
 - **Once** per category, month and user, not at every synchronization. If the budget
   is then raised and reached again, the alert fires again for the new amount.
 
@@ -500,6 +504,8 @@ users open **AI agent** from their menu.
   the API with the administrator's session.
 - **Database update**: when a new version changes the database, a banner
   reports it and applies it in one click (automatic with Docker).
+- **New release**: a banner reports that a new release of Carbure is published, with a
+  link to its notes (checked once a day by the server, `update_check` setting).
 - **Session key**: a banner reports a key that is too weak and renews it in one click
   (everyone signs in again).
 
@@ -519,7 +525,8 @@ users open **AI agent** from their menu.
 
 ## Known limitations { #limites-connues }
 
-- **Amounts are in euros**; no support for multiple currencies.
+- **One currency** per instance (`currency` setting, euro by default), only displayed:
+  no conversion, no multiple currencies; the mobile apps always show euros.
 - The banks covered are those of **woob**, mostly French.
 - Recurring transactions are **detected**, not **scheduled**: no bill
   schedule and no balance forecast.

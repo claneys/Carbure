@@ -111,8 +111,12 @@ The log contains the `admin` password: keep it readable by you only.
 
 ```bash
 git clone https://github.com/ltoinel/Carbure.git && cd Carbure/docker
-docker compose up -d
+docker compose pull && docker compose up -d
 ```
+
+`docker compose pull` downloads the published image of the
+[latest release](#recuperer-limage): without it, Compose would build the image from the code of
+the repository (`docker/docker-compose.yml` is also used by the tests).
 
 Open `http://<host>:8080/`: the setup wizard appears, already filled in with the
 database from `docker/docker-compose.yml`. Click **Continue**, choose the administrator
@@ -210,6 +214,27 @@ When `docker compose pull` brings a new major version of MariaDB (for example fr
 (`MARIADB_AUTO_UPGRADE`). There is no going back: the database can no longer be opened by
 the old version, hence the importance of the backup. To stay on a given version,
 pin it in `docker/docker-compose.yml` (`image: mariadb:11`).
+
+### Upgrading to 1.10.0 { #passer-a-la-1100 }
+
+- The `2026-10-27_budget_alert_threshold` migration is applied at startup: budget alerts
+  get a **global threshold** (all the budgets), which can be turned off, and **thresholds
+  per category** (**My profile → Notifications**). The settings are kept: a user who
+  watched one budget keeps that budget, at their threshold, without a global threshold. The
+  code works before it, as before.
+- **End-of-month salary**: a received transfer dated **on the 25th or later** is attached to
+  the next month (before: from the 26th). The day is set with `next_month_day`
+  (**Administration → Settings**, `0` to never move a transfer); only the transactions
+  imported or synchronized after the upgrade are concerned.
+- **New release**: a banner tells administrators when a release of Carbure is published.
+  The server asks the public API of GitHub for the latest release once a day, sending
+  nothing about the instance; `update_check=false` turns it off.
+- **First installation with Docker Compose**: `docker compose pull && docker compose up -d`
+  uses the published image (without `pull`, Compose built the image from the clone).
+- **Scripted installation**: `tools/install.php` installs Carbure without the web wizard
+  (see [Run the wizard](#3-lancer-lassistant)); the YunoHost package in preparation uses it.
+- The mobile apps are published: App Store and Google Play links in **My profile → My
+  devices**.
 
 ### Upgrading to 1.9.0 { #passer-a-la-190 }
 
@@ -328,6 +353,31 @@ docker compose exec -u www-data carbure php tools/migrate.php --status # databas
     BNP) can be copied into `/data/woob/.local/share/woob/modules/3.7/woob_modules/`;
     `curl_cffi`, required by the recent BNP module, is already installed in the image.
 
+## With YunoHost (in preparation) { #avec-yunohost-en-preparation }
+
+!!! warning "Work in progress"
+    The YunoHost package of Carbure is being written: it is **not in the YunoHost catalog
+    yet** and has **not been tested** on a YunoHost server yet. It installs Carbure 1.10.0,
+    the first version that can be installed without the web wizard (`tools/install.php`):
+    to try it, `sudo yunohost app install https://github.com/ltoinel/carbure_ynh` on a test
+    server. Follow-up: [issue #45](https://github.com/ltoinel/Carbure/issues/45).
+
+The [`carbure_ynh`](https://github.com/ltoinel/carbure_ynh) package will install Carbure in
+a few clicks from the administration interface of [YunoHost](https://yunohost.org):
+
+- on a **domain of its own** (for instance `budget.example.org`), not in a sub-path;
+- **without the wizard**: the chosen YunoHost user becomes the Carbure administrator, with
+  the password typed at the installation; the database and the starter categories, rules
+  and insights are created;
+- with **woob** in a virtualenv, and a **daily synchronization** of every account;
+- upgrades apply the migrations of the database and update the bank modules; the YunoHost
+  backups include the database and the data folder (configuration, logs, woob).
+
+Carbure keeps its own accounts (no single sign-on with YunoHost), which the mobile apps
+need, and the application stays public for them. You have a YunoHost server and want to
+help test it? Say so in [issue #45](https://github.com/ltoinel/Carbure/issues/45) or on
+[Discord](https://discord.gg/QsxYw4Rx9D).
+
 ## On an existing web server { #sur-un-serveur-web-existant }
 
 ### Prerequisites { #prerequis }
@@ -388,6 +438,23 @@ random secrets (`jwtsecret`, `sync_token`…). The woob command there is `woob`:
 From a public address, the wizard asks for the installation code written to
 `data/conf/setup.code` (and to the PHP error log). See
 [Security](securite.md#assistant-dinstallation).
+
+!!! tip "Install without the wizard (script)"
+    `tools/install.php` does the same installation from the command line, for a script
+    (package of a distribution, YunoHost…). The passwords go through the environment,
+    never the command line (visible in the list of the processes):
+
+    ```bash
+    CARBURE_DB_PASSWORD='…' CARBURE_ADMIN_PASSWORD='…' \
+      php tools/install.php --db-name=carbure --db-user=carbure --admin=marie \
+        --email=marie@example.org --language=en --starter
+    ```
+
+    Run it as the user of the web server, which must be able to write in `data/`.
+    Exit code: `0` installed, `1` failed (nothing is written), `2` already installed
+    (`data/conf/prod.ini` exists: nothing changes). `php tools/install.php --help` lists
+    the options (`--db-host`, `--db-port`, `--woob-path`, `--public-url`, `--backup-confirmed` to migrate
+    an existing database…).
 
 ### 4. Add a bank { #4-ajouter-une-banque }
 

@@ -21,6 +21,7 @@ use Carbure\Lib\Logger;
 use Carbure\Lib\Messages;
 use Carbure\Lib\Migrator;
 use Carbure\Lib\MobileApp;
+use Carbure\Lib\ReleaseCheck;
 use Error;
 use Exception;
 use RuntimeException;
@@ -255,6 +256,20 @@ final class System {
     {
         $migrator = new Migrator(Db::getConnection());
         return ['version' => $migrator->version(), 'pending' => $migrator->pending(), 'weakJwtSecret' => self::weakJwtSecret()];
+    }
+
+    /**
+     * Whether a newer release of Carbure is published (administrators), from the latest
+     * release of GitHub, asked at most once a day (setting update_check, on by default).
+     *
+     * @return array<string, mixed> enabled, current (this version), latest (null if
+     *               unknown), url (its release notes), available (latest is newer),
+     *               checked_at (last check, null if never)
+     */
+    #[ApiRoute('/system/release', method: 'GET', admin: true)]
+    public static function release(): array
+    {
+        return ReleaseCheck::status(self::version());
     }
 
     /**

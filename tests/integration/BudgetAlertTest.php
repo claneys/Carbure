@@ -1,6 +1,8 @@
 <?php
 
 use Carbure\Lib\Db;
+use Carbure\Lib\File;
+use Carbure\Lib\Installer;
 use Carbure\Lib\Mailer;
 use Carbure\Resources\Bank;
 use Carbure\Resources\Budget;
@@ -241,17 +243,170 @@ class BudgetAlertTest extends DatabaseTestCase
         }
     }
 
-    public function testOnlyTheBudgetWatched()
+    public function testOnlyTheCategoriesWithAThreshold()
     {
-        // Both reached at 50 %: the administrator watches Énergie only
+        // Both reached at 40 %: without the global threshold, only Énergie (its own) alerts
         $this->subscribe(self::ADMIN, true, false);
-        Db::query("UPDATE users SET budget_threshold = 50, budget_alert_category = 3 WHERE id = 1");
+        Db::query("UPDATE users SET budget_threshold = 40, budget_alert_all = 0 WHERE id = 1");
+        Db::query("INSERT INTO budget_alert_threshold (user_id, category, threshold) VALUES (1, 3, 50)");
 
         $this->assertSame(1, BudgetAlert::check());
         $requests = FakePushRelay::requests();
         $this->assertCount(1, $requests);
         $this->assertSame('Budget presque atteint : Énergie', $requests[0]['payload']['aps']['alert']['title']);
         $this->assertSame(3, (int)Db::queryOne("SELECT category FROM budget_alert", "")['category']);
+    }
+
+    public function testThresholdOfACategoryInsteadOfTheGlobalOne()
+    {
+        // 100 % on every budget, but 40 % on Alimentation (80 € of 200 €): only it alerts,
+        // Énergie (50 %) is under the global threshold
+        $this->subscribe(self::ADMIN, true, false);
+        Db::query("INSERT INTO budget_alert_threshold (user_id, category, threshold) VALUES (1, 1, 40)");
+
+        $this->assertSame(1, BudgetAlert::check());
+        $this->assertSame('Budget presque atteint : Alimentation', FakePushRelay::requests()[0]['payload']['aps']['alert']['title']);
+    }
+
+    public function testTwoCategoriesAtTwoThresholds()
+    {
+        // Alimentation at 40 % (reached), Énergie at 60 % (50 %: not yet), nothing else
+        $this->subscribe(self::ADMIN, true, false);
+        Db::query("UPDATE users SET budget_alert_all = 0 WHERE id = 1");
+        Db::query("INSERT INTO budget_alert_threshold (user_id, category, threshold) VALUES (1, 1, 40), (1, 3, 60)");
+        $this->assertSame(1, BudgetAlert::check());
+
+        // Énergie at 65 €: its threshold reached in turn, Alimentation not alerted again
+        FakePushRelay::start();
+        $this->spend(3, -15);
+        $this->assertSame(1, BudgetAlert::check());
+        $this->assertSame('Budget presque atteint : Énergie', FakePushRelay::requests()[0]['payload']['aps']['alert']['title']);
+        $this->assertSame(2, $this->alerts());
+    }
+
+    public function testThresholdsSavedWithThePreferences()
+    {
+        $this->loginAs(self::USER);
+        $notifications = Notification::get();
+        $this->assertTrue($notifications['budget_all']);
+        $this->assertSame([], $notifications['budget_thresholds']);
+
+        // Two categories, the global threshold off; given as strings like the portal sends
+        $notifications = Notification::update([], null, null, null, 'false', [['category' => '3', 'threshold' => '80'], ['category' => 1, 'threshold' => 90]]);
+        $this->assertFalse($notifications['budget_all']);
+        $this->assertSame([['category' => 1, 'threshold' => 90], ['category' => 3, 'threshold' => 80]], $notifications['budget_thresholds']);
+        // Two categories: no budget watched for the older clients
+        $this->assertNull($notifications['budget_category']);
+        $this->assertNull(Db::queryOne("SELECT budget_alert_category FROM users WHERE id = 2", "")['budget_alert_category']);
+
+        // One category left: the budget watched of the older clients
+        $notifications = Notification::update([], null, null, null, null, [['category' => 3, 'threshold' => 80]]);
+        $this->assertSame(3, $notifications['budget_category']);
+        $this->assertSame(3, (int)Db::queryOne("SELECT budget_alert_category FROM users WHERE id = 2", "")['budget_alert_category']);
+
+        // The global threshold back on: what is not sent is kept
+        $notifications = Notification::update([], 120, null, null, true);
+        $this->assertTrue($notifications['budget_all']);
+        $this->assertSame(120, $notifications['budget_threshold']);
+        $this->assertSame([['category' => 3, 'threshold' => 80]], $notifications['budget_thresholds']);
+        $this->assertNull($notifications['budget_category']);
+
+        // An older client watching one budget: the global threshold off, that category only
+        $notifications = Notification::update([], null, null, '1');
+        $this->assertFalse($notifications['budget_all']);
+        $this->assertSame([['category' => 1, 'threshold' => 120]], $notifications['budget_thresholds']);
+        // ...and all the budgets again
+        $notifications = Notification::update([], null, null, '');
+        $this->assertTrue($notifications['budget_all']);
+        $this->assertSame([], $notifications['budget_thresholds']);
+    }
+
+    /**
+     * @return array Thresholds refused: [budgetAll, budgetThresholds, budgetCategory]
+     */
+    public static function refusedCategoryThresholds(): array
+    {
+        return [
+            'income category' => [null, [['category' => 4, 'threshold' => 80]], null],
+            'unknown category' => [null, [['category' => 99, 'threshold' => 80]], null],
+            'no category' => [null, [['category' => 0, 'threshold' => 80]], null],
+            'twice the same category' => [null, [['category' => 3, 'threshold' => 80], ['category' => '3', 'threshold' => 90]], null],
+            'threshold too low' => [null, [['category' => 3, 'threshold' => 30]], null],
+            'threshold not an integer' => [null, [['category' => 3, 'threshold' => '80.5']], null],
+            'not an object' => [null, ['3'], null],
+            'missing threshold' => [null, [['category' => 3]], null],
+            'global threshold not a flag' => ['maybe', null, null],
+            'both the thresholds and the budget watched' => [null, [], '3'],
+        ];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('refusedCategoryThresholds')]
+    public function testRefusedCategoryThresholds($all, $thresholds, $category)
+    {
+        $this->loginAs(self::USER);
+        try {
+            Notification::update(['budget' => ['push' => true]], 80, null, $category, $all, $thresholds);
+            $this->fail('Invalid thresholds accepted');
+        } catch (Error $e) {
+            $this->assertSame(400, $e->getCode());
+        }
+        // Nothing saved
+        $user = Db::queryOne("SELECT budget_threshold, budget_alert_all FROM users WHERE id = 2", "");
+        $this->assertSame(['budget_threshold' => 100, 'budget_alert_all' => 1], $user);
+        $this->assertSame(0, (int)Db::queryOne("SELECT COUNT(*) AS n FROM budget_alert_threshold", "")['n']);
+        $this->assertSame(0, (int)Db::queryOne("SELECT COUNT(*) AS n FROM user_notification", "")['n']);
+    }
+
+    public function testThresholdRemovedWithItsCategory()
+    {
+        Db::query("INSERT INTO budget_alert_threshold (user_id, category, threshold) VALUES (2, 3, 80), (2, 1, 90)");
+        Db::query("DELETE FROM budget WHERE category = 3");
+        Db::query("DELETE FROM bank_transaction WHERE category = 3");
+        Db::query("DELETE FROM bank_transaction_category WHERE id = 3");
+        $this->assertSame(['all' => 100, 'categories' => [1 => 90]], BudgetAlert::rules(self::USER));
+    }
+
+    public function testMigrationKeepsTheSettingsAndBeforeItTheBudgetWatched()
+    {
+        // A database before the migration: the administrator watched Énergie at 50 %, the
+        // user all the budgets at 70 %
+        Db::query("DROP TABLE budget_alert_threshold");
+        Db::query("ALTER TABLE users DROP COLUMN budget_alert_all");
+        $migration = File::read(dirname(__DIR__, 2) . '/sql/migrations/2026-10-27_budget_alert_threshold.sql');
+        try {
+            Db::query("UPDATE users SET budget_threshold = 50, budget_alert_category = 3 WHERE id = 1");
+            Db::query("UPDATE users SET budget_threshold = 70 WHERE id = 2");
+            $this->assertFalse(BudgetAlert::thresholdsReady());
+            $this->assertSame(['all' => null, 'categories' => [3 => 50]], BudgetAlert::rules(self::ADMIN));
+            $this->assertSame(['all' => 70, 'categories' => []], BudgetAlert::rules(self::USER));
+
+            // Only Énergie alerts the administrator, as before
+            $this->subscribe(self::ADMIN, true, false);
+            $this->assertSame(1, BudgetAlert::check());
+            $this->assertSame('Budget presque atteint : Énergie', FakePushRelay::requests()[0]['payload']['aps']['alert']['title']);
+
+            // An older client still saves its budget watched; the thresholds of categories
+            // wait for the migration
+            $this->loginAs(self::USER);
+            $this->assertSame(3, Notification::update([], null, null, 3)['budget_category']);
+            try {
+                Notification::update([], null, null, null, null, [['category' => 1, 'threshold' => 80]]);
+                $this->fail('Thresholds of categories saved before their migration');
+            } catch (Error $e) {
+                $this->assertSame(409, $e->getCode());
+            }
+        } finally {
+            Installer::runScript(Db::getConnection(), $migration);
+        }
+
+        // After the migration: the same settings
+        $this->assertTrue(BudgetAlert::thresholdsReady());
+        $this->assertSame(['all' => null, 'categories' => [3 => 50]], BudgetAlert::rules(self::ADMIN));
+        $this->assertSame(['all' => null, 'categories' => [3 => 70]], BudgetAlert::rules(self::USER));
+        Db::query("UPDATE users SET budget_alert_category = NULL WHERE id = 2");
+        Db::query("DELETE FROM budget_alert_threshold WHERE user_id = 2");
+        Db::query("UPDATE users SET budget_alert_all = 1 WHERE id = 2");
+        $this->assertSame(['all' => 70, 'categories' => []], BudgetAlert::rules(self::USER));
     }
 
     public function testBudgetsThatCanBeWatched()

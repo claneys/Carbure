@@ -904,12 +904,12 @@ test('notifications: the large expense threshold is empty or a positive amount',
     }
 });
 
-test('notifications: the large expense threshold and the budget watched are saved at once', async () => {
+test('notifications: the large expense threshold is saved at once', async () => {
     const { createNotificationsModule } = await import('../../portal/modules/notificationsModule.js');
     const sent = [];
     let refuse = false;
-    let stored = { alert_threshold: 150, budget_category: null };
-    const answer = () => ({ preferences: {}, smtp: true, address: 'a@example.com', email_available: true, budget_threshold: 100, budgets: [{ id: 3, name: 'Logement' }], ...stored });
+    let stored = { alert_threshold: 150 };
+    const answer = () => ({ preferences: {}, smtp: true, address: 'a@example.com', email_available: true, budget_threshold: 100, budgets: [], ...stored });
     const api = {
         fetchNotifications: async () => answer(),
         updateAlertSettings: async settings => {
@@ -917,10 +917,7 @@ test('notifications: the large expense threshold and the budget watched are save
             if (refuse) {
                 throw new Error('Refused');
             }
-            stored = {
-                alert_threshold: 'alertThreshold' in settings ? (Number(settings.alertThreshold) || null) : stored.alert_threshold,
-                budget_category: 'budgetCategory' in settings ? (Number(settings.budgetCategory) || null) : stored.budget_category,
-            };
+            stored = { alert_threshold: Number(settings.alertThreshold) || null };
             return answer();
         },
     };
@@ -930,7 +927,6 @@ test('notifications: the large expense threshold and the budget watched are save
 
     await context.loadNotifications();
     assert.equal(context.alertThreshold, '150');
-    assert.equal(context.budgetCategory, '');
 
     // Invalid amount: not sent
     context.alertThreshold = '-5';
@@ -944,24 +940,89 @@ test('notifications: the large expense threshold and the budget watched are save
     assert.deepEqual(sent, [{ alertThreshold: '' }]);
     assert.equal(context.alertThreshold, '');
     assert.equal(context.alertThresholdErrorKey, '');
+    assert.deepEqual(toasts, ['notificationsSaved']);
 
-    context.budgetCategory = '3';
-    await context.saveBudgetCategory();
-    assert.deepEqual(sent.at(-1), { budgetCategory: '3' });
-    assert.equal(context.budgetCategory, '3');
-    assert.deepEqual(toasts, ['notificationsSaved', 'notificationsSaved']);
-
-    // Refused: back to the budget saved
     refuse = true;
-    context.budgetCategory = '';
-    await context.saveBudgetCategory();
-    assert.equal(context.budgetCategory, '3');
-    assert.equal(toasts.at(-1), 'Refused');
-    assert.equal(context.savingBudgetCategory, false);
     context.alertThreshold = '80';
     await context.saveAlertThreshold();
     assert.equal(toasts.at(-1), 'Refused');
     assert.equal(context.savingAlertThreshold, false);
+});
+
+test('notifications: the global budget threshold and the thresholds of categories', async () => {
+    const { createNotificationsModule } = await import('../../portal/modules/notificationsModule.js');
+    const sent = [];
+    let refuse = false;
+    let stored = { budget_all: true, budget_thresholds: [] };
+    const budgets = [{ id: 3, name: 'Logement' }, { id: 4, name: 'Alimentation' }, { id: 5, name: 'Loisirs' }];
+    const answer = () => ({ preferences: {}, smtp: true, address: null, email_available: false, budget_threshold: 100, alert_threshold: null, budgets, ...stored });
+    const api = {
+        fetchNotifications: async () => answer(),
+        updateBudgetAlerts: async settings => {
+            sent.push(settings);
+            if (refuse) {
+                throw new Error('Refused');
+            }
+            stored = {
+                budget_all: 'budgetAll' in settings ? settings.budgetAll : stored.budget_all,
+                budget_thresholds: 'budgetThresholds' in settings ? settings.budgetThresholds.map(({ category, threshold }) => ({ category: Number(category), threshold })) : stored.budget_thresholds,
+            };
+            return answer();
+        },
+    };
+    const { methods, data, computed } = createNotificationsModule(() => api);
+    const toasts = [];
+    const context = { ...data(), ...methods, t: key => key, showToast: message => toasts.push(message) };
+    Object.defineProperty(context, 'freeBudgets', { get: computed.freeBudgets.bind(context) });
+
+    await context.loadNotifications();
+    assert.equal(context.budgetAll, true);
+    assert.deepEqual(context.budgetRows, []);
+
+    // A threshold for the first budget without one, at the global threshold
+    await context.addBudgetRow();
+    assert.deepEqual(sent.at(-1), { budgetThresholds: [{ category: '3', threshold: 100 }] });
+    await context.addBudgetRow();
+    assert.deepEqual(sent.at(-1).budgetThresholds.map(row => row.category), ['3', '4']);
+    assert.deepEqual(context.freeBudgets.map(budget => budget.id), [5]);
+    // A category offers its own budget and those of no other threshold
+    assert.deepEqual(context.budgetRowOptions(context.budgetRows[0]).map(budget => budget.id), [3, 5]);
+    assert.equal(context.budgetRowName(context.budgetRows[1]), 'Alimentation');
+
+    // 80 % on groceries
+    context.budgetRows[1].threshold = '80';
+    await context.saveBudgetRows();
+    assert.deepEqual(sent.at(-1), { budgetThresholds: [{ category: '3', threshold: 100 }, { category: '4', threshold: 80 }] });
+    assert.equal(context.budgetRows[1].threshold, '80');
+
+    // Out of range: not sent, error shown
+    const count = sent.length;
+    context.budgetRows[0].threshold = '30';
+    await context.saveBudgetRows();
+    assert.equal(sent.length, count);
+    assert.equal(context.budgetRowsErrorKey, 'budgetThresholdInvalid');
+    assert.equal(context.budgetRowInvalid(context.budgetRows[0]), true);
+    assert.equal(context.budgetRowInvalid(context.budgetRows[1]), false);
+    context.budgetRows[0].threshold = '100';
+
+    // Only these two categories: the global threshold off
+    context.budgetAll = false;
+    await context.saveBudgetAll();
+    assert.deepEqual(sent.at(-1), { budgetAll: false });
+    assert.equal(context.budgetAll, false);
+
+    // Removed: its budget follows the global threshold again
+    await context.removeBudgetRow(context.budgetRows[0]);
+    assert.deepEqual(sent.at(-1), { budgetThresholds: [{ category: '4', threshold: 80 }] });
+    assert.equal(context.budgetRows.length, 1);
+
+    // Refused: back to the settings saved
+    refuse = true;
+    context.budgetAll = true;
+    await context.saveBudgetAll();
+    assert.equal(context.budgetAll, false);
+    assert.equal(toasts.at(-1), 'Refused');
+    assert.equal(context.savingBudgetRules, false);
 });
 
 test('notifications: a change is saved at once, undone if refused', async () => {
@@ -1091,4 +1152,43 @@ test('rules: keep the existing categories, loaded, switched and reflected in the
     assert.equal(context.keepCategorized, true);
     assert.equal(context.switchingKeepCategorized, false);
     assert.equal(toasts.at(-1), 'Forbidden - Administrator only');
+});
+
+test('profile: banner of a new release for the administrators, hidden for that version', async () => {
+    const { createProfileModule } = await import('../../portal/modules/profileModule.js');
+    let answer = { enabled: true, current: '1.9.1', latest: '1.10.0', url: 'https://github.com/ltoinel/Carbure/releases/tag/v1.10.0', available: true };
+    const api = { fetchRelease: async () => { if (!answer) { throw new Error('Forbidden'); } return answer; } };
+    const stored = {};
+    globalThis.localStorage = { getItem: key => stored[key] ?? null, setItem: (key, value) => { stored[key] = value; } };
+    try {
+        const { methods, data, computed } = createProfileModule(() => api);
+        const context = { ...data(), ...methods };
+        Object.defineProperty(context, 'releaseBanner', { get: computed.releaseBanner.bind(context) });
+
+        assert.equal(context.releaseBanner, false);
+        await context.loadRelease();
+        assert.equal(context.releaseBanner, true);
+
+        // Hidden for 1.10.0, in this browser
+        context.dismissRelease();
+        assert.equal(context.releaseBanner, false);
+        assert.equal(stored.releaseDismissed, '1.10.0');
+        assert.equal(createProfileModule(() => api).data().releaseDismissed, '1.10.0');
+
+        // A newer one: shown again
+        answer = { ...answer, latest: '1.11.0' };
+        await context.loadRelease();
+        assert.equal(context.releaseBanner, true);
+
+        // Nothing newer, or the route refused: no banner
+        answer = { ...answer, available: false };
+        await context.loadRelease();
+        assert.equal(context.releaseBanner, false);
+        answer = null;
+        await context.loadRelease();
+        assert.equal(context.releaseStatus, null);
+        assert.equal(context.releaseBanner, false);
+    } finally {
+        delete globalThis.localStorage;
+    }
 });

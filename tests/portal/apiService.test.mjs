@@ -211,6 +211,13 @@ test('notifications and test email requests', async () => {
     assert.equal(calls[5].options.method, 'PUT');
     assert.deepEqual(JSON.parse(calls[5].options.body), { alertThreshold: '150.5' });
     assert.deepEqual(JSON.parse(calls[6].options.body), { budgetCategory: '' });
+
+    // Budget alerts: the global threshold on or off, the thresholds of categories as strings
+    await api.updateBudgetAlerts({ budgetAll: false });
+    assert.deepEqual(JSON.parse(calls.at(-1).options.body), { budgetAll: false });
+    await api.updateBudgetAlerts({ budgetThresholds: [{ category: '4', threshold: 80 }] });
+    assert.equal(calls.at(-1).options.method, 'PUT');
+    assert.deepEqual(JSON.parse(calls.at(-1).options.body), { budgetThresholds: [{ category: '4', threshold: '80' }] });
 });
 
 test('rule settings: read with GET, keep_categorized changed with PUT /category/keyword/settings', async () => {

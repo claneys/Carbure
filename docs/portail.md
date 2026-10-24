@@ -107,6 +107,14 @@ tâches ou l'écran d'accueil.
     les migrations (`POST /system/migrate`) ; les données sont conservées. Avec Docker,
     elles sont de toute façon appliquées à chaque démarrage du conteneur.
 
+!!! note "Nouvelle version de Carbure"
+    Quand une nouvelle version de Carbure est publiée, un bandeau **Carbure X.Y.Z est
+    disponible** s'affiche pour les administrateurs, avec la version installée, le lien
+    **Voir les nouveautés** (les notes de version sur GitHub) et le bouton **Masquer
+    jusqu'à la prochaine version** (retenu dans ce navigateur). Le serveur vérifie au plus
+    une fois par jour (réglage `update_check`, voir [Configuration](configuration.md#global)) ;
+    pour mettre à jour, voir [Installation](installation.md#mettre-a-jour).
+
 ## Transactions
 
 ![Écran Transactions du portail web Carbure](assets/screenshot-transactions.png)
@@ -473,10 +481,13 @@ Quatre sous-onglets, comme l'administration : **Profil**, **Double authentificat
   valeur invalide est signalée sous le champ et n'est pas envoyée) :
   - **Dépense importante** : montant **à partir duquel** une nouvelle dépense, détectée
     lors d'une synchronisation, est notifiée (vide = désactivé) ;
-  - **Budget dépassé** : le **budget surveillé**, *Tous les budgets* (par défaut) ou l'un
-    des budgets du mois définis dans l'onglet **Budget**, dans son ordre (une sous-catégorie est présentée
-    « Catégorie › Sous-catégorie »), et le pourcentage de ce budget auquel **alerter**
-    (entier de 50 à 200, 100 par défaut).
+  - **Budget dépassé** : la case **Tous les budgets** (cochée par défaut) et le pourcentage
+    du budget auquel **alerter** (entier de 50 à 200, 100 par défaut), désactivé avec la
+    case ; puis les **Seuils par catégorie** : **Ajouter un seuil pour une catégorie** crée
+    une ligne avec le premier budget du mois sans seuil (au seuil global), où choisir le
+    budget parmi ceux de l'onglet **Budget**, dans son ordre (une sous-catégorie est
+    présentée « Catégorie › Sous-catégorie »), et son pourcentage ; la corbeille retire la
+    ligne. Le seuil d'une catégorie remplace le seuil global pour elle.
 
   Toutes les cases de la colonne push sont désactivées et grisées, avec la raison sous le
   tableau, tant que l'administrateur n'a pas inscrit l'instance au service Carbure Push

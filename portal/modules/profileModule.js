@@ -14,6 +14,21 @@ import { qrCodeOf } from './mfaModule.js';
 /** Page of carbure.org that opens the mobile apps on a server (Universal Links, App Links) */
 export const APP_LINK_URL = 'https://carbure.org/app/';
 
+/** Key of the version whose banner of a new release was hidden in this browser */
+export const RELEASE_DISMISSED_KEY = 'releaseDismissed';
+
+/**
+ * Version whose banner of a new release was hidden in this browser ('' if none)
+ * @returns {string}
+ */
+export function readDismissedRelease() {
+    try {
+        return localStorage.getItem(RELEASE_DISMISSED_KEY) || '';
+    } catch (error) {
+        return '';
+    }
+}
+
 /**
  * Link that opens the mobile apps on a server, for the QR code of the devices
  * @param {string} apiUrl - Address of the API (a trailing slash is added)
@@ -80,6 +95,10 @@ export function createProfileModule(getApiService) {
                 appServer: null,
                 // Database migrations to apply (administrators): {version, pending}
                 schemaStatus: null,
+                // Latest release of Carbure (administrators): {current, latest, url, available},
+                // and the version whose banner was hidden in this browser
+                releaseStatus: null,
+                releaseDismissed: readDismissedRelease(),
                 migrating: false,
                 rotatingSecret: false,
                 apiTokens: [],
@@ -106,6 +125,15 @@ export function createProfileModule(getApiService) {
         },
 
         computed: {
+            /**
+             * Whether the banner of a new release is shown: a newer release, not hidden
+             * in this browser
+             * @returns {boolean}
+             */
+            releaseBanner() {
+                return !!(this.releaseStatus && this.releaseStatus.available && this.releaseStatus.latest !== this.releaseDismissed);
+            },
+
             /**
              * Address of the API given to the mobile apps: the public one (public_url),
              * else the one of the portal
@@ -208,6 +236,7 @@ export function createProfileModule(getApiService) {
 
                     if (Number(this.currentUser.is_admin)) {
                         this.loadSchemaStatus();
+                        this.loadRelease();
                     }
                 } catch (error) {
                     console.error('Error loading current user:', error);
@@ -215,6 +244,31 @@ export function createProfileModule(getApiService) {
                     // the banner that applies it must still be offered (the route is
                     // reserved to administrators, the others get no banner)
                     this.loadSchemaStatus();
+                }
+            },
+
+            /**
+             * Loads the latest release of Carbure (administrators); nothing is shown when
+             * it cannot be read
+             * @returns {Promise<void>}
+             */
+            async loadRelease() {
+                try {
+                    this.releaseStatus = await getApiService().fetchRelease();
+                } catch (error) {
+                    this.releaseStatus = null;
+                }
+            },
+
+            /**
+             * Hides the banner of the release shown, until a newer one
+             */
+            dismissRelease() {
+                this.releaseDismissed = this.releaseStatus ? this.releaseStatus.latest : '';
+                try {
+                    localStorage.setItem(RELEASE_DISMISSED_KEY, this.releaseDismissed);
+                } catch (error) {
+                    // Storage refused (private browsing): hidden until the page is reloaded
                 }
             },
 

@@ -14,7 +14,8 @@ fills in the login form.
 <p id="server-link" hidden>Server: <code id="server-link-url"></code></p>
 
 If this page shows up on your phone, the app is not installed (or not up to date):
-install it, then scan the QR code again. You can also enter the server address above in
+install it from the [App Store](https://apps.apple.com/fr/app/carbure/id6824057363) (iPhone) or
+[Google Play](https://play.google.com/store/apps/details?id=org.carbure.app) (Android), then scan the QR code again. You can also enter the server address above in
 the **Server URL** field of the login screen.
 
 ## Create your server's link { #creer-le-lien-de-votre-serveur }

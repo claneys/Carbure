@@ -1,7 +1,8 @@
 {#-
-  Theme override: the links to the online demo and to the Discord server, then the GitHub
-  link of Material 9.7
-  (partials/source.html). Shown in the header from 60em and in the menu drawer below.
+  Theme override: the links to the online demo, to the Discord server and to the mobile apps
+  (App Store, Google Play), the GitHub link of Material 9.7 (partials/source.html), then the
+  Docker Hub image with its pull count (read at build time by overrides/hooks/docker_pulls.py).
+  Shown in the header from 60em and in the menu drawer below.
 -#}
 {%- set english = config.theme.language == "en" -%}
 <a href="{{ config.extra.demo_url }}" title="{{ 'Try Carbure online (account demo / carbure)' if english else 'Essayer Carbure en ligne (compte demo / carbure)' }}" class="carbure-demo">
@@ -16,6 +17,16 @@
   </span>
   Discord
 </a>
+<a href="{{ config.extra.app_store_url }}" title="{{ 'Carbure on the App Store (iPhone)' if english else 'Carbure sur l\'App Store (iPhone)' }}" aria-label="App Store (iPhone)" class="carbure-demo carbure-store">
+  <span class="carbure-demo__icon md-icon">
+    {% include ".icons/fontawesome/brands/apple.svg" %}
+  </span>
+</a>
+<a href="{{ config.extra.play_store_url }}" title="{{ 'Carbure on Google Play (Android)' if english else 'Carbure sur Google Play (Android)' }}" aria-label="Google Play (Android)" class="carbure-demo carbure-store">
+  <span class="carbure-demo__icon md-icon">
+    {% include ".icons/fontawesome/brands/google-play.svg" %}
+  </span>
+</a>
 <a href="{{ config.repo_url }}" title="{{ lang.t('source') }}" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     {% set icon = config.theme.icon.repo or "fontawesome/brands/git-alt" %}
@@ -25,3 +36,18 @@
     {{ config.repo_name }}
   </div>
 </a>
+{% if config.extra.docker_image %}
+<a href="https://hub.docker.com/r/{{ config.extra.docker_image }}" title="{{ 'Carbure image on Docker Hub' if english else 'Image de Carbure sur Docker Hub' }}" class="md-source carbure-docker">
+  <div class="md-source__icon md-icon">
+    {% include ".icons/fontawesome/brands/docker.svg" %}
+  </div>
+  <div class="md-source__repository{% if docker_pulls %} md-source__repository--active{% endif %}">
+    {{ config.extra.docker_image }}
+    {% if docker_pulls %}
+    <ul class="md-source__facts">
+      <li class="md-source__fact md-source__fact--pulls">{{ docker_pulls }} pulls</li>
+    </ul>
+    {% endif %}
+  </div>
+</a>
+{% endif %}

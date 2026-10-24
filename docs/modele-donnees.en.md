@@ -22,6 +22,8 @@ erDiagram
     users ||--o{ budget_alert : "alerted"
     bank_transaction_category ||--o{ budget_alert : "alert"
     bank_transaction_category |o--o{ users : "watched budget"
+    users ||--o{ budget_alert_threshold : "thresholds"
+    bank_transaction_category ||--o{ budget_alert_threshold : "threshold"
     users ||--o{ bank_account : "added"
     users ||--o{ bank_transaction : "attachment"
     bank_transaction_category ||--o{ bank_transaction : "categorizes"
@@ -47,6 +49,7 @@ erDiagram
         decimal alert_threshold "alert threshold, NULL = disabled"
         smallint budget_threshold "budget threshold in %, 100"
         tinyint budget_alert_category FK "watched budget, NULL = all"
+        tinyint budget_alert_all "global threshold on, 1"
         datetime last_login
         tinyint failed_logins
         datetime locked_until "NULL = not locked"
@@ -64,6 +67,11 @@ erDiagram
         varchar kind PK "sync, rule, expense, budget"
         tinyint push "1 by default"
         tinyint email "0 by default"
+    }
+    budget_alert_threshold {
+        int user_id PK
+        tinyint category PK
+        smallint threshold "threshold in %, 50 to 200"
     }
     budget_alert {
         int user_id PK
@@ -184,6 +192,7 @@ erDiagram
 | `mfa_trusted_browser` | Trusted browsers (6 months): SHA-256 hash of the cookie token (`token_hash`), `label` (User-Agent), `created_at`, `expires_at`, `last_used_at`. Deleted with the user, when their password changes or when their two-factor authentication is disabled or reset. |
 | `user_browser` | Web browsers of the portal logins: SHA-256 hash of the token of the `carbure_browser` cookie (`token_hash`, unique per user: several users of the household share the cookie of a browser), `label` (User-Agent), `created_at`, `last_login`. Forgotten after 6 months without a login or when the user asks, deleted with the user. Neither notifications nor exemption from two-factor authentication. |
 | `user_notification` | Channels chosen by a user for a notification type (`kind`: `sync`, `rule`, `expense`, `budget`): `push` to their devices, `email` to the address in their profile. With no row for a type: push yes, email no, except `budget` (neither). Deleted with the user. |
+| `budget_alert_threshold` | Budget alert threshold of a user for one category (`threshold`, 50 to 200%), instead of their global threshold (`users.budget_threshold`, applied to all the budgets if `users.budget_alert_all`). Deleted with the user or the category. |
 | `budget_alert` | Budget alerts sent: one per user, category and month (`month`, first day), with the budget (`budget`), the expenses (`spent`) and the percentage (`percent`) at the time of the alert. A new alert is sent only if the month's budget exceeds the one already alerted. Deleted with the user or the category. |
 | `api_tokens` | Access tokens of AI agents (MCP server): only the SHA-256 hash (`token_hash`) is stored, `token_hint` (start of the token) is used to recognize it; `expires_at` `NULL` = no expiration. A token obtained through OAuth carries its `client_id` and the hash of its refresh token (`refresh_hash`); `client_id` `NULL` = created in the portal. Deleted with the user. |
 | `oauth_clients` | AI agents registered through OAuth (RFC 7591): `client_id`, secret hash (`NULL` for a public client, PKCE only), name and allowed redirect URIs (JSON array). |
@@ -223,6 +232,7 @@ already been applied (by hand, or by `sql/carbure.sql`). See
 | `2026-10-21_user_budget_threshold` | Budget alert threshold (`users.budget_threshold`) |
 | `2026-10-22_budget_alert` | Budget alerts sent (`budget_alert` table) |
 | `2026-10-23_user_budget_alert_category` | Budget watched by budget alerts (`users.budget_alert_category`, `NULL` = all) |
+| `2026-10-27_budget_alert_threshold` | Global budget alert threshold that can be turned off, and thresholds per category (`users.budget_alert_all`, `budget_alert_threshold` table); the watched budget becomes a threshold of a category |
 
 ## "Household" model { #modele-foyer }
 

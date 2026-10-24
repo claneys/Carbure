@@ -115,6 +115,9 @@ plugins:
             generator: false
             demo_url: https://demo.carbure.org/
             discord_url: https://discord.gg/QsxYw4Rx9D
+            app_store_url: https://apps.apple.com/fr/app/carbure/id6824057363
+            play_store_url: https://play.google.com/store/apps/details?id=org.carbure.app
+            docker_image: ltoinel/carbure
             social:
               - icon: fontawesome/brands/github
                 link: https://github.com/ltoinel/Carbure
@@ -132,9 +135,13 @@ plugins:
 # No "Made with Material for MkDocs" in the footer
 extra:
   generator: false
-  # Online demo and Discord server, linked from the header (overrides/partials/source.html)
+  # Online demo, Discord server, mobile apps and Docker Hub image, linked from the header
+  # (overrides/partials/source.html); the pull count comes from overrides/hooks/docker_pulls.py
   demo_url: https://demo.carbure.org/
   discord_url: https://discord.gg/QsxYw4Rx9D
+  app_store_url: https://apps.apple.com/fr/app/carbure/id6824057363
+  play_store_url: https://play.google.com/store/apps/details?id=org.carbure.app
+  docker_image: ltoinel/carbure
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/ltoinel/Carbure
@@ -145,6 +152,10 @@ extra:
     - icon: fontawesome/brands/youtube
       link: https://www.youtube.com/@carbure-org
       name: "Vidéos de Carbure sur YouTube"
+
+# Docker Hub pull count of the header, read at build time
+hooks:
+  - overrides/hooks/docker_pulls.py
 
 extra_css:
   - stylesheets/extra.css

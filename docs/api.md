@@ -228,6 +228,8 @@ Canaux de chaque type de notification de l'utilisateur connecté :
   "push_available": true,
   "budget_threshold": 100,
   "alert_threshold": 200.0,
+  "budget_all": true,
+  "budget_thresholds": [{"category": 2, "threshold": 80}],
   "budget_category": null,
   "budgets": [{"id": 1, "name": "Alimentation"}, {"id": 2, "name": "Alimentation › Supermarché"}]
 }
@@ -241,12 +243,14 @@ envoyé en push et pas par email, sauf `budget`, désactivé sur tous les canaux
 aucune), `email_available` que les emails peuvent partir (les deux), `push_available`
 qu'une clé d'API du service de notifications push est configurée (sinon aucune
 notification push n'est envoyée) et `budget_threshold`
-le seuil des alertes de budget, en pourcentage du budget (100 par défaut). `alert_threshold`
+le seuil global des alertes de budget, en pourcentage du budget (100 par défaut), appliqué à
+tous les budgets quand `budget_all` est vrai. `budget_thresholds` donne les seuils des
+catégories qui ont le leur, à la place du seuil global. `alert_threshold`
 est le montant d'une dépense importante (type `expense`, `null` : désactivé, le même que
-`GET /user/me`), `budget_category` la catégorie dont le budget est surveillé par les alertes
-de budget (`null` : tous les budgets) et `budgets` les catégories de dépenses qui ont un
-budget ce mois-ci (une sous-catégorie nommée « Catégorie › Sous-catégorie »), plus celle
-surveillée si elle n'en a pas. Les notifications (push et email) sont
+`GET /user/me`), `budget_category`, pour les clients plus anciens, la seule catégorie de
+`budget_thresholds` quand le seuil global est désactivé (`null` sinon), et `budgets` les
+catégories de dépenses qui ont un budget ce mois-ci (une sous-catégorie nommée « Catégorie ›
+Sous-catégorie »), plus celles de `budget_thresholds` qui n'en ont pas. Les notifications (push et email) sont
 rédigées dans la langue du profil (`language`, `fr` par défaut).
 
 ### `PUT /user/notifications`
@@ -256,11 +260,14 @@ rédigées dans la langue du profil (`language`, `fr` par défaut).
 | `preferences` | non | `{type: {push?, email?}}`, chaque canal `true`/`false` (ou `"true"`, `"false"`, `1`, `0`) |
 | `budgetThreshold` | non | Seuil des alertes de budget (type `budget`) en pourcentage du budget : entier de 50 à 200 (nombre ou chaîne) |
 | `alertThreshold` | non | Montant d'une dépense importante (type `expense`) en euros ; `""` ou `0` désactive l'alerte |
-| `budgetCategory` | non | Catégorie de dépenses dont le budget est surveillé (type `budget`) ; `0` ou `""` : tous les budgets |
+| `budgetAll` | non | Le seuil global (`budgetThreshold`) s'applique à tous les budgets : `true`/`false` (ou `"true"`, `"false"`, `1`, `0`) |
+| `budgetThresholds` | non | Seuils des catégories, qui remplacent les précédents : `[{category, threshold}]`, une catégorie de dépenses chacun (une seule fois), un seuil de 50 à 200 ; `[]` les supprime tous |
+| `budgetCategory` | non | Clients plus anciens : seul budget surveillé (le seuil global désactivé, cette catégorie à `budgetThreshold` ou au seuil actuel) ; `0` ou `""` : tous les budgets, sans seuil de catégorie. Pas avec `budgetThresholds` |
 
 Les types, canaux et réglages absents sont conservés ; type, canal, valeur ou réglage
 invalides (dont une catégorie inconnue ou de revenus) : `400`, sans rien enregistrer ;
-`budgetCategory` avant la migration `2026-10-23_user_budget_alert_category` : `409`. Renvoie le résultat de `GET /user/notifications`.
+`budgetCategory` avant la migration `2026-10-23_user_budget_alert_category`, `budgetAll` ou
+`budgetThresholds` avant la migration `2026-10-27_budget_alert_threshold` : `409`. Renvoie le résultat de `GET /user/notifications`.
 
 ```bash
 curl -X PUT "https://exemple.fr/api/user/notifications" -H "Authorization: Bearer $TOKEN" \
@@ -270,9 +277,15 @@ curl -X PUT "https://exemple.fr/api/user/notifications" -H "Authorization: Beare
 curl -X PUT "https://exemple.fr/api/user/notifications" -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' -d '{"preferences":{"budget":{"email":true}},"budgetThreshold":"90"}'
 
-# Seulement le budget de la catégorie 4, et les dépenses à partir de 150 €
+# 100 % sur tous les budgets, 80 % sur les catégories 2 et 5
 curl -X PUT "https://exemple.fr/api/user/notifications" -H "Authorization: Bearer $TOKEN" \
-  -H 'Content-Type: application/json' -d '{"budgetCategory":"4","alertThreshold":"150"}'
+  -H 'Content-Type: application/json' \
+  -d '{"budgetAll":true,"budgetThreshold":"100","budgetThresholds":[{"category":"2","threshold":"80"},{"category":"5","threshold":"80"}]}'
+
+# Seulement les catégories 2 (80 %) et 4 (100 %), et les dépenses à partir de 150 €
+curl -X PUT "https://exemple.fr/api/user/notifications" -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"budgetAll":false,"budgetThresholds":[{"category":"2","threshold":"80"},{"category":"4","threshold":"100"}],"alertThreshold":"150"}'
 ```
 
 ### `DELETE /user` — administrateur
@@ -937,6 +950,15 @@ invalide, 404 s'il n'existe pas.
 Version du schéma de la base et migrations à appliquer :
 `{"version": "2026-10-13_base", "pending": []}`.
 
+### `GET /system/release` — administrateur
+
+Dernière version publiée de Carbure, demandée à l'API de GitHub au plus une fois par jour
+(réglage `update_check`) : `{"enabled": true, "current": "1.9.1", "latest": "1.10.0",
+"url": "https://github.com/ltoinel/Carbure/releases/tag/v1.10.0", "available": true,
+"checked_at": "2026-11-01 10:00:00"}`. `available` : `latest` est plus récente que
+`current` (jamais pour une version de développement) ; `latest`, `url` et `checked_at` sont
+`null` tant qu'elles ne sont pas connues.
+
 ### `POST /system/migrate` — administrateur
 
 Applique les migrations en attente (bouton **Mettre à jour** du portail) :
@@ -962,7 +984,7 @@ Le fichier de configuration, par section : `file` (chemin dans l'instance), `wri
 ### `PUT /system/config` — administrateur
 
 `values` : les nouvelles valeurs par clé, uniquement parmi les réglages modifiables
-(`log_level`, `log_retention_days`, `savings_category`, `public_url`, `woob_transactions`, `woob_logging`,
+(`log_level`, `log_retention_days`, `savings_category`, `public_url`, `currency`, `next_month_day`, `woob_transactions`, `woob_logging`,
 `woob_debug`, `woob_auto_update`, `woob_2fa_wait`, `woob_2fa_retries`, `push_api_key`, `smtp_host`, `smtp_port`, `smtp_encryption`, `smtp_auth`,
 `smtp_username`, `smtp_password`, `smtp_from`, `smtp_from_name`). Toutes les valeurs sont vérifiées avant d'écrire quoi que
 ce soit (`400` sinon, fichier inchangé) ; l'ancien fichier est gardé en `.bak`. Renvoie la

@@ -20,9 +20,9 @@ home. Transactions are fetched automatically from French banks thanks to
 - in the Carbure [**iPhone and Android apps**](applications-mobiles.md):
   transactions, checking, budgets, overviews, trends and synchronization, sign-in with
   Face ID or fingerprint, and push notifications (through the Carbure Push service) after each
-  synchronization, for large expenses and reached budgets — coming soon
-  to the App Store and Google Play; in the meantime, the portal can be installed as
-  an app on a computer or phone;
+  synchronization, for large expenses and reached budgets — available on
+  the [App Store](https://apps.apple.com/fr/app/carbure/id6824057363) and on [Google Play](https://play.google.com/store/apps/details?id=org.carbure.app); the portal can also be
+  installed as an app on a computer or phone;
 - through an **AI agent** (Claude, ChatGPT, Cursor, Copilot, Gemini…) thanks to the built-in
   MCP server, read-only.
 

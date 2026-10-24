@@ -18,3 +18,6 @@ tests/e2e/.data/
 
 # Build cache of the documentation (Material privacy plugin: downloaded fonts)
 .cache/
+
+# Bytecode of the MkDocs hooks (overrides/hooks/)
+__pycache__/

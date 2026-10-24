@@ -14,7 +14,8 @@ de confirmer le serveur, puis remplit le formulaire de connexion.
 <p id="server-link" hidden>Serveur : <code id="server-link-url"></code></p>
 
 Si cette page s'affiche sur votre téléphone, l'application n'est pas installée (ou pas à
-jour) : installez-la, puis scannez à nouveau le QR code. Vous pouvez aussi saisir l'adresse
+jour) : installez-la depuis l'[App Store](https://apps.apple.com/fr/app/carbure/id6824057363) (iPhone) ou
+[Google Play](https://play.google.com/store/apps/details?id=org.carbure.app) (Android), puis scannez à nouveau le QR code. Vous pouvez aussi saisir l'adresse
 du serveur ci-dessus dans le champ **URL du serveur** de l'écran de connexion.
 
 ## Créer le lien de votre serveur

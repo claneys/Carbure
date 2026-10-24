@@ -10,7 +10,7 @@ Carbure versus the other self-hosted open source budget managers: Firefly III,
 Actual Budget and Kresus.
 
 Carbure targets a household whose accounts are in France and who wants to keep its data at home,
-with iPhone and Android apps (coming soon to the App Store and Google Play) and an AI agent. The other open source tools below are excellent,
+with iPhone and Android apps ([App Store](https://apps.apple.com/fr/app/carbure/id6824057363), [Google Play](https://play.google.com/store/apps/details?id=org.carbure.app)) and an AI agent. The other open source tools below are excellent,
 with other strengths: a richer accounting model (Firefly III), envelope budgeting
 and a local-first application (Actual Budget), or the same woob connection for a
 single user (Kresus).

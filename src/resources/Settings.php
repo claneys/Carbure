@@ -50,6 +50,10 @@ final class Settings {
         'public_url' => ['kind' => 'url', 'empty' => true],
         // Currency of the amounts (ISO 4217 code), only displayed: nothing is converted
         'currency' => ['kind' => 'text', 'pattern' => '/^[A-Z]{3}$/'],
+        // Day from which a received transfer (salary) counts for the next month; 0: never
+        'next_month_day' => ['kind' => 'number', 'min' => 0, 'max' => 31],
+        // New release of Carbure asked to GitHub once a day, for the administrators
+        'update_check' => ['kind' => 'bool'],
         // Two-factor authentication (authenticator app) at the login of every user
         'mfa_required' => ['kind' => 'bool'],
         'woob_transactions' => ['kind' => 'number', 'min' => 1, 'max' => 5000],
@@ -75,7 +79,7 @@ final class Settings {
     /** Section of the settings that the file may not have yet */
     const SECTIONS = [
         'log_level' => 'global', 'log_retention_days' => 'global', 'savings_category' => 'global', 'public_url' => 'global',
-        'currency' => 'global',
+        'currency' => 'global', 'next_month_day' => 'global', 'update_check' => 'global',
         'mfa_required' => 'auth',
         'woob_transactions' => 'woob', 'woob_logging' => 'woob', 'woob_debug' => 'woob', 'woob_auto_update' => 'woob',
         'woob_2fa_wait' => 'woob', 'woob_2fa_retries' => 'woob',

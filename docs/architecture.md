@@ -118,7 +118,9 @@ sequenceDiagram
   libellé et montant : deux cafés le même jour) sont distinguées par leur rang : la
   première garde cet UUID, les suivantes ont `md5(uuid + "#n")`
   (`Transaction::prepareAll()`).
-- Les virements de type 1 (salaire) datés après le 25 sont rattachés au mois suivant.
+- Les virements reçus (type 1, le salaire) datés à partir du jour `next_month_day` (25 par
+  défaut, 0 : jamais) sont rattachés au 1er du mois suivant (`date`) ; `rdate` garde la date
+  réelle, et donc l'UUID.
 - La **catégorisation** recherche les mots-clés de `bank_transaction_category_keyword`
   dans le libellé des transactions sans catégorie du dernier mois (ou de tout
   l'historique avec `POST /category/keyword/apply`).

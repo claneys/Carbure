@@ -185,6 +185,17 @@ test('axe: the notifications of the profile and the result of the test email', a
     await page.setViewportSize({ width: 320, height: 256 });
     problems.push(...await reflowProblems(page, `${tr('budgetThreshold')} (error)`));
     await page.setViewportSize({ width: 1280, height: 720 });
+    // A threshold of a category, refused: its field, its remove button, its error message
+    await page.locator('#budget-threshold').fill('100');
+    await page.locator('#budget-threshold').press('Enter');
+    await page.getByRole('button', { name: tr('budgetThresholdAdd') }).click();
+    await page.locator('#budget-row-threshold-0').fill('250');
+    await page.locator('#budget-row-threshold-0').press('Enter');
+    await expect(page.locator('#budget-rows-error')).toBeVisible();
+    problems.push(...await axeViolations(page, `${tr('budgetCategoryThresholds')} (error)`));
+    await page.setViewportSize({ width: 320, height: 256 });
+    problems.push(...await reflowProblems(page, `${tr('budgetCategoryThresholds')} (error)`));
+    await page.setViewportSize({ width: 1280, height: 720 });
 
     // Settings: the test email failed (no SMTP server configured)
     await showTab(page, 'tabSettings');

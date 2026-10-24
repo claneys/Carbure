@@ -16,12 +16,6 @@ service tiers, sauf les notifications push (voir [plus bas](#notifications-push)
 ![Tendances sur 24 mois dans l'app iPhone](assets/mobile/ios-tendances.png){ loading=lazy }
 { .mobile-screens }
 
-!!! info "Disponibilité"
-    Les applications seront prochainement disponibles sur l'**App Store** et sur
-    **Google Play**. En attendant, le portail web
-    [s'installe comme une application](portail.md#installer-le-portail-comme-une-application)
-    sur le téléphone.
-
 Les apps sont faites pour **le suivi au quotidien** : consulter, pointer, catégoriser,
 ajuster un budget, lancer une synchronisation. L'administration (comptes bancaires, règles,
 catégories, insights, utilisateurs, paramètres) et l'import de relevés restent dans le
@@ -34,6 +28,23 @@ catégories, insights, utilisateurs, paramètres) et l'import de relevés resten
 | Connexion sans mot de passe | Face ID / Touch ID | empreinte ou visage (biométrie forte) |
 | Notifications push | Apple (APNs) | Google (Firebase Cloud Messaging) |
 | Thème | système, clair ou sombre | système, clair ou sombre |
+
+## Télécharger { #telecharger }
+
+[App Store (iPhone)](https://apps.apple.com/fr/app/carbure/id6824057363){ .md-button .md-button--primary }
+[Google Play (Android)](https://play.google.com/store/apps/details?id=org.carbure.app){ .md-button .md-button--primary }
+
+- **Gratuites**, sans publicité ni abonnement ; **aucune donnée collectée** (voir
+  [Confidentialité](confidentialite.md)).
+- Disponibles **en France** pour le moment.
+- **Prérequis** : un serveur Carbure [installé](installation.md) et accessible depuis le
+  téléphone, ou la [démo en ligne](https://demo.carbure.org/) pour essayer.
+- Le portail web [s'installe aussi comme une application](portail.md#installer-le-portail-comme-une-application)
+  sur le téléphone.
+
+Une note ou un avis sur les stores aide beaucoup à la visibilité du projet. Pour l'entraide,
+rendez-vous sur le [Discord](https://discord.gg/QsxYw4Rx9D) ; pour un bug, ouvrez une
+[issue sur GitHub](https://github.com/ltoinel/Carbure/issues).
 
 ## Connexion
 

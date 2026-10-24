@@ -117,7 +117,9 @@ sequenceDiagram
   transactions received together (same actual date, label and amount: two coffees on the
   same day) are told apart by their rank: the first keeps this UUID, the following ones
   get `md5(uuid + "#n")` (`Transaction::prepareAll()`).
-- Type 1 transfers (salary) dated after the 25th are attached to the following month.
+- Received transfers (type 1, the salary) dated from the day `next_month_day` (25 by
+  default, 0: never) are attached to the 1st of the following month (`date`); `rdate` keeps
+  the actual date, hence the UUID.
 - **Categorization** searches for the keywords of `bank_transaction_category_keyword` in
   the label of uncategorized transactions of the last month (or of the whole history with
   `POST /category/keyword/apply`).

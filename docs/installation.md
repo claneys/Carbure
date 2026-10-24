@@ -111,8 +111,12 @@ Le journal contient le mot de passe `admin` : gardez-le lisible par vous seul.
 
 ```bash
 git clone https://github.com/ltoinel/Carbure.git && cd Carbure/docker
-docker compose up -d
+docker compose pull && docker compose up -d
 ```
+
+`docker compose pull` télécharge l'image publiée de la
+[dernière release](#recuperer-limage) : sans lui, Compose construirait l'image à partir du code
+du dépôt (`docker/docker-compose.yml` sert aussi aux tests).
 
 Ouvrez `http://<hôte>:8080/` : l'assistant d'installation s'affiche, déjà rempli avec la
 base de données de `docker/docker-compose.yml`. Cliquez sur **Continuer**, choisissez le mot de
@@ -210,6 +214,27 @@ Quand `docker compose pull` apporte une nouvelle version majeure de MariaDB (par
 (`MARIADB_AUTO_UPGRADE`). Ce passage est sans retour : la base ne peut plus être ouverte par
 l'ancienne version, d'où l'importance de la sauvegarde. Pour garder une version donnée,
 fixez-la dans `docker/docker-compose.yml` (`image: mariadb:11`).
+
+### Passer à la 1.10.0
+
+- La migration `2026-10-27_budget_alert_threshold` est appliquée au démarrage : les alertes
+  de budget ont un **seuil global** (tous les budgets), désactivable, et des **seuils par
+  catégorie** (**Mon profil → Notifications**). Les réglages sont repris : un utilisateur
+  qui surveillait un seul budget garde ce budget, à son seuil, sans seuil global. Le code
+  fonctionne avant elle, comme avant.
+- **Salaire de fin de mois** : un virement reçu daté **du 25 ou après** est rattaché au mois
+  suivant (auparavant à partir du 26). Le jour se règle avec `next_month_day`
+  (**Administration → Paramètres**, `0` pour ne jamais déplacer un virement) ; seules les
+  transactions importées ou synchronisées après la mise à jour sont concernées.
+- **Nouvelle version** : un bandeau prévient les administrateurs quand une version de
+  Carbure est publiée. Le serveur demande la dernière version à l'API publique de GitHub
+  une fois par jour, sans rien envoyer sur l'instance ; `update_check=false` le désactive.
+- **Première installation avec Docker Compose** : `docker compose pull && docker compose up -d`
+  utilise l'image publiée (sans `pull`, Compose construisait l'image depuis le clone).
+- **Installation scriptée** : `tools/install.php` installe Carbure sans l'assistant web
+  (voir [Lancer l'assistant](#3-lancer-lassistant)) ; il sert au paquet YunoHost en préparation.
+- Les applications mobiles sont publiées : liens App Store et Google Play dans **Mon profil
+  → Mes appareils**.
 
 ### Passer à la 1.9.0
 
@@ -328,6 +353,35 @@ docker compose exec -u www-data carbure php tools/migrate.php --status # version
     BNP) peut être copié dans `/data/woob/.local/share/woob/modules/3.7/woob_modules/` ;
     `curl_cffi`, nécessaire au module BNP récent, est déjà installé dans l'image.
 
+## Avec YunoHost (en préparation)
+
+!!! warning "Travail en cours"
+    Le paquet YunoHost de Carbure est en cours d'écriture : il n'est **pas encore dans le
+    catalogue** de YunoHost et n'a **pas encore été testé** sur un serveur YunoHost. Il
+    installe Carbure 1.10.0, la première version qui sait s'installer sans l'assistant web
+    (`tools/install.php`) : pour l'essayer, `sudo yunohost app install
+    https://github.com/ltoinel/carbure_ynh` sur un serveur de test. Suivi :
+    [ticket #45](https://github.com/ltoinel/Carbure/issues/45).
+
+Le paquet [`carbure_ynh`](https://github.com/ltoinel/carbure_ynh) installera Carbure en
+quelques clics depuis l'interface d'administration de [YunoHost](https://yunohost.org) :
+
+- sur un **domaine dédié** (par exemple `budget.exemple.org`), pas dans un sous-chemin ;
+- **sans assistant** : l'utilisateur YunoHost choisi devient l'administrateur de Carbure,
+  avec le mot de passe saisi à l'installation ; la base, les catégories, les règles et les
+  insights de départ sont créés ;
+- avec **woob** dans un environnement virtuel, et une **synchronisation quotidienne** de
+  tous les comptes ;
+- les mises à jour appliquent les migrations de la base et mettent à jour les modules
+  bancaires ; les sauvegardes YunoHost comprennent la base et le dossier de données
+  (configuration, logs, woob).
+
+Carbure garde ses propres comptes (pas de connexion unique avec YunoHost), dont les
+applications mobiles ont besoin, et l'application reste publique pour elles. Vous avez un
+serveur YunoHost et voulez aider à tester ? Dites-le dans le
+[ticket #45](https://github.com/ltoinel/Carbure/issues/45) ou sur le
+[Discord](https://discord.gg/QsxYw4Rx9D).
+
 ## Sur un serveur web existant
 
 ### Prérequis
@@ -388,6 +442,23 @@ secrets aléatoires (`jwtsecret`, `sync_token`…). La commande woob y est `woob
 Depuis une adresse publique, l'assistant demande le code d'installation écrit dans
 `data/conf/setup.code` (et dans le journal d'erreurs PHP). Voir
 [Sécurité](securite.md#assistant-dinstallation).
+
+!!! tip "Installer sans l'assistant (script)"
+    `tools/install.php` fait la même installation en ligne de commande, pour un script
+    (paquet d'une distribution, YunoHost…). Les mots de passe passent par l'environnement,
+    jamais par la ligne de commande (visible dans la liste des processus) :
+
+    ```bash
+    CARBURE_DB_PASSWORD='…' CARBURE_ADMIN_PASSWORD='…' \
+      php tools/install.php --db-name=carbure --db-user=carbure --admin=marie \
+        --email=marie@example.org --language=fr --starter
+    ```
+
+    Lancez-le avec l'utilisateur du serveur web, qui doit pouvoir écrire dans `data/`.
+    Code de sortie : `0` installé, `1` échec (rien n'est écrit), `2` déjà installé
+    (`data/conf/prod.ini` existe : rien ne change). `php tools/install.php --help` liste
+    les options (`--db-host`, `--db-port`, `--woob-path`, `--public-url`, `--backup-confirmed` pour migrer
+    une base existante…).
 
 ### 4. Ajouter une banque
 
