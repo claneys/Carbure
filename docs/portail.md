@@ -292,7 +292,10 @@ ou importés depuis un fichier, sont regroupés à la fin sous **Autres comptes*
        un nom lisible (« Compte joint », « BNP pro »…), affiché à la place du nom de la
        banque ; son nom technique dans woob (`bnp`, `bnp_2`…) est généré automatiquement.
        Si la banque refuse les identifiants, son message s'affiche et le formulaire reste
-       ouvert.
+       ouvert. Si elle demande une **authentification forte** dès la connexion (Crédit
+       Mutuel, CIC…), la banque reste connectée et la liste de ses comptes s'ouvre en
+       attente : le message de la banque s'y affiche, on valide la connexion dans son
+       application sans fermer la fenêtre, puis les comptes apparaissent.
     2. **Banques connectées** : chaque connexion (backend woob) affiche son nom (à défaut
        celui de la banque) et son nom dans woob ; le bouton crayon la **renomme** (un nom
        vide rétablit celui de la banque) ; la corbeille la **supprime**, après confirmation

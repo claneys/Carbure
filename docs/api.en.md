@@ -352,9 +352,12 @@ values on a single line with no spaces, choices checked), `label` (optional: nam
 the connection, 100 characters max, for example "Joint account"). The credentials are
 handed to woob, neither stored nor logged by Carbure (`settings` is masked in the
 logs), and never passed on the woob command line. Returns
-`backend`, `label` and the `accounts` found (same format as `/bank/discover`). `409` if
-a bank with this name already exists in woob or if its module is not installed and the woob
-repository not yet approved, `400` if a parameter is missing or if woob refuses.
+`backend`, `label`, the `accounts` found (same format as `/bank/discover`) and
+`two_factor`. If the bank asks for a strong authentication on the first connection (woob
+only starts it in interactive mode), the bank stays configured: `accounts` is empty,
+`two_factor` is `true`, and its accounts are listed with `GET /bank/discover/interactive`.
+`409` if a bank with this name already exists in woob or if its module is not installed and
+the woob repository not yet approved, `400` if a parameter is missing or if woob refuses.
 
 ### `PUT /bank/backend` — administrator { #put-bankbackend-administrateur }
 
@@ -404,6 +407,17 @@ take several seconds (connection to the banks).
 | Parameter | Description |
 |---|---|
 | `backend` (optional) | Only the accounts of this connection (woob backend, `woob bank list -b <backend>`); `400` if the name is invalid |
+
+### `GET /bank/discover/interactive` — administrator (SSE stream) { #get-bankdiscoverinteractive-administrateur-flux-sse }
+
+Accounts of one connection (`backend`, required, `400` if the name is invalid) when the
+bank asks for a strong authentication: woob runs on a pseudo-terminal, starts the request
+and waits for the approval in the bank's app (sometimes several minutes). Each message of
+the bank is sent (`data: Bank message <backend>: <message>`), then the result: `Accounts
+<JSON list>` (same format as `/bank/discover`) or `Discovery failed: <cause>` (including
+`synchronization in progress`: never during a synchronization). The portal uses it after
+`POST /bank/backend` with `two_factor`, or when `GET /bank/discover` fails on a strong
+authentication request.
 
 ### `GET /bank/sync` — SSE stream { #bank-sync }
 

@@ -1,10 +1,11 @@
 // Accessibility: every text of the portal is readable (WCAG 2.2 AA contrast), the
 // buttons at rest and on hover, on every tab and in the modals (see a11y.js)
-const { test, expect, tr, openTab, trustWoobRepository, asDemoInstance } = require('../fixtures');
+const { test, expect, tr, openTab, trustWoobRepository, asDemoInstance, woobFile } = require('../fixtures');
 const { contrastProblems } = require('../a11y');
 const { startFakeSmtp } = require('../fake-smtp');
 const { startFakePushRelay } = require('../fake-push-relay');
 const path = require('path');
+const fs = require('fs');
 
 // Hovering every button of every screen takes time
 test.describe.configure({ timeout: 180_000 });
@@ -267,6 +268,27 @@ test('the menus, modals and the synchronization log are readable', async ({ admi
     problems.push(...await contrastProblems(page, tr('addAccountsTitle', { bank: 'BNP Paribas (bnp)' })));
     await page.keyboard.press('Escape');
     await expect(add).toHaveCount(0);
+
+    // A bank that asks a strong authentication: woob waits for the approval in its app (#299)
+    fs.writeFileSync(woobFile('carbure-fake-woob-2fa-wait'), '');
+    const discoverBnp = url => url.pathname.endsWith('/api/bank/discover') && url.searchParams.get('backend') === 'bnp';
+    const interactiveBnp = url => url.pathname.endsWith('/api/bank/discover/interactive') && url.searchParams.get('backend') === 'bnp';
+    await page.route(discoverBnp, route => route.fulfill({
+        status: 500,
+        json: { error: 'Error(bnp): You have to run bank in interactive mode to perform a two-factor authentication', code: 500 }
+    }));
+    await page.route(interactiveBnp, route => route.continue({ url: route.request().url().replace('backend=bnp', 'backend=2fa') }));
+    await page.getByRole('button', { name: tr('addAccountsTo', { bank: 'BNP Paribas (bnp)' }) }).click();
+    await expect(add.getByText(tr('discover2faWaiting'))).toBeVisible();
+    await expect(add.getByRole('status').filter({ hasText: 'Veuillez valider' })).toBeVisible();
+    problems.push(...await contrastProblems(page, tr('addAccountsTitle', { bank: 'BNP Paribas (bnp)' })));
+    // Approved: woob ends (and frees the synchronization lock)
+    fs.writeFileSync(woobFile('carbure-fake-woob-validated'), '');
+    await expect(add.getByRole('checkbox')).toHaveCount(2);
+    await page.keyboard.press('Escape');
+    await expect(add).toHaveCount(0);
+    await page.unroute(discoverBnp);
+    await page.unroute(interactiveBnp);
 
     await page.getByRole('button', { name: tr('renameBankConnectionOf', { bank: 'BNP Paribas (bnp)' }) }).click();
     const rename = page.getByRole('dialog', { name: tr('renameBankConnection') });

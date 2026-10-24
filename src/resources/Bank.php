@@ -404,7 +404,10 @@ final class Bank {
     /**
      * Configure a bank in woob from the portal (administrators): the credentials
      * are given to woob, which keeps them; Carbure stores and logs nothing of them.
-     * The accounts woob then finds are returned, to follow them.
+     * The accounts woob then finds are returned, to follow them. When the bank asks a
+     * two-factor authentication, which woob only starts in interactive mode, the bank stays
+     * configured with no account and two_factor true: its accounts are then listed by
+     * GET /bank/discover/interactive, while the administrator validates the connection (#299).
      *
      * @param string      $module   The woob module (e.g. bnp)
      * @param string      $backend  Name of the woob backend (e.g. bnp, bnp_pro)
@@ -412,9 +415,10 @@ final class Bank {
      *                              (anything else is taken as no setting, as sent by the client)
      * @param string|null $label    Name given to the bank connection, e.g. "Compte joint"
      *                              (optional)
-     * @return array{backend: string, label: string|null, accounts: list<array<string, mixed>>}
+     * @return array{backend: string, label: string|null, accounts: list<array<string, mixed>>, two_factor: bool}
      *               backend, label, accounts
-     *               [{bankId, account_number, bank_name, label, balance, currency, followed}]
+     *               [{bankId, account_number, bank_name, label, balance, currency, followed}],
+     *               two_factor (the bank asks a two-factor authentication)
      * @throws Error If a setting is missing or invalid, or woob refuses the bank; 409 if the
      *               module must be installed before the woob repository is trusted
      */
@@ -448,18 +452,35 @@ final class Bank {
             throw new Error($e->getMessage(), 400);
         }
 
-        // Accounts of the new bank, to follow them: the first connection to the bank.
-        // If the bank refuses it (wrong credentials...), the backend is removed from
-        // woob so that the form can be sent again
+        $accounts = self::firstConnection($module, $backend);
+        // Replaces the name of a former connection of the same woob name, if any
+        self::saveBackendLabel($backend, $label);
+        return ['backend' => $backend, 'label' => $label, 'accounts' => $accounts ?? [], 'two_factor' => $accounts === null];
+    }
+
+    /**
+     * First connection to a bank just configured in woob: its accounts, to follow them.
+     * If the bank refuses it (wrong credentials...), the backend is removed from woob so
+     * that the form can be sent again; if it asks a two-factor authentication, the backend
+     * is kept: woob only starts it with the administrator waiting for it (#299).
+     *
+     * @param string $module  The woob module
+     * @param string $backend Name of the woob backend
+     * @return list<array<string, mixed>>|null The accounts, null if the bank asks a two-factor authentication
+     * @throws Error If the bank refuses the connection (400)
+     */
+    private static function firstConnection(string $module, string $backend): ?array
+    {
         try {
-            $accounts = self::discover($backend);
+            return self::discover($backend);
         } catch (Exception $e) {
+            if (Woob::needsTwoFactor($e->getMessage())) {
+                Logger::info("The bank $backend asks a two-factor authentication: accounts to list interactively");
+                return null;
+            }
             Woob::removeBackend($backend);
             throw new Error(self::refusalMessage($module, $e->getMessage()), 400);
         }
-        // Replaces the name of a former connection of the same woob name, if any
-        self::saveBackendLabel($backend, $label);
-        return ['backend' => $backend, 'label' => $label, 'accounts' => $accounts];
     }
 
     /**
@@ -569,10 +590,59 @@ final class Bank {
         if ($backend !== null && !preg_match(Woob::BACKEND_NAME, $backend)) {
             throw new Error("Invalid bank name (lowercase letters, digits, - and _)", 400);
         }
+        return self::discovered(Woob::listAccounts($backend));
+    }
+
+    /**
+     * Accounts of one bank connection, with a two-factor authentication allowed
+     * (administrators), streamed: woob runs on a pseudo-terminal and may ask a validation
+     * in the bank app, as on the first connection to some banks (#299). Each message of the
+     * bank is sent as "Bank message <backend>: <message>", then the result: "Accounts
+     * <JSON list>" (same format as GET /bank/discover) or "Discovery failed: <cause>" (also
+     * "synchronization in progress": never while a synchronization runs woob).
+     *
+     * @param string $backend Name of the woob backend (bank connection)
+     * @return void
+     * @throws Error If the backend name is invalid (400)
+     */
+    #[ApiRoute('/bank/discover/interactive', method: 'GET', stream: true, admin: true)]
+    public static function discoverInteractive(string $backend): void
+    {
+        if (!preg_match(Woob::BACKEND_NAME, $backend)) {
+            throw new Error("Invalid bank name (lowercase letters, digits, - and _)", 400);
+        }
+        // The validation in the bank app may take minutes
+        set_time_limit(0);
+
+        // Not while a synchronization runs woob: the bank would ask two validations
+        if (!(Db::select("SELECT GET_LOCK('bank_sync', 0) AS locked")->fetch_assoc()['locked'] ?? 0)) {
+            Webservice::sendProgress("Discovery failed: synchronization in progress");
+            return;
+        }
+        try {
+            $accounts = Woob::listAccounts($backend, true, fn(string $message) => Webservice::sendProgress("Bank message $backend: $message"));
+            Webservice::sendProgress("Accounts " . json_encode(self::discovered($accounts), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE));
+        } catch (Exception $e) {
+            Logger::error("Discovery of the accounts of $backend failed: " . $e->getMessage());
+            Webservice::sendProgress("Discovery failed: " . $e->getMessage());
+        } finally {
+            Db::query("SELECT RELEASE_LOCK('bank_sync')");
+        }
+    }
+
+    /**
+     * Accounts listed by woob as returned by the discovery, the followed ones marked.
+     *
+     * @param list<array<mixed>> $woobAccounts The accounts listed by woob
+     * @return list<array<string, mixed>> The accounts (bankId, account_number, bank_name, label,
+     *               balance, currency, followed)
+     */
+    private static function discovered(array $woobAccounts): array
+    {
         $followed = array_column(self::accounts(), 'bankId');
 
         $accounts = [];
-        foreach (Woob::listAccounts($backend) as $account) {
+        foreach ($woobAccounts as $account) {
             $at = strrpos($account['id'], '@');
             if ($at === false) {
                 continue;

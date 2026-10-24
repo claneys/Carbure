@@ -6,7 +6,9 @@
  *    stored by Carbure; several connections of the same bank are allowed, each
  *    with a name given in Carbure (its woob name, bnp_2..., is generated);
  * 2. add accounts to a connected bank: only the accounts woob lists for it
- *    (bank list -b <backend>) can be followed.
+ *    (bank list -b <backend>) can be followed. A bank that asks a two-factor
+ *    authentication is listed interactively: the administrator approves the
+ *    connection in the bank app while woob waits (#299).
  * Followed accounts: list with the result of the last synchronization, label
  * modified in a modal, delete.
  *
@@ -71,6 +73,11 @@ export function createAccountsModule(getApiService) {
                 selectedAccounts: [],
                 discovering: false,
                 discoverError: null,
+                // The bank asks a two-factor authentication, and its last message
+                discoverTwoFactor: false,
+                discoverMessage: null,
+                // Interactive listing of the accounts, stopped when the modal is closed
+                discoverAbort: null,
                 followingAccounts: false,
                 // Update of the woob bank modules: repository {repository, trusted, fingerprint,
                 // error}, its keyring trusted by the administrator, lines written by woob
@@ -173,6 +180,12 @@ export function createAccountsModule(getApiService) {
                     // Configured now, even if woob lists it a bit later
                     if (!this.bankBackends.some(b => b.name === result.backend)) {
                         this.bankBackends = [...this.bankBackends, { name: result.backend, module: setup.module, label: result.label || null }];
+                    }
+                    if (result.two_factor) {
+                        // Its accounts once the connection is approved in the bank app
+                        this.showToast(this.t('bankConnected2fa'));
+                        this.openAddAccounts(result.backend, null, true);
+                        return;
                     }
                     this.showToast(this.t(result.accounts.length ? 'bankConnected' : 'bankConnectedNoAccount'));
                     this.openAddAccounts(result.backend, result.accounts);
@@ -436,15 +449,19 @@ export function createAccountsModule(getApiService) {
 
             /**
              * Opens the modal adding accounts to a connected bank (step 2), with the
-             * accounts woob lists for it
+             * accounts woob lists for it. When the bank asks a two-factor authentication,
+             * they are listed interactively, while the connection is approved in its app
              * @param {string} backend - woob backend (bank connection)
              * @param {Array|null} accounts - Accounts already listed (just connected), else asked to woob
+             * @param {boolean} twoFactor - The bank asks a two-factor authentication
              * @returns {Promise<void>}
              */
-            async openAddAccounts(backend, accounts = null) {
+            async openAddAccounts(backend, accounts = null, twoFactor = false) {
                 this.addAccountsBackend = backend;
                 this.selectedAccounts = [];
                 this.discoverError = null;
+                this.discoverTwoFactor = false;
+                this.discoverMessage = null;
                 this.showAddAccountsModal = true;
                 if (accounts) {
                     this.showDiscovered(accounts);
@@ -453,12 +470,41 @@ export function createAccountsModule(getApiService) {
                 this.discoveredAccounts = [];
                 this.discovering = true;
                 try {
-                    this.showDiscovered(await getApiService().discoverBankAccounts(backend));
+                    let found;
+                    try {
+                        found = twoFactor ? await this.discoverWithTwoFactor(backend) : await getApiService().discoverBankAccounts(backend);
+                    } catch (error) {
+                        // woob only starts a two-factor authentication with the administrator waiting for it
+                        if (twoFactor || !this.needsTwoFactor(error.message)) {
+                            throw error;
+                        }
+                        found = await this.discoverWithTwoFactor(backend);
+                    }
+                    if (this.showAddAccountsModal && this.addAccountsBackend === backend) {
+                        this.showDiscovered(found);
+                    }
                 } catch (error) {
-                    this.discoverError = error.message;
+                    if (error.name !== 'AbortError') {
+                        this.discoverError = error.message;
+                    }
                 } finally {
                     this.discovering = false;
+                    this.discoverAbort = null;
                 }
+            },
+
+            /**
+             * Accounts of a bank that asks a two-factor authentication: woob waits for the
+             * approval in the bank app, its messages are shown in the modal
+             * @param {string} backend - woob backend (bank connection)
+             * @returns {Promise<Array>} Accounts found by woob
+             */
+            discoverWithTwoFactor(backend) {
+                this.discoverTwoFactor = true;
+                this.discoverAbort = new AbortController();
+                return getApiService().discoverBankAccountsInteractive(backend, message => {
+                    this.discoverMessage = message;
+                }, this.discoverAbort.signal);
             },
 
             /**
@@ -474,6 +520,10 @@ export function createAccountsModule(getApiService) {
              * Closes the modal adding accounts
              */
             closeAddAccounts() {
+                // woob stops waiting for the approval of the bank
+                if (this.discoverAbort) {
+                    this.discoverAbort.abort();
+                }
                 this.showAddAccountsModal = false;
                 this.discoveredAccounts = [];
                 this.selectedAccounts = [];
