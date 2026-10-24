@@ -697,7 +697,7 @@ final class Woob {
         $bankId = escapeshellarg($bankId);
 
         return "$woob_path bank $type $bankId --count $woob_transactions$auto_update_flag" . self::loggingOptions()
-            . " -f json -s date,rdate,amount,raw,type,category,card";
+            . " -f json -s date,rdate,amount,raw,label,type,category,card";
     }
 
     /**

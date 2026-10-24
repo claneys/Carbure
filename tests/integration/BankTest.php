@@ -610,7 +610,7 @@ class BankTest extends DatabaseTestCase
         }
 
         // Neither its coming transactions nor its history asked: the error of the list
-        $this->assertStringContainsString('data: Error syncing unlisted@bnp: Account unlisted@bnp not in the 15 account(s) listed by woob for bnp', $output);
+        $this->assertStringContainsString('data: Error syncing unlisted@bnp: Account unlisted@bnp not in the 16 account(s) listed by woob for bnp', $output);
         $this->assertStringNotContainsString('(coming)', $output);
         $this->assertStringNotContainsString('(history)', $output);
         $accounts = array_column(Bank::accounts(), null, 'bankId');
@@ -703,6 +703,45 @@ class BankTest extends DatabaseTestCase
         $sync();
         $this->assertSame($count - 1, (int)Db::queryOne("SELECT COUNT(*) AS n FROM bank_transaction", "")['n']);
         $this->assertNull(Db::queryOne("SELECT id FROM bank_transaction WHERE uuid = ?", "s", $deleted['uuid']));
+    }
+
+    public function testSyncReadsTheLabelAndCompletesTheTransactionsSavedWithoutOne()
+    {
+        Db::query("DELETE FROM bank_transaction");
+        Db::query("INSERT INTO bank_account (bank_name, account_number, user_id) VALUES ('bank', 'labelonly', " . self::ADMIN . ")");
+        [$byHand, $byRule] = array_map('intval', array_column(Db::select("SELECT id FROM bank_transaction_category WHERE id > 0 ORDER BY id LIMIT 2")->fetch_all(MYSQLI_ASSOC), 'id'));
+        Db::execute("INSERT INTO bank_transaction_category_keyword (keyword, category) VALUES ('CARREFOUR', ?)", "i", $byRule);
+        // Saved without a label by a previous version: the module only fills label (#328)
+        $month = date('Y-m');
+        $insert = "INSERT INTO bank_transaction (uuid, date, rdate, type, label, category, amount, pointed, bank_name, account_number, user)
+                   VALUES (?, ?, ?, ?, '', ?, ?, ?, 'bank', 'labelonly', ?)";
+        Db::execute($insert, "sssiidii", 'old-edf', "$month-02", "$month-02", 2, $byHand, -60.1, 1, self::ADMIN);
+        Db::execute($insert, "sssiidii", 'old-carrefour', "$month-03", "$month-03", 7, 0, -12.5, 0, self::ADMIN);
+        $ids = array_column(Db::select("SELECT id, uuid FROM bank_transaction")->fetch_all(MYSQLI_ASSOC), 'id', 'uuid');
+
+        $this->loginAs(self::ADMIN);
+        $sync = function () {
+            ob_start();
+            try {
+                Bank::getSync(null, 'labelonly@bank');
+            } finally {
+                $output = ob_get_clean();
+            }
+            return $output;
+        };
+        $output = $sync();
+
+        // The label of woob when raw is empty; the two transactions completed, not saved again
+        $this->assertStringContainsString('data: CB CARREFOUR', $output);
+        $this->assertStringContainsString('data: Done labelonly@bank (history): 3 received, 1 new', $output);
+        $rows = array_column(Db::select("SELECT id, label, category, pointed, card FROM bank_transaction ORDER BY rdate")->fetch_all(MYSQLI_ASSOC), null, 'label');
+        $this->assertSame(['PRLV SEPA EDF', 'CB CARREFOUR', ''], array_keys($rows));
+        $this->assertSame([$ids['old-edf'], $byHand, 1], [$rows['PRLV SEPA EDF']['id'], (int)$rows['PRLV SEPA EDF']['category'], (int)$rows['PRLV SEPA EDF']['pointed']]);
+        $this->assertSame([$ids['old-carrefour'], $byRule, '4974XXXXXXXX1234'], [$rows['CB CARREFOUR']['id'], (int)$rows['CB CARREFOUR']['category'], $rows['CB CARREFOUR']['card']]);
+
+        // Nothing duplicated at the next synchronization (the one without any label included)
+        $this->assertStringContainsString('data: Done labelonly@bank (history): 3 received, 0 new', $sync());
+        $this->assertSame(3, (int)Db::queryOne("SELECT COUNT(*) AS n FROM bank_transaction", "")['n']);
     }
 
     public function testComingFailureKeepsTheHistory()

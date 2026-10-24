@@ -104,6 +104,15 @@ A question that isn't here? Ask it on the
     the fix is published. See
     [If the synchronization fails](installation.md#en-cas-dechec-de-la-synchronisation).
 
+??? question "My synchronized transactions have no label"
+    Some woob modules (Banque Populaire with the new API of the bank) only fill the
+    simplified label of the transaction: before 1.10.1, Carbure only read the raw label and
+    saved these transactions without a label. Since 1.10.1, the synchronization reads either
+    one and completes the transactions already saved without a label (same account, same
+    date and same amount), without duplicates: they keep their category and their pointing.
+    Those older than the transactions returned by the bank stay without a label: recategorize
+    or delete them from the **Transactions** tab.
+
 ## Transactions, categories and budgets { #transactions-categories-et-budgets }
 
 ??? question "How are the transactions categorized?"

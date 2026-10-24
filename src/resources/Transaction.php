@@ -269,8 +269,13 @@ final class Transaction {
         $rows = self::prepareAll($data);
         if ($progress) {
             foreach ($data as $index => $transaction) {
-                $rows[$index]['raw'] = $transaction['raw'];
+                $rows[$index]['raw'] = self::rawLabel($transaction);
             }
+        }
+        $unlabeled = count(array_filter($rows, fn($row) => $row['label'] === ''));
+        if ($unlabeled > 0) {
+            Logger::warn("$unlabeled transactions without a label (raw and label empty) from "
+                . ($origin['bank_name'] ?? 'a file') . ": check the woob module");
         }
         return self::store($rows, $userId, $origin);
     }
@@ -291,17 +296,66 @@ final class Transaction {
         $created = [];
         // Deleted by a user: never saved again
         $deleted = self::deletedUuids(array_column($rows, 'uuid'));
+        $repair = self::hasUnlabeled($userId, $origin);
         foreach ($rows as $row) {
             if (isset($row['raw'])) {
                 Webservice::sendProgress($row['raw']);
             }
-            if (!isset($deleted[$row['uuid']]) && self::create($row, $userId, $origin)) {
+            if (!isset($deleted[$row['uuid']]) && !($repair && self::relabel($row, $userId, $origin))
+                && self::create($row, $userId, $origin)) {
                 $created[] = ['label' => $row['label'], 'amount' => (float)$row['amount'], 'uuid' => $row['uuid'],
                     'date' => $row['rdate'] ?? $row['date'] ?? null];
             }
         }
 
         return $created;
+    }
+
+    /**
+     * Check if the synchronized account has transactions saved without a label: a woob
+     * module that only fills label, before Carbure read it (banquepopulaire, #328).
+     *
+     * @param int                        $userId The user owning the transactions
+     * @param array<string, string|null> $origin bank_name and account_number of the account
+     * @return bool True if some may be completed by the transactions received
+     */
+    private static function hasUnlabeled(int $userId, array $origin): bool
+    {
+        if (empty($origin['bank_name'])) {
+            return false;
+        }
+        return Db::queryOne("SELECT id FROM bank_transaction WHERE label = '' AND user = ? AND bank_name = ?
+            AND account_number <=> ? LIMIT 1", "iss", $userId, $origin['bank_name'], $origin['account_number'] ?? null) !== null;
+    }
+
+    /**
+     * Give its label to a transaction of the same account saved without one (same real
+     * date, amount and type) instead of saving the transaction again: it keeps its
+     * category and its pointing, and gets the category of the rules if it had none.
+     *
+     * @param array<string, mixed>       $row    The transaction, as returned by prepare()
+     * @param int                        $userId The user owning the transactions
+     * @param array<string, string|null> $origin bank_name and account_number of the account
+     * @return bool True if a transaction without a label was completed
+     */
+    private static function relabel(array $row, int $userId, array $origin): bool
+    {
+        if ($row['label'] === '' || Db::queryOne("SELECT id FROM bank_transaction WHERE uuid = ?", "s", $row['uuid']) !== null) {
+            return false;
+        }
+        $unlabeled = Db::queryOne("SELECT id, category FROM bank_transaction WHERE label = '' AND user = ? AND bank_name = ?
+            AND account_number <=> ? AND rdate = ? AND amount = ? AND type = ? ORDER BY id LIMIT 1", "isssdi",
+            $userId, $origin['bank_name'], $origin['account_number'] ?? null, $row['rdate'], $row['amount'], $row['type']);
+        if ($unlabeled === null) {
+            return false;
+        }
+        Db::execute("UPDATE bank_transaction SET label = ?, uuid = ?, card = ? WHERE id = ?", "sssi",
+            $row['label'], $row['uuid'], $row['card'], $unlabeled['id']);
+        $category = (int)$unlabeled['category'] === 0 ? Category::find($row['label']) : null;
+        if ($category !== null) {
+            self::updateCategory((int)$unlabeled['id'], $category, false);
+        }
+        return true;
     }
 
     /**
@@ -337,13 +391,13 @@ final class Transaction {
      * Columns of a transaction as it is stored: cleaned label, date of the salaries
      * moved to the next month, UUID.
      *
-     * @param array<string, mixed> $transaction The transaction {type, raw, amount, date, rdate?, card?}
+     * @param array<string, mixed> $transaction The transaction {type, raw (or label), amount, date, rdate?, card?}
      * @return array<string, mixed> uuid, date, rdate, amount, label, type, card
      */
     public static function prepare(array $transaction): array
     {
         $type = $transaction['type'];
-        $label = self::cleanLabel($transaction['raw']);
+        $label = self::cleanLabel(self::rawLabel($transaction));
         $amount = $transaction['amount'];
         $rdate = $transaction['rdate'] ?? $transaction['date'];
 
@@ -734,6 +788,19 @@ final class Transaction {
             return self::NEXT_MONTH_DAY;
         }
         return is_numeric($value) ? max(0, min(31, (int)$value)) : self::NEXT_MONTH_DAY;
+    }
+
+    /**
+     * Label of a transaction as received: raw, or label when the woob module only fills
+     * that one (banquepopulaire, #328).
+     *
+     * @param array<string, mixed> $transaction The transaction {raw?, label?...}
+     * @return string The label, empty when the module gave none
+     */
+    private static function rawLabel(array $transaction): string
+    {
+        $raw = trim((string)($transaction['raw'] ?? ''));
+        return $raw !== '' ? $raw : trim((string)($transaction['label'] ?? ''));
     }
 
     /**
