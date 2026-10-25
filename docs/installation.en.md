@@ -13,6 +13,7 @@ administrator account. No command is needed.
 - **Docker** (recommended): everything is included (nginx, PHP, woob) and the database is
   prepared by `docker/docker-compose.yml`.
 - **Synology NAS**: see the [step-by-step tutorial](synology.md).
+- **YunoHost**: a [package](#avec-yunohost) installs Carbure on a YunoHost server.
 - **Existing web server** (PHP + MariaDB/MySQL), without Docker.
 
 Before installing, discover Carbure's [features](fonctionnalites.md) and its
@@ -232,7 +233,7 @@ pin it in `docker/docker-compose.yml` (`image: mariadb:11`).
 - **First installation with Docker Compose**: `docker compose pull && docker compose up -d`
   uses the published image (without `pull`, Compose built the image from the clone).
 - **Scripted installation**: `tools/install.php` installs Carbure without the web wizard
-  (see [Run the wizard](#3-lancer-lassistant)); the YunoHost package in preparation uses it.
+  (see [Run the wizard](#3-lancer-lassistant)); the [YunoHost package](#avec-yunohost) uses it.
 - The mobile apps are published: App Store and Google Play links in **My profile → My
   devices**.
 
@@ -358,30 +359,41 @@ docker compose exec -u www-data carbure php tools/migrate.php --status # databas
     La Nef). The modules driving a real browser (American Express, Sogecartenet, HSBC Hong
     Kong) are not supported: use the statement import.
 
-## With YunoHost (in preparation) { #avec-yunohost-en-preparation }
+## With YunoHost { #avec-yunohost }
 
-!!! warning "Work in progress"
-    The YunoHost package of Carbure is being written: it is **not in the YunoHost catalog
-    yet** and has **not been tested** on a YunoHost server yet. It installs Carbure 1.10.0,
-    the first version that can be installed without the web wizard (`tools/install.php`):
-    to try it, `sudo yunohost app install https://github.com/ltoinel/carbure_ynh` on a test
-    server. Follow-up: [issue #45](https://github.com/ltoinel/Carbure/issues/45).
-
-The [`carbure_ynh`](https://github.com/ltoinel/carbure_ynh) package will install Carbure in
-a few clicks from the administration interface of [YunoHost](https://yunohost.org):
+The [`carbure_ynh`](https://github.com/ltoinel/carbure_ynh) package installs Carbure on a
+[YunoHost](https://yunohost.org) server:
 
 - on a **domain of its own** (for instance `budget.example.org`), not in a sub-path;
 - **without the wizard**: the chosen YunoHost user becomes the Carbure administrator, with
   the password typed at the installation; the database and the starter categories, rules
   and insights are created;
-- with **woob** in a virtualenv, and a **daily synchronization** of every account;
+- with **woob** and the Python packages of the bank modules in a virtualenv, and a **daily
+  synchronization** of every account;
 - upgrades apply the migrations of the database and update the bank modules; the YunoHost
   backups include the database and the data folder (configuration, logs, woob).
 
+!!! note "Not in the YunoHost catalog"
+    The package is not in the YunoHost catalog yet: it is installed from its repository.
+    It was tested on a fresh installation; your feedback on an upgrade, a backup and its
+    restoration is welcome in [issue #45](https://github.com/ltoinel/Carbure/issues/45).
+
+To install it, in the administration interface of YunoHost: **Applications → Install**,
+then at the bottom of the page **Install a custom app** with the address
+`https://github.com/ltoinel/carbure_ynh`. From the command line:
+
+```bash
+sudo yunohost app install https://github.com/ltoinel/carbure_ynh
+```
+
+The installation asks for the domain, who can open the web portal, the language, the
+YunoHost user who becomes administrator and their Carbure password (8 characters at least).
+
 Carbure keeps its own accounts (no single sign-on with YunoHost), which the mobile apps
-need, and the application stays public for them. You have a YunoHost server and want to
-help test it? Say so in [issue #45](https://github.com/ltoinel/Carbure/issues/45) or on
-[Discord](https://discord.gg/QsxYw4Rx9D).
+need: the administrator password is not the YunoHost one. The API stays public for the
+mobile apps, the synchronization and the AI agents, even when the portal is restricted to
+some users. A bank that asks for a validation on the phone (strong authentication) is
+synchronized from the portal.
 
 ## On an existing web server { #sur-un-serveur-web-existant }
 
