@@ -218,6 +218,26 @@ class BankTest extends DatabaseTestCase
         Bank::module('../etc');
     }
 
+    public function testModuleWoobCannotLoad()
+    {
+        $this->loginAs(self::ADMIN);
+        // Repository trusted: woob installs the module
+        $keyrings = WoobRepository::$keyringDir;
+        @mkdir($keyrings, 0700, true);
+        copy(dirname(__DIR__) . '/fixtures/woob-repository/trusted.gpg', "$keyrings/https___updates_woob_tech_3_main_.gpg");
+        try {
+            // A Python package of the module is missing: the cause of woob, not an empty form
+            Bank::module('banquepopulaire');
+            $this->fail('Module that woob cannot load described without settings');
+        } catch (Error $e) {
+            $this->assertSame(422, $e->getCode());
+            $this->assertSame('woob cannot load the bank module banquepopulaire: Unable to load module "banquepopulaire": Module requires python package "python-jose" but not installed. '
+                . 'Its Python packages are missing from the environment of woob', $e->getMessage());
+        } finally {
+            array_map('unlink', glob("$keyrings/*") ?: []);
+        }
+    }
+
     public function testModuleNotInstalledYet()
     {
         $this->loginAs(self::ADMIN);

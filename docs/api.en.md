@@ -342,7 +342,8 @@ Parameters requested by a woob module: `module`, `description`, `fields` (`key`,
 `description`, `default`, `required`, `masked`, `choices`). Nothing secret is returned.
 A module not installed yet is installed first; `409` if the woob repository is not yet
 approved (installing it would trust its key, see `GET /bank/woob/update`), as
-for `POST /bank/backend`.
+for `POST /bank/backend`; `422` with the cause given by woob when it cannot load the
+module (a missing Python package: "woob cannot load the bank module …").
 
 ### `POST /bank/backend` — administrator { #post-bankbackend-administrateur }
 

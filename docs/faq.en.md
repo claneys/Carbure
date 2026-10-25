@@ -97,6 +97,14 @@ A question that isn't here? Ask it on the
     tab at any time. See
     [Schedule the synchronization](installation.md#5-planifier-la-synchronisation).
 
+??? question "My bank shows no field when connecting it"
+    The portal then shows "woob cannot load the bank module …": a Python package the
+    module needs is missing, and woob never installs it itself. The Docker image ships the
+    ones of the bank modules since 1.10.1: update it. On a manual installation, install
+    the package named in the environment of woob (`pip install <package>`). The modules
+    driving a real browser (American Express, Sogecartenet) are not supported: import your
+    statements.
+
 ??? question "The synchronization fails, what should I do?"
     The **Accounts** tab shows the cause returned by woob. Bank websites change often and
     break their woob module: check the woob tickets (the portal gives the link) to see

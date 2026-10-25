@@ -343,7 +343,8 @@ Paramètres demandés par un module woob : `module`, `description`, `fields` (`k
 `description`, `default`, `required`, `masked`, `choices`). Rien de secret n'est renvoyé.
 Un module pas encore installé l'est d'abord ; `409` si le dépôt de woob n'est pas encore
 approuvé (l'installer ferait confiance à sa clé, voir `GET /bank/woob/update`), comme
-pour `POST /bank/backend`.
+pour `POST /bank/backend` ; `422` avec la cause donnée par woob s'il ne peut pas charger le
+module (un paquet Python manquant : « woob cannot load the bank module … »).
 
 ### `POST /bank/backend` — administrateur
 

@@ -351,7 +351,12 @@ docker compose exec -u www-data carbure php tools/migrate.php --status # databas
     woob downloads its modules (including your bank's) into `/data/woob` and updates them
     automatically. A module fix not yet published (for example for
     BNP) can be copied into `/data/woob/.local/share/woob/modules/3.7/woob_modules/`;
-    `curl_cffi`, required by the recent BNP module, is already installed in the image.
+    woob never installs the Python packages a module needs (it refuses to load it): the
+    image ships the ones of the bank modules, `curl_cffi` (BNP), `python-jose` and
+    `chompjs` (Banque Populaire, Caisse d'Épargne, BTP Banque, Crédit Coopératif),
+    `schwifty` (Société Générale) and `pycryptodomex` (HSBC employee savings, Esalia,
+    La Nef). The modules driving a real browser (American Express, Sogecartenet, HSBC Hong
+    Kong) are not supported: use the statement import.
 
 ## With YunoHost (in preparation) { #avec-yunohost-en-preparation }
 
@@ -388,8 +393,10 @@ help test it? Say so in [issue #45](https://github.com/ltoinel/Carbure/issues/45
 - A web server able to forward `/api/` to PHP-FPM, for example nginx (example
   below). Carbure does not ship an `.htaccess` file: protecting sensitive
   folders must be configured in the server.
-- [woob](https://woob.tech/) installed for the web server user. The recent BNP module
-  requires `curl_cffi` (`pip install "curl_cffi>=0.7"`).
+- [woob](https://woob.tech/) installed for the web server user, with the Python packages
+  of the bank modules, which woob does not install itself:
+  `pip install "curl_cffi>=0.7" python-jose chompjs schwifty pycryptodomex` (BNP, BPCE
+  group, Société Générale, employee savings).
 - For push notifications: outbound HTTPS access to the Carbure Push service
   (`https://api.carbure.org`; no Apple or Firebase key is needed). Optional: an SMTP server for
   email notifications.

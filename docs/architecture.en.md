@@ -179,7 +179,7 @@ identity of the token's user. See [AI agents (MCP)](mcp.md).
 
 | Item | Role |
 |---|---|
-| `docker/Dockerfile` | `php:8.5.12-fpm-alpine` + nginx (multi-stage image: woob is built separately, with no compiler in the final image), `mysqli` and APCu extensions, woob and `curl_cffi` in `/opt/woob`, `HEALTHCHECK` on `/api/health` |
+| `docker/Dockerfile` | `php:8.5.12-fpm-alpine` + nginx (multi-stage image: woob is built separately, with no compiler in the final image), `mysqli` and APCu extensions, woob and the Python packages of the bank modules (`curl_cffi`, `python-jose`, `chompjs`, `schwifty`, `pycryptodomex`) in `/opt/woob`, `HEALTHCHECK` on `/api/health` |
 | `docker/nginx.conf` | nginx site (portal, Swagger, API, security headers) |
 | `docker/php.ini`, `docker/php-fpm.conf` | PHP and PHP-FPM settings |
 | `docker/demo/Dockerfile`, `docker/demo/entrypoint.sh` | Demo image (`ltoinel/carbure:demo`): the usual image with MariaDB; on each start, the database is recreated, a configuration with random secrets (`demo=true`), data from `tests/e2e/server/seed.php --demo` with the `demo` / `carbure` account and a random `admin` password shown in the logs, then the usual entrypoint; `docker stop` shuts down nginx, PHP-FPM and MariaDB cleanly |

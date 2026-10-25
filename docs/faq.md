@@ -101,6 +101,14 @@ Une question qui n'est pas ici ? Posez-la sur le
     l'onglet **Comptes** à tout moment. Voir
     [Planifier la synchronisation](installation.md#5-planifier-la-synchronisation).
 
+??? question "Ma banque n'affiche aucun champ à la connexion"
+    Le portail affiche alors « woob cannot load the bank module … » : il manque un paquet
+    Python dont le module a besoin, que woob n'installe jamais lui-même. L'image Docker
+    fournit ceux des modules bancaires depuis la 1.10.1 : mettez-la à jour. Sur une
+    installation manuelle, installez le paquet cité dans l'environnement de woob (`pip
+    install <paquet>`). Les modules qui pilotent un vrai navigateur (American Express,
+    Sogecartenet) ne sont pas pris en charge : importez vos relevés.
+
 ??? question "La synchronisation échoue, que faire ?"
     L'onglet **Comptes** affiche la cause renvoyée par woob. Les sites des banques changent
     souvent et cassent leur module woob : vérifiez dans les tickets woob (le portail propose

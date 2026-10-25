@@ -386,7 +386,7 @@ final class Woob {
      *
      * @param string $module The woob module
      * @return void
-     * @throws Error If the woob repository is not trusted yet (409)
+     * @throws Error If the woob repository is not trusted yet (409), or woob cannot load the module (422)
      */
     private static function installModule(string $module): void
     {
@@ -400,13 +400,33 @@ final class Woob {
         if (!is_resource($process)) {
             return;
         }
-        $stdout = stream_get_contents($pipes[1]);
-        stream_get_contents($pipes[2]);
+        $stdout = (string)stream_get_contents($pipes[1]);
+        $stderr = (string)stream_get_contents($pipes[2]);
         fclose($pipes[1]);
         fclose($pipes[2]);
         proc_close($process);
         if (stripos($stdout, 'successfully added') !== false) {
             shell_exec("$woob_path config remove " . escapeshellarg($probe) . ' < /dev/null 2>&1');
+        }
+        self::checkModuleLoaded($module, "$stdout\n$stderr");
+    }
+
+    /**
+     * Check that woob could load a module it installed: a module needing a Python package
+     * missing from the environment of woob is refused ("Unable to load module ...: Module
+     * requires python package ... but not installed"), and woob then describes no setting.
+     *
+     * @param string $module The woob module
+     * @param string $output What woob wrote while installing it
+     * @return void
+     * @throws Error If woob cannot load the module (422, with the cause given by woob)
+     */
+    private static function checkModuleLoaded(string $module, string $output): void
+    {
+        if (preg_match('/Unable to load module[^\r\n]*/', $output, $match)) {
+            Logger::warn("woob cannot load the module $module: $match[0]");
+            throw new Error("woob cannot load the bank module $module: " . rtrim($match[0], '. ')
+                . '. Its Python packages are missing from the environment of woob', 422);
         }
     }
 

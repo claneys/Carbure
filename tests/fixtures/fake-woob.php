@@ -141,7 +141,7 @@ if (($argv[1] ?? '') === 'config' && $type === 'info') {
         exit(1);
     }
     $names = ['bnp' => 'BNP Paribas', 'boursorama' => 'Boursorama', 'cic' => 'CIC'];
-    $installed = $module !== 'boursorama' || is_file(fake_woob_file('installed'));
+    $installed = !in_array($module, ['boursorama', 'banquepopulaire'], true) || ($module === 'boursorama' && is_file(fake_woob_file('installed')));
     $info = ['name' => $module, 'description' => $names[$module] ?? $module, 'installed' => $installed ? 'yes' : 'no'];
     if ($installed) {
         $info['config'] = [
@@ -177,6 +177,11 @@ if (($argv[1] ?? '') === 'config' && $type === 'add') {
     // signature of the module needs the keyring of its repository
     if (!glob(fake_woob_file('keyrings') . '/*.gpg')) {
         fwrite(STDERR, "Error: No keyring found, please update repos.\n");
+        exit(1);
+    }
+    // Module needing a Python package missing from the environment (banquepopulaire, #326)
+    if ($argv[3] === 'banquepopulaire') {
+        fwrite(STDERR, "Unable to load module \"banquepopulaire\": Module requires python package \"python-jose\" but not installed.\n");
         exit(1);
     }
     touch(fake_woob_file('installed'));

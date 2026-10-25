@@ -183,7 +183,7 @@ l'identité de l'utilisateur du jeton. Voir [Agents IA (MCP)](mcp.md).
 
 | Élément | Rôle |
 |---|---|
-| `docker/Dockerfile` | `php:8.5.12-fpm-alpine` + nginx (image multi-étapes : woob est construit à part, sans compilateur dans l'image finale), extensions `mysqli` et APCu, woob et `curl_cffi` dans `/opt/woob`, `HEALTHCHECK` sur `/api/health` |
+| `docker/Dockerfile` | `php:8.5.12-fpm-alpine` + nginx (image multi-étapes : woob est construit à part, sans compilateur dans l'image finale), extensions `mysqli` et APCu, woob et les paquets Python des modules bancaires (`curl_cffi`, `python-jose`, `chompjs`, `schwifty`, `pycryptodomex`) dans `/opt/woob`, `HEALTHCHECK` sur `/api/health` |
 | `docker/nginx.conf` | Site nginx (portail, Swagger, API, en-têtes de sécurité) |
 | `docker/php.ini`, `docker/php-fpm.conf` | Réglages PHP et PHP-FPM |
 | `docker/demo/Dockerfile`, `docker/demo/entrypoint.sh` | Image de démonstration (`ltoinel/carbure:demo`) : l'image habituelle avec MariaDB ; à chaque démarrage, base recréée, configuration à secrets aléatoires (`demo=true`), données de `tests/e2e/server/seed.php --demo` avec le compte `demo` / `carbure` et un mot de passe `admin` aléatoire affiché dans les journaux, puis l'entrypoint habituel ; `docker stop` arrête nginx, PHP-FPM et MariaDB proprement |
