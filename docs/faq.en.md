@@ -212,6 +212,14 @@ A question that isn't here? Ask it on the
     Not for now: they are published in France on the App Store and Google Play. The web
     portal works everywhere, and installs as an app (see below).
 
+??? question "My phone does not receive the notifications"
+    Open **My profile → My devices**: if the phone is marked "Notifications unavailable",
+    the app logged in without a notification token. Allow the notifications of Carbure in
+    the settings of the phone, then log out and in again in the app. If it is not listed at
+    all, log in again in the app with your account. An administrator also checks that the
+    instance is registered and sends a test notification in **Administration → Mobile
+    push**.
+
 ??? question "How do I connect the app to my server?"
     In the portal, **My profile → My devices** shows a QR code: scan it with the phone's
     camera, and the app opens with the address of your server already filled in. You can

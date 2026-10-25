@@ -796,7 +796,13 @@ renvoie `applied`, le nombre de transactions recatégorisées.
 Appareils de l'utilisateur connecté : `id`, `user_id`, `name`, `token`, `platform` (`ios` ou
 `android` ; `ios` tant que la migration `2026-10-23_device_platform` n'est pas appliquée),
 `lastLogin`, `model`, `os_version`, `app_version` (`null` si l'application ne les a pas
-envoyés ou tant que la migration `2026-10-25_device_model` n'est pas appliquée).
+envoyés ou tant que la migration `2026-10-25_device_model` n'est pas appliquée). `token`
+vaut `null` quand l'application s'est connectée sans jeton de notification (notifications
+indisponibles dans l'app, refusées, ou jeton pas encore reçu) : l'appareil est listé, une
+fois par nom et plateforme, mais aucune notification ne l'atteint ; il est remplacé par
+l'appareil avec son jeton dès que l'app en envoie un (migration
+`2026-10-28_device_without_token` ; avant, il n'est pas listé). Chaque connexion sans jeton
+est journalisée.
 
 ### `GET /device/link`
 
@@ -1049,7 +1055,8 @@ d'une ancienne version) : sinon `400`. Il est enregistré (date et adresse du re
 
 Envoie une notification de test aux appareils de l'administrateur, dans sa langue :
 `{"sent": 1, "devices": 2, "results": [{"device": "iPhone", "sent": true, "status": "sent", "error": null}, …]}`
-(sans les tokens). `400` sans clé d'API ou sans appareil.
+(sans les tokens). Un appareil sans jeton de notification a le statut `no_token`. `400` sans
+clé d'API ou sans appareil.
 
 ### `POST /system/sync-token` — administrateur
 

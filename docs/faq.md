@@ -223,6 +223,14 @@ Une question qui n'est pas ici ? Posez-la sur le
     portail web, lui, s'utilise partout, et s'installe comme une application (voir plus
     bas).
 
+??? question "Mon téléphone ne reçoit pas les notifications"
+    Ouvrez **Mon profil → Mes appareils** : si le téléphone y est marqué « Notifications
+    indisponibles », l'application s'est connectée sans jeton de notification. Autorisez
+    les notifications de Carbure dans les réglages du téléphone, puis déconnectez-vous et
+    reconnectez-vous dans l'application. S'il n'apparaît pas du tout, reconnectez-vous dans
+    l'application avec votre compte. Un administrateur vérifie aussi que l'instance est
+    enregistrée et envoie une notification de test dans **Administration → Push mobile**.
+
 ??? question "Comment connecter l'application à mon serveur ?"
     Dans le portail, **Mon profil → Mes appareils** affiche un QR code : scannez-le avec
     l'appareil photo du téléphone, l'application s'ouvre avec l'adresse de votre serveur

@@ -675,6 +675,7 @@
     "devicePlatform_ios": "iOS",
     "devicePlatform_android": "Android",
     "deviceAppVersion": "app {version}",
+    "deviceNoPush": "Notificações indisponíveis: a aplicação não enviou nenhum token de notificação. Volte a iniciar sessão na aplicação depois de permitir as notificações.",
     "alertThreshold": "A partir de",
     "alertThresholdPlaceholder": "Desativado",
     "alertThresholdHelp": "Qualquer nova despesa de pelo menos este montante. Vazio: desativado.",

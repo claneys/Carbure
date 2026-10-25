@@ -161,7 +161,7 @@ CREATE TABLE `budget_insight` (
 CREATE TABLE `devices` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(50) NOT NULL,
-  `token` varchar(200) NOT NULL,
+  `token` varchar(200) DEFAULT NULL COMMENT 'Push token (APNs or FCM), NULL when the app sent none',
   `platform` varchar(10) NOT NULL DEFAULT 'ios' COMMENT 'ios (APNs) or android (FCM)',
   `model` varchar(100) DEFAULT NULL COMMENT 'Model of the device (e.g. iPhone16,1, Google Pixel 8)',
   `os_version` varchar(50) DEFAULT NULL COMMENT 'Version of its system (e.g. iOS 26.0, Android 15)',
@@ -359,7 +359,8 @@ INSERT IGNORE INTO `schema_migrations` (`version`) VALUES
 ('2026-10-24_user_mfa'),
 ('2026-10-25_device_model'),
 ('2026-10-26_user_browser'),
-('2026-10-27_budget_alert_threshold');
+('2026-10-27_budget_alert_threshold'),
+('2026-10-28_device_without_token');
 
 SET FOREIGN_KEY_CHECKS = 1;
 COMMIT;

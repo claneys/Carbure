@@ -795,7 +795,12 @@ returns `applied`, the number of recategorized transactions.
 Devices of the logged-in user: `id`, `user_id`, `name`, `token`, `platform` (`ios` or
 `android`; `ios` until the `2026-10-23_device_platform` migration is applied),
 `lastLogin`, `model`, `os_version`, `app_version` (`null` if the app did not send them
-or until the `2026-10-25_device_model` migration is applied).
+or until the `2026-10-25_device_model` migration is applied). `token` is `null` when the
+app logged in without a notification token (notifications not available in the app,
+refused, or token not received yet): the device is listed, once per name and platform, but
+no notification reaches it; it is replaced by the device with its token as soon as the app
+sends one (migration `2026-10-28_device_without_token`; before it, it is not listed). Each
+login without a token is logged.
 
 ### `GET /device/link`
 
@@ -1047,7 +1052,8 @@ table) and returned by `GET /system/push`.
 
 Sends a test notification to the administrator's devices, in their language:
 `{"sent": 1, "devices": 2, "results": [{"device": "iPhone", "sent": true, "status": "sent", "error": null}, …]}`
-(without the tokens). `400` with no API key or no device.
+(without the tokens). A device without a notification token has the status `no_token`.
+`400` with no API key or no device.
 
 ### `POST /system/sync-token` — administrator { #post-systemsync-token-administrateur }
 

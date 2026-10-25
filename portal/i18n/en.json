@@ -675,6 +675,7 @@
     "devicePlatform_ios": "iOS",
     "devicePlatform_android": "Android",
     "deviceAppVersion": "app {version}",
+    "deviceNoPush": "Notifications unavailable: the app sent no notification token. Log in again in the app after allowing the notifications.",
     "alertThreshold": "From",
     "alertThresholdPlaceholder": "Disabled",
     "alertThresholdHelp": "Any new expense of at least this amount. Empty: disabled.",

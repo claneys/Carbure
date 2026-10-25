@@ -245,6 +245,19 @@ class SettingsTest extends DatabaseTestCase
         $this->assertSame(['iPhone'], array_column(Db::execute("SELECT name FROM devices WHERE user_id = ?", "i", self::ADMIN)->get_result()->fetch_all(MYSQLI_ASSOC), 'name'));
     }
 
+    public function testTestPushToADeviceWithoutPushToken()
+    {
+        $this->loginAs(self::ADMIN);
+        Db::execute("DELETE FROM devices WHERE user_id = ?", "i", self::ADMIN);
+        Db::execute("INSERT INTO devices (user_id, name, token, platform) VALUES (?, 'Pixel', NULL, 'android')", "i", self::ADMIN);
+        $result = Settings::testPush();
+
+        $this->assertSame([0, 1], [$result['sent'], $result['devices']]);
+        $this->assertSame(['device' => 'Pixel', 'sent' => false, 'status' => 'no_token',
+            'error' => 'No push token: notifications are not available in the app of Pixel'], $result['results'][0]);
+        $this->assertSame([], FakePushRelay::requests());
+    }
+
     public function testTestPushWithoutKeyOrDevice()
     {
         $this->loginAs(self::ADMIN);
