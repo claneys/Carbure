@@ -136,6 +136,34 @@ class DeviceTest extends DatabaseTestCase
         $this->assertSame([[$token, 'android']], array_map(fn($r) => [$r['token'], $r['platform']], FakePushRelay::requests()));
     }
 
+    public function testPushTokenRegisteredAfterTheLogin()
+    {
+        // Logged in before Firebase gave its token: listed without push
+        User::login('user', 'userpass', ['name' => 'Pixel 8', 'token' => '', 'platform' => 'android']);
+        $this->loginAs(self::USER);
+        $this->assertNull(Device::getMine()[0]['token']);
+
+        $token = 'fcm_token-0123456789:APA91bLateAndroidToken';
+        $device = json_decode($this->callRoute('POST', '/device', ['name' => 'Pixel 8', 'token' => $token, 'platform' => 'android',
+            'model' => 'Google Pixel 8', 'os_version' => 'Android 15', 'app_version' => '1.1.0']), true);
+        $this->assertSame([$token, 'android', 'Google Pixel 8'], [$device['token'], $device['platform'], $device['model']]);
+        $devices = Device::getMine();
+        $this->assertCount(1, $devices, 'The device listed without token is replaced');
+        $this->assertSame([$token, 'Android 15', '1.1.0'], [$devices[0]['token'], $devices[0]['os_version'], $devices[0]['app_version']]);
+
+        // A new token (FCM rotation): one more device row of the same phone, the old token
+        // forgotten by the push service when it answers unregistered
+        Device::registerMine('fcm_token-0123456789:APA91bRotatedToken', 'Pixel 8', 'android');
+        $this->assertContains('fcm_token-0123456789:APA91bRotatedToken', array_column(Device::getMine(), 'token'));
+
+        // Its own user only, a token required
+        $this->loginAs(self::ADMIN);
+        $this->assertNotContains($token, array_column(Device::getMine(), 'token'));
+        $this->expectException(Error::class);
+        $this->expectExceptionCode(400);
+        Device::registerMine(' ', 'Pixel 8', 'android');
+    }
+
     public function testPlatformIsNotCaseSensitive()
     {
         $token = 'fcm_token-0123456789:APA91bOtherAndroidToken';

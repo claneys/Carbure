@@ -803,6 +803,15 @@ no notification reaches it; it is replaced by the device with its token as soon 
 sends one (migration `2026-10-28_device_without_token`; before it, it is not listed). Each
 login without a token is logged.
 
+### `POST /device`
+
+Registers the push token of the signed-in mobile app, received after its login or changed
+since (FCM): `token` (required, `400` otherwise), `name`, `platform` (`ios` or `android`;
+empty: the one of the token, `400` if unknown), `model`, `os_version`, `app_version`, like
+the `device` object of the login. The device is the one of the signed-in user; it replaces
+the device listed without token of the same name and platform. Returns the registered device
+(`id`, `user_id`, `name`, `token`, `platform`, `model`, `os_version`, `app_version`).
+
 ### `GET /device/link`
 
 Address of the API given to the mobile apps by the QR code of **My devices**:

@@ -141,6 +141,7 @@ class ApiResolverTest extends TestCase
         'POST /category' => 'admin',
         'POST /category/keyword' => 'admin',
         'POST /category/keyword/apply' => 'admin',
+        'POST /device' => 'user',
         'POST /device/push' => 'user',
         'POST /insight' => 'admin',
         'POST /insight/check' => 'admin',
