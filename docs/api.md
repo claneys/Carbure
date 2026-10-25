@@ -532,7 +532,7 @@ mois précédent). Un paiement par carte doit en plus garder le même montant à
 Réponse, triée par jour : `[{"label", "category", "amount" (dernier montant), "average",
 "variable" (montant changeant de plus de 10 %), "day" (jour habituel), "months" (nombre de
 mois où elle apparaît), "last" (date de la dernière), "ids" (ses transactions du mois),
-"status"}]`. `status` vaut `received`, ou `expected` si elle n'est pas encore dans le mois.
+"date" (date de sa première transaction du mois, `null` si aucune), "status"}]`. `status` vaut `received`, ou `expected` si elle n'est pas encore dans le mois.
 
 ```bash
 curl "https://exemple.fr/api/transaction/recurring?month=10&year=2026" -H "Authorization: Bearer $TOKEN"

@@ -184,12 +184,14 @@ class TransactionTest extends TestCase
         $this->assertTrue($edf['variable']);
         $this->assertSame(4, $edf['months']);
         $this->assertSame('2026-10-06', $edf['last']);
+        $this->assertSame('2026-10-06', $edf['date']);
 
         $this->assertSame('expected', $netflix['status']);
         $this->assertSame([], $netflix['ids']);
         $this->assertSame(20, $netflix['day']);
         $this->assertFalse($netflix['variable']);
         $this->assertSame('2026-09-20', $netflix['last']);
+        $this->assertNull($netflix['date']);
 
         $this->assertSame([-400.0, 400.0], [$debit['amount'], $credit['amount']]);
     }

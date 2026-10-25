@@ -243,6 +243,28 @@ test('shows the recurring transactions of the month', async ({ adminPage: page }
     await expect(page.locator('.transaction-item')).toHaveCount(6);
 });
 
+test('shows the recurring transactions of the month in a calendar', async ({ adminPage: page }) => {
+    await page.getByRole('button', { name: tr('recurringCalendarButton') }).click();
+    const modal = page.locator('.modal-recurring-calendar');
+    await expect(modal).toBeVisible();
+
+    // Salary and rent, both received this month, on the day of their transaction
+    await expect(modal.locator('.recurring-calendar-total.received')).toContainText(tr('recurringCalendarReceived', { count: 2 }));
+    await expect(modal.locator('.recurring-calendar-item.status-received')).toHaveCount(2);
+    await expect(modal.locator('.recurring-calendar-today')).toHaveCount(1);
+
+    // A received one opens its transaction
+    await modal.getByRole('button', { name: /PRLV LOYER AGENCE/ }).click();
+    await expect(modal).toHaveCount(0);
+    await expect(page.getByRole('dialog', { name: tr('transactionDetail') })).toContainText('PRLV LOYER AGENCE');
+    await page.keyboard.press('Escape');
+
+    await page.getByRole('button', { name: tr('recurringCalendarButton') }).click();
+    await expect(modal).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+});
+
 test('imports a bank statement file', async ({ adminPage: page }) => {
     const day = d => {
         const date = new Date();

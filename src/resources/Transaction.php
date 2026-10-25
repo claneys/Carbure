@@ -123,7 +123,8 @@ final class Transaction {
      * @return list<array<string, mixed>> The series, by day of the month: label, category, amount (last one),
      *               average, variable (amount changing by more than 10 %), day (usual day
      *               of the month), months (number of months seen), last (date of the last
-     *               one), ids (its transactions of the month) and status: "received", or
+     *               one), ids (its transactions of the month), date (the one of its first
+     *               transaction of the month, null if none) and status: "received", or
      *               "expected" when it is not in the month yet
      */
     #[ApiRoute('/transaction/recurring', method: 'GET')]
@@ -232,6 +233,7 @@ final class Transaction {
             'months' => $count,
             'last' => $last['date'],
             'ids' => $ids,
+            'date' => $byMonth[$current][0]['date'] ?? null,
             'status' => $ids ? 'received' : 'expected',
         ];
     }

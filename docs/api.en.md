@@ -531,7 +531,7 @@ previous month). A card payment must also keep the same amount within 20%
 Response, sorted by day: `[{"label", "category", "amount" (last amount), "average",
 "variable" (amount changing by more than 10%), "day" (usual day), "months" (number of
 months it appears in), "last" (date of the last one), "ids" (its transactions in the month),
-"status"}]`. `status` is `received`, or `expected` if it is not in the month yet.
+"date" (date of its first transaction in the month, `null` if none), "status"}]`. `status` is `received`, or `expected` if it is not in the month yet.
 
 ```bash
 curl "https://exemple.fr/api/transaction/recurring?month=10&year=2026" -H "Authorization: Bearer $TOKEN"

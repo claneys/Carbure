@@ -199,6 +199,8 @@ abonnements, factures, remboursements…
   pas encore arrivées, avec leur jour habituel et leur montant (« ≈ » s'il varie) ; pour un
   mois passé, celles qui ont **manqué** (« Absentes ce mois-ci »). Pratique pour vérifier que
   le salaire est tombé ou qu'un prélèvement n'a pas été oublié.
+- Un **calendrier du mois** (bouton **Calendrier**) les place jour par jour : reçues, attendues
+  ou en retard, avec le total de ce qui est déjà passé et de ce qui reste à venir.
 
 **Règles de détection**, sur les 6 derniers mois :
 
