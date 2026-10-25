@@ -120,18 +120,18 @@ flowchart LR
 
 ## Comparison
 
-| | **Carbure** | **Firefly III** | **Actual Budget** | **Kresus** |
-|---|---|---|---|---|
-| Bank connection | Direct, via woob | Third-party aggregators | Third-party aggregators | Direct, via woob |
-| Sub-categories adding up to their parent | ✅ | ➖ | ⚠️ | ➖ |
-| Several users sharing the same data | ✅ | ⚠️ | ✅ | ➖ |
-| Native iPhone and Android apps, push notifications | ✅ | ➖ | ➖ | ➖ |
-| Built-in MCP server for AI agents | ✅ | ➖ | ➖ | ➖ |
-| File import (OFX, QIF, CSV, CAMT.053) | ✅ | ✅ | ✅ | ⚠️ |
-| Several currencies | ➖ | ✅ | ➖ | ⚠️ |
+| | **Carbure** | **Firefly III** | **Actual Budget** | **Kresus** | **Sure** | **ezBookkeeping** |
+|---|---|---|---|---|---|---|
+| Bank connection | Direct, via woob | Third-party aggregators | Third-party aggregators | Direct, via woob | Third-party aggregators | File import |
+| Sub-categories adding up to their parent | ✅ | ➖ | ⚠️ | ➖ | ✅ | ⚠️ |
+| Several users sharing the same data | ✅ | ⚠️ | ✅ | ➖ | ✅ | ⚠️ |
+| Native iPhone and Android apps, push notifications | ✅ | ⚠️ | ➖ | ➖ | ⚠️ | ➖ |
+| Built-in MCP server for AI agents | ✅ | ➖ | ➖ | ➖ | ✅ | ✅ |
+| File import (OFX, QIF, CSV, CAMT.053) | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ |
+| Several currencies | ➖ | ✅ | ➖ | ⚠️ | ✅ | ✅ |
 
 ✅ yes · ⚠️ partly · ➖ no — 👉 **[Full comparison](https://carbure.org/en/comparatif/)**:
-23 criteria (hosting, bank data, budget, household and devices, API), with the strengths of
+24 criteria (hosting, bank data, budget, household and devices, API), with the strengths of
 each tool.
 
 ## Installation

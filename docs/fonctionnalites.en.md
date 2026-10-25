@@ -539,4 +539,4 @@ users open **AI agent** from their menu.
   ([over HTTPS](portail.md#installer-le-portail-comme-une-application)). Neither the apps nor the
   portal have an offline mode.
 
-See also the [comparison](comparatif.md) with Firefly III, Actual Budget and Kresus.
+See also the [comparison](comparatif.md) with Firefly III, Actual Budget, Kresus, Sure and ezBookkeeping.
