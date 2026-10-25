@@ -34,7 +34,8 @@ test('a demonstration instance shows its public account on the login screen', as
     await page.reload();
     const notice = page.locator('.login-demo');
     await expect(notice).toContainText(tr('loginDemoTitle'));
-    await expect(notice).toContainText(tr('loginDemoAccount', { username: 'demo', password: 'carbure' }));
+    await expect(notice.locator('.login-demo-value')).toHaveText(['demo', 'carbure']);
+    await expect(notice).toContainText(tr('loginDemoUsername'));
     await expect(notice).toContainText(tr('loginDemoWarning'));
 
 });

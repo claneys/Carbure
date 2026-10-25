@@ -212,7 +212,10 @@
                     <span class="material-icons" aria-hidden="true">info</span>
                     <div>
                         <p class="login-demo-title">{{ t('loginDemoTitle') }}</p>
-                        <p>{{ t('loginDemoAccount', demoAccount) }}</p>
+                        <p class="login-demo-account">
+                            <span>{{ t('loginDemoUsername') }} <strong class="login-demo-value">{{ demoAccount.username }}</strong></span>
+                            <span>{{ t('loginDemoPassword') }} <strong class="login-demo-value">{{ demoAccount.password }}</strong></span>
+                        </p>
                         <p>{{ t('loginDemoWarning') }}</p>
                     </div>
                 </div>
