@@ -120,18 +120,18 @@ flowchart LR
 
 ## Comparaison
 
-| | **Carbure** | **Firefly III** | **Actual Budget** | **Kresus** |
-|---|---|---|---|---|
-| Connexion bancaire | Directe, via woob | Agrégateurs tiers | Agrégateurs tiers | Directe, via woob |
-| Sous-catégories additionnées dans leur parent | ✅ | ➖ | ⚠️ | ➖ |
-| Plusieurs utilisateurs sur les mêmes données | ✅ | ⚠️ | ✅ | ➖ |
-| Apps natives iPhone et Android, notifications push | ✅ | ➖ | ➖ | ➖ |
-| Serveur MCP intégré pour les agents IA | ✅ | ➖ | ➖ | ➖ |
-| Import de fichiers (OFX, QIF, CSV, CAMT.053) | ✅ | ✅ | ✅ | ⚠️ |
-| Plusieurs devises | ➖ | ✅ | ➖ | ⚠️ |
+| | **Carbure** | **Firefly III** | **Actual Budget** | **Kresus** | **Sure** | **ezBookkeeping** |
+|---|---|---|---|---|---|---|
+| Connexion bancaire | Directe, via woob | Agrégateurs tiers | Agrégateurs tiers | Directe, via woob | Agrégateurs tiers | Import de fichiers |
+| Sous-catégories additionnées dans leur parent | ✅ | ➖ | ⚠️ | ➖ | ✅ | ⚠️ |
+| Plusieurs utilisateurs sur les mêmes données | ✅ | ⚠️ | ✅ | ➖ | ✅ | ⚠️ |
+| Apps natives iPhone et Android, notifications push | ✅ | ⚠️ | ➖ | ➖ | ⚠️ | ➖ |
+| Serveur MCP intégré pour les agents IA | ✅ | ➖ | ➖ | ➖ | ✅ | ✅ |
+| Import de fichiers (OFX, QIF, CSV, CAMT.053) | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ |
+| Plusieurs devises | ➖ | ✅ | ➖ | ⚠️ | ✅ | ✅ |
 
 ✅ oui · ⚠️ en partie · ➖ non — 👉 **[Comparatif complet](https://carbure.org/comparatif/)** :
-23 critères (hébergement, données bancaires, budget, foyer et appareils, API), avec les points
+24 critères (hébergement, données bancaires, budget, foyer et appareils, API), avec les points
 forts de chacun.
 
 ## Installation

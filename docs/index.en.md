@@ -73,7 +73,7 @@ overviews of the month.*
 - Install Carbure: [Installation](installation.md) or the [Synology NAS tutorial](synology.md)
 - Use the portal: [Web portal](portail.md)
 - Connect an AI agent: [AI agents (MCP)](mcp.md)
-- Compare with Firefly III, Actual Budget and Kresus: [Comparison](comparatif.md)
+- Compare with Firefly III, Actual Budget, Kresus, Sure and ezBookkeeping: [Comparison](comparatif.md)
 - Understand how it works: [Architecture](architecture.md)
 - Integrate a client: [API reference](api.md)
 - Contribute: [Development](developpement.md)

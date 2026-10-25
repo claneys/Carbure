@@ -538,4 +538,4 @@ utilisateurs ouvrent **Agent IA** depuis leur menu.
   ([en HTTPS](portail.md#installer-le-portail-comme-une-application)). Ni les apps ni le
   portail n'ont de mode hors ligne.
 
-Voir aussi le [comparatif](comparatif.md) avec Firefly III, Actual Budget et Kresus.
+Voir aussi le [comparatif](comparatif.md) avec Firefly III, Actual Budget, Kresus, Sure et ezBookkeeping.
