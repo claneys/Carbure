@@ -340,7 +340,7 @@ class WoobTest extends TestCase
     public function testAnAccountNotListedByTheBankFails()
     {
         $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Account unlisted@bnp not in the 15 account(s) listed by woob for bnp');
+        $this->expectExceptionMessage('Account unlisted@bnp not in the 16 account(s) listed by woob for bnp');
         Woob::findAccount('unlisted@bnp');
     }
 

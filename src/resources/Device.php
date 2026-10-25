@@ -33,6 +33,9 @@ final class Device {
     /** Whether the columns devices.model, os_version, app_version exist (null: not checked yet) */
     private static ?bool $detailsColumns = null;
 
+    /** Whether devices.token may be NULL: a device without push token (null: not checked yet) */
+    private static ?bool $nullableToken = null;
+
     /**
      * Get all devices of the authenticated user.
      *
@@ -82,7 +85,7 @@ final class Device {
      *
      * @param int $userId The user ID
      * @return list<array<string, mixed>> List of all devices for the user: id, user_id, name,
-     *               token, platform (ios before the migration that adds it), lastLogin, model,
+     *               token (null: the app sent none, no notification reaches it), platform (ios before the migration that adds it), lastLogin, model,
      *               os_version, app_version (null when unknown or before the migration that adds them)
      */
     public static function get(int $userId): array
@@ -130,22 +133,61 @@ final class Device {
 
     /**
      * Register the device sent at login by a mobile app ('name', 'token' and, optional,
-     * 'platform', 'model', 'os_version', 'app_version'), nothing without a token (web portal).
+     * 'platform', 'model', 'os_version', 'app_version'). A device without a token (push not
+     * available in the app: no Firebase in the build, token not received in time,
+     * notifications refused) is still listed, without notification, and logged.
      *
      * @param int                       $userId The user ID
      * @param array<string, mixed>|null $device The device sent
-     * @return array<string, mixed>|null The device registered, null without token
+     * @return array<string, mixed>|null The device registered, null without device (web
+     *              portal) or without token before the migration that allows it
      * @throws Error If the platform is not known (400)
      */
     public static function register(int $userId, ?array $device): ?array
     {
-        $token = is_scalar($device['token'] ?? null) ? trim((string)$device['token']) : '';
-        if ($token === '') {
+        if ($device === null) {
             return null;
         }
+        $token = is_scalar($device['token'] ?? null) ? trim((string)$device['token']) : '';
         $name = is_scalar($device['name'] ?? null) ? (string)$device['name'] : '';
+        if ($token === '') {
+            return self::registerWithoutToken($userId, $name, $device);
+        }
         return self::createOrUpdate($userId, $name, $token, self::platformOf($token, $device['platform'] ?? null),
             self::details($device));
+    }
+
+    /**
+     * Register a device whose app sent no push token: one row per user, name and platform
+     * (no token to tell them apart), replaced by the device with its token once the app
+     * sends one.
+     *
+     * @param int                  $userId The user ID
+     * @param string               $name   The device name
+     * @param array<string, mixed> $device The device sent (platform: ios when none, the
+     *                                     first iOS apps sent none)
+     * @return array<string, mixed>|null The device registered, null before the migration
+     * @throws Error If the platform is not known (400)
+     */
+    private static function registerWithoutToken(int $userId, string $name, array $device): ?array
+    {
+        $platform = is_scalar($device['platform'] ?? null) && trim((string)$device['platform']) !== ''
+            ? self::platformOf('', $device['platform']) : 'ios';
+        Logger::warn("Mobile login of user $userId without a push token ($platform, \"$name\"): "
+            . "no notification can reach this device");
+        if (!self::hasNullableToken()) {
+            return null;
+        }
+        $details = self::details($device);
+        $known = Db::queryOne("SELECT id FROM devices WHERE user_id = ? AND token IS NULL AND name = ? AND platform = ?",
+            "iss", $userId, $name, $platform);
+        $deviceId = $known !== null ? (int)$known['id']
+            : Db::execute("INSERT INTO devices (user_id, name, token, platform) VALUES (?, ?, NULL, ?)",
+                "iss", $userId, $name, $platform)->insert_id;
+        Db::execute("UPDATE devices SET lastLogin = NOW(), model = ?, os_version = ?, app_version = ? WHERE id = ?", "sssi",
+            $details['model'], $details['os_version'], $details['app_version'], $deviceId);
+
+        return ['id' => $deviceId, 'user_id' => $userId, 'name' => $name, 'token' => null, 'platform' => $platform] + $details;
     }
 
     /**
@@ -230,6 +272,11 @@ final class Device {
             Db::execute("UPDATE devices SET model=?, os_version=?, app_version=? WHERE token=?", "ssss",
                 $details['model'], $details['os_version'], $details['app_version'], $token);
         }
+        // The same device listed before without its token
+        if (self::hasNullableToken()) {
+            Db::execute("DELETE FROM devices WHERE user_id = ? AND token IS NULL AND name = ? AND platform = ?",
+                "iss", $userId, $name, $platform);
+        }
 
         return array(
             'id' => $deviceId,
@@ -266,6 +313,19 @@ final class Device {
     }
 
     /**
+     * Whether devices.token may be NULL: the code runs before the migration that allows it
+     * (2026-10-28_device_without_token), a device without token being then not listed. A device
+     * without token is told apart by its platform: it needs the column devices.platform too.
+     *
+     * @return bool
+     */
+    private static function hasNullableToken(): bool
+    {
+        return self::hasPlatform() && (self::$nullableToken ??= (int)(Db::queryOne("SELECT COUNT(*) AS n FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'devices' AND COLUMN_NAME = 'token' AND IS_NULLABLE = 'YES'", "")['n'] ?? 0) > 0);
+    }
+
+    /**
      * Send push notification to all devices of a user, through the push service
      * (Carbure Push); the devices it reports unregistered (app removed, token expired)
      * are forgotten.
@@ -279,11 +339,11 @@ final class Device {
      */
     public static function sendNotification(int $userId, string $title, string $body, int $badge = 0, array $data = []): array
     {
-        // Get all devices for the user
-        $devices = self::get($userId);
-        
+        // The devices of the user that sent a push token
+        $devices = array_filter(self::get($userId), fn(array $device) => $device['token'] !== null);
+
         if (empty($devices)) {
-            Logger::info("No devices found for user $userId");
+            Logger::info("No device with a push token for user $userId");
             return [];
         }
         

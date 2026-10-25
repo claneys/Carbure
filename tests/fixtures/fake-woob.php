@@ -141,7 +141,7 @@ if (($argv[1] ?? '') === 'config' && $type === 'info') {
         exit(1);
     }
     $names = ['bnp' => 'BNP Paribas', 'boursorama' => 'Boursorama', 'cic' => 'CIC'];
-    $installed = $module !== 'boursorama' || is_file(fake_woob_file('installed'));
+    $installed = !in_array($module, ['boursorama', 'banquepopulaire'], true) || ($module === 'boursorama' && is_file(fake_woob_file('installed')));
     $info = ['name' => $module, 'description' => $names[$module] ?? $module, 'installed' => $installed ? 'yes' : 'no'];
     if ($installed) {
         $info['config'] = [
@@ -177,6 +177,11 @@ if (($argv[1] ?? '') === 'config' && $type === 'add') {
     // signature of the module needs the keyring of its repository
     if (!glob(fake_woob_file('keyrings') . '/*.gpg')) {
         fwrite(STDERR, "Error: No keyring found, please update repos.\n");
+        exit(1);
+    }
+    // Module needing a Python package missing from the environment (banquepopulaire, #326)
+    if ($argv[3] === 'banquepopulaire') {
+        fwrite(STDERR, "Unable to load module \"banquepopulaire\": Module requires python package \"python-jose\" but not installed.\n");
         exit(1);
     }
     touch(fake_woob_file('installed'));
@@ -234,7 +239,7 @@ if (($argv[1] ?? '') === 'bank' && $type === 'list') {
         // except "unlisted@<backend>"
         echo json_encode(array_map(fn($account) => ['id' => "$account@$backend"],
             ['DEMO0000001', '00087654321', '1', '111', '123', '222', '333', 'fail', 'empty', 'broken',
-             'forbidden', 'slow', 'nocoming', 'validate', '2fa'])) . "\n";
+             'forbidden', 'slow', 'nocoming', 'validate', '2fa', 'labelonly'])) . "\n";
         exit(0);
     }
     echo json_encode([
@@ -300,6 +305,16 @@ if ($account === 'slow@bank') {
 }
 
 $month = date('Y-m');
+
+// Module filling label but not raw (banquepopulaire, #328)
+if ($account === 'labelonly@bank') {
+    echo json_encode($type === 'coming' ? [] : [
+        ['date' => "$month-02", 'rdate' => "$month-02", 'amount' => -60.1, 'raw' => null, 'label' => 'PRLV SEPA EDF', 'type' => 2],
+        ['date' => "$month-03", 'rdate' => "$month-03", 'amount' => -12.5, 'raw' => '', 'label' => 'CB CARREFOUR', 'type' => 7, 'card' => '4974XXXXXXXX1234'],
+        ['date' => "$month-04", 'rdate' => "$month-04", 'amount' => -3, 'raw' => null, 'label' => null, 'type' => 2],
+    ]) . "\n";
+    exit(0);
+}
 
 if ($type === 'coming') {
     echo json_encode([

@@ -514,7 +514,8 @@ Four sub-tabs, like the administration: **Profile**, **Two-factor authentication
   - **Mobile apps**: devices registered at login from the app, with
     their platform (icon and **iOS** or **Android** label), the date of last login,
     the model, the system version and the app version when the app sends them
-    ("iPhone16,1 · iOS 26.0 · app 1.2") and the notification token, masked by default. The buttons let you show it in
+    ("iPhone16,1 · iOS 26.0 · app 1.2") and the notification token, masked by default
+    ("Notifications unavailable" when the app sent none). The buttons let you show it in
     full, copy it (HTTPS required; otherwise the token is shown) or **delete** an
     old device (`GET`/`DELETE /device`);
   - **Web browsers**: browsers from which the user logged in to the portal, with a

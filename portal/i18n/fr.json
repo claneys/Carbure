@@ -684,6 +684,7 @@
     "devicePlatform_ios": "iOS",
     "devicePlatform_android": "Android",
     "deviceAppVersion": "app {version}",
+    "deviceNoPush": "Notifications indisponibles : l'application n'a pas envoyé de jeton de notification. Reconnectez-vous dans l'application après avoir autorisé les notifications.",
     "alertThreshold": "À partir de",
     "alertThresholdPlaceholder": "Désactivé",
     "alertThresholdHelp": "Toute nouvelle dépense d'au moins ce montant. Vide : désactivé.",

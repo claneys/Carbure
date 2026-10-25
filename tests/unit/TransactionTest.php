@@ -21,6 +21,22 @@ class TransactionTest extends TestCase
         $this->assertSame('PRLV SEPA EDF ECH/010126 ', Transaction::cleanLabel('PRLV SEPA EDF ECH/010126 MDT/123'));
     }
 
+    public function testLabelOfWoobWhenRawIsEmpty()
+    {
+        // Module filling label but not raw (banquepopulaire, #328): same UUID as with raw
+        $withRaw = Transaction::prepare(['type' => 2, 'raw' => 'PRLV SEPA EDF', 'amount' => -60.1, 'date' => '2026-01-02']);
+        foreach ([null, '', ' '] as $raw) {
+            $row = Transaction::prepare(['type' => 2, 'raw' => $raw, 'label' => 'PRLV SEPA EDF', 'amount' => -60.1, 'date' => '2026-01-02']);
+            $this->assertSame('PRLV SEPA EDF', $row['label']);
+            $this->assertSame($withRaw['uuid'], $row['uuid']);
+        }
+        // raw first when the module fills both
+        $this->assertSame('CB AMAZON', Transaction::prepare(['type' => 7, 'raw' => 'facture carte du 010126 amazon', 'label' => 'AMAZON',
+            'amount' => -5, 'date' => '2026-01-02'])['label']);
+        // Neither: an empty label (saved, and logged by save())
+        $this->assertSame('', Transaction::prepare(['type' => 2, 'amount' => -3, 'date' => '2026-01-02'])['label']);
+    }
+
     public function testUuidIgnoresCardLabelSuffix()
     {
         $uuid = new ReflectionMethod(Transaction::class, 'generateTransactionUuid');

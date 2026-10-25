@@ -13,6 +13,7 @@ compte administrateur. Aucune commande n'est nécessaire.
 - **Docker** (recommandé) : tout est inclus (nginx, PHP, woob) et la base de données est
   préparée par `docker/docker-compose.yml`.
 - **NAS Synology** : voir le [tutoriel pas à pas](synology.md).
+- **YunoHost** : un [paquet](#avec-yunohost) installe Carbure sur un serveur YunoHost.
 - **Serveur web existant** (PHP + MariaDB/MySQL), sans Docker.
 
 Avant d'installer, découvrez les [fonctionnalités](fonctionnalites.md) de Carbure et son
@@ -232,7 +233,7 @@ fixez-la dans `docker/docker-compose.yml` (`image: mariadb:11`).
 - **Première installation avec Docker Compose** : `docker compose pull && docker compose up -d`
   utilise l'image publiée (sans `pull`, Compose construisait l'image depuis le clone).
 - **Installation scriptée** : `tools/install.php` installe Carbure sans l'assistant web
-  (voir [Lancer l'assistant](#3-lancer-lassistant)) ; il sert au paquet YunoHost en préparation.
+  (voir [Lancer l'assistant](#3-lancer-lassistant)) ; il sert au [paquet YunoHost](#avec-yunohost).
 - Les applications mobiles sont publiées : liens App Store et Google Play dans **Mon profil
   → Mes appareils**.
 
@@ -351,36 +352,50 @@ docker compose exec -u www-data carbure php tools/migrate.php --status # version
     woob télécharge ses modules (dont celui de votre banque) dans `/data/woob` et les met
     à jour automatiquement. Un correctif de module pas encore publié (par exemple pour la
     BNP) peut être copié dans `/data/woob/.local/share/woob/modules/3.7/woob_modules/` ;
-    `curl_cffi`, nécessaire au module BNP récent, est déjà installé dans l'image.
+    woob n'installe jamais les paquets Python dont un module a besoin (il refuse de le
+    charger) : l'image fournit ceux des modules bancaires, `curl_cffi` (BNP),
+    `python-jose` et `chompjs` (Banque Populaire, Caisse d'Épargne, BTP Banque, Crédit
+    Coopératif), `schwifty` (Société Générale) et `pycryptodomex` (épargne salariale HSBC,
+    Esalia, La Nef). Les modules qui pilotent un vrai navigateur (American Express,
+    Sogecartenet, HSBC Hong Kong) ne sont pas pris en charge : utilisez l'import de relevés.
 
-## Avec YunoHost (en préparation)
+## Avec YunoHost
 
-!!! warning "Travail en cours"
-    Le paquet YunoHost de Carbure est en cours d'écriture : il n'est **pas encore dans le
-    catalogue** de YunoHost et n'a **pas encore été testé** sur un serveur YunoHost. Il
-    installe Carbure 1.10.0, la première version qui sait s'installer sans l'assistant web
-    (`tools/install.php`) : pour l'essayer, `sudo yunohost app install
-    https://github.com/ltoinel/carbure_ynh` sur un serveur de test. Suivi :
-    [ticket #45](https://github.com/ltoinel/Carbure/issues/45).
-
-Le paquet [`carbure_ynh`](https://github.com/ltoinel/carbure_ynh) installera Carbure en
-quelques clics depuis l'interface d'administration de [YunoHost](https://yunohost.org) :
+Le paquet [`carbure_ynh`](https://github.com/ltoinel/carbure_ynh) installe Carbure sur un
+serveur [YunoHost](https://yunohost.org) :
 
 - sur un **domaine dédié** (par exemple `budget.exemple.org`), pas dans un sous-chemin ;
 - **sans assistant** : l'utilisateur YunoHost choisi devient l'administrateur de Carbure,
   avec le mot de passe saisi à l'installation ; la base, les catégories, les règles et les
   insights de départ sont créés ;
-- avec **woob** dans un environnement virtuel, et une **synchronisation quotidienne** de
-  tous les comptes ;
+- avec **woob** et les paquets Python des modules bancaires dans un environnement virtuel,
+  et une **synchronisation quotidienne** de tous les comptes ;
 - les mises à jour appliquent les migrations de la base et mettent à jour les modules
   bancaires ; les sauvegardes YunoHost comprennent la base et le dossier de données
   (configuration, logs, woob).
 
+!!! note "Hors du catalogue de YunoHost"
+    Le paquet n'est pas encore dans le catalogue de YunoHost : il s'installe depuis son
+    dépôt. Il a été testé sur une installation neuve ; vos retours sur une mise à jour, une
+    sauvegarde et sa restauration sont les bienvenus dans le
+    [ticket #45](https://github.com/ltoinel/Carbure/issues/45).
+
+Pour l'installer, dans l'interface d'administration de YunoHost : **Applications →
+Installer**, puis en bas de la page **Installer une application personnalisée** avec
+l'adresse `https://github.com/ltoinel/carbure_ynh`. En ligne de commande :
+
+```bash
+sudo yunohost app install https://github.com/ltoinel/carbure_ynh
+```
+
+L'installation demande le domaine, qui peut ouvrir le portail web, la langue, l'utilisateur
+YunoHost administrateur et son mot de passe Carbure (8 caractères minimum).
+
 Carbure garde ses propres comptes (pas de connexion unique avec YunoHost), dont les
-applications mobiles ont besoin, et l'application reste publique pour elles. Vous avez un
-serveur YunoHost et voulez aider à tester ? Dites-le dans le
-[ticket #45](https://github.com/ltoinel/Carbure/issues/45) ou sur le
-[Discord](https://discord.gg/QsxYw4Rx9D).
+applications mobiles ont besoin : le mot de passe de l'administrateur n'est pas celui de
+YunoHost. L'API reste publique pour les applications mobiles, la synchronisation et les
+agents IA, même si le portail est réservé à certains utilisateurs. Une banque qui demande
+une validation sur le téléphone (authentification forte) se synchronise depuis le portail.
 
 ## Sur un serveur web existant
 
@@ -392,8 +407,10 @@ serveur YunoHost et voulez aider à tester ? Dites-le dans le
 - Un serveur web capable de transmettre `/api/` à PHP-FPM, par exemple nginx (exemple
   ci-dessous). Carbure ne fournit pas de fichier `.htaccess` : la protection des dossiers
   sensibles est à configurer dans le serveur.
-- [woob](https://woob.tech/) installé pour l'utilisateur du serveur web. Le module BNP
-  récent nécessite `curl_cffi` (`pip install "curl_cffi>=0.7"`).
+- [woob](https://woob.tech/) installé pour l'utilisateur du serveur web, avec les paquets
+  Python des modules bancaires, que woob n'installe pas lui-même :
+  `pip install "curl_cffi>=0.7" python-jose chompjs schwifty pycryptodomex` (BNP, groupe
+  BPCE, Société Générale, épargne salariale).
 - Pour les notifications push : un accès HTTPS sortant vers le service Carbure Push
   (`https://api.carbure.org` ; aucune clé Apple ni Firebase n'est nécessaire). Facultatif : un serveur SMTP pour les
   notifications par email.

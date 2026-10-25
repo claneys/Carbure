@@ -2297,6 +2297,22 @@ button .material-icons {
     word-break: break-all;
 }
 
+/* Device listed without push token: no notification reaches it */
+.device-no-push {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--warning-color);
+    background: var(--warning-light);
+    padding: 4px 8px;
+    border-radius: var(--border-radius-sm);
+}
+
+.device-no-push .material-icons {
+    font-size: 16px;
+}
+
 .device-actions {
     display: flex;
     gap: 4px;

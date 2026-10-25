@@ -2295,14 +2295,17 @@
                                         <div class="device-meta">
                                             <span class="device-platform">{{ t(devicePlatform(device).label) }}</span> · {{ t('lastLogin') }} : {{ formatDate(device.lastLogin) }}
                                         </div>
-                                        <code class="device-token" :class="{ revealed: revealedTokens[device.id] }">{{ displayToken(device) }}</code>
+                                        <code v-if="device.token" class="device-token" :class="{ revealed: revealedTokens[device.id] }">{{ displayToken(device) }}</code>
+                                        <div v-else class="device-no-push">
+                                            <span class="material-icons" aria-hidden="true">notifications_off</span>{{ t('deviceNoPush') }}
+                                        </div>
                                     </div>
                                     <div class="device-actions">
-                                        <button class="btn-icon" @click="toggleToken(device)"
+                                        <button v-if="device.token" class="btn-icon" @click="toggleToken(device)"
                                                 :title="revealedTokens[device.id] ? t('hideToken') : t('showToken')" :aria-label="revealedTokens[device.id] ? t('hideToken') : t('showToken')">
                                             <span class="material-icons" aria-hidden="true">{{ revealedTokens[device.id] ? 'visibility_off' : 'visibility' }}</span>
                                         </button>
-                                        <button class="btn-icon" @click="copyToken(device)" :title="t('copyToken')" :aria-label="t('copyToken')">
+                                        <button v-if="device.token" class="btn-icon" @click="copyToken(device)" :title="t('copyToken')" :aria-label="t('copyToken')">
                                             <span class="material-icons" aria-hidden="true">content_copy</span>
                                         </button>
                                         <button class="btn-icon btn-icon-delete" @click="removeDevice(device)" :title="t('deleteDevice')" :aria-label="t('deleteDevice')">

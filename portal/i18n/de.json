@@ -684,6 +684,7 @@
     "devicePlatform_ios": "iOS",
     "devicePlatform_android": "Android",
     "deviceAppVersion": "App {version}",
+    "deviceNoPush": "Benachrichtigungen nicht verfügbar: Die App hat kein Benachrichtigungstoken gesendet. Melden Sie sich in der App erneut an, nachdem Sie die Benachrichtigungen erlaubt haben.",
     "alertThreshold": "Ab",
     "alertThresholdPlaceholder": "Deaktiviert",
     "alertThresholdHelp": "Jede neue Ausgabe ab diesem Betrag. Leer: deaktiviert.",

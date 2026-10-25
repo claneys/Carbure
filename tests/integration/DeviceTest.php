@@ -206,6 +206,49 @@ class DeviceTest extends DatabaseTestCase
         }
     }
 
+    public function testDeviceWithoutPushTokenIsListed()
+    {
+        // The Android app without Firebase sends an empty token: listed, no notification
+        $device = ['name' => 'Pixel', 'token' => '', 'platform' => 'android', 'model' => 'Google Pixel 8'];
+        User::login('user', 'userpass', $device);
+        User::login('user', 'userpass', $device);
+        $devices = Device::get(self::USER);
+        $this->assertCount(1, $devices, 'Listed once');
+        $this->assertSame(['Pixel', null, 'android', 'Google Pixel 8'],
+            [$devices[0]['name'], $devices[0]['token'], $devices[0]['platform'], $devices[0]['model']]);
+        $this->assertSame([], Device::sendNotification(self::USER, 'Title', 'Body'));
+        $this->assertSame([], FakePushRelay::requests());
+
+        // No platform: an iOS app (notifications refused); another device of the user
+        User::login('user', 'userpass', ['name' => 'iPhone', 'token' => null]);
+        $this->assertEqualsCanonicalizing(['ios', 'android'], array_column(Device::get(self::USER), 'platform'));
+
+        // Once the app sends its token, the same device with its token
+        $token = 'fcm_token-0123456789:APA91bFakeAndroidToken';
+        User::login('user', 'userpass', ['name' => 'Pixel', 'token' => $token, 'platform' => 'android']);
+        $this->assertEqualsCanonicalizing(['Pixel' => $token, 'iPhone' => null], array_column(Device::get(self::USER), 'token', 'name'));
+        Device::sendNotification(self::USER, 'Title', 'Body');
+        $this->assertSame([$token], array_column(FakePushRelay::requests(), 'token'));
+    }
+
+    public function testDeviceWithoutPushTokenBeforeTheMigration()
+    {
+        $column = new ReflectionProperty(Device::class, 'nullableToken');
+        Db::query("ALTER TABLE devices MODIFY token varchar(200) NOT NULL");
+        $column->setValue(null, null);
+        try {
+            // Not listed, the login does not fail
+            $this->assertArrayHasKey('token', User::login('user', 'userpass', ['name' => 'Pixel', 'token' => '', 'platform' => 'android']));
+            $this->assertSame([], Device::get(self::USER));
+            // A device with its token is still registered
+            Device::createOrUpdate(self::USER, 'Pixel', 'fcm:APA91bBeforeTheMigration', 'android');
+            $this->assertCount(1, Device::get(self::USER));
+        } finally {
+            Db::query("ALTER TABLE devices MODIFY token varchar(200) DEFAULT NULL");
+            $column->setValue(null, null);
+        }
+    }
+
     public function testBeforeThePlatformMigration()
     {
         $column = new ReflectionProperty(Device::class, 'platformColumn');
