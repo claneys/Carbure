@@ -819,6 +819,16 @@ l'appareil avec son jeton dès que l'app en envoie un (migration
 `2026-10-28_device_without_token` ; avant, il n'est pas listé). Chaque connexion sans jeton
 est journalisée.
 
+### `POST /device`
+
+Enregistre le jeton de notification de l'application mobile connectée, reçu après sa
+connexion ou changé depuis (FCM) : `token` (requis, `400` sinon), `name`, `platform` (`ios`
+ou `android` ; vide : celle du jeton, `400` si inconnue), `model`, `os_version`,
+`app_version`, comme l'objet `device` de la connexion. L'appareil est celui de
+l'utilisateur connecté ; il remplace l'appareil listé sans jeton du même nom et de la même
+plateforme. Renvoie l'appareil enregistré (`id`, `user_id`, `name`, `token`, `platform`,
+`model`, `os_version`, `app_version`).
+
 ### `GET /device/link`
 
 Adresse de l'API donnée aux applications mobiles par le QR code de **Mes appareils** :

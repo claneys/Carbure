@@ -48,6 +48,30 @@ final class Device {
     }
 
     /**
+     * Register the push token of the signed-in mobile app, received after its login or
+     * changed since (FCM): the same device as the one sent at login (see register()).
+     *
+     * @param string|null $token       The push token (required)
+     * @param string|null $name        The device name
+     * @param string|null $platform    ios or android (empty: the one of the token)
+     * @param string|null $model       The model (e.g. Google Pixel 8)
+     * @param string|null $os_version  The version of the system (e.g. Android 15)
+     * @param string|null $app_version The version of the app
+     * @return array<string, mixed> The device registered
+     * @throws Error If there is no token or the platform is not known (400)
+     */
+    #[ApiRoute('/device', method: 'POST')]
+    public static function registerMine(?string $token = null, ?string $name = '', ?string $platform = null, ?string $model = null,
+        ?string $os_version = null, ?string $app_version = null): array
+    {
+        if (trim((string)$token) === '') {
+            throw new Error("No push token", 400);
+        }
+        return (array)self::register(Jwt::getUserIdFromToken(), ['token' => $token, 'name' => (string)$name, 'platform' => $platform,
+            'model' => $model, 'os_version' => $os_version, 'app_version' => $app_version]);
+    }
+
+    /**
      * Address of the API given to the mobile apps by the QR code of the devices
      * (https://carbure.org/app/?server=...): the setting public_url followed by /api/, the
      * portal may be opened through another address (local network); null without it (the
