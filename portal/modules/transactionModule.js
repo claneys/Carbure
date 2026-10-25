@@ -39,6 +39,61 @@ export function similarLabelQuery(label) {
 }
 
 /**
+ * Calendar of the recurring series of a month (GET /transaction/recurring), weeks
+ * starting on Monday. A received series is on the day of its transaction, an expected
+ * one on its usual day (the last day of a shorter month): "late" once that day is past
+ * in the current month, "missing" in a past month.
+ * @param {Array<Object>} series - Recurring series of the month
+ * @param {number} year - Year
+ * @param {number} month - Month (1 to 12)
+ * @param {Date} [today] - Today
+ * @returns {{weeks: Array<Array<Object|null>>, received: {count: number, total: number}, expected: {count: number, total: number}}}
+ *          weeks: 7 cells each ({day, date, today, items: [{series, amount, approx, status}]}, null out of the month);
+ *          received and expected: count and sum of the amounts
+ */
+export function recurringCalendar(series, year, month, today = new Date()) {
+    const days = new Date(year, month, 0).getDate();
+    const prefix = `${year}-${String(month).padStart(2, '0')}-`;
+    const monthIndex = year * 12 + month - 1;
+    const todayIndex = today.getFullYear() * 12 + today.getMonth();
+    const cells = Array.from({ length: days }, (_, i) => ({
+        day: i + 1,
+        date: prefix + String(i + 1).padStart(2, '0'),
+        today: monthIndex === todayIndex && i + 1 === today.getDate(),
+        items: []
+    }));
+    const totals = { received: { count: 0, total: 0 }, expected: { count: 0, total: 0 } };
+
+    for (const one of series) {
+        const received = one.status === 'received';
+        const date = received && String(one.date || '').startsWith(prefix) ? one.date : null;
+        const day = date ? Number(date.slice(8, 10)) : Math.min(Number(one.day), days);
+        let status = received ? 'received' : 'expected';
+        if (!received && (monthIndex < todayIndex || (monthIndex === todayIndex && day < today.getDate()))) {
+            status = monthIndex < todayIndex ? 'missing' : 'late';
+        }
+        const approx = !received && !!one.variable;
+        const amount = Number(approx ? one.average : one.amount);
+        cells[day - 1].items.push({ series: one, amount, approx, status });
+        const total = totals[received ? 'received' : 'expected'];
+        total.count++;
+        total.total = Math.round((total.total + amount) * 100) / 100;
+    }
+
+    // Monday first: the days of the week before the 1st are empty
+    const lead = (new Date(year, month - 1, 1).getDay() + 6) % 7;
+    const grid = [...Array(lead).fill(null), ...cells];
+    while (grid.length % 7) {
+        grid.push(null);
+    }
+    const weeks = [];
+    for (let i = 0; i < grid.length; i += 7) {
+        weeks.push(grid.slice(i, i + 7));
+    }
+    return { weeks, ...totals };
+}
+
+/**
  * Creates a transaction module mixin for Vue components
  * @param {Function} getApiService - Function that returns the API service instance
  * @returns {Object} Vue mixin with transaction methods and computed properties
@@ -59,6 +114,8 @@ export function createTransactionModule(getApiService) {
                 recurring: [],
                 recurringOnly: false,
                 recurringRequest: 0,
+                // Calendar of the recurring series of the month (modal)
+                showRecurringCalendar: false,
 
                 // Rule proposed after a manual categorization: {keyword, category, categoryName}
                 ruleSuggestion: null,
@@ -122,6 +179,33 @@ export function createTransactionModule(getApiService) {
              */
             recurringExpected() {
                 return this.recurring.filter(series => series.status === 'expected');
+            },
+
+            /**
+             * Calendar of the recurring series of the selected month
+             * @returns {{weeks: Array<Array<Object|null>>, received: Object, expected: Object}}
+             */
+            recurringCalendar() {
+                return recurringCalendar(this.recurring, Number(this.selectedYear), Number(this.selectedMonth));
+            },
+
+            /**
+             * Short names of the days of the week, Monday first
+             * @returns {Array<string>}
+             */
+            recurringWeekdays() {
+                const format = new Intl.DateTimeFormat(this.intlLocale, { weekday: 'short' });
+                // 2024-01-01 is a Monday
+                return Array.from({ length: 7 }, (_, i) => format.format(new Date(2024, 0, 1 + i)));
+            },
+
+            /**
+             * Month and year of the calendar ("octobre 2026")
+             * @returns {string}
+             */
+            recurringCalendarTitle() {
+                return new Intl.DateTimeFormat(this.intlLocale, { month: 'long', year: 'numeric' })
+                    .format(new Date(Number(this.selectedYear), Number(this.selectedMonth) - 1, 1));
             },
 
             /**
@@ -343,6 +427,30 @@ export function createTransactionModule(getApiService) {
                     getApiService().fetchCategories().then(c => { this.ruleCategories = c; }).catch(() => {});
                 }
                 this.$nextTick(() => document.querySelector('.modal-form .category-picker-button')?.focus());
+            },
+
+            /** Opens the calendar of the recurring transactions of the month */
+            openRecurringCalendar() {
+                this.showRecurringCalendar = true;
+                this.$nextTick?.(() => document.querySelector('.modal-recurring-calendar .modal-close')?.focus());
+            },
+
+            /** Closes the calendar of the recurring transactions */
+            closeRecurringCalendar() {
+                this.showRecurringCalendar = false;
+            },
+
+            /**
+             * Opens the detail of the transaction of a received series, from the calendar
+             * @param {Object} item - Item of the calendar ({series})
+             */
+            openRecurringTransaction(item) {
+                const id = Number(item.series.ids?.[0]);
+                const transaction = this.transactions.find(t => Number(t.id) === id);
+                if (transaction) {
+                    this.showRecurringCalendar = false;
+                    this.openTransactionModal(transaction);
+                }
             },
 
             /**

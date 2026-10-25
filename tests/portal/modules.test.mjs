@@ -3,7 +3,7 @@ import './setup.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createBudgetModule } from '../../portal/modules/budgetModule.js';
-import { createTransactionModule, similarLabelQuery } from '../../portal/modules/transactionModule.js';
+import { createTransactionModule, recurringCalendar, similarLabelQuery } from '../../portal/modules/transactionModule.js';
 import { createRulesModule } from '../../portal/modules/rulesModule.js';
 import { agentConfigurations } from '../../portal/modules/agentsModule.js';
 
@@ -1203,4 +1203,71 @@ test('profile: banner of a new release for the administrators, hidden for that v
     } finally {
         delete globalThis.localStorage;
     }
+});
+
+test('recurring calendar: weeks from Monday, received on their day, expected, late or missing on the usual one', () => {
+    const series = [
+        { label: 'SALAIRE', amount: 2500, average: 2500, variable: false, day: 28, status: 'expected', ids: [] },
+        { label: 'PRLV EDF', amount: -120, average: -90, variable: true, day: 5, date: '2026-10-06', status: 'received', ids: [7] },
+        { label: 'CB NETFLIX', amount: -13.49, average: -13.49, variable: false, day: 20, status: 'expected', ids: [] },
+        { label: 'PRLV LOYER', amount: -800, average: -800, variable: false, day: 31, status: 'expected', ids: [] },
+        { label: 'PRLV ASSURANCE', amount: -40, average: -42, variable: true, day: 3, status: 'expected', ids: [] },
+    ];
+    const october = recurringCalendar(series, 2026, 10, new Date(2026, 9, 25));
+
+    // October 2026 starts on a Thursday: 3 empty days, 5 weeks
+    assert.equal(october.weeks.length, 5);
+    assert.deepEqual(october.weeks[0].slice(0, 4).map(cell => cell && cell.day), [null, null, null, 1]);
+    assert.ok(october.weeks.every(week => week.length === 7));
+    const cells = october.weeks.flat().filter(Boolean);
+    const at = day => cells[day - 1].items.map(item => [item.series.label, item.status, item.amount, item.approx]);
+    assert.equal(cells.length, 31);
+    assert.equal(cells.find(cell => cell.today).day, 25);
+
+    // Received on the day of its transaction, its real amount
+    assert.deepEqual(at(6), [['PRLV EDF', 'received', -120, false]]);
+    assert.deepEqual(at(5), []);
+    // Expected, its day past in the current month: late, its average when it varies
+    assert.deepEqual(at(3), [['PRLV ASSURANCE', 'late', -42, true]]);
+    assert.deepEqual(at(20), [['CB NETFLIX', 'late', -13.49, false]]);
+    assert.deepEqual(at(28), [['SALAIRE', 'expected', 2500, false]]);
+    assert.deepEqual(october.received, { count: 1, total: -120 });
+    assert.deepEqual(october.expected, { count: 4, total: 1644.51 });
+
+    // A past month: missing; the 31st on the last day of a shorter month, no today
+    const september = recurringCalendar(series, 2026, 9, new Date(2026, 9, 25));
+    const septemberCells = september.weeks.flat().filter(Boolean);
+    assert.equal(septemberCells.length, 30);
+    assert.ok(!septemberCells.some(cell => cell.today));
+    assert.deepEqual(septemberCells[29].items.map(item => [item.series.label, item.status]), [['PRLV LOYER', 'missing']]);
+    // A received series whose date is not in the month (never: its usual day)
+    assert.deepEqual(septemberCells[4].items.map(item => item.status), ['received']);
+
+    // A future month: every one expected
+    const november = recurringCalendar(series, 2026, 11, new Date(2026, 9, 25));
+    assert.ok(november.weeks.flat().filter(Boolean).flatMap(cell => cell.items)
+        .filter(item => item.status !== 'received').every(item => item.status === 'expected'));
+});
+
+test('recurring calendar: opened, the transaction of a received series shown from it', () => {
+    const module = createTransactionModule(() => ({}));
+    const opened = [];
+    const context = {
+        ...module.data(), ...module.methods,
+        transactions: [{ id: 7, label: 'PRLV EDF' }],
+        openTransactionModal: transaction => opened.push(transaction),
+    };
+
+    context.openRecurringCalendar();
+    assert.equal(context.showRecurringCalendar, true);
+    context.openRecurringTransaction({ series: { ids: [8] } });
+    assert.equal(context.showRecurringCalendar, true);
+    assert.deepEqual(opened, []);
+    context.openRecurringTransaction({ series: { ids: ['7'] } });
+    assert.equal(context.showRecurringCalendar, false);
+    assert.deepEqual(opened, [{ id: 7, label: 'PRLV EDF' }]);
+
+    context.openRecurringCalendar();
+    context.closeRecurringCalendar();
+    assert.equal(context.showRecurringCalendar, false);
 });

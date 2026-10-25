@@ -199,6 +199,8 @@ subscriptions, bills, reimbursements…
   not arrived yet, with their usual day and amount ("≈" if it varies); for a
   past month, the ones that were **missed** ("Missing this month"). Handy to check that
   the salary came in or that a direct debit was not forgotten.
+- A **calendar of the month** (**Calendar** button) places them day by day: received,
+  expected or late, with the total of what already came and of what is still to come.
 
 **Detection rules**, over the last 6 months:
 

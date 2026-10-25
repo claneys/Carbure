@@ -131,6 +131,13 @@ tâches ou l'écran d'accueil.
   second interrupteur n'affiche qu'elles et liste celles qui ne sont pas encore arrivées
   (« Attendues ce mois-ci », avec leur jour habituel et leur montant, « ≈ » s'il varie ;
   « Absentes ce mois-ci » pour un mois passé). Il n'apparaît pas pendant une recherche.
+- **Calendrier des récurrentes** : le bouton **Calendrier** ouvre le mois affiché en
+  calendrier (semaines du lundi au dimanche, aujourd'hui en couleur). Chaque transaction
+  récurrente y est placée au jour de son arrivée (« Reçue », un clic ouvre son détail) ou
+  à son jour habituel (« Attendue », « En retard » une fois ce jour passé, « Absente » pour
+  un mois passé), avec son montant (« ≈ » s'il varie). En haut, le nombre et le total des
+  reçues et des attendues. Sur téléphone, le calendrier devient la liste des jours qui ont
+  des récurrentes.
 - **Recherche** : le champ de recherche (2 caractères minimum) interroge
   `GET /transaction/search` sur tous les mois et affiche le **total** des transactions
   trouvées ; le filtre s'applique aussi aux résultats. La croix efface la recherche.

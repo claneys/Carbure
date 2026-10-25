@@ -566,6 +566,10 @@
                                         <span class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></span>
                                         <span class="toggle-label">{{ t('recurringCount', { count: recurring.length }) }}</span>
                                     </label>
+                                    <button v-if="!isSearching && recurring.length > 0" type="button" class="btn-secondary btn-recurring-calendar"
+                                            @click="openRecurringCalendar" :title="t('recurringCalendarHelp')">
+                                        <span class="material-icons" aria-hidden="true">calendar_month</span>{{ t('recurringCalendarButton') }}
+                                    </button>
                                     <button type="button" class="btn-secondary btn-import" @click="openImport" :title="t('importTitle')">
                                         <span class="material-icons" aria-hidden="true">upload_file</span>{{ t('importButton') }}
                                     </button>
@@ -2508,6 +2512,66 @@
                         <span class="material-icons" aria-hidden="true">check_circle</span>
                         {{ t('save') }}
                     </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calendar of the recurring transactions of the month -->
+        <div v-if="showRecurringCalendar" class="modal-overlay" @click.self="closeRecurringCalendar" @keydown.esc="closeRecurringCalendar">
+            <div class="modal modal-recurring-calendar" role="dialog" aria-modal="true" aria-labelledby="recurring-calendar-title">
+                <div class="modal-header">
+                    <span class="material-icons" aria-hidden="true">calendar_month</span>
+                    <h3 id="recurring-calendar-title">{{ t('recurringCalendarTitle', { month: recurringCalendarTitle }) }}</h3>
+                    <button class="modal-close" @click="closeRecurringCalendar" :aria-label="t('close')">
+                        <span class="material-icons" aria-hidden="true">close</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="recurring-calendar-totals">
+                        <span class="recurring-calendar-total received">
+                            <span class="material-icons" aria-hidden="true">check_circle</span>
+                            {{ t('recurringCalendarReceived', { count: recurringCalendar.received.count }) }}
+                            <strong :class="recurringCalendar.received.total >= 0 ? 'positive' : 'negative'">{{ formatAmount(recurringCalendar.received.total) }} {{ currencySymbol }}</strong>
+                        </span>
+                        <span v-if="recurringCalendar.expected.count > 0" class="recurring-calendar-total expected">
+                            <span class="material-icons" aria-hidden="true">schedule</span>
+                            {{ t(isCurrentMonth ? 'recurringCalendarExpected' : 'recurringCalendarMissing', { count: recurringCalendar.expected.count }) }}
+                            <strong :class="recurringCalendar.expected.total >= 0 ? 'positive' : 'negative'">≈ {{ formatAmount(recurringCalendar.expected.total) }} {{ currencySymbol }}</strong>
+                        </span>
+                    </div>
+                    <table class="recurring-calendar">
+                        <thead>
+                            <tr><th v-for="weekday in recurringWeekdays" :key="weekday" scope="col">{{ weekday }}</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(week, w) in recurringCalendar.weeks" :key="w">
+                                <td v-for="(cell, d) in week" :key="d"
+                                    :class="{ 'recurring-calendar-out': !cell, 'recurring-calendar-today': cell && cell.today, 'recurring-calendar-busy': cell && cell.items.length > 0 }">
+                                    <template v-if="cell">
+                                        <time class="recurring-calendar-day" :datetime="cell.date">
+                                            <span class="recurring-calendar-weekday" aria-hidden="true">{{ recurringWeekdays[d] }}</span>
+                                            {{ cell.day }}
+                                        </time>
+                                        <ul v-if="cell.items.length > 0">
+                                            <li v-for="item in cell.items" :key="item.series.label + item.series.amount"
+                                                class="recurring-calendar-item" :class="'status-' + item.status">
+                                                <component :is="item.status === 'received' ? 'button' : 'span'" :type="item.status === 'received' ? 'button' : null"
+                                                           class="recurring-calendar-entry" :title="item.series.label + ' · ' + t('recurringStatus_' + item.status)"
+                                                           @click="item.status === 'received' && openRecurringTransaction(item)">
+                                                    <span class="material-icons" aria-hidden="true">{{ { received: 'check_circle', expected: 'schedule', late: 'error_outline', missing: 'highlight_off' }[item.status] }}</span>
+                                                    <span class="recurring-calendar-label">{{ item.series.label }}</span>
+                                                    <span class="recurring-calendar-amount" :class="item.amount >= 0 ? 'positive' : 'negative'">
+                                                        {{ item.approx ? '≈ ' : '' }}{{ formatAmount(item.amount) }} {{ currencySymbol }}
+                                                    </span>
+                                                    <span class="visually-hidden">{{ t('recurringStatus_' + item.status) }}</span>
+                                                </component>
+                                            </li>
+                                        </ul>
+                                    </template>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

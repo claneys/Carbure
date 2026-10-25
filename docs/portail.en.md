@@ -131,6 +131,13 @@ taskbar or the home screen.
   second switch shows only them and lists those that have not arrived yet
   ("Expected this month", with their usual day and amount, "≈" if it varies;
   "Missing this month" for a past month). It does not appear during a search.
+- **Calendar of the recurring transactions**: the **Calendar** button opens the month shown
+  as a calendar (weeks from Monday to Sunday, today highlighted). Each recurring
+  transaction is on the day it arrived ("Received", a click opens its detail) or on its
+  usual day ("Expected", "Late" once that day is past, "Missing" for a past month), with
+  its amount ("≈" if it varies). At the top, the number and total of the received and
+  expected ones. On a phone, the calendar becomes the list of the days that have recurring
+  transactions.
 - **Search**: the search field (2 characters minimum) queries
   `GET /transaction/search` across all months and shows the **total** of the transactions
   found; the filter also applies to the results. The cross clears the search.
