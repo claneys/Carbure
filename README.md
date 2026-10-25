@@ -33,11 +33,7 @@
   <a href="https://github.com/ltoinel/Carbure/actions/workflows/security.yml"><img src="https://github.com/ltoinel/Carbure/actions/workflows/security.yml/badge.svg?branch=main" alt="Sécurité"></a>
   <a href="https://github.com/ltoinel/Carbure/releases"><img src="https://img.shields.io/github/v/release/ltoinel/Carbure" alt="Release"></a>
   <a href="https://hub.docker.com/r/ltoinel/carbure"><img src="https://img.shields.io/docker/pulls/ltoinel/carbure?logo=docker&logoColor=white" alt="Docker pulls"></a>
-  <a href="https://github.com/ltoinel/Carbure/actions/workflows/ci.yml"><img src="https://img.shields.io/badge/coverage-%E2%89%A5%2090%25-brightgreen" alt="Coverage"></a>
-  <a href="https://www.php.net/"><img src="https://img.shields.io/badge/PHP-%3E%3D%208.2-777BB4?logo=php&logoColor=white" alt="PHP"></a>
-  <a href="https://mariadb.org/"><img src="https://img.shields.io/badge/MariaDB%20%2F%20MySQL-003545?logo=mariadb&logoColor=white" alt="MariaDB"></a>
   <a href="https://carbure.org/"><img src="https://img.shields.io/badge/docs-carbure.org-EF4860" alt="Docs"></a>
-  <a href="https://discord.gg/QsxYw4Rx9D"><img src="https://img.shields.io/badge/Discord-rejoindre-5865F2?logo=discord&logoColor=white" alt="Discord"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License: MIT"></a>
 </p>
 
@@ -64,61 +60,36 @@
 
 <p align="center">👉 <a href="https://carbure.org/fonctionnalites/"><b>Toutes les fonctionnalités</b></a>, avec chaque écran</p>
 
-## Pourquoi Carbure ?
+## Fonctionnalités
 
-- 🔄 **Zéro saisie** : vos opérations arrivent toutes seules depuis votre banque, chaque jour,
-  grâce à [woob](https://woob.tech/) — une connexion directe, sans agrégateur tiers. Ou
-  importez les relevés de votre banque (OFX, QIF, CSV, CAMT.053) : Carbure repère d'abord les
-  doublons.
-- 🏷️ **Catégorisation automatique** : des règles simples (« CARREFOUR → Supermarché ») classent
-  chaque transaction. Une nouvelle ? Choisissez sa catégorie, Carbure vous propose la règle.
-- 🎯 **Budgets mensuels** : dépensé, restant, dépassement, catégorie par catégorie, d'un coup
-  d'œil. Budgétez les sous-catégories et leur parent les additionne — ou fixez-lui son propre
-  montant. Le **flux du mois** montre d'où vient l'argent et où il part : un clic sur une
-  catégorie affiche ses transactions.
-- 📈 **Tendances** : revenus, dépenses et épargne sur 3, 6 ou 12 mois, comparés à la période
-  précédente ou à la même période l'an dernier.
-- ✅ **Pointage** : vérifiez vos transactions en un clic, filtrez celles qui restent à contrôler.
-- 🔁 **Opérations récurrentes** : salaire, loyer, abonnements et factures sont repérés tout
-  seuls ; voyez d'un coup d'œil celles encore attendues ce mois-ci.
-- 🔔 **Alertes sur votre téléphone et par email** : après chaque synchronisation, dès qu'une dépense
-  dépasse le seuil que vous avez choisi, quand une règle que vous avez désignée s'applique,
-  ou quand les dépenses d'un budget atteignent le pourcentage choisi ; chacun choisit push,
-  email ou les deux pour chaque type d'alerte.
+- 🔄 **Zéro saisie** : les opérations arrivent chaque jour de votre banque, en direct avec
+  [woob](https://woob.tech/), sans agrégateur ; ou importez vos relevés (OFX, QIF, CSV, CAMT.053).
+- 🏷️ **Catégorisation automatique** par des règles simples (« CARREFOUR → Supermarché »),
+  proposées quand vous classez une nouvelle transaction.
+- 🎯 **Budgets mensuels** par catégorie, les sous-catégories s'additionnant dans leur parent,
+  et le **flux du mois** : d'où vient l'argent, où il part.
+- 📈 **Tendances** sur 3, 6 ou 12 mois, comparées à la période précédente ou à l'an dernier.
+- ✅ **Pointage** des transactions et 🔁 **opérations récurrentes** repérées toutes seules
+  (salaire, loyer, abonnements).
+- 🔔 **Alertes** par notification push ou email : grosse dépense, règle choisie, budget presque
+  atteint.
 - 📊 **Insights** : vos propres indicateurs du mois (courses, carburant, abonnements…).
-- 🌗 **Clair ou sombre, accessible** : le portail suit le thème du système ou en change d'un
-  clic, respecte ses réglages de contraste élevé et vise le niveau AA des WCAG 2.2.
-- 👨‍👩‍👧 **Pensé pour le foyer** : plusieurs utilisateurs, des comptes et des données partagés,
-  chacun sa langue et ses appareils ; un administrateur gère comptes, catégories, règles,
-  utilisateurs et configuration, copie la commande toute prête qui planifie la synchro, et
-  sauvegarde ou restaure les données (catégories, règles, budgets, transactions…) dans un ZIP.
-- 🤖 **Interrogez vos comptes avec votre agent IA** : un serveur MCP intégré, en lecture seule
-  et désactivable, répond à « combien en restaurants cette année ? » ou « où dépasse-t-on le
-  budget ? ». Claude (web, Desktop, mobile) se connecte avec la seule URL du serveur, après
-  votre accord dans le portail ; Claude Code, ChatGPT, Cursor, Copilot et Gemini avec un
-  jeton d'accès.
-- 🔒 **Tout reste chez vous** : Carbure tourne sur votre propre serveur (un NAS suffit). Pas de
-  compte à créer, pas d'agrégateur, pas de cloud : vos identifiants et vos données bancaires
-  restent dans votre base locale. Seules sorties réseau : votre banque (woob), une fois par
-  jour l'API publique de GitHub pour signaler une nouvelle version aux administrateurs (rien
-  n'est envoyé sur votre instance ; réglage `update_check` pour la désactiver) et, si vous
-  les activez, le relais Carbure Push (notifications des apps iPhone et Android) et votre
-  serveur SMTP.
+- 👨‍👩‍👧 **Pensé pour le foyer** : plusieurs utilisateurs sur les mêmes comptes, chacun sa
+  langue et ses appareils ; sauvegarde et restauration en un ZIP.
+- 🤖 **Votre agent IA interroge vos comptes** (« combien en restaurants cette année ? ») par
+  un serveur MCP intégré, en lecture seule : Claude, ChatGPT, Cursor, Copilot, Gemini…
+- 🌗 **Clair ou sombre, accessible** (WCAG 2.2 AA), en français, anglais, espagnol, italien,
+  allemand et portugais.
 
-> 🌍 **Banques couvertes** : Carbure s'appuie sur les modules [woob](https://woob.tech/), qui
-> couvrent surtout les banques françaises. Le portail existe en français, anglais, espagnol,
-> italien, allemand et portugais ; les montants sont en euros par défaut, ou dans la devise
-> de l'instance (réglage `currency`, affichage seulement).
+Carbure s'appuie sur les modules de woob, qui couvrent surtout les **banques françaises**.
 
-> 📱 **Applications mobiles** : les applications Carbure sont disponibles sur
-> l'[**App Store**](https://apps.apple.com/fr/app/carbure/id6824057363) (iPhone, iOS 26 minimum) et sur
-> [**Google Play**](https://play.google.com/store/apps/details?id=org.carbure.app) (Android 8.0 minimum) :
-> transactions, pointage, budgets, aperçus, tendances, synchronisation, connexion par Face ID
-> ou empreinte et notifications push ([fonctionnalités](https://carbure.org/applications-mobiles/)).
-> Gratuites, sans publicité ni abonnement, aucune donnée collectée ; disponibles en France pour
-> le moment. Elles se connectent à **votre** serveur Carbure. Le portail web s'installe aussi
-> comme une application sur ordinateur ou téléphone (Chrome/Edge « Installer »,
-> Safari « Ajouter au Dock » ou « Sur l'écran d'accueil »), en HTTPS.
+## Applications mobiles
+
+Les applications [**iPhone**](https://apps.apple.com/fr/app/carbure/id6824057363) (iOS 26) et
+[**Android**](https://play.google.com/store/apps/details?id=org.carbure.app) (Android 8.0) se
+connectent à **votre** serveur : transactions, pointage, budgets, tendances, synchronisation,
+Face ID ou empreinte et notifications push. Gratuites, sans publicité ni collecte de données,
+disponibles en France pour le moment ([détails](https://carbure.org/applications-mobiles/)).
 
 <p align="center">
   <img src="docs/assets/mobile/ios-transactions.png" alt="Transactions du mois dans l'app iPhone" width="220">
@@ -126,7 +97,28 @@
   <img src="docs/assets/mobile/ios-tendances.png" alt="Tendances sur 24 mois dans l'app iPhone" width="220">
 </p>
 
-## Comment se situe Carbure ?
+## Vos données restent chez vous
+
+Carbure tourne sur votre propre serveur (un NAS suffit) : pas de compte à créer, pas
+d'agrégateur, pas de cloud. Vos identifiants et vos données bancaires restent dans votre base.
+Carbure ne contacte que votre banque (woob), l'API publique de GitHub une fois par jour pour
+signaler une nouvelle version (désactivable), et, si vous les activez, le relais des
+notifications mobiles et votre serveur d'email.
+
+```mermaid
+flowchart LR
+    bank[(Banques)] -->|woob| sync[Synchronisation]
+    subgraph Carbure
+        sync --> rules[Règles de<br/>catégorisation] --> db[(MariaDB)]
+        api[API REST PHP] <--> db
+    end
+    portal[Portail web] <--> api
+    mobile[Apps iPhone<br/>et Android] <--> api
+    ai[Agent IA] <-->|MCP| api
+    sync -->|relais Carbure Push| push[Notifications<br/>mobiles]
+```
+
+## Comparaison
 
 | | **Carbure** | **Firefly III** | **Actual Budget** | **Kresus** |
 |---|---|---|---|---|
@@ -142,94 +134,42 @@
 23 critères (hébergement, données bancaires, budget, foyer et appareils, API), avec les points
 forts de chacun.
 
-## Comment ça marche
+## Installation
 
-```mermaid
-flowchart LR
-    bank[(Banques)] -->|woob| sync[Synchronisation]
-    subgraph Carbure
-        sync --> rules[Règles de<br/>catégorisation] --> db[(MariaDB)]
-        api[API REST PHP] <--> db
-    end
-    portal[Portail web] <--> api
-    mobile[Apps iPhone<br/>et Android] <--> api
-    ai[Agent IA] <-->|MCP| api
-    sync -->|relais Carbure Push| push[Notifications<br/>mobiles]
-```
-
-## Démarrage rapide
-
-Trois façons de lancer Carbure, selon ce que vous voulez faire :
-
-| | Pour | En bref |
+| | Pour | Comment |
 |---|---|---|
-| [**1. Démo**](#1-essayer-la-démo) | essayer Carbure avec un foyer d'exemple | `docker run --rm -p 8080:80 ltoinel/carbure:demo` |
-| [**2. Production**](#2-linstaller-pour-de-bon) | gérer le vrai budget de votre foyer | `docker compose pull && docker compose up -d` (image `ltoinel/carbure`), puis l'assistant d'installation |
-| [**3. Développement**](#3-le-lancer-en-local-pour-développer) | modifier le code | `./start.sh` |
+| **Démo en ligne** | voir Carbure sans rien installer | [demo.carbure.org](https://demo.carbure.org/) (`demo` / `carbure`) |
+| **Démo chez vous** | essayer avec un foyer d'exemple | `docker run --rm -p 8080:80 ltoinel/carbure:demo` |
+| **Docker** (recommandé) | gérer le vrai budget du foyer | voir ci-dessous |
+| **NAS Synology** | un NAS à la maison | [tutoriel pas à pas](https://carbure.org/synology/) |
+| **YunoHost** | un serveur YunoHost | [paquet `carbure_ynh`](https://carbure.org/installation/#avec-yunohost) |
+| **Serveur web** | PHP 8.2 et MariaDB/MySQL déjà en place | [installation sans Docker](https://carbure.org/installation/#sur-un-serveur-web-existant) |
 
-### 1. Essayer la démo
-
-Rien à installer : ouvrez la démo en ligne sur **[demo.carbure.org](https://demo.carbure.org/)**
-(données fictives). Ou lancez-la chez vous : l'image de
-démonstration lance Carbure avec sa base de données et un foyer d'exemple, effacé à chaque
-démarrage (jamais pour de vraies données) :
-
-```bash
-docker run --rm -p 8080:80 ltoinel/carbure:demo
-```
-
-Ouvrez ensuite `http://localhost:8080/portal/` : la page de connexion indique le compte de
-démonstration (le mot de passe de l'administrateur `admin` est affiché dans les journaux du
-conteneur).
-
-### 2. L'installer pour de bon
-
-Avec Docker, l'image de production [`ltoinel/carbure`](https://hub.docker.com/r/ltoinel/carbure)
-(nginx, PHP et woob inclus, sans données d'exemple, à ne pas confondre avec `:demo`) et
-MariaDB. Le dépôt n'apporte que `docker/docker-compose.yml` ; `docker compose pull`
-télécharge l'image publiée de la dernière release (sans lui, Compose construirait l'image à
-partir du code du dépôt) :
+Avec Docker, l'image [`ltoinel/carbure`](https://hub.docker.com/r/ltoinel/carbure) contient
+nginx, PHP et woob ; `docker/docker-compose.yml` y ajoute MariaDB :
 
 ```bash
 git clone https://github.com/ltoinel/Carbure.git && cd Carbure/docker
 docker compose pull && docker compose up -d
 ```
 
-Pour maîtriser les mises à jour, remplacez `latest` par une version
-(`image: ltoinel/carbure:1.9.1`, voir les [tags](https://carbure.org/installation/#recuperer-limage)).
+Ouvrez `http://localhost:8080/` : l'**assistant d'installation** crée la base et le compte
+administrateur en trois clics. Pour les applications mobiles, placez Carbure derrière un
+proxy inverse en HTTPS.
 
-Ouvrez `http://localhost:8080/` : **l'assistant d'installation** s'occupe de tout (base de
-données, compte administrateur, et en option des catégories, règles et insights de
-départ) en trois clics, sans aucune commande. Les mises à jour de la base de données sont,
-elles aussi, automatiques. Sur un NAS Synology, suivez le
-[tutoriel](https://carbure.org/synology/) ; pour y accéder depuis votre téléphone,
-placez-le derrière un proxy inverse en HTTPS ([installation](https://carbure.org/installation/)).
+👉 **Installation détaillée, mises à jour, configuration, API et sécurité :
+[la documentation](https://carbure.org/installation/).**
 
-> **YunoHost** : le paquet [`carbure_ynh`](https://github.com/ltoinel/carbure_ynh) installe
-> Carbure sur un serveur [YunoHost](https://yunohost.org), depuis son dépôt en attendant le
-> catalogue ([installation](https://carbure.org/installation/#avec-yunohost),
-> [retours](https://github.com/ltoinel/Carbure/issues/45)).
-
-### 3. Le lancer en local pour développer
-
-Avec Git et Docker, depuis un clone du dépôt :
+## Développer
 
 ```bash
 git clone https://github.com/ltoinel/Carbure.git && cd Carbure
 ./start.sh
 ```
 
-`./start.sh` démarre l'image de production et MariaDB avec le code du dépôt monté en direct
-(une modification est prise en compte à la requête suivante) et un foyer d'exemple : ouvrez
-`http://localhost:8000/portal/` et connectez-vous avec `admin` / `admin-password`. Options
-utiles : `--reset` (données d'exemple remises à zéro), `--fresh` (installation vierge,
-assistant d'installation), `--fake-woob` (banques simulées), `--build` (reconstruire
-l'image), `--stop`, `--clean` ; `./start.sh --help` les liste. Les tests (PHPUnit, tests
-unitaires du portail, tests de bout en bout Playwright) sont décrits dans la
-[documentation développeur](https://carbure.org/developpement/).
-
-👉 **Installation détaillée, configuration, référence de l'API, modèle de données et sécurité :
-[la documentation](https://carbure.org/).**
+`./start.sh` lance Carbure avec le code du dépôt monté en direct et un foyer d'exemple sur
+`http://localhost:8000/portal/` (`admin` / `admin-password`) ; `./start.sh --help` liste ses
+options. Tests et architecture : [documentation développeur](https://carbure.org/developpement/).
 
 ## Assistance
 
@@ -238,28 +178,18 @@ unitaires du portail, tests de bout en bout Playwright) sont décrits dans la
   <a href="https://www.youtube.com/@carbure-org"><img src="https://img.shields.io/badge/YouTube-Voir%20les%20vid%C3%A9os-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="Voir les vidéos de Carbure sur YouTube"></a>
 </p>
 
-- **Discord** : entraide, questions, idées et échanges avec la communauté, sur le serveur
-  de Carbure (invitation : <https://discord.gg/QsxYw4Rx9D>).
-- **Vidéos** : Carbure en action sur la [chaîne YouTube](https://www.youtube.com/@carbure-org).
-- **Un bug ?** [Ouvrez une issue](https://github.com/ltoinel/Carbure/issues) ; une faille de
-  sécurité se signale en privé (voir [SECURITY.md](SECURITY.md)).
-
-Toutes les façons d'obtenir de l'aide, et la FAQ : [Assistance](https://carbure.org/assistance/).
+Questions et entraide sur le [Discord](https://discord.gg/QsxYw4Rx9D), FAQ dans
+l'[assistance](https://carbure.org/assistance/). Un bug ?
+[Ouvrez une issue](https://github.com/ltoinel/Carbure/issues) ; une faille de sécurité se
+signale en privé ([SECURITY.md](SECURITY.md)).
 
 ## Contribuer
 
-Les contributions sont les bienvenues :
-
-- lisez [CONTRIBUTING.md](CONTRIBUTING.md) : démarche (issue, branche, pull request),
-  conventions et tests ; les règles du code sont détaillées dans [AGENTS.md](AGENTS.md) ;
-- choisissez une tâche parmi celles ouvertes dans [TODO.md](TODO.md) ;
-- mettez en place l'environnement de développement :
-  [Le lancer en local pour développer](#3-le-lancer-en-local-pour-développer) ;
-- si Carbure vous est utile, une ⭐ aide d'autres personnes à le découvrir.
+Les contributions sont les bienvenues : lisez [CONTRIBUTING.md](CONTRIBUTING.md) (démarche,
+conventions, tests) et [AGENTS.md](AGENTS.md) (règles du code), et choisissez une tâche dans
+[TODO.md](TODO.md). Si Carbure vous est utile, une ⭐ aide d'autres personnes à le découvrir.
 
 ## Licence
 
-[MIT](LICENSE) © Ludovic Toinel
-
-Les logiciels tiers embarqués (woob, curl_cffi, PHP, nginx, bibliothèques du portail…),
-leurs licences et les crédits sont listés dans [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+[MIT](LICENSE) © Ludovic Toinel. Logiciels tiers embarqués et leurs licences :
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
