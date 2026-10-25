@@ -243,6 +243,30 @@ body {
     font-weight: 600;
 }
 
+/* The public account, easy to read and to type */
+.login-demo-account {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+}
+
+.login-demo .login-demo-account {
+    margin: 6px 0 8px;
+}
+
+.login-demo-value {
+    display: inline-block;
+    padding: 1px 8px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--primary-color);
+    background: var(--surface);
+    border: 1px solid var(--primary-color);
+    border-radius: var(--border-radius-sm);
+    user-select: all;
+}
+
 .login-form {
     display: flex;
     flex-direction: column;
