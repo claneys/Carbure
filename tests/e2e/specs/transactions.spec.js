@@ -407,14 +407,26 @@ test('closes the detail modal with Escape', async ({ adminPage: page }) => {
     await expect(page.getByRole('dialog')).toHaveCount(0);
 });
 
-test('shows the recurring transactions of the month', async ({ adminPage: page }) => {
-    // Salary and rent: in each of the 3 months of the data set, summed up in their strip
-    const strip = page.getByRole('region', { name: tr('recurringSummary') });
-    await expect(strip.locator('.recurring-strip-title')).toHaveText(tr('recurringCount', { count: 2 }));
-    await expect(strip.locator('.recurring-strip-detail')).toHaveText(tr('recurringCalendarReceived', { count: 2 }));
-    await expect(strip.locator('.recurring-strip-total strong')).toHaveText(euros(2250));
-    await expect(strip.locator('.recurring-strip-total strong')).toHaveClass(/positive/);
-    const toggle = strip.locator('.toggle-recurring');
+test('shows the recurring transactions of the month in a bar folded by default (#465)', async ({ adminPage: page }) => {
+    // Salary and rent: in each of the 3 months of the data set, counted in their bar, inside the list
+    const bar = page.locator('.transactions-container').getByRole('region', { name: tr('recurringSummary') });
+    await expect(bar.locator('.recurring-bar-title')).toHaveText(tr('recurringCount', { count: 2 }));
+    const unfold = bar.getByRole('button', { name: tr('recurringDetails') });
+    await expect(unfold).toHaveAttribute('aria-expanded', 'false');
+    await expect(unfold).toHaveAttribute('aria-controls', 'recurring-bar-details');
+    // Folded: only their number, the filter and the calendar hidden
+    const details = page.locator('#recurring-bar-details');
+    await expect(details).toBeHidden();
+    await expect(bar.getByRole('switch', { name: tr('recurringOnly') })).toHaveCount(0);
+
+    await unfold.click();
+    await expect(unfold).toHaveAttribute('aria-expanded', 'true');
+    await expect(details).toBeVisible();
+    await expect(bar.locator('.recurring-bar-detail')).toHaveText(tr('recurringCalendarReceived', { count: 2 }));
+    await expect(bar.locator('.recurring-bar-total-label')).toHaveText(tr('recurringTotal'));
+    await expect(bar.locator('.recurring-bar-total strong')).toHaveText(euros(2250));
+    await expect(bar.locator('.recurring-bar-total strong')).toHaveClass(/positive/);
+    const toggle = bar.locator('.toggle-recurring');
     await expect(toggle).toContainText(tr('recurringOnly'));
     await expect(row(page, 'PRLV LOYER AGENCE').locator('.recurring-badge')).toBeVisible();
     await expect(row(page, 'CB SUPERMARCHE CASINO').locator('.recurring-badge')).toHaveCount(0);
@@ -426,10 +438,29 @@ test('shows the recurring transactions of the month', async ({ adminPage: page }
 
     await toggle.click();
     await expect(page.locator('.transaction-item')).toHaveCount(6);
+
+    // Unfolded: remembered in this browser
+    await page.reload();
+    await expect(unfold).toHaveAttribute('aria-expanded', 'true');
+    await expect(details).toBeVisible();
+
+    // Folded with the keyboard while filtered: the whole list is back, folded after a reload
+    await toggle.click();
+    await expect(page.locator('.transaction-item')).toHaveCount(2);
+    await unfold.focus();
+    await page.keyboard.press('Enter');
+    await expect(unfold).toHaveAttribute('aria-expanded', 'false');
+    await expect(details).toBeHidden();
+    await expect(page.locator('.transaction-item')).toHaveCount(6);
+    await page.reload();
+    await expect(unfold).toHaveAttribute('aria-expanded', 'false');
+    await expect(details).toBeHidden();
 });
 
 test('shows the recurring transactions of the month in a calendar', async ({ adminPage: page }) => {
-    await page.getByRole('region', { name: tr('recurringSummary') }).getByRole('button', { name: tr('recurringCalendarButton') }).click();
+    const bar = page.getByRole('region', { name: tr('recurringSummary') });
+    await bar.getByRole('button', { name: tr('recurringDetails') }).click();
+    await bar.getByRole('button', { name: tr('recurringCalendarButton') }).click();
     const modal = page.locator('.modal-recurring-calendar');
     await expect(modal).toBeVisible();
 

@@ -404,6 +404,21 @@ test('axe: the tags, their form and a summary', async ({ adminPage: page, api })
     expect(problems).toEqual([]);
 });
 
+test('axe: the bar of the recurring transactions, folded and unfolded, at 320 CSS px too (#465)', async ({ adminPage: page }) => {
+    const problems = [];
+    const bar = page.getByRole('region', { name: tr('recurringSummary') });
+    const unfold = bar.getByRole('button', { name: tr('recurringDetails') });
+    await expect(unfold).toHaveAttribute('aria-expanded', 'false');
+    problems.push(...await axeViolations(page, `${tr('recurringSummary')} (folded)`));
+
+    await unfold.click();
+    await expect(page.locator('#recurring-bar-details')).toBeVisible();
+    problems.push(...await axeViolations(page, `${tr('recurringSummary')} (unfolded)`));
+    await page.setViewportSize({ width: 320, height: 720 });
+    problems.push(...await reflowProblems(page, `${tr('recurringSummary')} (unfolded, 320 px)`));
+    expect(problems).toEqual([]);
+});
+
 test('axe: the note of a budget, on its card and in the budget editor (#468)', async ({ adminPage: page, api }) => {
     const { month, year } = currentMonth();
     await api.post('/api/budget', { data: { category: 4, amount: 1000, month, year, note: 'Loyer + charges, régularisation en juin' } });

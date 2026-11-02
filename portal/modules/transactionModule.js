@@ -15,6 +15,22 @@ import { EMPTY_FILTERS, searchParams } from './searchModule.js';
 const LABEL_PREFIX = /^(FACTURE CARTE DU \d{4,8}|PAIEMENT (PAR )?CB|CB|CARTE|PRLV( SEPA)?|VIREMENT( SEPA)?|VIR( SEPA)?( INST)?|RETRAIT( DAB)?|CHQ|CHEQUE)\s+/;
 const LABEL_NOISE = /^(CARTE|ECH|MDT|REF|\S*\d\S*\d\S*\d\S*|\d{1,2}\/\d{1,2}\S*)$/;
 
+/** Key of the unfolded state of the bar of the recurring transactions, in this browser */
+export const RECURRING_EXPANDED_KEY = 'recurringExpanded';
+
+/**
+ * Whether the bar of the recurring transactions was left unfolded in this browser
+ * (folded by default)
+ * @returns {boolean}
+ */
+export function readRecurringExpanded() {
+    try {
+        return localStorage.getItem(RECURRING_EXPANDED_KEY) === '1';
+    } catch (error) {
+        return false;
+    }
+}
+
 /**
  * Query of the label search that finds the transactions similar to a label: the
  * label without the kind of operation (CB, PRLV SEPA, VIR...) nor what follows the
@@ -134,6 +150,8 @@ export function createTransactionModule(getApiService) {
                 recurring: [],
                 recurringOnly: false,
                 recurringRequest: 0,
+                // Bar of the recurring series unfolded: their detail, filter and calendar
+                recurringExpanded: readRecurringExpanded(),
                 // Calendar of the recurring series of the month (modal)
                 showRecurringCalendar: false,
 
@@ -456,6 +474,23 @@ export function createTransactionModule(getApiService) {
                     getApiService().fetchCategories().then(c => { this.ruleCategories = c; }).catch(() => {});
                 }
                 this.$nextTick(() => document.querySelector('.modal-form .category-picker-button')?.focus());
+            },
+
+            /**
+             * Folds or unfolds the bar of the recurring transactions, remembered in this
+             * browser. Folded, its filter no longer applies: the list never stays limited
+             * by a switch out of sight.
+             */
+            toggleRecurringBar() {
+                this.recurringExpanded = !this.recurringExpanded;
+                if (!this.recurringExpanded) {
+                    this.recurringOnly = false;
+                }
+                try {
+                    localStorage.setItem(RECURRING_EXPANDED_KEY, this.recurringExpanded ? '1' : '0');
+                } catch (error) {
+                    // Storage refused (private browsing): remembered until the page is reloaded
+                }
             },
 
             /** Opens the calendar of the recurring transactions of the month */

@@ -166,6 +166,35 @@ test('recurring transactions: ids, filter and expected series', () => {
     assert.equal(transactions.computed.recurringTotal.call({ recurringCalendar }), 2236.51);
 });
 
+test('recurring transactions: their bar folded by default, unfolded remembered, folded without its filter (#465)', () => {
+    const stored = {};
+    globalThis.localStorage = { getItem: key => stored[key] ?? null, setItem: (key, value) => { stored[key] = value; } };
+    try {
+        const context = { ...transactions.data(), ...transactions.methods };
+        assert.equal(context.recurringExpanded, false);
+
+        context.toggleRecurringBar();
+        assert.equal(context.recurringExpanded, true);
+        assert.equal(stored.recurringExpanded, '1');
+        assert.equal(createTransactionModule(() => null).data().recurringExpanded, true);
+
+        // Folded: the list is no longer limited by a switch out of sight
+        context.recurringOnly = true;
+        context.toggleRecurringBar();
+        assert.equal(context.recurringExpanded, false);
+        assert.equal(context.recurringOnly, false);
+        assert.equal(stored.recurringExpanded, '0');
+
+        // Storage refused (private browsing): folded, and the bar still folds and unfolds
+        globalThis.localStorage = { getItem: () => { throw new Error('denied'); }, setItem: () => { throw new Error('denied'); } };
+        assert.equal(createTransactionModule(() => null).data().recurringExpanded, false);
+        context.toggleRecurringBar();
+        assert.equal(context.recurringExpanded, true);
+    } finally {
+        delete globalThis.localStorage;
+    }
+});
+
 test('similarLabelQuery: the merchant, without the kind of operation nor the references', () => {
     // Labels of the data set (tests/e2e/server/seed.php) and as woob gives them
     assert.equal(similarLabelQuery('CB BOULANGERIE PAUL'), 'BOULANGERIE PAUL');

@@ -231,10 +231,11 @@ Carbure **automatically detects** the transactions that come back every month: s
 subscriptions, bills, reimbursements…
 
 - **"Monthly" badge** on these transactions in the list of the month.
-- A **strip** under the search bar sums them up: their number, how many were received and
-  expected, and the **month total** (net: incomes minus expenses, the ones still expected
-  counted at their usual amount).
-- In this strip, a **toggle** shows only those, and lists the ones **expected this month** that have
+- A **bar** at the top of the list, like the selection one, sums them up. Folded by
+  default, it shows only their number; its chevron unfolds it (choice remembered by the
+  browser): how many were received and expected, and the **recurring transactions total**
+  (net: incomes minus expenses, the ones still expected counted at their usual amount).
+- In this unfolded bar, a **toggle** shows only those, and lists the ones **expected this month** that have
   not arrived yet, with their usual day and amount ("≈" if it varies); for a
   past month, the ones that were **missed** ("Missing this month"). Handy to check that
   the salary came in or that a direct debit was not forgotten.

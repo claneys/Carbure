@@ -137,10 +137,13 @@ taskbar or the home screen.
 - **Filter**: next to the number of transactions, a switch limits the list to
   unchecked transactions (with their number).
 - **Recurring transactions**: those found every month (salary, rent,
-  subscriptions, bills, `GET /transaction/recurring`) carry the "Monthly" badge. A
-  second switch shows only them and lists those that have not arrived yet
-  ("Expected this month", with their usual day and amount, "≈" if it varies;
-  "Missing this month" for a past month). It does not appear during a search.
+  subscriptions, bills, `GET /transaction/recurring`) carry the "Monthly" badge. Their
+  bar, at the top of the list like the selection one, is folded by default (only their
+  number); its chevron unfolds it, a choice remembered by the browser: received and
+  expected, "Recurring transactions total", and a second switch that shows only them and
+  lists those that have not arrived yet ("Expected this month", with their usual day and
+  amount, "≈" if it varies; "Missing this month" for a past month). Folding it removes
+  that filter. The bar does not appear during a search.
 - **Calendar of the recurring transactions**: the **Calendar** button opens the month shown
   as a calendar (weeks from Monday to Sunday, today highlighted). Each recurring
   transaction is on the day it arrived ("Received", a click opens its detail) or on its

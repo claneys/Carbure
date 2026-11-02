@@ -618,29 +618,6 @@
                             <button type="button" class="search-filters-clear" @click="clearSearch">{{ t('clearSearch') }}</button>
                         </div>
 
-                        <!-- Recurring series of the month: their number, their total, the filter and the calendar -->
-                        <section v-if="!isSearching && recurring.length > 0" class="recurring-strip" :aria-label="t('recurringSummary')">
-                            <span class="recurring-strip-icon" aria-hidden="true"><span class="material-icons">autorenew</span></span>
-                            <div class="recurring-strip-info">
-                                <span class="recurring-strip-title">{{ t('recurringCount', { count: recurring.length }) }}</span>
-                                <span class="recurring-strip-detail">
-                                    {{ t('recurringCalendarReceived', { count: recurringCalendar.received.count }) }}<template v-if="recurringCalendar.expected.count > 0"> · {{ t(isCurrentMonth ? 'recurringCalendarExpected' : 'recurringCalendarMissing', { count: recurringCalendar.expected.count }) }}</template>
-                                </span>
-                            </div>
-                            <div class="recurring-strip-total">
-                                <span class="recurring-strip-total-label">{{ t('recurringTotal') }}</span>
-                                <strong :class="recurringTotal >= 0 ? 'positive' : 'negative'">{{ formatAmount(recurringTotal) }} {{ currencySymbol }}</strong>
-                            </div>
-                            <label class="toggle-switch toggle-recurring" :class="{ on: recurringOnly }">
-                                <input type="checkbox" role="switch" v-model="recurringOnly" />
-                                <span class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></span>
-                                <span class="toggle-label">{{ t('recurringOnly') }}</span>
-                            </label>
-                            <button type="button" class="btn-secondary btn-recurring-calendar" @click="openRecurringCalendar" :title="t('recurringCalendarHelp')">
-                                <span class="material-icons" aria-hidden="true">calendar_month</span><span class="btn-label">{{ t('recurringCalendarButton') }}</span>
-                            </button>
-                        </section>
-
                         <div class="transactions-container">
                             <div class="transactions-header">
                                 <h2>{{ isSearching ? t('searchResultsTitle') : t('transactionsTitle') }}</h2>
@@ -666,6 +643,35 @@
                                     </button>
                                 </div>
                             </div>
+                            <!-- Recurring series of the month, a bar like the selection one (#465): folded, their
+                                 number and its chevron; unfolded, under them, what was received, their total, the
+                                 filter and the calendar -->
+                            <section v-if="!isSearching && recurring.length > 0" class="recurring-bar" :class="{ expanded: recurringExpanded }" :aria-label="t('recurringSummary')">
+                                <span class="material-icons recurring-bar-icon" aria-hidden="true">autorenew</span>
+                                <span class="recurring-bar-title">{{ t('recurringCount', { count: recurring.length }) }}</span>
+                                <button type="button" class="recurring-bar-toggle" @click="toggleRecurringBar"
+                                        :aria-expanded="recurringExpanded ? 'true' : 'false'" aria-controls="recurring-bar-details"
+                                        :title="t('recurringDetails')" :aria-label="t('recurringDetails')">
+                                    <span class="material-icons" aria-hidden="true">{{ recurringExpanded ? 'expand_less' : 'expand_more' }}</span>
+                                </button>
+                                <div v-show="recurringExpanded" id="recurring-bar-details" class="recurring-bar-details">
+                                    <span class="recurring-bar-detail">
+                                        {{ t('recurringCalendarReceived', { count: recurringCalendar.received.count }) }}<template v-if="recurringCalendar.expected.count > 0"> · {{ t(isCurrentMonth ? 'recurringCalendarExpected' : 'recurringCalendarMissing', { count: recurringCalendar.expected.count }) }}</template>
+                                    </span>
+                                    <span class="recurring-bar-total">
+                                        <span class="recurring-bar-total-label">{{ t('recurringTotal') }}</span>
+                                        <strong :class="recurringTotal >= 0 ? 'positive' : 'negative'">{{ formatAmount(recurringTotal) }} {{ currencySymbol }}</strong>
+                                    </span>
+                                    <label class="toggle-switch toggle-recurring" :class="{ on: recurringOnly }">
+                                        <input type="checkbox" role="switch" v-model="recurringOnly" />
+                                        <span class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></span>
+                                        <span class="toggle-label">{{ t('recurringOnly') }}</span>
+                                    </label>
+                                    <button type="button" class="btn-secondary btn-recurring-calendar" @click="openRecurringCalendar" :title="t('recurringCalendarHelp')">
+                                        <span class="material-icons" aria-hidden="true">calendar_month</span><span class="btn-label">{{ t('recurringCalendarButton') }}</span>
+                                    </button>
+                                </div>
+                            </section>
                             <!-- Selection of transactions: one tag added to all of them, or all of them deleted -->
                             <div v-if="selectingTransactions" class="tag-selection-bar" role="region" :aria-label="t('tagSelect')">
                                 <span class="tag-selection-count" aria-live="polite">{{ t('tagSelected', { count: selectedTransactionIds.length }) }}</span>

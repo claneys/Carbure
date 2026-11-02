@@ -139,10 +139,14 @@ tâches ou l'écran d'accueil.
 - **Filtre** : à côté du nombre de transactions, un interrupteur limite la liste aux
   transactions non vérifiées (avec leur nombre).
 - **Transactions récurrentes** : celles retrouvées chaque mois (salaire, loyer,
-  abonnements, factures, `GET /transaction/recurring`) portent le badge « Mensuelle ». Un
-  second interrupteur n'affiche qu'elles et liste celles qui ne sont pas encore arrivées
-  (« Attendues ce mois-ci », avec leur jour habituel et leur montant, « ≈ » s'il varie ;
-  « Absentes ce mois-ci » pour un mois passé). Il n'apparaît pas pendant une recherche.
+  abonnements, factures, `GET /transaction/recurring`) portent le badge « Mensuelle ». Leur
+  barre, en haut de la liste comme celle de la sélection, est repliée par défaut (leur
+  nombre seul) ; son chevron la déplie, choix retenu par le navigateur : reçues et
+  attendues, « Total des transactions récurrentes », et un second interrupteur qui
+  n'affiche qu'elles et liste celles qui ne sont pas encore arrivées (« Attendues ce
+  mois-ci », avec leur jour habituel et leur montant, « ≈ » s'il varie ; « Absentes ce
+  mois-ci » pour un mois passé). La replier retire ce filtre. La barre n'apparaît pas
+  pendant une recherche.
 - **Calendrier des récurrentes** : le bouton **Calendrier** ouvre le mois affiché en
   calendrier (semaines du lundi au dimanche, aujourd'hui en couleur). Chaque transaction
   récurrente y est placée au jour de son arrivée (« Reçue », un clic ouvre son détail) ou
