@@ -379,14 +379,7 @@ final class Setup {
             return true;
         }
         // Local only if every address of the request (peer and proxy headers) is private
-        foreach (array_filter(array_map('trim', explode(',', $this->clientAddress)), fn(string $address): bool => $address !== '') ?: [''] as $address) {
-            $local = filter_var($address, FILTER_VALIDATE_IP) !== false
-                && filter_var($address, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false;
-            if (!$local) {
-                return true;
-            }
-        }
-        return false;
+        return !Network::isLocal($this->clientAddress);
     }
 
     /**

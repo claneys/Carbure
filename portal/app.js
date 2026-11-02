@@ -37,6 +37,7 @@ import { createConfirmModule } from './modules/confirmModule.js';
 import { createNotificationsModule } from './modules/notificationsModule.js';
 import { createMfaModule } from './modules/mfaModule.js';
 import { createBackupModule } from './modules/backupModule.js';
+import { createPurgeModule } from './modules/purgeModule.js';
 import { createChangesModule } from './modules/changesModule.js';
 
 /**
@@ -52,7 +53,7 @@ const API_BASE_URL = new URL('../api', new URL('.', window.location.href)).href;
 const DEMO_ACCOUNT = { username: 'demo', password: 'carbure' };
 
 /** Tabs reserved to administrators */
-const ADMIN_TABS = ['rules', 'categories', 'accounts', 'users', 'logs', 'config', 'sync', 'push', 'backup', 'api'];
+const ADMIN_TABS = ['rules', 'categories', 'accounts', 'users', 'logs', 'config', 'sync', 'push', 'backup', 'purge', 'api'];
 
 /**
  * Tabs grouped under "Administration" in the navigation of the administrators (the
@@ -67,6 +68,7 @@ const ADMINISTRATION_TABS = [
     { key: 'logs', icon: 'receipt_long', label: 'tabLogs' },
     { key: 'config', icon: 'tune', label: 'tabSettings' },
     { key: 'backup', icon: 'backup', label: 'tabBackup' },
+    { key: 'purge', icon: 'delete_sweep', label: 'tabPurge' },
     // Swagger UI of the API (/swagger/), framed by the portal
     { key: 'api', icon: 'api', label: 'tabApi' }
 ];
@@ -121,6 +123,7 @@ const app = createApp({
         createNotificationsModule(() => apiService),
         createMfaModule(() => apiService),
         createBackupModule(() => apiService),
+        createPurgeModule(() => apiService),
         createChangesModule(() => apiService)
     ],
 
@@ -550,6 +553,9 @@ const app = createApp({
                     break;
                 case 'backup':
                     this.loadBackupInfo();
+                    break;
+                case 'purge':
+                    this.loadPurgeInfo();
                     break;
                 case 'agents':
                     this.loadAgents();

@@ -13,7 +13,7 @@ test.beforeEach(async ({ page }) => {
 
 /** Tabs of the main navigation (administrators), then those of the Administration menu */
 const MAIN_TABS = ['tabTransactions', 'tabBudget', 'tabInsights', 'tabTrends', 'tabTags', 'tabRules', 'tabAccounts'];
-const ADMIN_TABS = ['tabUsers', 'tabCategories', 'tabSync', 'tabPush', 'tabAgents', 'tabLogs', 'tabSettings', 'tabBackup'];
+const ADMIN_TABS = ['tabUsers', 'tabCategories', 'tabSync', 'tabPush', 'tabAgents', 'tabLogs', 'tabSettings', 'tabBackup', 'tabPurge'];
 /** Tabs of a user who is not an administrator */
 const USER_TABS = ['tabTransactions', 'tabBudget', 'tabInsights', 'tabTrends', 'tabTags'];
 
@@ -274,6 +274,29 @@ test('axe: the import of a backup, its files, its confirmation, at 320 CSS px to
     await expect(dialog).toBeVisible();
     problems.push(...await axeViolations(page, tr('backupImportConfirmTitle')));
     await page.keyboard.press('Escape');
+
+    expect(problems).toEqual([]);
+});
+
+test('axe: the purge, a dataset ticked with its dependents, its confirmation, refused from Internet', async ({ adminPage: page }) => {
+    const problems = [];
+    await showTab(page, 'tabPurge');
+    await page.locator('input[data-dataset="categories"]').check();
+    problems.push(...await axeViolations(page, tr('purgeTitle')));
+    await page.setViewportSize({ width: 320, height: 256 });
+    problems.push(...await reflowProblems(page, tr('purgeTitle')));
+    await page.setViewportSize({ width: 1280, height: 720 });
+
+    await page.locator('.purge-button').click();
+    await expect(page.getByRole('dialog', { name: tr('purgeConfirmTitle') })).toBeVisible();
+    problems.push(...await axeViolations(page, tr('purgeConfirmTitle')));
+    await page.keyboard.press('Escape');
+
+    await page.setExtraHTTPHeaders({ 'X-Forwarded-For': '203.0.113.7' });
+    await showTab(page, 'tabBackup');
+    await showTab(page, 'tabPurge');
+    await expect(page.locator('.purge-not-local')).toBeVisible();
+    problems.push(...await axeViolations(page, tr('purgeNotLocal')));
 
     expect(problems).toEqual([]);
 });

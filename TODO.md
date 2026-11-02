@@ -233,6 +233,12 @@ keeps track of what was done).
       then no longer cover the whole import) or stream the rows. The bank accounts (labels,
       owners) and connections are not in a backup: their credentials live in woob.
 
+- [ ] Purge (Administration → Purge, #453): "local network only" trusts the addresses of
+      the request (peer, `X-Forwarded-For`, `X-Real-IP`, `Forwarded`). A reverse proxy
+      that forwards none of them makes a request from Internet look local: document that
+      the NAS proxy must send `X-Forwarded-For` (passed to PHP by the nginx of the image), or add a
+      setting that turns the purge off entirely.
+
 - [ ] **Production** (two-factor authentication, #166): the migration `2026-10-24_user_mfa`
       (tables `user_mfa`, `mfa_recovery_code`, `mfa_trusted_browser`) is applied at
       container start; until it is, the second factor is never asked. Nothing changes until

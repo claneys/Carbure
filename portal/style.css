@@ -8259,6 +8259,20 @@ button.is-busy:not(.btn-confirm-danger):hover {
     font-size: 20px;
 }
 
+/* Purge: a dataset ticked with the one that refers to it, the purge refused from Internet */
+.purge-forced {
+    display: block;
+    font-size: 12px;
+    font-weight: normal;
+}
+
+.purge-not-local {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 16px;
+}
+
 /* First bank connection: the synchronization depends on woob */
 .woob-warning {
     display: flex;

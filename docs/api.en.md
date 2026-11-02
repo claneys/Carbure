@@ -103,7 +103,7 @@ is enough (see below).
 | `settings` | `PUT /system/config` |
 | `tags` | `POST`/`PUT`/`DELETE /tag` |
 
-`POST /backup/import` bumps every kind. The insights and the trends are computed from the
+`POST /backup/import` bumps every kind; `POST /purge` every kind but `accounts` and `settings`. The insights and the trends are computed from the
 transactions and the budgets: a client reloads them when one of these kinds moves.
 
 - **Version**, not only a date: no tie between two writes in the same second, no
@@ -1210,6 +1210,28 @@ The insight alerts of an unknown user, or of an insight missing or hidden, are n
 imported.
 The portal rejects a file whose format version is newer than its own. Response: `{"imported": {"rules": 1}}`. Body limited to 32 MB
 by nginx (2 MB for the other routes).
+
+## Purge { #purge }
+
+Empties datasets of the backup (same names) to start again from scratch. Accepted **from
+the local network only**: every address of the request (peer, `X-Forwarded-For`,
+`X-Real-IP`, `Forwarded`) must be private or reserved.
+
+### `GET /purge` — administrator { #get-purge-administrateur }
+
+`{"local": true, "datasets": [{"name":"categories","count":11,"dependents":["rules","budgets","transactions","transaction_tags"]}, …]}`:
+`local` tells whether the purge is accepted from this address, `count` the number of rows
+deleted (without category 0 for `categories`), `dependents` the datasets purged with
+it (they refer to it).
+
+### `POST /purge` — administrator { #post-purge-administrateur }
+
+Body: `{"datasets": ["transactions", "transaction_tags"]}`. Deletes every row of
+each dataset in one transaction, the database constraints applied (budget alerts
+of the categories, alert category of the users…). Category 0 is kept.
+`403` (`purge_not_local`) from Internet; `400` without a dataset, for an unknown name, or
+(`purge_dependents`) if a dataset that depends on a chosen one is missing: nothing is
+deleted. Response: `{"purged": {"transactions": 120, "transaction_tags": 4}}`.
 
 ## System { #systeme }
 

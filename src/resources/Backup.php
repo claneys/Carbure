@@ -136,7 +136,7 @@ final class Backup {
      * @param list<string> $names The datasets
      * @return list<string> The datasets available, in the same order
      */
-    private static function available(array $names): array
+    public static function available(array $names): array
     {
         return array_values(array_filter($names, fn(string $name): bool => $name !== 'insight_alerts' || InsightAlert::ready()));
     }

@@ -585,7 +585,7 @@ Détails : [Portail web](portail.md#accessibilite).
 ## Administration
 
 Les onglets **Règles** et **Comptes**, et le menu **Administration**
-(**Utilisateurs**, **Catégories**, **Logs**, **Paramètres**, **Synchro**, **Push mobile**, **Agent IA**, **Sauvegarde**, **API**) sont réservés aux administrateurs ; les autres
+(**Utilisateurs**, **Catégories**, **Logs**, **Paramètres**, **Synchro**, **Push mobile**, **Agent IA**, **Sauvegarde**, **Purge**, **API**) sont réservés aux administrateurs ; les autres
 utilisateurs ouvrent **Agent IA** depuis leur menu.
 
 - **Utilisateurs** : création, modification (dont le profil), suppression, dernière
@@ -607,6 +607,9 @@ utilisateurs ouvrent **Agent IA** depuis leur menu.
   ZIP (en choisissant ses fichiers) ou d'un seul fichier, qui **supprime et remplace** les
   données de chaque type importé, après confirmation, tout ou rien. Ni utilisateurs, ni mots
   de passe, ni jetons, ni connexions bancaires dans une sauvegarde.
+- **Purge** : pour repartir de zéro, suppression de toutes les lignes des données choisies
+  (celles qui en dépendent avec elles), après confirmation, depuis le réseau local
+  uniquement ; comptes bancaires, utilisateurs et réglages conservés.
 - **API** : la documentation de l'API (Swagger UI) dans le portail ; « Try it out » appelle
   l'API avec la session de l'administrateur.
 - **Mise à jour de la base** : quand une nouvelle version modifie la base, un bandeau le

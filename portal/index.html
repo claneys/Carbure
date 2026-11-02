@@ -2197,6 +2197,47 @@
                     </section>
                 </div>
 
+                <!-- Purge Tab (administrators): deletes the chosen datasets, from the local network only -->
+                <div v-else-if="activeTab === 'purge'" key="purge" class="tab-panel">
+                    <section class="trends-card config-card backup-card" aria-labelledby="purge-title">
+                        <div class="panel-header">
+                            <div>
+                                <h2 id="purge-title">{{ t('purgeTitle') }}</h2>
+                                <p class="rules-help">{{ t('purgeHelp') }}</p>
+                            </div>
+                        </div>
+                        <p class="backup-warning">
+                            <span class="material-icons" aria-hidden="true">warning</span>{{ t('purgeWarning') }}
+                        </p>
+                        <p v-if="!purgeLocal" class="sync-step-error purge-not-local" role="alert">
+                            <span class="material-icons" aria-hidden="true">lock</span>{{ t('purgeNotLocal') }}
+                        </p>
+                        <div v-if="loadingPurge && !purgeDatasets.length" class="loading">
+                            <div class="material-icons spin" aria-hidden="true">refresh</div>
+                            <p>{{ t('loadingMessage') }}</p>
+                        </div>
+                        <fieldset v-else class="backup-datasets">
+                            <legend class="visually-hidden">{{ t('purgeDatasets') }}</legend>
+                            <label v-for="dataset in purgeDatasets" :key="dataset.name" class="backup-dataset" :class="{ selected: purgeSelected.has(dataset.name) }">
+                                <input type="checkbox" :checked="purgeSelected.has(dataset.name)" :disabled="!purgeLocal || purgeForced.has(dataset.name)"
+                                       :data-dataset="dataset.name" @change="togglePurgeDataset(dataset.name, $event.target.checked)" />
+                                <span class="material-icons backup-dataset-icon" aria-hidden="true">{{ backupDatasetIcon(dataset.name) }}</span>
+                                <span class="backup-dataset-name">{{ backupDatasetLabel(dataset.name) }}<small v-if="purgeForced.has(dataset.name)" class="purge-forced">{{ t('purgeWithParent') }}</small></span>
+                                <span class="backup-dataset-count">{{ t('backupRows', { count: dataset.count }) }}</span>
+                            </label>
+                        </fieldset>
+                        <div v-if="purgeError" class="sync-step-error" role="alert">{{ purgeError }}</div>
+                        <div class="backup-actions">
+                            <button type="button" class="btn-secondary purge-backup-first" @click="setActiveTab('backup')">
+                                <span class="material-icons" aria-hidden="true">backup</span>{{ t('purgeBackupFirst') }}
+                            </button>
+                            <button type="button" class="btn-danger purge-button" @click="confirmPurge" :disabled="!purgeLocal || !purgeSelected.size">
+                                <span class="material-icons" aria-hidden="true">delete_forever</span>{{ t('purgeButton') }}
+                            </button>
+                        </div>
+                    </section>
+                </div>
+
                 <div v-else-if="activeTab === 'agents'" key="agents" class="tab-panel">
                     <div class="trends-view">
                         <section class="trends-card">

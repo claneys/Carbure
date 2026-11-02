@@ -53,7 +53,7 @@ Deux profils existent :
 | Profil | Onglets |
 |---|---|
 | **Utilisateur** | Transactions, Budget, Insights, Tendances, Tags ; **Agent IA** et **Mon profil** dans le menu utilisateur |
-| **Administrateur** | En plus : Règles, Comptes, et le menu **Administration** (Utilisateurs, Catégories, Synchro, Push mobile, Agent IA, Logs, Paramètres, Sauvegarde, API) ; ajout et modification des insights ; activation du serveur MCP ; mise à jour de la base de données |
+| **Administrateur** | En plus : Règles, Comptes, et le menu **Administration** (Utilisateurs, Catégories, Synchro, Push mobile, Agent IA, Logs, Paramètres, Sauvegarde, Purge, API) ; ajout et modification des insights ; activation du serveur MCP ; mise à jour de la base de données |
 
 Les pages d'administration (Règles, Catégories, Comptes, Utilisateurs) et les onglets
 Insights et Agent IA suivent la même présentation : un en-tête avec le titre et l'aide, et
@@ -593,6 +593,23 @@ cet onglet ; voir [Configuration](configuration.md#push).
   conservés ; le propriétaire d'une transaction est retrouvé par son identifiant de
   connexion, à défaut c'est l'administrateur qui importe. Les alertes des insights d'un
   utilisateur inconnu ne sont pas importées.
+
+## Purge (menu Administration)
+
+Pour repartir de zéro, l'onglet **Purge** supprime toutes les lignes des données cochées
+(mêmes données que la sauvegarde), chacune avec son nombre de lignes. Les données qui
+dépendent d'une donnée cochée sont cochées avec elle et ne peuvent pas être décochées :
+purger les catégories purge aussi les règles, les budgets et les transactions (et leurs
+tags) ; purger les transactions ou les tags purge les tags des transactions ; purger les
+insights purge leurs alertes. La catégorie par défaut est conservée, ainsi que les comptes
+bancaires, les utilisateurs et les réglages : une synchronisation récupère à nouveau les
+transactions.
+
+**Purger** demande une confirmation qui rappelle le nombre de lignes supprimées : la purge
+est **définitive**, faites d'abord une sauvegarde (bouton **Sauvegarder d'abord**). La
+purge n'est acceptée que **depuis le réseau local** : derrière un reverse proxy, une
+adresse publique dans `X-Forwarded-For`, `X-Real-IP` ou `Forwarded` la refuse, et l'onglet
+le signale.
 
 ## API (menu Administration)
 

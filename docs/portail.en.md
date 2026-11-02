@@ -53,7 +53,7 @@ There are two profiles:
 | Profile | Tabs |
 |---|---|
 | **User** | Transactions, Budget, Insights, Trends, Tags; **AI agent** and **My profile** in the user menu |
-| **Administrator** | In addition: Rules, Accounts, and the **Administration** menu (Users, Categories, Sync, Mobile push, AI agent, Logs, Settings, Backup, API); adding and editing insights; enabling the MCP server; database update |
+| **Administrator** | In addition: Rules, Accounts, and the **Administration** menu (Users, Categories, Sync, Mobile push, AI agent, Logs, Settings, Backup, Purge, API); adding and editing insights; enabling the MCP server; database update |
 
 The administration pages (Rules, Categories, Accounts, Users) and the
 Insights and AI agent tabs share the same layout: a header with the title and the help, and
@@ -585,6 +585,23 @@ this tab; see [Configuration](configuration.md#push).
   kept; the owner of a transaction is found by their
   login, otherwise it is the administrator doing the import. The insight alerts of an
   unknown user are not imported.
+
+## Purge (Administration menu) { #purge-menu-administration }
+
+To start again from scratch, the **Purge** tab deletes every row of the ticked data
+(the same data as the backup), each with its number of rows. The data that
+depends on a ticked one is ticked with it and cannot be unticked:
+purging the categories also purges the rules, the budgets and the transactions (and their
+tags); purging the transactions or the tags purges the tags of the transactions; purging the
+insights purges their alerts. The default category is kept, and so are the bank
+accounts, the users and the settings: a synchronization fetches the transactions
+again.
+
+**Purge** asks for a confirmation that recalls the number of rows deleted: the purge
+is **permanent**, make a backup first (**Back up first** button). The
+purge is only accepted **from the local network**: behind a reverse proxy, a
+public address in `X-Forwarded-For`, `X-Real-IP` or `Forwarded` refuses it, and the tab
+says so.
 
 ## API (Administration menu) { #api-menu-administration }
 

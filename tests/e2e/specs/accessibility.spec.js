@@ -41,7 +41,7 @@ test('every tab is readable, buttons on hover included', async ({ adminPage: pag
     }
 
     await page.locator('.tabs').getByRole('button', { name: tr('tabAdministration'), exact: true }).click();
-    for (const tab of ['tabUsers', 'tabCategories', 'tabSync', 'tabPush', 'tabAgents', 'tabLogs', 'tabSettings', 'tabBackup']) {
+    for (const tab of ['tabUsers', 'tabCategories', 'tabSync', 'tabPush', 'tabAgents', 'tabLogs', 'tabSettings', 'tabBackup', 'tabPurge']) {
         await page.getByRole('tab', { name: tr(tab), exact: true }).click();
         await expect(page.getByRole('tab', { name: tr(tab), exact: true })).toHaveAttribute('aria-selected', 'true');
         await page.waitForLoadState('networkidle');

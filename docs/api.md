@@ -104,7 +104,7 @@ premier plan ; ensuite, l'en-tête de chaque réponse suffit (voir ci-dessous).
 | `settings` | `PUT /system/config` |
 | `tags` | `POST`/`PUT`/`DELETE /tag` |
 
-`POST /backup/import` incrémente tous les types. Les insights et les tendances sont
+`POST /backup/import` incrémente tous les types ; `POST /purge` tous sauf `accounts` et `settings`. Les insights et les tendances sont
 calculés à partir des transactions et des budgets : un client les recharge quand l'un de
 ces types bouge.
 
@@ -1216,6 +1216,28 @@ Les alertes d'insight d'un utilisateur inconnu, ou d'un insight absent ou masqu�
 pas importées.
 Le portail refuse un fichier d'une version du format plus récente que la sienne. Réponse : `{"imported": {"rules": 1}}`. Corps limité à 32 Mo
 par nginx (2 Mo pour les autres routes).
+
+## Purge
+
+Vide des données de la sauvegarde (mêmes noms) pour repartir de zéro. Acceptée **depuis
+le réseau local uniquement** : toutes les adresses de la requête (pair, `X-Forwarded-For`,
+`X-Real-IP`, `Forwarded`) doivent être privées ou réservées.
+
+### `GET /purge` — administrateur
+
+`{"local": true, "datasets": [{"name":"categories","count":11,"dependents":["rules","budgets","transactions","transaction_tags"]}, …]}` :
+`local` indique si la purge est acceptée depuis cette adresse, `count` le nombre de lignes
+supprimées (sans la catégorie 0 pour `categories`), `dependents` les données purgées avec
+elle (elles y renvoient).
+
+### `POST /purge` — administrateur
+
+Corps : `{"datasets": ["transactions", "transaction_tags"]}`. Supprime toutes les lignes de
+chaque donnée en une transaction, les contraintes de la base appliquées (alertes de budget
+des catégories, catégorie d'alerte des utilisateurs…). La catégorie 0 est conservée.
+`403` (`purge_not_local`) depuis Internet ; `400` sans donnée, pour un nom inconnu, ou
+(`purge_dependents`) si une donnée qui dépend d'une donnée choisie manque : rien n'est
+supprimé. Réponse : `{"purged": {"transactions": 120, "transaction_tags": 4}}`.
 
 ## Système
 

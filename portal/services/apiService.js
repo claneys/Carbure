@@ -1507,6 +1507,30 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
         }, 'Failed to import the backup');
     }
 
+    /**
+     * Fetches the datasets that can be purged, their number of rows and the datasets
+     * purged with them (administrators)
+     * @returns {Promise<Object>} {local, datasets: [{name, count, dependents}]}
+     * @throws {Error} If request fails
+     */
+    async function fetchPurgeInfo() {
+        const data = await request(`${baseUrl}/purge`, {}, 'Failed to fetch the purge datasets');
+        return { local: data?.local !== false, datasets: Array.isArray(data?.datasets) ? data.datasets : [] };
+    }
+
+    /**
+     * Deletes every row of datasets (administrators, from the local network)
+     * @param {Array<string>} datasets - Names of the datasets, their dependents included
+     * @returns {Promise<Object>} {purged: {name: count}}
+     * @throws {Error} If request fails (nothing deleted)
+     */
+    async function purgeData(datasets) {
+        return request(`${baseUrl}/purge`, {
+            method: 'POST',
+            body: JSON.stringify({ datasets })
+        }, 'Failed to purge the data');
+    }
+
     return {
         abortAllExcept,
         fetchChanges,
@@ -1626,6 +1650,8 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
         deleteUser,
         fetchBackupInfo,
         exportBackup,
-        importBackup
+        importBackup,
+        fetchPurgeInfo,
+        purgeData
     };
 }
