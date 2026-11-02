@@ -118,6 +118,12 @@ keeps track of what was done).
       arm64, and mention the demo tag in the overview of the Docker Hub repository
       (accounts: `demo` / `carbure`, `admin` with a random password printed in the logs).
 
+- [ ] **Demo data reloaded each day (#481)**: after the 1.13.0 release, the day after the
+      update of demo.carbure.org, check that `docker logs carbure-demo` shows
+      `new day (…), demonstration data reloaded up to today` and that the current month
+      has transactions up to today; the nightly `run.sh --reset` cron is then only
+      needed to change the `admin` password.
+
 - [ ] **Insights restricted to the budget tables (#226)**: after the upgrade, an insight
       whose query reads another table (or takes more than 5 s) shows 0: check the
       Insights tab of the instance and fix such queries.

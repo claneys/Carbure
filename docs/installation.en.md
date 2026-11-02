@@ -47,10 +47,13 @@ seasonal expenses, savings.
 
 The demo image is the usual image with MariaDB and the demo data
 inside: on every start, the database is recreated, the configuration is written with
-random secrets and the data is reloaded. `Ctrl+C` (or `docker stop`) stops it.
+random secrets and the data is reloaded. It covers the 12 months ending today and is
+reloaded every night (when the date of the container changes, UTC by default): a demo
+running for days keeps a current month filled up to the same day, without a restart. The
+`admin` password only changes at start. `Ctrl+C` (or `docker stop`) stops it.
 
 !!! warning "For trying only"
-    **All data is erased on every start** and the `demo` account password is public:
+    **All data is erased on every start and every night** and the `demo` account password is public:
     do not enter any real data in it, and only publish it on the Internet with the precautions
     below. Bank
     sync and notifications are not configured. For your own budget, install
@@ -97,7 +100,7 @@ location /api/ {
 }
 ```
 
-Visitors can change the data: a regular restart resets it and
+Visitors can change the data: the nightly reload resets it, a regular restart also
 changes the `admin` password. The `docker/demo/run.sh` script (to be copied next to the compose
 file on the server) starts the demo, updates it when a new image is published
 (the container is only recreated if the image has changed), with `--reset` recreates it with fresh

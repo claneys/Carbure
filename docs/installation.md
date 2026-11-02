@@ -47,10 +47,14 @@ dépenses saisonnières, de l'épargne.
 
 L'image de démonstration est l'image habituelle avec MariaDB et les données de démonstration
 à l'intérieur : à chaque démarrage, la base est recréée, la configuration est écrite avec des
-secrets aléatoires et les données sont rechargées. `Ctrl+C` (ou `docker stop`) l'arrête.
+secrets aléatoires et les données sont rechargées. Elles couvrent les 12 mois qui finissent
+aujourd'hui et sont rechargées chaque nuit (au changement de date du conteneur, en UTC par
+défaut) : une démo qui tourne depuis des jours garde un mois courant rempli jusqu'au jour
+même, sans redémarrage. Le mot de passe `admin` ne change qu'au démarrage. `Ctrl+C` (ou
+`docker stop`) l'arrête.
 
 !!! warning "Uniquement pour essayer"
-    **Toutes les données sont effacées à chaque démarrage** et le mot de passe du compte `demo` est public :
+    **Toutes les données sont effacées à chaque démarrage et chaque nuit** et le mot de passe du compte `demo` est public :
     n'y saisissez aucune donnée réelle et ne la publiez sur Internet qu'avec les précautions
     ci-dessous. La synchronisation
     bancaire et les notifications ne sont pas configurées. Pour votre budget, installez
@@ -97,8 +101,8 @@ location /api/ {
 }
 ```
 
-Les visiteurs peuvent modifier les données : un redémarrage régulier les remet à neuf et
-change le mot de passe `admin`. Le script `docker/demo/run.sh` (à copier à côté du fichier
+Les visiteurs peuvent modifier les données : le rechargement de chaque nuit les remet à neuf,
+un redémarrage régulier change aussi le mot de passe `admin`. Le script `docker/demo/run.sh` (à copier à côté du fichier
 compose sur le serveur) démarre la démo, la met à jour quand une nouvelle image est publiée
 (le conteneur n'est recréé que si l'image a changé), avec `--reset` la recrée avec des
 données neuves, et affiche le mot de passe `admin`. Par exemple dans la crontab :
