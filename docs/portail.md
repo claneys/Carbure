@@ -136,13 +136,15 @@ tâches ou l'écran d'accueil.
   type d'opération si elles ne sont pas catégorisées), libellé, date et montant.
 - **Pointage** : le bouton rond à gauche de chaque transaction la marque comme vérifiée
   (coche verte) ou non vérifiée. Les transactions non vérifiées sont en gras.
-- **Filtre** : à côté du nombre de transactions, un interrupteur limite la liste aux
-  transactions non vérifiées (avec leur nombre).
+- **Filtres** : à côté du nombre de transactions, un interrupteur limite la liste aux
+  transactions non vérifiées, un autre aux transactions **sans catégorie** du mois (chacun
+  avec leur nombre) ; ils se combinent. Une transaction catégorisée quitte aussitôt la
+  liste filtrée.
 - **Transactions récurrentes** : celles retrouvées chaque mois (salaire, loyer,
   abonnements, factures, `GET /transaction/recurring`) portent le badge « Mensuelle ». Leur
   barre, en haut de la liste comme celle de la sélection, est repliée par défaut (leur
   nombre seul) ; son chevron la déplie, choix retenu par le navigateur : reçues et
-  attendues, « Total des transactions récurrentes », et un second interrupteur qui
+  attendues, « Total des transactions récurrentes », et un interrupteur qui
   n'affiche qu'elles et liste celles qui ne sont pas encore arrivées (« Attendues ce
   mois-ci », avec leur jour habituel et leur montant, « ≈ » s'il varie ; « Absentes ce
   mois-ci » pour un mois passé). La replier retire ce filtre. La barre n'apparaît pas
@@ -156,7 +158,7 @@ tâches ou l'écran d'accueil.
   des récurrentes.
 - **Recherche** : le champ de recherche (2 caractères minimum) interroge
   `GET /transaction/search` sur tous les mois et affiche le **total** des transactions
-  trouvées ; le filtre s'applique aussi aux résultats. La croix efface la recherche.
+  trouvées ; les filtres (non vérifiées, sans catégorie) s'appliquent aussi aux résultats. La croix efface la recherche.
 - **Catégorisation manuelle** : une transaction sans catégorie propose un sélecteur
   « Catégoriser… » (icônes, couleurs, recherche) ; la transaction est aussi pointée. Pour un administrateur, un bandeau
   propose ensuite de **créer une règle** pour classer automatiquement ce libellé : il ouvre
@@ -247,6 +249,12 @@ Deux sous-onglets : **Flux** (affiché par défaut) et **Budgets**.
 - **Clic sur une catégorie** : liste de ses transactions du mois (sous-catégories
   comprises) avec leur total et le pointage ; si elle a des sous-catégories, leurs
   cartes s'affichent, avec un fil d'Ariane pour remonter.
+- **Changer la catégorie d'une transaction** : dans les deux sous-onglets, un clic (ou
+  Entrée) sur le libellé d'une transaction listée ouvre la même fenêtre de détail que
+  l'onglet Transactions. Après enregistrement, les cartes, le diagramme et la liste sont
+  recalculés sans quitter le niveau ni la catégorie affichés ; le bandeau de création de
+  règle s'affiche aussi pour une transaction qui n'avait pas de catégorie. « Transactions
+  similaires » bascule sur l'onglet Transactions pour afficher la recherche.
 - Bouton de réglage d'une carte : modification du montant budgété pour le mois. Pour une
   catégorie parente, la case **Somme des sous-catégories** utilise leur somme ; décochée,
   le montant saisi la remplace. Le champ **Note** garde un pense-bête de ce que couvre le

@@ -141,6 +141,8 @@ export function createTransactionModule(getApiService) {
 
                 // 'all' or 'unchecked'
                 transactionFilter: 'all',
+                // Shows only the transactions without a category
+                uncategorizedOnly: false,
 
                 // Selected transactions being deleted
                 deletingSelection: false,
@@ -192,6 +194,14 @@ export function createTransactionModule(getApiService) {
             },
 
             /**
+             * Number of transactions without a category (search results or the month)
+             * @returns {number}
+             */
+            uncategorizedCount() {
+                return (this.isSearching ? this.searchResults : this.transactions).filter(t => this.isUncategorized(t)).length;
+            },
+
+            /**
              * Transactions to display: search results or the month, filtered, the parts
              * of a split transaction right after it
              * @returns {Array}
@@ -200,6 +210,9 @@ export function createTransactionModule(getApiService) {
                 let list = this.isSearching ? this.searchResults : this.transactions;
                 if (this.recurringOnly && !this.isSearching) {
                     list = list.filter(t => this.isRecurring(t));
+                }
+                if (this.uncategorizedOnly) {
+                    list = list.filter(t => this.isUncategorized(t));
                 }
                 if (this.transactionFilter === 'unchecked') {
                     list = list.filter(t => !Number(t.pointed));
@@ -540,9 +553,10 @@ export function createTransactionModule(getApiService) {
                     return;
                 }
                 const dateChanged = date !== transaction.date;
+                const categoryChanged = category !== (Number(transaction.category) || 0);
                 this.savingTransaction = true;
                 try {
-                    if (category !== (Number(transaction.category) || 0)) {
+                    if (categoryChanged) {
                         const wasUncategorized = this.isUncategorized(transaction);
                         // Changing the category also checks the transaction
                         await getApiService().setTransactionCategory(transaction.id, category);
@@ -565,6 +579,10 @@ export function createTransactionModule(getApiService) {
                     if (dateChanged) {
                         this.loadPeriods();
                         this.loadTransactions(this.selectedMonth, this.selectedYear);
+                    }
+                    // The amount moved to another category or month: totals and lists of the Budget tab
+                    if ((categoryChanged || dateChanged) && this.activeTab === 'budget') {
+                        this.refreshBudgetTab();
                     }
                 } catch (error) {
                     this.showToast(this.apiErrorText(error));
@@ -606,7 +624,11 @@ export function createTransactionModule(getApiService) {
                     this.searchResults = this.searchResults.filter(t => Number(t.id) !== Number(transaction.id));
                     this.showToast(this.t('transactionDeleted'));
                     this.loadPeriods();
-                    this.loadTransactions(this.selectedMonth, this.selectedYear);
+                    if (this.activeTab === 'budget') {
+                        this.refreshBudgetTab();
+                    } else {
+                        this.loadTransactions(this.selectedMonth, this.selectedYear);
+                    }
                 } catch (error) {
                     this.showToast(this.apiErrorText(error));
                 } finally {
@@ -718,6 +740,10 @@ export function createTransactionModule(getApiService) {
                     return;
                 }
                 this.transactionDetail = null;
+                // The results are listed in the Transactions tab (detail opened from the Budget tab)
+                if (this.activeTab !== 'transactions') {
+                    this.setActiveTab('transactions');
+                }
                 clearTimeout(this.searchTimer);
                 this.searchQuery = similarLabelQuery(transaction.label);
                 this.$nextTick?.(() => document.querySelector('.transaction-search input')?.focus());

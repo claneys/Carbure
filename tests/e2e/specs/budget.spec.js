@@ -1,5 +1,5 @@
-// Budget tab: money flow, budgets by category, sub-categories, editing a budget
-const { test, expect, tr, openTab, euros, currentMonth, offerBudgetCopy } = require('../fixtures');
+// Budget tab: money flow, budgets by category, sub-categories, editing a budget, recategorizing
+const { test, expect, tr, openTab, pickCategory, euros, currentMonth, offerBudgetCopy } = require('../fixtures');
 
 /**
  * Checks the amounts of a budget card: spent / budget
@@ -341,4 +341,64 @@ test('the sub-categories follow a transaction recategorized elsewhere (#402)', a
     // Its sub-category is fetched again, not taken from the cache
     await card(page, 'Alimentation').click();
     await expect(card(page, 'Supermarché').locator('.spent')).toHaveText(euros(89.2));
+});
+
+/**
+ * Moves a listed transaction to another category from its detail modal
+ * @param {import('@playwright/test').Locator} list - Transactions listed in the Budget tab
+ * @param {string} label - Label of the transaction
+ * @param {string} category - New category
+ */
+async function recategorize(list, label, category) {
+    const page = list.page();
+    await list.locator('.transaction-item').filter({ hasText: label })
+        .getByRole('button', { name: new RegExp(tr('transactionDetail')) }).click();
+    const modal = page.getByRole('dialog', { name: tr('transactionDetail') });
+    await pickCategory(modal, category);
+    await modal.getByRole('button', { name: tr('save') }).click();
+    await expect(modal).toHaveCount(0);
+    await expect(page.locator('.toast')).toHaveText(tr('transactionSaved'));
+}
+
+test('changes the category of a transaction listed under the budgets', async ({ adminPage: page, api }) => {
+    await openBudgets(page);
+    await card(page, 'Alimentation').click();
+    const list = page.locator('.budget-transactions');
+    await expect(list.locator('.transaction-item')).toHaveCount(2);
+    await expect(list.locator('.transaction-item').filter({ hasText: 'CB SUPERMARCHE CASINO' })).toContainText('Supermarché');
+
+    await recategorize(list, 'CB SUPERMARCHE CASINO', 'Logement');
+
+    // Still on the sub-categories: the amount left Supermarché and the list
+    await expect(page.locator('.budget-breadcrumb')).toContainText('Alimentation');
+    await expectAmounts(card(page, 'Supermarché'), 0, `/ ${euros(300)}`);
+    await expect(list.locator('.transaction-item')).toHaveCount(1);
+    await page.getByRole('button', { name: tr('allCategories') }).click();
+    await expectAmounts(card(page, 'Logement'), 1032.4, `/ ${euros(1000)}`);
+
+    const { month, year } = currentMonth();
+    const saved = await (await api.get(`/api/transaction?month=${month}&year=${year}`)).json();
+    expect(Number(saved.find(t => t.label === 'CB SUPERMARCHE CASINO').category)).toBe(4);
+});
+
+test('changes the category of a transaction of the money flow, an uncategorized one proposing a rule', async ({ adminPage: page }) => {
+    await openTab(page, tr('tabBudget'));
+    const node = page.locator('.flow-node[role="button"]').filter({ hasText: 'Alimentation' });
+    await node.click();
+    const list = page.locator('.flow-transactions');
+    await expect(list.locator('.search-total strong')).toContainText('127,40');
+
+    await recategorize(list, 'CB RESTAURANT LE PETIT ZINC', 'Logement');
+
+    // The node stays selected, its transactions and the diagram reloaded
+    await expect(node).toHaveAttribute('aria-pressed', 'true');
+    await expect(list.locator('.transaction-item')).toHaveCount(1);
+    await expect(list.locator('.search-total strong')).toContainText('82,40');
+    await page.getByRole('button', { name: tr('flowShowTable') }).click();
+    await expect(page.locator('.flow-table').getByRole('row').filter({ hasText: 'Logement' })).toContainText(euros(995).replace(' €', ''));
+
+    // An uncategorized transaction: the rule is proposed in the Budget tab too
+    await page.locator('.flow-node[role="button"]').filter({ hasText: tr('uncategorized') }).click();
+    await recategorize(list, 'CB BOULANGERIE PAUL', 'Alimentation');
+    await expect(page.locator('.rule-suggestion')).toContainText(tr('ruleSuggestion', { label: 'CB BOULANGERIE PAUL', category: 'Alimentation' }));
 });

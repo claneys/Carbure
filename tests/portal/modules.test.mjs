@@ -138,6 +138,70 @@ test('displayedTransactions and totals', () => {
     assert.equal(transactions.computed.uncheckedCount.call(context), 1);
 });
 
+test('uncategorized filter: the transactions without a category, combined with the other filters', () => {
+    const list = [
+        { id: 1, amount: '3200.00', pointed: '1', category: 4 },
+        { id: 2, amount: '-82.40', pointed: '0', category: '0' },
+        { id: 3, amount: '-950.00', pointed: '1', category: null },
+    ];
+    const context = { transactions: list, searchResults: [list[0]], isSearching: false, transactionFilter: 'all', uncategorizedOnly: true };
+    context.isUncategorized = transactions.methods.isUncategorized;
+    assert.deepEqual(transactions.computed.displayedTransactions.call(context).map(t => t.id), [2, 3]);
+    assert.equal(transactions.computed.uncategorizedCount.call(context), 2);
+    assert.deepEqual(transactions.computed.displayedTransactions.call({ ...context, transactionFilter: 'unchecked' }).map(t => t.id), [2]);
+    // Also applied to the search results, counted among them
+    assert.deepEqual(transactions.computed.displayedTransactions.call({ ...context, isSearching: true }), []);
+    assert.equal(transactions.computed.uncategorizedCount.call({ ...context, isSearching: true }), 0);
+    // Off: every transaction
+    assert.equal(transactions.computed.displayedTransactions.call({ ...context, uncategorizedOnly: false }).length, 3);
+});
+
+/** `this` of the portal saving the transaction modal in a tab (date unchanged), the API calls recorded */
+function detailContext(activeTab, transaction, category) {
+    const calls = [];
+    const api = {
+        async setTransactionCategory(id, value) { calls.push(['category', id, value]); },
+        async setTransactionPointed(id, value) { calls.push(['pointed', id, value]); },
+        async setTransactionDate(id, value) { calls.push(['date', id, value]); },
+    };
+    const module = createTransactionModule(() => api);
+    const context = {
+        activeTab, isAdmin: false, transactionDetail: { date: '2026-10-05', ...transaction }, transactionDetailCategory: category,
+        transactionDetailPointed: !!Number(transaction.pointed), transactionDetailDate: '2026-10-05',
+        transactions: [], searchResults: [], t: key => key, apiErrorText, showToast() {},
+        refreshBudgetTab() { calls.push(['refreshBudgetTab']); },
+        loadPeriods() {}, loadTransactions() {},
+    };
+    for (const [name, method] of Object.entries(module.methods)) {
+        context[name] = method.bind(context);
+    }
+    return { context, calls };
+}
+
+test('saveTransactionDetail: a new category or date reloads the Budget tab where the modal was opened', async () => {
+    const moved = detailContext('budget', { id: 7, label: 'CB PAUL', category: 2, pointed: 1 }, 4);
+    await moved.context.saveTransactionDetail();
+    assert.deepEqual(moved.calls, [['category', 7, 4], ['refreshBudgetTab']]);
+    assert.equal(moved.context.transactionDetail, null);
+
+    // Only checked: the amounts of the categories did not change
+    const checked = detailContext('budget', { id: 7, label: 'CB PAUL', category: 2, pointed: 0 }, 2);
+    checked.context.transactionDetailPointed = true;
+    await checked.context.saveTransactionDetail();
+    assert.deepEqual(checked.calls, [['pointed', 7, true]]);
+
+    // Moved to another month: the amounts of the month shown changed
+    const dated = detailContext('budget', { id: 7, label: 'CB PAUL', category: 2, pointed: 1 }, 2);
+    dated.context.transactionDetailDate = '2026-09-30';
+    await dated.context.saveTransactionDetail();
+    assert.deepEqual(dated.calls, [['date', 7, '2026-09-30'], ['refreshBudgetTab']]);
+
+    // Transactions tab: the row is updated in place
+    const listed = detailContext('transactions', { id: 7, label: 'CB PAUL', category: 0, pointed: 1 }, 4);
+    await listed.context.saveTransactionDetail();
+    assert.deepEqual(listed.calls, [['category', 7, 4]]);
+});
+
 test('recurring transactions: ids, filter and expected series', () => {
     const recurring = [
         { label: 'VIR SALAIRE ACME', ids: [1], status: 'received' },
@@ -216,6 +280,7 @@ test('similarLabelQuery: the merchant, without the kind of operation nor the ref
 test('searchSimilarTransactions: closes the detail and searches like a typed search', async () => {
     const searched = [];
     const context = {
+        activeTab: 'transactions',
         transactionDetail: { id: 1, label: 'CB BOULANGERIE PAUL' },
         searchQuery: '',
         searchTimer: null,
@@ -225,6 +290,38 @@ test('searchSimilarTransactions: closes the detail and searches like a typed sea
     assert.equal(context.transactionDetail, null);
     assert.equal(context.searchQuery, 'BOULANGERIE PAUL');
     assert.deepEqual(searched, ['BOULANGERIE PAUL']);
+});
+
+test('searchSimilarTransactions: from the Budget tab, the results are shown in the Transactions tab', async () => {
+    const context = {
+        activeTab: 'budget',
+        transactionDetail: { id: 1, label: 'CB BOULANGERIE PAUL' },
+        searchQuery: '',
+        searchTimer: null,
+        setActiveTab(tab) { this.activeTab = tab; },
+        runSearch() {},
+    };
+    await transactions.methods.searchSimilarTransactions.call(context);
+    assert.equal(context.activeTab, 'transactions');
+    assert.equal(context.searchQuery, 'BOULANGERIE PAUL');
+});
+
+test('reloadBudgetLevel: reloads the budgets, then the transactions of the selected category', async () => {
+    const calls = [];
+    const store = { async reloadBudgets(month, year) { calls.push(['reloadBudgets', month, year]); } };
+    const api = { async fetchCategoryTransactions(month, year, category) { calls.push(['transactions', month, year, category]); return [{ id: 9 }]; } };
+    const module = createBudgetModule(() => store, () => api);
+    const context = { budgetCategory: { id: 4, name: 'Logement' }, ensureCategories() {}, showToast() {}, $nextTick() {} };
+    context.loadBudgetTransactions = module.methods.loadBudgetTransactions.bind(context);
+    await module.methods.reloadBudgetLevel.call(context, 10, 2026);
+    await new Promise(resolve => setTimeout(resolve));
+    assert.deepEqual(calls, [['reloadBudgets', 10, 2026], ['transactions', 10, 2026, 4]]);
+    assert.deepEqual(context.budgetTransactions, [{ id: 9 }]);
+
+    // No category selected: only the budgets
+    calls.length = 0;
+    await module.methods.reloadBudgetLevel.call({ ...context, budgetCategory: null }, 10, 2026);
+    assert.deepEqual(calls, [['reloadBudgets', 10, 2026]]);
 });
 
 test('isSearching: from 2 characters', () => {

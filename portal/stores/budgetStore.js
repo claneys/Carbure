@@ -257,7 +257,17 @@ export function createBudgetStore(apiService) {
      */
     async function updateBudget(budgetId, month, year, newAmount, note) {
         await apiService.updateBudget(budgetId, month, year, newAmount, note);
-        // Reload the budgets (a parent depends on its sub-categories), staying on the displayed level
+        // A parent depends on its sub-categories
+        await reloadBudgets(month, year);
+    }
+
+    /**
+     * Reloads the budgets (amounts spent included), staying on the displayed level
+     * @param {number} month - Month (1-12)
+     * @param {number} year - Year
+     * @returns {Promise<void>}
+     */
+    async function reloadBudgets(month, year) {
         const stack = state.breadcrumbStack.slice();
         await loadRootBudgets(month, year);
         for (const crumb of stack) {
@@ -274,12 +284,8 @@ export function createBudgetStore(apiService) {
      */
     async function copyBudgets(month, year, overwrite = false) {
         const result = await apiService.copyBudgets(month, year, overwrite);
-        // Reload the budgets (a parent depends on its sub-categories), staying on the displayed level
-        const stack = state.breadcrumbStack.slice();
-        await loadRootBudgets(month, year);
-        for (const crumb of stack) {
-            await navigateToChildren(crumb, month, year);
-        }
+        // A parent depends on its sub-categories
+        await reloadBudgets(month, year);
         return result;
     }
     
@@ -297,6 +303,7 @@ export function createBudgetStore(apiService) {
         navigateToChildren,
         navigateToBreadcrumb,
         updateBudget,
+        reloadBudgets,
         copyBudgets,
         filterBudgets,
         abortAll

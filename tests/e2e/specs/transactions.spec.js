@@ -139,6 +139,25 @@ test('filters the transactions not checked yet', async ({ adminPage: page }) => 
     await expect(page.locator('.transaction-item')).toHaveCount(6);
 });
 
+test('filters the transactions without a category', async ({ adminPage: page }) => {
+    const toggle = page.locator('.toggle-uncategorized');
+    await expect(toggle.locator('.toggle-label')).toHaveText(tr('uncategorizedCount', { count: 1 }));
+
+    await toggle.click();
+    await expect(toggle.getByRole('switch')).toBeChecked();
+    await expect(page.locator('.transaction-item')).toHaveCount(1);
+    await expect(row(page, 'CB BOULANGERIE PAUL')).toBeVisible();
+
+    // Once categorized, it leaves the filtered list
+    await pickCategory(row(page, 'CB BOULANGERIE PAUL'), 'Alimentation');
+    await expect(page.locator('.transaction-item')).toHaveCount(0);
+    await expect(page.locator('.transactions-hint')).toHaveText(tr('allCategorized'));
+    await expect(toggle.locator('.toggle-label')).toHaveText(tr('uncategorizedCount', { count: 0 }));
+
+    await toggle.click();
+    await expect(page.locator('.transaction-item')).toHaveCount(6);
+});
+
 test('checks and unchecks a transaction', async ({ adminPage: page, api }) => {
     const transaction = row(page, 'CB SUPERMARCHE CASINO');
     await transaction.getByRole('button', { name: tr('checkTransaction') }).click();

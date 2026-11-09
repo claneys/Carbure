@@ -134,13 +134,15 @@ taskbar or the home screen.
   operation type if they are not categorized), label, date and amount.
 - **Checking**: the round button on the left of each transaction marks it as checked
   (green tick) or unchecked. Unchecked transactions are in bold.
-- **Filter**: next to the number of transactions, a switch limits the list to
-  unchecked transactions (with their number).
+- **Filters**: next to the number of transactions, a switch limits the list to
+  unchecked transactions, another one to the transactions of the month **without a
+  category** (each with their number); they combine. A transaction leaves the filtered
+  list as soon as it is categorized.
 - **Recurring transactions**: those found every month (salary, rent,
   subscriptions, bills, `GET /transaction/recurring`) carry the "Monthly" badge. Their
   bar, at the top of the list like the selection one, is folded by default (only their
   number); its chevron unfolds it, a choice remembered by the browser: received and
-  expected, "Recurring transactions total", and a second switch that shows only them and
+  expected, "Recurring transactions total", and a switch that shows only them and
   lists those that have not arrived yet ("Expected this month", with their usual day and
   amount, "≈" if it varies; "Missing this month" for a past month). Folding it removes
   that filter. The bar does not appear during a search.
@@ -153,7 +155,7 @@ taskbar or the home screen.
   transactions.
 - **Search**: the search field (2 characters minimum) queries
   `GET /transaction/search` across all months and shows the **total** of the transactions
-  found; the filter also applies to the results. The cross clears the search.
+  found; the filters (unchecked, without a category) also apply to the results. The cross clears the search.
 - **Manual categorization**: a transaction without a category offers a
   "Categorize…" picker (icons, colors, search); the transaction is also checked. For an administrator, a banner
   then offers to **Create a rule** to classify this label automatically: it opens
@@ -242,6 +244,12 @@ Two sub-tabs: **Flow** (shown by default) and **Budgets**.
 - **Click on a category**: list of its transactions of the month (sub-categories
   included) with their total and the checking; if it has sub-categories, their
   cards are shown, with a breadcrumb to go back up.
+- **Change the category of a transaction**: in both sub-tabs, a click (or Enter) on the
+  label of a listed transaction opens the same details window as the Transactions tab.
+  Once saved, the cards, the diagram and the list are computed again without leaving the
+  level or the category shown; the rule creation banner also appears for a transaction
+  that had no category. "Similar transactions" switches to the Transactions tab to show
+  the search.
 - Settings button of a card: changes the budgeted amount for the month. For a
   parent category, the **Sum of the sub-categories** box uses their sum; unticked,
   the amount typed replaces it. The **Note** field keeps a reminder of what the budget

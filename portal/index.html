@@ -630,6 +630,11 @@
                                         <span class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></span>
                                         <span class="toggle-label">{{ t('uncheckedCount', { count: (isSearching ? searchResults : transactions).filter(t => !Number(t.pointed)).length }) }}</span>
                                     </label>
+                                    <label class="toggle-switch toggle-uncategorized" :class="{ on: uncategorizedOnly }">
+                                        <input type="checkbox" role="switch" v-model="uncategorizedOnly" />
+                                        <span class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></span>
+                                        <span class="toggle-label">{{ t('uncategorizedCount', { count: uncategorizedCount }) }}</span>
+                                    </label>
                                     <button type="button" class="btn-secondary btn-manual-add btn-select" @click="toggleTransactionSelection"
                                             :aria-pressed="selectingTransactions ? 'true' : 'false'" :title="t('tagSelectHelp')">
                                         <span class="material-icons" aria-hidden="true">{{ selectingTransactions ? 'close' : 'checklist' }}</span><span class="btn-label">{{ selectingTransactions ? t('tagSelectStop') : t('tagSelect') }}</span>
@@ -724,7 +729,7 @@
                             </section>
                             <div v-if="searching" class="transactions-hint">{{ t('searching') }}</div>
                             <div v-else-if="displayedTransactions.length === 0" class="transactions-hint">
-                                {{ isSearching ? t('noSearchResults') : recurringOnly ? t('noRecurringReceived') : t('allChecked') }}
+                                {{ isSearching ? t('noSearchResults') : recurringOnly ? t('noRecurringReceived') : uncategorizedOnly ? t('allCategorized') : t('allChecked') }}
                             </div>
                             <div class="transactions-list">
                                 <div v-for="transaction in displayedTransactions" :key="transaction.id" class="transaction-item"
@@ -813,6 +818,12 @@
                             {{ copyButtonLabel }}
                         </button>
                     </div>
+                    <div v-if="ruleSuggestion" class="rule-suggestion" role="status">
+                        <span class="material-icons" aria-hidden="true">lightbulb</span>
+                        <span class="rule-suggestion-text">{{ t('ruleSuggestion', { label: ruleSuggestion.keyword, category: ruleSuggestion.categoryName }) }}</span>
+                        <button @click="createSuggestedRule">{{ t('createRule') }}</button>
+                        <button class="btn-secondary" @click="ruleSuggestion = null">{{ t('ignore') }}</button>
+                    </div>
 
                     <div v-if="budgetView === 'flow'" role="tabpanel">
                         <section v-if="budgetFlow && (budgetFlow.totalIncome > 0 || budgetFlow.totalExpenses > 0)" class="trends-card flow-card">
@@ -859,7 +870,9 @@
                                         <div class="transaction-icon" :class="transactionCategory(transaction) ? '' : 'type-' + transaction.type" :style="transactionIconStyle(transaction)">
                                             <span class="material-icons" aria-hidden="true">{{ transactionIcon(transaction) }}</span>
                                         </div>
-                                        <div class="transaction-details">
+                                        <div class="transaction-details transaction-open" role="button" tabindex="0"
+                                             :aria-label="t('transactionDetail') + ' : ' + transaction.label"
+                                             @click="openTransactionModal(transaction)" @keydown.enter.prevent="openTransactionModal(transaction)" @keydown.space.prevent="openTransactionModal(transaction)">
                                             <div class="transaction-label">{{ transaction.label }}</div>
                                             <div class="transaction-date">{{ formatDate(transaction.rdate || transaction.date) }}<template v-if="transactionCategory(transaction)"> · {{ transactionCategory(transaction).name }}</template></div>
                                         </div>
@@ -1004,9 +1017,11 @@
                                         <div class="transaction-icon" :class="transactionCategory(transaction) ? '' : 'type-' + transaction.type" :style="transactionIconStyle(transaction)">
                                             <span class="material-icons" aria-hidden="true">{{ transactionIcon(transaction) }}</span>
                                         </div>
-                                        <div class="transaction-details">
+                                        <div class="transaction-details transaction-open" role="button" tabindex="0"
+                                             :aria-label="t('transactionDetail') + ' : ' + transaction.label"
+                                             @click="openTransactionModal(transaction)" @keydown.enter.prevent="openTransactionModal(transaction)" @keydown.space.prevent="openTransactionModal(transaction)">
                                             <div class="transaction-label">{{ transaction.label }}</div>
-                                            <div class="transaction-date">{{ formatDate(transaction.rdate || transaction.date) }}</div>
+                                            <div class="transaction-date">{{ formatDate(transaction.rdate || transaction.date) }}<template v-if="transactionCategory(transaction)"> · {{ transactionCategory(transaction).name }}</template></div>
                                         </div>
                                         <div class="transaction-amount" :class="transaction.amount >= 0 ? 'positive' : 'negative'">
                                             {{ formatAmount(transaction.amount) }} {{ currencySymbol }}

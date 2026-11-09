@@ -303,6 +303,29 @@ export function createBudgetModule(getBudgetStore, getApiService) {
             },
 
             /**
+             * Reloads the budgets of the displayed level and the transactions listed under
+             * the cards (after a transaction changed category or was deleted)
+             * @param {number} month - Month (1-12)
+             * @param {number} year - Year
+             * @returns {Promise<void>}
+             */
+            async reloadBudgetLevel(month, year) {
+                const store = getBudgetStore();
+                if (!store) {
+                    return;
+                }
+                const category = this.budgetCategory;
+                try {
+                    await store.reloadBudgets(month, year);
+                } catch (err) {
+                    this.showToast(err.message);
+                }
+                if (category) {
+                    this.loadBudgetTransactions(category, month, year);
+                }
+            },
+
+            /**
              * Navigates to child budgets for a given item
              * @param {Object} item - Budget item to navigate to
              * @param {number} month - Month (1-12)
