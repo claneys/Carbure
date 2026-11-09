@@ -390,7 +390,8 @@ transactions non catégorisées restent visibles. Les mêmes flux existent en ta
 
 ![Tendances des dépenses, des revenus et de l'épargne sur plusieurs mois](assets/screenshot-trends.webp)
 
-Sur **3, 6 ou 12 mois** jusqu'au mois courant, éventuellement **comparés** à la période
+Sur **3, 6, 12, 24, 36 ou 60 mois** jusqu'au mois courant, ou sur une **période personnalisée**
+(du mois choisi au mois choisi, 20 ans au plus), éventuellement **comparés** à la période
 précédente ou à la même période l'an dernier :
 
 | Mesure | Calcul |
@@ -406,6 +407,19 @@ La catégorie d'épargne est « Épargne » (casse et accents ignorés), ou cell
 `savings_category`. Les chiffres clés (épargne cumulée et moyenne, taux d'épargne, dépenses
 moyennes face au budget planifié) indiquent l'écart avec la période comparée. Chaque graphique
 existe aussi en tableau.
+
+La carte **Par catégorie** compare toutes les catégories d'un type (dépenses, revenus ou
+hors budget) sur un même graphique, catégories principales (sous-catégories incluses) ou
+sous-catégories : chaque catégorie se masque ou se réaffiche d'un clic sur sa pastille
+(**Tout** / **Aucun**), l'échelle s'adaptant aux catégories affichées. Le graphique se
+dessine en **lignes**, en **barres** empilées ou en **aires** empilées ; ce choix, les
+catégories masquées, le type et le niveau sont retenus par le navigateur, et le type de
+graphique s'applique aussi aux graphiques personnalisés.
+
+Les administrateurs ajoutent des **graphiques personnalisés** (12 au plus, partagés par le
+foyer) : l'évolution mois par mois d'une catégorie (avec ses sous-catégories), d'une
+sous-catégorie ou d'un insight, avec sa moyenne sur la période et, pour une catégorie, son
+budget prévu.
 
 ## Insights
 
