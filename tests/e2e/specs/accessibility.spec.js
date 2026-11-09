@@ -52,6 +52,21 @@ test('every tab is readable, buttons on hover included', async ({ adminPage: pag
     expect(problems).toEqual([]);
 });
 
+test('the chart of the categories is readable: kinds, chips shown and hidden, hint', async ({ userPage: page }) => {
+    const problems = [];
+    await openTab(page, tr('tabTrends'));
+    const card = page.locator('.trend-categories-card');
+    await card.getByRole('button', { name: tr('trendsKindLines') }).click();
+    await card.getByRole('button', { name: 'Logement' }).click();
+    await expect(card.getByRole('button', { name: 'Logement' })).toHaveAttribute('aria-pressed', 'false');
+    problems.push(...await contrastProblems(page, `${tr('trendCategoriesTitle')} (filtered)`));
+
+    await card.getByRole('button', { name: tr('trendCategoriesNone') }).click();
+    await expect(card.getByText(tr('trendCategoriesNoneShown'))).toBeVisible();
+    problems.push(...await contrastProblems(page, `${tr('trendCategoriesTitle')} (none)`));
+    expect(problems).toEqual([]);
+});
+
 test('the import of a backup is readable: its files, an invalid one, the confirmation', async ({ adminPage: page }) => {
     const problems = [];
     await page.locator('.tabs').getByRole('button', { name: tr('tabAdministration'), exact: true }).click();
@@ -586,5 +601,26 @@ test('the cards of the insights are readable while ordered: handles, focus and t
     await expect(page.locator('.insight-card.dragging')).toHaveCount(1);
     problems.push(...await contrastProblems(page, `${tr('insightMove')} (dragging)`));
     await page.mouse.up();
+    expect(problems).toEqual([]);
+});
+
+test('the custom charts of the trends, their range and their modal are readable', async ({ adminPage: page, api }) => {
+    const problems = [];
+    await api.put('/api/budget/trends/charts', { data: { charts: [{ type: 'category', id: 1 }, { type: 'insight', id: 1 }] } });
+    await openTab(page, tr('tabTrends'));
+    await expect(page.locator('.trend-custom-chart')).toHaveCount(2);
+    await page.getByRole('button', { name: tr('trendsCustomRange') }).click();
+    await expect(page.getByLabel(tr('trendsFrom'), { exact: true })).toBeVisible();
+    await page.waitForLoadState('networkidle');
+    problems.push(...await contrastProblems(page, tr('trendsCustomRange')));
+
+    await page.getByRole('button', { name: tr('trendChartAdd') }).click();
+    const dialog = page.getByRole('dialog', { name: tr('trendChartAdd') });
+    await expect(dialog).toBeVisible();
+    problems.push(...await contrastProblems(page, tr('trendChartAdd')));
+    await dialog.getByRole('combobox', { name: tr('trendChartType') }).selectOption('insight');
+    await expect(dialog.getByRole('combobox', { name: tr('trendChartInsight') })).toBeVisible();
+    problems.push(...await contrastProblems(page, tr('trendChartInsight')));
+
     expect(problems).toEqual([]);
 });
