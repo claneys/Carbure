@@ -95,7 +95,7 @@ is enough (see below).
 
 | Kind | Bumped by |
 |---|---|
-| `transactions` | synchronization (new or modified transaction, category found), `POST /transaction/import`, `POST /transaction`, `PUT /transaction`, `PUT /transaction/category`, `PUT /transaction/date`, `PUT /transaction/pointed`, `PUT /transaction/split`, `PUT /transaction/tags`, `DELETE /tag`, `DELETE /transaction`, rules applied to the history, `DELETE /category` |
+| `transactions` | synchronization (new or modified transaction, category found), `POST /transaction/import`, `POST /transaction`, `PUT /transaction`, `PUT /transaction/category`, `PUT /transaction/categories`, `PUT /transaction/date`, `PUT /transaction/pointed`, `PUT /transaction/split`, `PUT /transaction/tags`, `DELETE /tag`, `DELETE /transaction`, rules applied to the history, `DELETE /category` |
 | `accounts` | synchronization (account in error, repaired or another error), `POST`/`PUT`/`DELETE /bank`, `/bank/backend` |
 | `categories` | `POST`/`PUT`/`DELETE /category`, `/category/keyword`, `PUT /category/keyword/settings` |
 | `budgets` | `POST /budget`, `POST /budget/copy`, `DELETE /category` |
@@ -705,6 +705,19 @@ curl -X POST https://exemple.fr/api/transaction/import -H "Authorization: Bearer
 `id`, `category`: assigns the category and checks off the transaction (`autoPointed=false`
 to leave it unchecked). The category is chosen by hand (`category_source` `manual`): the
 rules no longer change it.
+
+### `PUT /transaction/categories` { #put-transactioncategories }
+
+`ids` (1 to 500 transactions), `category`: assigns the same category to all of them at once
+(all or none; `400 tag_selection_limit`, `404 category_not_found`), and checks them off with
+the parts of the split ones (`autoPointed=false` to leave them unchecked). As for a single
+one, the category is chosen by hand (`category_source` `manual`). Returns `{updated}`: the
+number of transactions whose category changed.
+
+```bash
+curl -X PUT https://exemple.fr/api/transaction/categories -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' -d '{"ids":[42,43],"category":5}'
+```
 
 ### `PUT /transaction/pointed` { #put-transactionpointed }
 

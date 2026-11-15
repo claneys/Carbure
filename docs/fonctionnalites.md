@@ -147,6 +147,11 @@ transactions du dernier mois restées sans catégorie.
   cocher les transactions, **Supprimer** ; après confirmation) : elle disparaît
   pour tout le foyer et n'est plus réimportée, ni par la synchronisation ni par l'import
   d'un relevé.
+- **Changer la catégorie** de plusieurs transactions d'un coup : **Sélectionner**, cocher les
+  transactions, puis choisir la catégorie dans la liste, sur l'une des transactions cochées
+  (« Non catégorisé » compris) : toutes les transactions cochées la prennent, et la sélection
+  reste. Comme pour une seule, elles sont pointées et les règles ne changent plus cette
+  catégorie choisie à la main.
 - **Mode sélection** : **Tout sélectionner** coche toutes les transactions affichées (filtre et
   recherche appliqués, 500 au plus), puis devient **Tout désélectionner** ; la croix à droite de
   la barre ferme le mode sélection.

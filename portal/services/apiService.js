@@ -705,6 +705,19 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
     }
 
     /**
+     * Sets one category on several transactions at once, and checks them
+     * @param {Array<number>} ids - Transaction ids
+     * @param {number} category - Category id (0: uncategorized)
+     * @returns {Promise<{updated: number}>}
+     */
+    async function setTransactionsCategory(ids, category) {
+        return request(`${baseUrl}/transaction/categories`, {
+            method: 'PUT',
+            body: JSON.stringify({ ids, category: Number(category) })
+        }, 'Failed to update the categories');
+    }
+
+    /**
      * Changes the date a transaction is counted on (its month); the real date of the
      * bank is kept, the parts of a split transaction follow it
      * @param {number} id - Transaction id
@@ -1606,6 +1619,7 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
         updateCategory,
         deleteCategory,
         setTransactionCategory,
+        setTransactionsCategory,
         setTransactionDate,
         splitTransaction,
         createTransaction,

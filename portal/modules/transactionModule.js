@@ -144,6 +144,8 @@ export function createTransactionModule(getApiService) {
 
                 // Selected transactions being deleted
                 deletingSelection: false,
+                // Category of the selected transactions being saved
+                categorizingSelection: false,
 
                 // Recurring series of the month (salary, rent, subscriptions...) and the
                 // filter that shows only their transactions
@@ -659,6 +661,39 @@ export function createTransactionModule(getApiService) {
                         this.loadPeriods();
                         this.loadTransactions(this.selectedMonth, this.selectedYear);
                     }
+                }
+            },
+
+            /**
+             * Sets a category chosen in the picker of a selected transaction on every selected
+             * transaction: like a single change, it also checks them (with the parts of the
+             * split ones); the selection stays, for another change
+             * @param {number} chosen - Category id (0: uncategorized)
+             * @returns {Promise<void>}
+             */
+            async categorizeSelectedTransactions(chosen) {
+                const ids = this.selectedTransactionIds.map(Number);
+                if (chosen === '' || chosen === null || !ids.length || this.categorizingSelection) {
+                    return;
+                }
+                const category = Number(chosen);
+                this.categorizingSelection = true;
+                try {
+                    await getApiService().setTransactionsCategory(ids, category);
+                    for (const transaction of [...this.transactions, ...this.searchResults]) {
+                        if (ids.includes(Number(transaction.id))) {
+                            transaction.category = category;
+                            transaction.pointed = 1;
+                        } else if (ids.includes(Number(transaction.split_of))) {
+                            transaction.pointed = 1;
+                        }
+                    }
+                    const name = this.ruleCategories.find(c => Number(c.id) === category)?.name || this.t('uncategorized');
+                    this.showToast(this.t('selectionCategorized', { count: ids.length, name }));
+                } catch (error) {
+                    this.showToast(this.apiErrorText(error));
+                } finally {
+                    this.categorizingSelection = false;
                 }
             },
 

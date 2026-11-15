@@ -159,6 +159,9 @@ taskbar or the home screen.
   then offers to **Create a rule** to classify this label automatically: it opens
   the Rules tab with the label and the category pre-filled, the keyword can be
   shortened (dates, card numbers…).
+  In **Select** mode, every ticked transaction shows this picker: the category chosen on one
+  of them applies to every ticked transaction (they are also checked; no rule offered), and
+  the selection stays.
 - **Transaction details**: a click (or Enter) on the label opens a window with
   the amount, the full label, the dates, the type, the card, the bank (synchronized account
   or imported statement) and the import date; the

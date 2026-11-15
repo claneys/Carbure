@@ -3969,6 +3969,13 @@ button .material-icons {
     width: 100%;
 }
 
+/* A row is too narrow for the type and the parent of the category chosen: its name takes the
+   room, as on the chip of the other rows */
+.transaction-category .category-picker-button .category-type-chip,
+.transaction-category .category-picker-button .category-picker-name small {
+    display: none;
+}
+
 /* Category picker of a row: a small button, its list floats over the page */
 .category-picker.compact .category-picker-button {
     min-height: 34px;

@@ -162,6 +162,9 @@ tâches ou l'écran d'accueil.
   propose ensuite de **créer une règle** pour classer automatiquement ce libellé : il ouvre
   l'onglet Règles avec le libellé et la catégorie pré-remplis, le mot-clé pouvant être
   raccourci (dates, numéros de carte…).
+  En mode **Sélectionner**, chaque transaction cochée affiche ce sélecteur : la catégorie
+  choisie sur l'une d'elles est appliquée à toutes les transactions cochées (elles sont
+  aussi pointées ; pas de règle proposée), et la sélection reste.
 - **Détail d'une transaction** : un clic (ou Entrée) sur le libellé ouvre une fenêtre avec
   le montant, le libellé complet, les dates, le type, la carte, la banque (compte synchronisé
   ou relevé importé) et la date d'import ; la

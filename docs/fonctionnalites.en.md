@@ -147,6 +147,11 @@ transactions of the last month still without a category.
   transactions, **Delete**; after confirmation): it disappears
   for the whole household and is never imported again, neither by synchronization nor by importing
   a statement.
+- **Change the category** of several transactions at once: **Select**, tick the
+  transactions, then choose the category in the list, on one of the ticked transactions
+  ("Uncategorized" included): every ticked transaction gets it, and the selection stays. As
+  for a single one, they are checked off and the rules no longer change this category chosen
+  by hand.
 - **Selection mode**: **Select all** ticks every transaction shown (filter and search applied,
   500 at most), then becomes **Unselect all**; the cross at the right of the bar closes the
   selection mode.

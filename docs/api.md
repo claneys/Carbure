@@ -96,7 +96,7 @@ premier plan ; ensuite, l'en-tête de chaque réponse suffit (voir ci-dessous).
 
 | Type | Incrémenté par |
 |---|---|
-| `transactions` | synchronisation (transaction nouvelle ou modifiée, catégorie trouvée), `POST /transaction/import`, `POST /transaction`, `PUT /transaction`, `PUT /transaction/category`, `PUT /transaction/date`, `PUT /transaction/pointed`, `PUT /transaction/split`, `PUT /transaction/tags`, `DELETE /tag`, `DELETE /transaction`, règles appliquées à l'historique, `DELETE /category` |
+| `transactions` | synchronisation (transaction nouvelle ou modifiée, catégorie trouvée), `POST /transaction/import`, `POST /transaction`, `PUT /transaction`, `PUT /transaction/category`, `PUT /transaction/categories`, `PUT /transaction/date`, `PUT /transaction/pointed`, `PUT /transaction/split`, `PUT /transaction/tags`, `DELETE /tag`, `DELETE /transaction`, règles appliquées à l'historique, `DELETE /category` |
 | `accounts` | synchronisation (compte en erreur, réparé ou autre erreur), `POST`/`PUT`/`DELETE /bank`, `/bank/backend` |
 | `categories` | `POST`/`PUT`/`DELETE /category`, `/category/keyword`, `PUT /category/keyword/settings` |
 | `budgets` | `POST /budget`, `POST /budget/copy`, `DELETE /category` |
@@ -708,6 +708,19 @@ curl -X POST https://exemple.fr/api/transaction/import -H "Authorization: Bearer
 `id`, `category` : affecte la catégorie et pointe la transaction (`autoPointed=false`
 pour ne pas la pointer). La catégorie est choisie à la main (`category_source` `manual`) :
 les règles ne la changent plus.
+
+### `PUT /transaction/categories`
+
+`ids` (1 à 500 transactions), `category` : affecte la même catégorie à toutes, en une fois
+(toutes ou aucune ; `400 tag_selection_limit`, `404 category_not_found`), et les pointe avec
+les parts des transactions réparties (`autoPointed=false` pour ne pas les pointer). Comme
+pour une seule, la catégorie est choisie à la main (`category_source` `manual`). Renvoie
+`{updated}` : le nombre de transactions dont la catégorie a changé.
+
+```bash
+curl -X PUT https://exemple.fr/api/transaction/categories -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' -d '{"ids":[42,43],"category":5}'
+```
 
 ### `PUT /transaction/pointed`
 

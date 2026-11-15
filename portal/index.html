@@ -672,7 +672,8 @@
                                     </button>
                                 </div>
                             </section>
-                            <!-- Selection of transactions: one tag added to all of them, or all of them deleted -->
+                            <!-- Selection of transactions: one tag added to all of them, or all of them deleted; their
+                                 category changes from the picker of one of them, in the list -->
                             <div v-if="selectingTransactions" class="tag-selection-bar" role="region" :aria-label="t('tagSelect')">
                                 <span class="tag-selection-count" aria-live="polite">{{ t('tagSelected', { count: selectedTransactionIds.length }) }}</span>
                                 <button type="button" class="btn-secondary selection-all" @click="toggleSelectAll" :disabled="displayedTransactions.length === 0"
@@ -763,8 +764,13 @@
                                             </span>
                                         </div>
                                     </div>
-                                    <div class="transaction-category">
-                                        <category-picker v-if="isUncategorized(transaction) && ruleCategoryOptions.length > 0" compact
+                                    <!-- Selected: its picker changes the category of the whole selection -->
+                                    <div class="transaction-category" :title="selectingTransactions && selectedTransactionIds.includes(Number(transaction.id)) ? t('selectionCategoryHelp', { count: selectedTransactionIds.length }) : null">
+                                        <category-picker v-if="selectingTransactions && selectedTransactionIds.includes(Number(transaction.id)) && ruleCategories.length > 0" compact with-default
+                                                         :model-value="isUncategorized(transaction) ? '' : Number(transaction.category)" :categories="ruleCategories" :t="t"
+                                                         :placeholder="t('chooseCategory')" :icon-for="categoryIcon" :color-for="categoryColor"
+                                                         @update:model-value="categorizeSelectedTransactions($event)"></category-picker>
+                                        <category-picker v-else-if="isUncategorized(transaction) && ruleCategoryOptions.length > 0" compact
                                                          model-value="" :categories="ruleCategories" :t="t" :placeholder="t('chooseCategory')"
                                                          :icon-for="categoryIcon" :color-for="categoryColor"
                                                          @update:model-value="categorizeTransaction(transaction, $event)"></category-picker>

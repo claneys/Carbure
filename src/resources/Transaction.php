@@ -983,6 +983,44 @@ final class Transaction {
     }
 
     /**
+     * Set one category, chosen by hand, on several transactions at once (a selection of the
+     * list), all or none: the rules never overwrite it. Like a single change, it also
+     * points them, with the parts of the split ones.
+     *
+     * @param array<mixed>         $ids         The ids of the transactions (at most Tag::MAX_SELECTION)
+     * @param int|string           $category    The category to set (0: uncategorized)
+     * @param bool|int|string|null $autoPointed Whether to auto-point the transactions (true by default)
+     * @return array{updated: int} The number of transactions whose category changed
+     * @throws Error If an id is invalid (400), the selection too large (400) or the category unknown (404)
+     */
+    #[ApiRoute('/transaction/categories', method: 'PUT', changes: ['transactions'])]
+    public static function updateCategories(array $ids, int|string $category, bool|int|string|null $autoPointed = true): array
+    {
+        $ids = Tag::idList($ids);
+        if ($ids === [] || count($ids) > Tag::MAX_SELECTION) {
+            throw new ApiError("Select 1 to " . Tag::MAX_SELECTION . " transactions", 400, 'tag_selection_limit', ['max' => Tag::MAX_SELECTION]);
+        }
+        $category = self::existingCategory($category);
+        $in = implode(',', array_fill(0, count($ids), '?'));
+        $types = str_repeat('i', count($ids));
+
+        $db = Db::getConnection();
+        $db->begin_transaction();
+        try {
+            $updated = Db::execute("UPDATE bank_transaction SET category = ?" . self::sourceSql(self::SOURCE_MANUAL)
+                . " WHERE id IN ($in)", "i$types", $category, ...$ids)->affected_rows;
+            if (filter_var($autoPointed, FILTER_VALIDATE_BOOLEAN)) {
+                Db::execute("UPDATE bank_transaction SET pointed = 1 WHERE id IN ($in) OR split_of IN ($in)", "$types$types", ...$ids, ...$ids);
+            }
+            $db->commit();
+        } catch (Exception $e) {
+            $db->rollback();
+            throw $e;
+        }
+        return ['updated' => (int)$updated];
+    }
+
+    /**
      * Set a category on a transaction, with its origin.
      *
      * @param int|string $id       The id of the transaction

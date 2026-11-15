@@ -194,6 +194,7 @@ class ApiResolverTest extends TestCase
         'PUT /system/config' => 'admin',
         'PUT /tag' => 'user',
         'PUT /transaction' => 'user',
+        'PUT /transaction/categories' => 'user',
         'PUT /transaction/category' => 'user',
         'PUT /transaction/date' => 'user',
         'PUT /transaction/pointed' => 'user',

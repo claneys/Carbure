@@ -1486,6 +1486,66 @@ test('deleteSelectedTransactions deletes the parts first, keeps the selection of
     delete globalThis.confirm;
 });
 
+test('categorizeSelectedTransactions sets the category chosen on the whole selection, uncategorized included', async () => {
+    const sent = [];
+    let refuse = false;
+    const module = createTransactionModule(() => ({
+        setTransactionsCategory: async (ids, category) => {
+            if (refuse) {
+                throw new Error('Category not found');
+            }
+            sent.push([ids, category]);
+        },
+    }));
+    const context = {
+        ...module.data(),
+        transactions: [
+            { id: 1, category: 2, pointed: 0, split_of: null },
+            { id: 9, category: 3, pointed: 0, split_of: 1 },
+            { id: 2, category: 4, pointed: 0, split_of: null },
+        ],
+        searchResults: [{ id: 2, category: 4, pointed: 0, split_of: null }],
+        ruleCategories: [{ id: 0, name: 'Défaut' }, { id: 5, name: 'Courses' }],
+        selectingTransactions: true, selectedTransactionIds: [1, 2],
+        toasts: [],
+        t: (key, params) => `${key} ${JSON.stringify(params ?? {})}`,
+        showToast(text) { this.toasts.push(text); },
+        apiErrorText: error => error.message,
+    };
+
+    // No category chosen: nothing sent
+    await module.methods.categorizeSelectedTransactions.call(context, '');
+    assert.deepEqual(sent, []);
+
+    // The selection gets it and is checked, the part of a split one is checked only; the selection stays
+    await module.methods.categorizeSelectedTransactions.call(context, 5);
+    assert.deepEqual(sent, [[[1, 2], 5]]);
+    assert.deepEqual(context.transactions.map(t => [t.id, t.category, t.pointed]), [[1, 5, 1], [9, 3, 1], [2, 5, 1]]);
+    assert.deepEqual(context.searchResults.map(t => [t.category, t.pointed]), [[5, 1]]);
+    assert.deepEqual(context.toasts, ['selectionCategorized {"count":2,"name":"Courses"}']);
+    assert.deepEqual([context.selectingTransactions, context.selectedTransactionIds], [true, [1, 2]]);
+
+    // Uncategorized (0) is a choice
+    context.selectedTransactionIds = [2];
+    await module.methods.categorizeSelectedTransactions.call(context, 0);
+    assert.deepEqual(sent.at(-1), [[2], 0]);
+    assert.equal(context.transactions[2].category, 0);
+
+    // A change already being saved: another one is ignored
+    context.categorizingSelection = true;
+    await module.methods.categorizeSelectedTransactions.call(context, 5);
+    assert.equal(sent.length, 2);
+    context.categorizingSelection = false;
+
+    // A refusal: nothing changes, the selection stays
+    refuse = true;
+    context.selectedTransactionIds = [1];
+    await module.methods.categorizeSelectedTransactions.call(context, 99);
+    assert.deepEqual([context.selectingTransactions, context.selectedTransactionIds, context.transactions[0].category], [true, [1], 5]);
+    assert.equal(context.toasts.at(-1), 'Category not found');
+    assert.equal(context.categorizingSelection, false);
+});
+
 test('toggleSelectAll selects the transactions shown, then none', () => {
     const module = createTransactionModule(() => ({}));
     const context = {
