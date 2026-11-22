@@ -310,7 +310,9 @@ Des exemples de requêtes sont dans [Recettes d'insights](insights.md).
 
 ![Écran Tendances du portail web Carbure](assets/screenshot-trends.webp)
 
-- Période de **3, 6 ou 12 mois** se terminant au mois courant.
+- Période de **3, 6, 12, 24, 36 ou 60 mois** se terminant au mois courant, ou
+  **Personnalisée** : du mois choisi au mois choisi (mois courant au plus tard, 240 mois au
+  plus). Au-delà de 12 mois, l'axe n'affiche qu'une partie des mois, puis les années.
 - **Comparer à** : sans comparaison, la période précédente ou la même période l'an
   dernier.
 - **Chiffres clés** : épargne cumulée, épargne moyenne par mois, taux d'épargne,
@@ -324,6 +326,19 @@ Des exemples de requêtes sont dans [Recettes d'insights](insights.md).
   sous-catégories, moins les retraits (barres bleues, rouges pour un mois de retrait net).
   Le nom de la catégorie se règle avec `savings_category` (casse et accents ignorés). Le
   taux d'épargne est `épargne / revenus`.
+- **Par catégorie** : toutes les catégories d'un type (sélecteur Dépenses, Revenus, Hors
+  budget) sur un même graphique, catégories principales (sous-catégories incluses) ou
+  sous-catégories. Une pastille par catégorie, de la plus grosse à la plus petite, la masque
+  ou la réaffiche ; **Tout** et **Aucun** les affichent ou les masquent toutes. Boutons
+  **Lignes**, **Barres** (empilées) et **Aires** (empilées) ; l'échelle couvre les
+  catégories affichées, l'infobulle donne le montant de chacune et leur total. Ces choix
+  sont retenus par le navigateur.
+- **Graphiques personnalisés** : un graphique par catégorie (sous-catégories incluses),
+  sous-catégorie ou insight choisi, en barres, lignes ou aires mensuelles (le choix de la
+  carte Par catégorie) avec la moyenne de la période, le
+  budget prévu (catégories) et une infobulle au survol. Les administrateurs les ajoutent
+  (**Ajouter un graphique**, 12 au plus), les déplacent et les retirent ; la liste est
+  partagée par le foyer.
 - Vue **tableau** des données mois par mois.
 
 ## Tags
@@ -396,7 +411,8 @@ la catégorie choisie.
 
 Arborescence des catégories (un niveau de sous-catégories) regroupée par type (dépenses,
 revenus, hors budget). **+** ajoute une catégorie, le crayon la modifie (dans une modale),
-la corbeille la supprime. L'icône et la couleur se choisissent parmi celles que
+la corbeille la supprime. Le **+** d'une ligne de catégorie principale ajoute une
+sous-catégorie : la modale s'ouvre avec ce parent et son type déjà choisis. L'icône et la couleur se choisissent parmi celles que
 les applications mobiles savent afficher, avec un aperçu. Supprimer une catégorie fait passer ses
 transactions en « Non catégorisé » et supprime ses budgets et règles ; une catégorie qui a
 des sous-catégories ne peut pas être supprimée. La catégorie « Non catégorisé » (0) est

@@ -5,6 +5,13 @@ const { contrastProblems } = require('../a11y');
 /** Button of a rule, by its keyword */
 const rule = (page, keyword) => page.getByRole('button', { name: `${tr('editRule')} ${keyword}` });
 
+/** Click the button applying the rules, named by its visible text and described by its mode */
+async function applyRules(page, help) {
+    const button = page.getByRole('button', { name: tr('applyRules'), exact: true });
+    await expect(button).toHaveAccessibleDescription(tr(help));
+    await button.click();
+}
+
 test('lists the rules grouped by category, with a filter', async ({ adminPage: page }) => {
     await openTab(page, tr('tabRules'));
 
@@ -99,7 +106,7 @@ test('deletes a rule', async ({ adminPage: page }) => {
 
 test('applies all the rules to the whole history', async ({ adminPage: page }) => {
     await openTab(page, tr('tabRules'));
-    await page.getByRole('button', { name: tr('applyRulesHelp') }).click();
+    await applyRules(page, 'applyRulesHelp');
 
     await expect(page.locator('.toast')).toHaveText(tr('rulesApplied', { count: 0 }));
 });
@@ -114,7 +121,7 @@ test('a category chosen by hand is never overwritten by the rules (#341)', async
     const created = await (await api.post('/api/category/keyword', { data: { keyword: 'BOULANGERIE', category: 1 } })).json();
     expect(created.applied).toBe(0);
     await openTab(page, tr('tabRules'));
-    await page.getByRole('button', { name: tr('applyRulesHelp') }).click();
+    await applyRules(page, 'applyRulesHelp');
     await expect(page.locator('.toast')).toHaveText(tr('rulesApplied', { count: 0 }));
 
     const { month, year } = currentMonth();
@@ -148,7 +155,7 @@ test('keeps the existing categories: the rules only categorize the uncategorized
     const category = label => Number(transactions.find(t => t.label === label).category);
     expect([category('CB BOULANGERIE PAUL'), category('CB SUPERMARCHE CASINO'), category('CB RESTAURANT LE PETIT ZINC')]).toEqual([1, 2, 3]);
 
-    await page.getByRole('button', { name: tr('applyRulesHelpUncategorized') }).click();
+    await applyRules(page, 'applyRulesHelpUncategorized');
     await expect(page.locator('.toast')).toHaveText(tr('rulesAppliedUncategorized', { count: 0 }));
 
     // Kept after a reload

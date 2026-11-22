@@ -302,8 +302,9 @@ export default {
     template: `
         <div class="category-picker" :class="{ open, compact }" @keydown.esc="close">
             <button ref="button" type="button" class="category-picker-button" @click="toggle"
-                    aria-haspopup="listbox" :aria-expanded="open ? 'true' : 'false'"
-                    :aria-label="t('categoryLabel') + ' : ' + (selected ? selected.name : (placeholder || t('ruleCategoryPlaceholder')))">
+                    aria-haspopup="listbox" :aria-expanded="open ? 'true' : 'false'">
+                <!-- Named by its content (WCAG 2.5.3 Label in Name): the visible text, after a hidden prefix -->
+                <span class="visually-hidden">{{ t('categoryLabel') }} : </span>
                 <template v-if="selected">
                     <span class="category-badge" :style="badgeStyle(selected)">
                         <span class="material-icons" aria-hidden="true">{{ iconFor(selected) }}</span>
