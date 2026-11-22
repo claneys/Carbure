@@ -167,10 +167,14 @@ export function createTransactionModule(getApiService) {
                 transactionDetailPointed: false,
                 // Date it is counted on (its month), changed in the modal
                 transactionDetailDate: '',
+                // Free-text comment, changed in the modal ('' for none)
+                transactionDetailComment: '',
                 savingTransaction: false,
 
                 // Search by label
                 searchQuery: '',
+                // The search of the transactions similar to one: the text in their label only
+                searchLabelOnly: false,
                 searchResults: [],
                 searching: false,
                 searchTimer: null
@@ -484,6 +488,7 @@ export function createTransactionModule(getApiService) {
                 this.transactionDetailCategory = Number(transaction.category) || 0;
                 this.transactionDetailPointed = !!Number(transaction.pointed);
                 this.transactionDetailDate = transaction.date || '';
+                this.transactionDetailComment = transaction.comment || '';
                 // The categories are needed by the picker
                 if (!this.ruleCategories.length && getApiService()) {
                     getApiService().fetchCategories().then(c => { this.ruleCategories = c; }).catch(() => {});
@@ -540,9 +545,9 @@ export function createTransactionModule(getApiService) {
             },
 
             /**
-             * Saves the category, the checked state and the date (the month it is counted
-             * on) of the transaction of the modal; a new date reloads the list, the totals
-             * and the periods: the transaction may move to another month
+             * Saves the category, the checked state, the comment and the date (the month it
+             * is counted on) of the transaction of the modal; a new date reloads the list, the
+             * totals and the periods: the transaction may move to another month
              * @returns {Promise<void>}
              */
             async saveTransactionDetail() {
@@ -555,9 +560,15 @@ export function createTransactionModule(getApiService) {
                     return;
                 }
                 const dateChanged = date !== transaction.date;
+                const comment = (this.transactionDetailComment || '').trim();
                 const categoryChanged = category !== (Number(transaction.category) || 0);
                 this.savingTransaction = true;
                 try {
+                    // The comment first: refused (before its migration, too long), nothing else is saved
+                    if (comment !== (transaction.comment || '')) {
+                        await getApiService().setTransactionComment(transaction.id, comment);
+                        this.setShownComment(transaction, comment || null);
+                    }
                     if (categoryChanged) {
                         const wasUncategorized = this.isUncategorized(transaction);
                         // Changing the category also checks the transaction
@@ -607,6 +618,20 @@ export function createTransactionModule(getApiService) {
                     }
                 }
                 transaction.date = date;
+            },
+
+            /**
+             * Gives its new comment to a transaction in the lists shown (month and search)
+             * @param {Object} transaction - Transaction (or a part of one)
+             * @param {string|null} comment - New comment, null for none
+             */
+            setShownComment(transaction, comment) {
+                for (const t of [...this.transactions, ...this.searchResults]) {
+                    if (Number(t.id) === Number(transaction.id)) {
+                        t.comment = comment;
+                    }
+                }
+                transaction.comment = comment;
             },
 
             /**
@@ -757,6 +782,8 @@ export function createTransactionModule(getApiService) {
              */
             onSearchInput() {
                 clearTimeout(this.searchTimer);
+                // Typed by the user: the label and the comment
+                this.searchLabelOnly = false;
                 if (!this.isSearching) {
                     this.searchResults = [];
                     return;
@@ -781,6 +808,8 @@ export function createTransactionModule(getApiService) {
                 }
                 clearTimeout(this.searchTimer);
                 this.searchQuery = similarLabelQuery(transaction.label);
+                // Same merchant: a comment that names it is not a similar transaction
+                this.searchLabelOnly = true;
                 this.$nextTick?.(() => document.querySelector('.transaction-search input')?.focus());
                 await this.runSearch();
             },
@@ -795,13 +824,13 @@ export function createTransactionModule(getApiService) {
                     return;
                 }
 
-                const params = searchParams(this.searchQuery, this.searchFilters);
+                const params = searchParams(this.searchQuery, this.searchFilters, this.searchLabelOnly);
                 const key = JSON.stringify(params);
                 this.searching = true;
                 try {
                     const results = await apiService.searchTransactions(params);
                     // Ignore late answers for an older search
-                    if (key === JSON.stringify(searchParams(this.searchQuery, this.searchFilters))) {
+                    if (key === JSON.stringify(searchParams(this.searchQuery, this.searchFilters, this.searchLabelOnly))) {
                         this.searchResults = results;
                     }
                 } catch (err) {
@@ -817,6 +846,7 @@ export function createTransactionModule(getApiService) {
             clearSearch() {
                 clearTimeout(this.searchTimer);
                 this.searchQuery = '';
+                this.searchLabelOnly = false;
                 this.searchFilters = { ...EMPTY_FILTERS };
                 this.searchResults = [];
             },

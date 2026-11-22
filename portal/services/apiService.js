@@ -790,8 +790,22 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
     }
 
     /**
+     * Sets the free-text comment of a transaction
+     * @param {number} id - Transaction id
+     * @param {string} comment - The comment (500 characters at most), '' removes it
+     * @returns {Promise<Object>} The transaction saved
+     * @throws {Error} If request fails (409 before the database migration)
+     */
+    async function setTransactionComment(id, comment) {
+        return request(`${baseUrl}/transaction/comment`, {
+            method: 'PUT',
+            body: JSON.stringify({ id, comment })
+        }, 'Failed to change the comment of the transaction');
+    }
+
+    /**
      * Enters a transaction by hand on a manual account
-     * @param {{account: number, date: string, label: string, amount: number, category?: number}} transaction - The transaction
+     * @param {{account: number, date: string, label: string, amount: number, category?: number, comment?: string}} transaction - The transaction
      * @returns {Promise<Object>} The transaction saved
      */
     async function createTransaction(transaction) {
@@ -800,7 +814,7 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
 
     /**
      * Changes a transaction entered by hand
-     * @param {{id: number, date: string, label: string, amount: number}} transaction - The new values
+     * @param {{id: number, date: string, label: string, amount: number, comment?: string}} transaction - The new values ('' removes the comment, absent keeps it)
      * @returns {Promise<Object>} The transaction saved
      */
     async function updateTransaction(transaction) {
@@ -1680,6 +1694,7 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
         setTransactionCategory,
         setTransactionsCategory,
         setTransactionDate,
+        setTransactionComment,
         splitTransaction,
         createTransaction,
         updateTransaction,

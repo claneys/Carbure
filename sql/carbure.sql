@@ -72,6 +72,7 @@ CREATE TABLE `bank_transaction` (
   `rdate` date NOT NULL COMMENT 'Transaction real date',
   `type` tinyint(3) unsigned NOT NULL COMMENT 'Type of transaction : Cheque, virement ...',
   `label` varchar(300) NOT NULL COMMENT 'Label for the transaction',
+  `comment` varchar(500) DEFAULT NULL COMMENT 'Free-text comment of the household (NULL: none)',
   `category` tinyint(3) unsigned NOT NULL DEFAULT 0 COMMENT 'Category of the transaction',
   `category_source` varchar(10) DEFAULT NULL COMMENT 'Origin of the category: rule, manual (NULL: unknown)',
   `amount` decimal(10,2) NOT NULL COMMENT 'Amount in currency for this transaction',
@@ -430,7 +431,8 @@ INSERT IGNORE INTO `schema_migrations` (`version`) VALUES
 ('2026-11-04_insight_largest_expense'),
 ('2026-11-05_rule_amount'),
 ('2026-11-06_budget_note'),
-('2026-11-07_insight_position');
+('2026-11-07_insight_position'),
+('2026-11-19_transaction_comment');
 
 SET FOREIGN_KEY_CHECKS = 1;
 COMMIT;

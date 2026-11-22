@@ -301,9 +301,9 @@ final class Mcp {
             [
                 'name' => 'search_transactions',
                 'title' => 'Search transactions',
-                'description' => 'Search the transactions of every period, most recent first: by a text of the label (e.g. a shop or a company) and/or by amount, kind, categories and dates. Give at least one criterion.',
+                'description' => 'Search the transactions of every period, most recent first: by a text of the label (e.g. a shop or a company) or of the comment written by the household and/or by amount, kind, categories and dates. Give at least one criterion.',
                 'inputSchema' => ['type' => 'object', 'properties' => [
-                    'query' => ['type' => 'string', 'minLength' => 2, 'description' => 'Text to find in the label'],
+                    'query' => ['type' => 'string', 'minLength' => 2, 'description' => 'Text to find in the label or the comment'],
                     'min' => ['type' => 'number', 'minimum' => 0, 'description' => 'Smallest amount, without sign (50 finds an expense of -50)'],
                     'max' => ['type' => 'number', 'minimum' => 0, 'description' => 'Largest amount, without sign'],
                     'kind' => ['type' => 'string', 'enum' => ['debit', 'credit'], 'description' => 'debit: expenses only, credit: incomes only'],
@@ -518,7 +518,9 @@ final class Mcp {
             'tables' => [
                 'bank_transaction' => 'date (debit date: the month displayed), rdate (actual date of the payment), type (see transaction_types), label, '
                     . 'category (bank_transaction_category.id, 0 = uncategorized), amount (negative = expense), pointed (1 = checked), '
-                    . 'bank_name, account_number, split_of (a part of a split transaction: id of the original one, otherwise NULL)',
+                    . 'bank_name, account_number, split_of (a part of a split transaction: id of the original one, otherwise NULL)'
+                    // The column exists once the migration 2026-11-19_transaction_comment is applied
+                    . (Transaction::commentReady() ? ', comment (free text written by the household, NULL if none)' : ''),
                 'bank_transaction_category' => 'id, name, parent_category (0 = main category), type: DEBIT (expense), CREDIT (income) or HORS-BUDGET (off-budget: savings, internal transfers)',
                 'bank_transaction_category_keyword' => 'keyword, category, notify: categorization rules (a label containing the keyword gets the category)',
                 'budget' => 'category, amount (planned, positive), date (first day of the month)',
@@ -668,7 +670,8 @@ final class Mcp {
      * Transactions reduced to what an analysis needs, with the category name.
      *
      * @param array<array<string, mixed>> $transactions Rows of bank_transaction
-     * @return array<array<string, mixed>> date, label, amount, category, checked
+     * @return array<array<string, mixed>> date, label, amount, category, checked, comment (null
+     *                                      without one, or before the migration 2026-11-19_transaction_comment)
      */
     private static function compact(array $transactions): array
     {
@@ -682,6 +685,7 @@ final class Mcp {
             'amount' => (float)$t['amount'],
             'category' => $names[(int)$t['category']] ?? null,
             'checked' => (bool)$t['pointed'],
+            'comment' => $t['comment'] ?? null,
         ], $transactions);
     }
 

@@ -764,6 +764,10 @@
                                                 <span class="material-icons" aria-hidden="true">call_split</span>{{ t('splitBankAmount', { amount: formatAmount(transactionBankAmount(transaction)) + ' ' + currencySymbol }) }}
                                             </span>
                                         </div>
+                                        <p v-if="transaction.comment" class="transaction-comment" :title="transaction.comment">
+                                            <span class="material-icons" aria-hidden="true">chat_bubble_outline</span>
+                                            <span class="visually-hidden">{{ t('transactionComment') }}: </span>{{ transaction.comment }}
+                                        </p>
                                         <div v-if="transaction.tags && transaction.tags.length" class="transaction-tags">
                                             <span v-for="tag in transactionTags(transaction)" :key="tag.id" class="tag-chip">
                                                 <span class="tag-dot" :style="{ background: categoryColor(tag) }" aria-hidden="true"></span><span class="tag-chip-name">#{{ tag.name }}</span>
@@ -877,11 +881,16 @@
                                         <div class="transaction-icon" :class="transactionCategory(transaction) ? '' : 'type-' + transaction.type" :style="transactionIconStyle(transaction)">
                                             <span class="material-icons" aria-hidden="true">{{ transactionIcon(transaction) }}</span>
                                         </div>
+                                        <!-- Named by its content (WCAG 2.5.3 Label in Name): the visible text, after a hidden prefix -->
                                         <div class="transaction-details transaction-open" role="button" tabindex="0"
-                                             :aria-label="t('transactionDetail') + ' : ' + transaction.label"
                                              @click="openTransactionModal(transaction)" @keydown.enter.prevent="openTransactionModal(transaction)" @keydown.space.prevent="openTransactionModal(transaction)">
+                                            <span class="visually-hidden">{{ t('transactionDetail') }} : </span>
                                             <div class="transaction-label">{{ transaction.label }}</div>
                                             <div class="transaction-date">{{ formatDate(transaction.rdate || transaction.date) }}<template v-if="transactionCategory(transaction)"> · {{ transactionCategory(transaction).name }}</template></div>
+                                            <p v-if="transaction.comment" class="transaction-comment" :title="transaction.comment">
+                                                <span class="material-icons" aria-hidden="true">chat_bubble_outline</span>
+                                                <span class="visually-hidden">{{ t('transactionComment') }}: </span>{{ transaction.comment }}
+                                            </p>
                                         </div>
                                         <div class="transaction-amount" :class="transaction.amount >= 0 ? 'positive' : 'negative'">
                                             {{ formatAmount(transaction.amount) }} {{ currencySymbol }}
@@ -1024,11 +1033,16 @@
                                         <div class="transaction-icon" :class="transactionCategory(transaction) ? '' : 'type-' + transaction.type" :style="transactionIconStyle(transaction)">
                                             <span class="material-icons" aria-hidden="true">{{ transactionIcon(transaction) }}</span>
                                         </div>
+                                        <!-- Named by its content (WCAG 2.5.3 Label in Name): the visible text, after a hidden prefix -->
                                         <div class="transaction-details transaction-open" role="button" tabindex="0"
-                                             :aria-label="t('transactionDetail') + ' : ' + transaction.label"
                                              @click="openTransactionModal(transaction)" @keydown.enter.prevent="openTransactionModal(transaction)" @keydown.space.prevent="openTransactionModal(transaction)">
+                                            <span class="visually-hidden">{{ t('transactionDetail') }} : </span>
                                             <div class="transaction-label">{{ transaction.label }}</div>
                                             <div class="transaction-date">{{ formatDate(transaction.rdate || transaction.date) }}<template v-if="transactionCategory(transaction)"> · {{ transactionCategory(transaction).name }}</template></div>
+                                            <p v-if="transaction.comment" class="transaction-comment" :title="transaction.comment">
+                                                <span class="material-icons" aria-hidden="true">chat_bubble_outline</span>
+                                                <span class="visually-hidden">{{ t('transactionComment') }}: </span>{{ transaction.comment }}
+                                            </p>
                                         </div>
                                         <div class="transaction-amount" :class="transaction.amount >= 0 ? 'positive' : 'negative'">
                                             {{ formatAmount(transaction.amount) }} {{ currencySymbol }}
@@ -3170,6 +3184,12 @@
                             <template v-for="(part, i) in t('tagNoneActive', { link: '{link}' }).split('{link}')" :key="i"><a v-if="i > 0" href="#" class="tag-tab-link" @click.prevent="goToTagsTab">{{ t('tagNoneActiveLink') }}</a>{{ part }}</template>
                         </p>
                     </div>
+                    <div class="form-group">
+                        <label for="detail-comment">{{ t('transactionComment') }}</label>
+                        <textarea id="detail-comment" class="transaction-detail-comment" rows="3" maxlength="500" v-model="transactionDetailComment"
+                                  :placeholder="t('transactionCommentPlaceholder')" aria-describedby="detail-comment-help"></textarea>
+                        <small id="detail-comment-help">{{ t('transactionCommentHelp') }}</small>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn-danger btn-danger-icon modal-footer-start" @click="deleteTransactionDetail" :disabled="savingTransaction"
@@ -3287,6 +3307,12 @@
                         <label>{{ t('categoryLabel') }}</label>
                         <category-picker v-model="manualForm.category" :categories="ruleCategories" :t="t" with-default :amount="manualForm.direction === 'income' ? 1 : -1"
                                          :placeholder="t('manualCategoryAuto')" :icon-for="categoryIcon" :color-for="categoryColor"></category-picker>
+                    </div>
+                    <div class="form-group">
+                        <label for="manual-comment">{{ t('transactionComment') }}</label>
+                        <textarea id="manual-comment" class="transaction-detail-comment" rows="3" maxlength="500" v-model="manualForm.comment"
+                                  :placeholder="t('transactionCommentPlaceholder')" aria-describedby="manual-comment-help"></textarea>
+                        <small id="manual-comment-help">{{ t('transactionCommentHelp') }}</small>
                     </div>
                 </div>
                 <div class="modal-footer">

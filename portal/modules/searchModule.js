@@ -28,13 +28,17 @@ export function filterCount(filters) {
  * Parameters of GET /transaction/search: the text from 2 characters, the criteria set
  * @param {string} query - Text typed
  * @param {Object} filters - Criteria
+ * @param {boolean} [labelOnly=false] - The text in the label only, not in the comment
  * @returns {Object<string, string>}
  */
-export function searchParams(query, filters = EMPTY_FILTERS) {
+export function searchParams(query, filters = EMPTY_FILTERS, labelOnly = false) {
     const params = {};
     const text = String(query || '').trim();
     if (text.length >= 2) {
         params.query = text;
+        if (labelOnly) {
+            params.in = 'label';
+        }
     }
     for (const key of ['min', 'max', 'kind', 'from', 'to']) {
         const value = String(filters[key] ?? '').trim();

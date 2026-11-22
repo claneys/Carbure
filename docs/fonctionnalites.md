@@ -137,6 +137,10 @@ transactions du dernier mois restées sans catégorie.
   prélèvement…), carte, banque d'origine, date d'import ; la catégorie et le pointage s'y
   modifient. **Transactions similaires** y lance la recherche sur le nom du commerçant
   (« PRLV SEPA EDF MDT/123 » cherche « EDF »).
+- **Commenter** une transaction (depuis son détail, champ **Commentaire**, 500 caractères) :
+  un texte libre visible par tout le foyer (« remboursé par Paul », « cadeau de Léa »), affiché
+  sous la date dans les listes et trouvé par la recherche. La synchronisation et l'import d'un
+  relevé ne le modifient pas.
 - **Changer la date comptée** d'une transaction, synchronisée ou non (depuis son détail,
   champ **Date comptée**) : elle passe au mois précédent ou suivant pour les totaux, les
   budgets et les tendances (une facture payée le 1er qui concerne le mois d'avant, un
@@ -158,9 +162,9 @@ transactions du dernier mois restées sans catégorie.
 - **Saisir une transaction à la main** (bouton **+**), par exemple une dépense en
   espèces, sur n'importe quel compte : un compte manuel, ou un compte synchronisé (une
   transaction que la banque n'envoie pas encore ; si elle l'envoie ensuite, supprimer le
-  doublon) : dépense ou revenu, montant, libellé, date, et catégorie (sinon celle des
-  règles). Tout utilisateur peut en saisir ; elle est comptée comme les autres, n'est jamais
-  écrasée par la synchronisation et reste modifiable (libellé, date, montant) depuis son
+  doublon) : dépense ou revenu, montant, libellé, date, catégorie (sinon celle des
+  règles) et commentaire. Tout utilisateur peut en saisir ; elle est comptée comme les autres, n'est jamais
+  écrasée par la synchronisation et reste modifiable (libellé, date, montant, commentaire) depuis son
   détail.
 - **Répartir** une transaction sur plusieurs catégories (depuis son détail) : un ticket de
   supermarché en partie alimentation et en partie maison, un retrait d'espèces dépensé en

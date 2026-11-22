@@ -74,6 +74,19 @@ keeps track of what was done).
       (column `budget.note`) is applied at container start. Before it, `GET /budget` returns
       `note: null` and `POST /budget` with a note answers 409 (`budget_note_migration`).
 
+- [ ] **Deployment of the transaction comments**: the migration `2026-11-19_transaction_comment`
+      (column `bank_transaction.comment`, nullable: the existing transactions get `NULL`, no
+      rewrite of the rows) is applied at container start by `tools/migrate.php`. Before it,
+      the transactions have no `comment` field and `PUT /transaction/comment` with a comment
+      answers 409 (`transaction_comment_migration`); the rest works as before.
+
+- [ ] **Mobile apps — transaction comments**: `GET /transaction` and `GET /transaction/search`
+      return `comment` (`null` without one, absent before the migration); show it and offer it
+      in the transaction details (`PUT /transaction/comment` with `id`, `comment`; `""` removes
+      it, 500 characters at most) and in the form of a transaction entered by hand
+      (`POST /transaction` and `PUT /transaction` take an optional `comment`; without it,
+      `PUT /transaction` keeps the current one).
+
 - [ ] **Mobile apps — budget notes (#468)**: `GET /budget` returns `note`; show it and offer it
       in the budget editor (`POST /budget` with `note`, `""` to remove it; without `note`
       the current one is kept).

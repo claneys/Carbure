@@ -96,7 +96,7 @@ premier plan ; ensuite, l'en-tête de chaque réponse suffit (voir ci-dessous).
 
 | Type | Incrémenté par |
 |---|---|
-| `transactions` | synchronisation (transaction nouvelle ou modifiée, catégorie trouvée), `POST /transaction/import`, `POST /transaction`, `PUT /transaction`, `PUT /transaction/category`, `PUT /transaction/categories`, `PUT /transaction/date`, `PUT /transaction/pointed`, `PUT /transaction/split`, `PUT /transaction/tags`, `DELETE /tag`, `DELETE /transaction`, règles appliquées à l'historique, `DELETE /category` |
+| `transactions` | synchronisation (transaction nouvelle ou modifiée, catégorie trouvée), `POST /transaction/import`, `POST /transaction`, `PUT /transaction`, `PUT /transaction/category`, `PUT /transaction/categories`, `PUT /transaction/comment`, `PUT /transaction/date`, `PUT /transaction/pointed`, `PUT /transaction/split`, `PUT /transaction/tags`, `DELETE /tag`, `DELETE /transaction`, règles appliquées à l'historique, `DELETE /category` |
 | `accounts` | synchronisation (compte en erreur, réparé ou autre erreur), `POST`/`PUT`/`DELETE /bank`, `/bank/backend` |
 | `categories` | `POST`/`PUT`/`DELETE /category`, `/category/keyword`, `PUT /category/keyword/settings` |
 | `budgets` | `POST /budget`, `POST /budget/copy`, `DELETE /category` |
@@ -596,7 +596,8 @@ choisis (voir [`GET /user/notifications`](#get-usernotifications)).
 Les transactions sont triées par date réelle décroissante. Champs : `id`, `uuid`,
 `imported`, `date`, `rdate`, `type`, `label`, `category`, `amount`, `card`, `bank_name`
 et `account_number` (compte d'origine ; `null` pour les transactions antérieures à leur
-ajout), `pointed`, `user`.
+ajout), `pointed`, `user`, `comment` (commentaire libre du foyer, `null` sans commentaire ;
+absent tant que la migration `2026-11-19_transaction_comment` n'est pas appliquée).
 
 ```bash
 curl "https://exemple.fr/api/transaction?month=9&year=2026&category=1" -H "Authorization: Bearer $TOKEN"
@@ -641,8 +642,9 @@ faut au moins un (`400 search_too_short` sinon).
 
 | Paramètre | Requis | Description |
 |---|---|---|
-| `query` | non | Texte recherché dans le libellé (2 caractères minimum, insensible à la casse) ; `#nom` : les transactions du tag |
+| `query` | non | Texte recherché dans le libellé ou le commentaire (2 caractères minimum, insensible à la casse) ; `#nom` : les transactions du tag |
 | `min`, `max` | non | Montant minimal et maximal, sans signe : `min=50` trouve une dépense de -50 comme un revenu de 50 (`400 search_amount_invalid` si négatif ou `min` > `max`) |
+| `in` | non | `label` : le texte de `query` dans le libellé seulement, pas dans le commentaire (transactions similaires à une autre) |
 | `kind` | non | `debit` : dépenses seules, `credit` : revenus seuls |
 | `categories` | non | Ids de catégories séparés par des virgules ; une catégorie inclut ses sous-catégories |
 | `accounts` | non | Comptes séparés par des virgules, sous la forme `bankId` de `GET /bank` (`numéro@banque`) |
@@ -734,6 +736,21 @@ curl -X PUT https://exemple.fr/api/transaction/pointed -H "Authorization: Bearer
   -H 'Content-Type: application/json' -d '{"id":42,"pointed":false}'
 ```
 
+### `PUT /transaction/comment`
+
+`id`, `comment` : commentaire libre de la transaction (synchronisée, importée, saisie à la
+main ou part d'une transaction répartie), visible par tout le foyer. 500 caractères au plus
+(`400 transaction_comment_length`, `params.max`), espaces de début et de fin retirés ; `""`
+(ou `comment` absent) le supprime. La synchronisation et l'import ne le modifient jamais ;
+les parts d'une transaction répartie ont chacune le leur. Renvoie la transaction de l'`id`.
+`404 transaction_not_found` ; `409 transaction_comment_migration` si la migration
+`2026-11-19_transaction_comment` n'est pas encore appliquée.
+
+```bash
+curl -X PUT https://exemple.fr/api/transaction/comment -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' -d '{"id":42,"comment":"Remboursé par Paul en juin"}'
+```
+
 ### `PUT /transaction/date`
 
 `id`, `date` (`AAAA-MM-JJ`) : change la date à laquelle la transaction est comptée (son
@@ -752,13 +769,17 @@ curl -X PUT https://exemple.fr/api/transaction/date -H "Authorization: Bearer $T
 
 Saisit une transaction à la main sur un compte du foyer, manuel ou synchronisé : `account`
 (`id` du compte, voir `GET /bank`), `date` (`AAAA-MM-JJ`), `label`, `amount` (négatif pour
-une dépense) et `category` (facultative : sinon celle des règles, sinon aucune). Elle est
+une dépense), `category` (facultative : sinon celle des règles, sinon aucune) et `comment`
+(facultatif, voir `PUT /transaction/comment` ; vérifié avant l'enregistrement : refusé, rien
+n'est saisi). Elle est
 pointée, de type `8` (dépense), avec le `bank_name` et l'`account_number` du compte ; son
 `uuid` commence par `manual` (jamais celui d'une banque), ce qui la distingue d'une
 transaction synchronisée : la synchronisation ne l'écrase pas, mais si la banque envoie plus
 tard la même transaction, elle s'ajoute en doublon. Renvoie la transaction. Erreurs `400` :
-`transaction_date_invalid`, `transaction_label_invalid`, `transaction_amount_invalid` ;
-`404` si le compte ou la catégorie n'existe pas.
+`transaction_date_invalid`, `transaction_label_invalid`, `transaction_amount_invalid`,
+`transaction_comment_length` ; `404` si le compte ou la catégorie n'existe pas ;
+`409 transaction_comment_migration` pour un commentaire avant la migration
+`2026-11-19_transaction_comment`.
 
 ```bash
 curl -X POST https://exemple.fr/api/transaction -H "Authorization: Bearer $TOKEN" \
@@ -769,7 +790,8 @@ curl -X POST https://exemple.fr/api/transaction -H "Authorization: Bearer $TOKEN
 
 Modifie une transaction saisie à la main (sur un compte manuel, ou `uuid` commençant par
 `manual`) : `id` et les valeurs à changer parmi `date`,
-`label` et `amount`. `400 transaction_not_manual` pour une transaction d'une banque ou une
+`label`, `amount` et `comment` (`""` le supprime ; sans `comment`, applications mobiles, le
+commentaire existant est conservé). `400 transaction_not_manual` pour une transaction d'une banque ou une
 part de répartition, `400 transaction_split_amount` pour le montant d'une transaction
 répartie (annuler d'abord la répartition). Renvoie la transaction.
 

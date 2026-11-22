@@ -95,7 +95,7 @@ is enough (see below).
 
 | Kind | Bumped by |
 |---|---|
-| `transactions` | synchronization (new or modified transaction, category found), `POST /transaction/import`, `POST /transaction`, `PUT /transaction`, `PUT /transaction/category`, `PUT /transaction/categories`, `PUT /transaction/date`, `PUT /transaction/pointed`, `PUT /transaction/split`, `PUT /transaction/tags`, `DELETE /tag`, `DELETE /transaction`, rules applied to the history, `DELETE /category` |
+| `transactions` | synchronization (new or modified transaction, category found), `POST /transaction/import`, `POST /transaction`, `PUT /transaction`, `PUT /transaction/category`, `PUT /transaction/categories`, `PUT /transaction/comment`, `PUT /transaction/date`, `PUT /transaction/pointed`, `PUT /transaction/split`, `PUT /transaction/tags`, `DELETE /tag`, `DELETE /transaction`, rules applied to the history, `DELETE /category` |
 | `accounts` | synchronization (account in error, repaired or another error), `POST`/`PUT`/`DELETE /bank`, `/bank/backend` |
 | `categories` | `POST`/`PUT`/`DELETE /category`, `/category/keyword`, `PUT /category/keyword/settings` |
 | `budgets` | `POST /budget`, `POST /budget/copy`, `DELETE /category` |
@@ -593,7 +593,8 @@ chose (see [`GET /user/notifications`](#get-usernotifications)).
 Transactions are sorted by actual date, newest first. Fields: `id`, `uuid`,
 `imported`, `date`, `rdate`, `type`, `label`, `category`, `amount`, `card`, `bank_name`
 and `account_number` (source account; `null` for transactions older than when these fields
-were added), `pointed`, `user`.
+were added), `pointed`, `user`, `comment` (free-text comment of the household, `null`
+without one; absent until the migration `2026-11-19_transaction_comment` is applied).
 
 ```bash
 curl "https://exemple.fr/api/transaction?month=9&year=2026&category=1" -H "Authorization: Bearer $TOKEN"
@@ -638,8 +639,9 @@ needed (`400 search_too_short` otherwise).
 
 | Parameter | Required | Description |
 |---|---|---|
-| `query` | no | Text searched in the label (2 characters minimum, case-insensitive); `#name`: the transactions of the tag |
+| `query` | no | Text searched in the label or the comment (2 characters minimum, case-insensitive); `#name`: the transactions of the tag |
 | `min`, `max` | no | Smallest and largest amount, without sign: `min=50` finds an expense of -50 as well as an income of 50 (`400 search_amount_invalid` if negative or `min` > `max`) |
+| `in` | no | `label`: the text of `query` in the label only, not in the comment (transactions similar to another one) |
 | `kind` | no | `debit`: expenses only, `credit`: incomes only |
 | `categories` | no | Comma-separated category ids; a category includes its sub-categories |
 | `accounts` | no | Comma-separated accounts, as the `bankId` of `GET /bank` (`number@bank`) |
@@ -731,6 +733,21 @@ curl -X PUT https://exemple.fr/api/transaction/pointed -H "Authorization: Bearer
   -H 'Content-Type: application/json' -d '{"id":42,"pointed":false}'
 ```
 
+### `PUT /transaction/comment` { #put-transactioncomment }
+
+`id`, `comment`: free-text comment of the transaction (synchronized, imported, entered by
+hand or a part of a split transaction), seen by the whole household. 500 characters at most
+(`400 transaction_comment_length`, `params.max`), leading and trailing spaces removed; `""`
+(or no `comment`) removes it. The synchronization and the import never change it; the parts
+of a split transaction each have their own. Returns the transaction of the `id`.
+`404 transaction_not_found`; `409 transaction_comment_migration` if the migration
+`2026-11-19_transaction_comment` is not applied yet.
+
+```bash
+curl -X PUT https://exemple.fr/api/transaction/comment -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' -d '{"id":42,"comment":"Paid back by Paul in June"}'
+```
+
 ### `PUT /transaction/date` { #put-transactiondate }
 
 `id`, `date` (`YYYY-MM-DD`): changes the date the transaction is counted on (its month, for
@@ -749,13 +766,16 @@ curl -X PUT https://exemple.fr/api/transaction/date -H "Authorization: Bearer $T
 
 Enters a transaction by hand on an account of the household, manual or synchronized:
 `account` (`id` of the account, see `GET /bank`), `date` (`YYYY-MM-DD`), `label`, `amount`
-(negative for an expense) and `category` (optional: otherwise the one of the rules,
-otherwise none). It is checked, of type `8` (expense), with the `bank_name` and the
+(negative for an expense), `category` (optional: otherwise the one of the rules,
+otherwise none) and `comment` (optional, see `PUT /transaction/comment`; checked before
+saving: refused, nothing is entered). It is checked, of type `8` (expense), with the `bank_name` and the
 `account_number` of the account; its `uuid` starts with `manual` (never a bank's one), which
 tells it apart from a synchronized transaction: the synchronization does not overwrite it,
 but if the bank later sends the same transaction, it is added as a duplicate. Returns the
-transaction. `400` errors: `transaction_date_invalid`, `transaction_label_invalid`, `transaction_amount_invalid`;
-`404` if the account or the category does not exist.
+transaction. `400` errors: `transaction_date_invalid`, `transaction_label_invalid`, `transaction_amount_invalid`,
+`transaction_comment_length`; `404` if the account or the category does not exist;
+`409 transaction_comment_migration` for a comment before the migration
+`2026-11-19_transaction_comment`.
 
 ```bash
 curl -X POST https://exemple.fr/api/transaction -H "Authorization: Bearer $TOKEN" \
@@ -765,8 +785,9 @@ curl -X POST https://exemple.fr/api/transaction -H "Authorization: Bearer $TOKEN
 ### `PUT /transaction` { #put-transaction }
 
 Changes a transaction entered by hand (on a manual account, or `uuid` starting with
-`manual`): `id` and the values to change among `date`, `label`
-and `amount`. `400 transaction_not_manual` for a transaction of a bank or a part of a split
+`manual`): `id` and the values to change among `date`, `label`,
+`amount` and `comment` (`""` removes it; without `comment`, mobile apps, the current
+comment is kept). `400 transaction_not_manual` for a transaction of a bank or a part of a split
 one, `400 transaction_split_amount` for the amount of a split transaction (cancel the split
 first). Returns the transaction.
 

@@ -55,6 +55,9 @@ test('searchParams: the text from 2 characters, the criteria set, a comma as dec
         { query: 'loyer', min: '10.5', to: '2026-10-31', categories: '1,4', accounts: '0001@bnp,0002@bnp' });
     // Without criteria (an older caller): the text only
     assert.deepEqual(searchParams('edf'), { query: 'edf' });
+    // The transactions similar to one: the text in the label only (nothing without a text)
+    assert.deepEqual(searchParams('edf', EMPTY_FILTERS, true), { query: 'edf', in: 'label' });
+    assert.deepEqual(searchParams('e', EMPTY_FILTERS, true), {});
 });
 
 test('the categories of the modal: chosen in the list, shown in their order, removed one by one', () => {

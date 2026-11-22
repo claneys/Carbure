@@ -100,6 +100,8 @@ final class BackupData {
                 'pointed' => 'bool', 'user' => 'user',
                 // Added with the migration 2026-11-02_category_source: unknown in an older backup
                 'category_source' => '?enum:rule|manual',
+                // Added with the migration 2026-11-19_transaction_comment: no comment in an older backup
+                'comment' => '?comment:500',
             ],
         ],
         'deleted_transactions' => [
@@ -320,7 +322,21 @@ final class BackupData {
             // bool:<default> = the value of a column missing from an older backup
             'bool' => fn(mixed $value, string $default): int => $value === null && $default !== '' ? (int)$default : self::flag($value),
             'user' => fn(mixed $value): ?string => $value === null ? null : self::text($value, 20, 1),
+            // comment:<max> = stored like the API does: trimmed, null when empty
+            'comment' => fn(mixed $value, string $max): ?string => self::comment(self::text($value, (int)$max, 0)),
         ];
+    }
+
+    /**
+     * A comment as the API stores it: trimmed, null when empty ("0" is a comment).
+     *
+     * @param string $text The text checked
+     * @return string|null The comment, null for none
+     */
+    private static function comment(string $text): ?string
+    {
+        $text = trim($text);
+        return $text === '' ? null : $text;
     }
 
     /**

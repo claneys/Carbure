@@ -137,6 +137,10 @@ transactions of the last month still without a category.
   direct debit…), card, originating bank, import date; the category and the checked status can be
   changed there. **Similar transactions** runs a search on the merchant's name
   ("PRLV SEPA EDF MDT/123" searches for "EDF").
+- **Comment** a transaction (from its details, **Comment** field, 500 characters): a free
+  text seen by the whole household ("paid back by Paul", "Léa's present"), shown under the
+  date in the lists and found by the search. The synchronization and a statement import do
+  not change it.
 - **Change the date a transaction is counted on**, synchronized or not (from its details,
   **Counted on** field): it moves to the previous or the next month for the totals, the
   budgets and the trends (a bill paid on the 1st that belongs to the month before, a salary
@@ -158,9 +162,9 @@ transactions of the last month still without a category.
 - **Enter a transaction by hand** (**+** button), for example a cash expense, on any
   account: a manual account, or a synchronized one (a transaction the bank does not send
   yet; if it sends it later, delete the duplicate): expense or income, amount, label, date,
-  and category (otherwise the one of the rules). Any user can enter one; it counts like the
+  category (otherwise the one of the rules) and comment. Any user can enter one; it counts like the
   others, is never overwritten by the synchronization and stays editable (label, date,
-  amount) from its details.
+  amount, comment) from its details.
 - **Split** a transaction across several categories (from its details): a supermarket
   receipt partly food and partly home, a cash withdrawal spent on groceries and transport.
   The first line is the transaction itself (its category, which may change, and the amount

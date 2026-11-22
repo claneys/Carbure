@@ -178,7 +178,10 @@ tâches ou l'écran d'accueil.
   **Date comptée** change le mois où la transaction compte, synchronisée ou non (la date
   réelle de la banque reste affichée et ne change pas) : à l'enregistrement, la liste, les
   totaux et les mois proposés sont rechargés, la transaction passe dans son nouveau mois et
-  les synchronisations suivantes gardent cette date. Le bouton
+  les synchronisations suivantes gardent cette date. Le champ **Commentaire** (texte libre,
+  500 caractères, vide pour le retirer), dernier champ de la fenêtre, est enregistré avec le reste ; un commentaire
+  s'affiche sous la date de la transaction dans les listes (une ligne, texte complet au
+  survol). Le bouton
   corbeille supprime la transaction, après confirmation : elle n'est plus réimportée, ni par
   la synchronisation ni par l'import d'un relevé (marquée « Supprimée » dans l'aperçu).
   Le bouton **Transactions similaires** ferme la fenêtre et lance la recherche avec le
@@ -187,12 +190,12 @@ tâches ou l'écran d'accueil.
   cherche « EDF ». La recherche s'efface ensuite avec la croix, comme une recherche saisie.
 - **Saisir une transaction à la main** : le bouton **Ajouter** ouvre un formulaire
   (compte, dépense ou revenu, montant, date, libellé, catégorie facultative : sinon celle
-  des règles). Pratique pour une dépense en espèces ; tout utilisateur peut en saisir. Le
+  des règles ; commentaire facultatif, en dernier). Pratique pour une dépense en espèces ; tout utilisateur peut en saisir. Le
   compte se choisit parmi tous ceux du foyer : les **comptes manuels** d'abord (le premier
   est proposé), puis les comptes synchronisés. Sur un compte synchronisé, le formulaire
   rappelle que la banque peut envoyer plus tard la même transaction : supprimer alors le
   doublon. La transaction est pointée, n'est jamais écrasée par la synchronisation, et reste
-  modifiable depuis son détail (bouton crayon **Modifier**, à côté de la poubelle : date, libellé, montant).
+  modifiable depuis son détail (bouton crayon **Modifier**, à côté de la poubelle : date, libellé, montant, commentaire).
 - **Répartir une transaction** sur plusieurs catégories : dans son détail, le bouton
   icône **Répartir** ouvre une fenêtre avec une ligne par part (catégorie et montant, saisi
   sans signe : il prend celui de la transaction ; 10 parts au plus). Le **reste**, recalculé

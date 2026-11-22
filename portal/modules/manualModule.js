@@ -4,7 +4,7 @@
  * Transactions entered by hand on any account: a manual one (cash, a bank woob does not
  * support, added by an administrator in the Accounts tab) or a synchronized one (a
  * transaction the bank does not send yet). Added from the Transactions tab by any user,
- * changed later (date, label, amount).
+ * changed later (date, label, amount, comment).
  *
  * @module manualModule
  */
@@ -49,9 +49,10 @@ export function isoDay(date) {
 
 /**
  * Values sent to the API for the form: the amount typed without sign takes the one of
- * the direction (expense or income); a comma is a decimal separator
- * @param {{account: string|number, date: string, label: string, amount: string|number, direction: string, category: string|number}} form - The form
- * @returns {{account: number, date: string, label: string, amount: number, category?: number}}
+ * the direction (expense or income); a comma is a decimal separator. The comment is sent
+ * trimmed when there is one
+ * @param {{account: string|number, date: string, label: string, amount: string|number, direction: string, category: string|number, comment?: string}} form - The form
+ * @returns {{account: number, date: string, label: string, amount: number, category?: number, comment?: string}}
  */
 export function manualPayload(form) {
     const amount = Math.abs(Number(String(form.amount ?? '').trim().replace(',', '.'))) || 0;
@@ -64,11 +65,15 @@ export function manualPayload(form) {
     if (form.category !== '' && form.category !== null && form.category !== undefined) {
         payload.category = Number(form.category);
     }
+    const comment = String(form.comment ?? '').trim();
+    if (comment !== '') {
+        payload.comment = comment;
+    }
     return payload;
 }
 
 /** Form of a transaction entered by hand, empty */
-const EMPTY_FORM = { id: null, account: '', date: '', label: '', amount: '', direction: 'expense', category: '' };
+const EMPTY_FORM = { id: null, account: '', date: '', label: '', amount: '', direction: 'expense', category: '', comment: '' };
 
 /**
  * Creates the manual module mixin for Vue components
@@ -153,7 +158,8 @@ export function createManualModule(getApiService) {
                     date: transaction.date,
                     label: transaction.label,
                     amount: Math.abs(amount).toFixed(2),
-                    direction: amount < 0 ? 'expense' : 'income'
+                    direction: amount < 0 ? 'expense' : 'income',
+                    comment: transaction.comment || ''
                 };
                 this.transactionDetail = null;
                 this.showManualModal = true;
@@ -177,7 +183,9 @@ export function createManualModule(getApiService) {
                     if (form.id === null) {
                         await getApiService().createTransaction(payload);
                     } else {
-                        await getApiService().updateTransaction({ id: form.id, date: payload.date, label: payload.label, amount: payload.amount });
+                        // The comment is always sent: '' removes it
+                        await getApiService().updateTransaction({ id: form.id, date: payload.date, label: payload.label, amount: payload.amount,
+                            comment: payload.comment ?? '' });
                     }
                     this.showManualModal = false;
                     this.showToast(this.t(form.id === null ? 'manualTransactionAdded' : 'transactionSaved'));

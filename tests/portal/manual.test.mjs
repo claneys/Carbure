@@ -53,6 +53,9 @@ test('manualPayload gives the amount the sign of the direction', () => {
     assert.deepEqual(manualPayload({ ...form, direction: 'income', amount: '-20', category: 0 }),
         { account: 3, date: '2026-10-27', label: 'Marché', amount: 20, category: 0 });
     assert.equal(manualPayload({ ...form, amount: 'abc' }).amount === 0, true);
+    // The comment: trimmed, left out when empty
+    assert.equal(manualPayload({ ...form, comment: '  Payé en espèces ' }).comment, 'Payé en espèces');
+    assert.equal('comment' in manualPayload({ ...form, comment: '   ' }), false);
 });
 
 test('the manual accounts are listed apart from the banks', () => {
@@ -127,8 +130,34 @@ test('changes a transaction entered by hand, from its detail', async () => {
     assert.equal(context.manualValid, true);
     context.manualForm.amount = '5';
     await context.saveManualTransaction();
-    assert.deepEqual(sent, [{ id: 9, date: '2026-10-20', label: 'PAIN', amount: -5 }]);
+    // Without comment: '' sent, the API keeps none
+    assert.deepEqual(sent, [{ id: 9, date: '2026-10-20', label: 'PAIN', amount: -5, comment: '' }]);
     assert.deepEqual(context.toasts, ['transactionSaved']);
+});
+
+test('a new transaction is saved with its comment', async () => {
+    const sent = [];
+    const context = manualContext({ createTransaction: async t => { sent.push(t); return t; } });
+    context.manualForm = { id: null, account: 5, date: '2026-10-27', label: 'Marché', amount: '20', direction: 'expense', category: '',
+        comment: ' Légumes pour la semaine ' };
+
+    await context.saveManualTransaction();
+    assert.deepEqual(sent, [{ account: 5, date: '2026-10-27', label: 'Marché', amount: -20, comment: 'Légumes pour la semaine' }]);
+});
+
+test('the comment of a transaction entered by hand is found in its form, changed or removed', async () => {
+    const sent = [];
+    const context = manualContext({ updateTransaction: async t => { sent.push(t); return t; } });
+    const transaction = { id: 9, bank_name: 'manual', date: '2026-10-20', label: 'PAIN', amount: '-4.20', comment: 'Pour Léa' };
+
+    context.editManualTransaction(transaction);
+    assert.equal(context.manualForm.comment, 'Pour Léa');
+    context.manualForm.comment = '  Pour Léa et Paul ';
+    await context.saveManualTransaction();
+    context.editManualTransaction(transaction);
+    context.manualForm.comment = '';
+    await context.saveManualTransaction();
+    assert.deepEqual(sent.map(t => t.comment), ['Pour Léa et Paul', '']);
 });
 
 test('a refused transaction keeps the form open with the error', async () => {

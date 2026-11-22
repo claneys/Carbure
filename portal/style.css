@@ -3381,6 +3381,29 @@ button .material-icons {
     font-size: 16px;
 }
 
+/* Comment of a transaction, under its date in the lists: one line, whole text in the title */
+.transaction-comment {
+    margin: 2px 0 0;
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.transaction-comment .material-icons {
+    font-size: 14px;
+    vertical-align: -2px;
+    margin-right: 4px;
+}
+
+/* The comment of the detail modal: text, not code (the other textareas are SQL) */
+.modal-body textarea.transaction-detail-comment {
+    font-family: inherit;
+    font-size: 16px;
+}
+
 /* ===== Trends view ===== */
 .trends-view {
     display: flex;

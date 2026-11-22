@@ -310,6 +310,12 @@ test('searchSimilarTransactions: closes the detail and searches like a typed sea
     assert.equal(context.transactionDetail, null);
     assert.equal(context.searchQuery, 'BOULANGERIE PAUL');
     assert.deepEqual(searched, ['BOULANGERIE PAUL']);
+    // Same merchant: in the label only, until the user types
+    assert.equal(context.searchLabelOnly, true);
+    context.isSearching = true;
+    transactions.methods.onSearchInput.call(context);
+    clearTimeout(context.searchTimer);
+    assert.equal(context.searchLabelOnly, false);
 });
 
 test('searchSimilarTransactions: from the Budget tab, the results are shown in the Transactions tab', async () => {

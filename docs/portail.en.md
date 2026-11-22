@@ -175,7 +175,9 @@ taskbar or the home screen.
   **Counted on** field changes the month the transaction counts in, synchronized or not (the
   real date of the bank stays shown and does not change): once saved, the list, the totals and
   the months offered are reloaded, the transaction moves to its new month and the next
-  synchronizations keep this date. The trash
+  synchronizations keep this date. The **Comment** field (free text, 500 characters, empty to
+  remove it), the last field of the window, is saved with the rest; a comment is shown under the date of the transaction in
+  the lists (one line, whole text on hover). The trash
   button deletes the transaction, after confirmation: it is no longer imported again, neither by
   the synchronization nor by a statement import (marked "Deleted" in the preview).
   The **Similar transactions** button closes the window and starts a search with the
@@ -183,13 +185,14 @@ taskbar or the home screen.
   merchant (card number, date, mandate reference): "PRLV SEPA EDF MDT/123"
   searches for "EDF". The search is then cleared with the cross, like a typed search.
 - **Enter a transaction by hand**: the **Add** button opens a form (account, expense or
-  income, amount, date, label, optional category: otherwise the one of the rules). Handy
+  income, amount, date, label, optional category: otherwise the one of the rules; optional
+  comment, last). Handy
   for a cash expense; any user can enter one. The account is chosen among all the ones of
   the household: the **manual accounts** first (the first one is offered), then the
   synchronized ones. On a synchronized account, the form recalls that the bank may later
   send the same transaction: then delete the duplicate. The transaction is checked, is never
   overwritten by the synchronization, and stays editable from its details (pencil **Edit** button, next to the trash:
-  date, label, amount).
+  date, label, amount, comment).
 - **Split a transaction** across several categories: in its details, the **Split** icon
   button opens a window with one row per part (category and amount, typed without sign: it
   takes the one of the transaction; 10 parts at most). The **rest**, computed again as you

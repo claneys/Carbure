@@ -89,7 +89,7 @@ class McpTest extends DatabaseTestCase
 
         $transactions = $this->tool('list_transactions');
         $this->assertNotEmpty($transactions);
-        $this->assertSame(['date', 'label', 'amount', 'category', 'checked'], array_keys($transactions[0]));
+        $this->assertSame(['date', 'label', 'amount', 'category', 'checked', 'comment'], array_keys($transactions[0]));
 
         $found = $this->tool('search_transactions', ['query' => 'edf']);
         $this->assertNotEmpty($found);

@@ -133,6 +133,7 @@ erDiagram
         date rdate "date réelle"
         tinyint type
         varchar label
+        varchar comment "commentaire libre, NULL sans"
         tinyint category FK
         varchar category_source "origine : rule, manual, NULL inconnue"
         decimal amount
@@ -213,7 +214,7 @@ erDiagram
 | `bank_backend` | Nom donné à une connexion bancaire (backend woob, ex. `bnp_2` → « Compte joint »), affiché à la place du nom de la banque ; sans ligne, le nom de la banque est affiché. Les identifiants restent chez woob. |
 | `bank_account` | Comptes bancaires suivis par le foyer : `account_number@bank_name` forme le `bankId` passé à woob ; `label` est le nom donné au compte (« Compte joint », `NULL` = « BANQUE ···1234 »). `user_id` est l'utilisateur qui a ajouté le compte (« Ajouté par ») ; `last_sync_at`, `last_sync_status`, `last_sync_message` décrivent la dernière synchronisation. Unicité `(account_number, bank_name, user_id)` ; l'API refuse en plus un compte déjà suivi par le foyer. Un compte **manuel** (espèces, banque que woob ne gère pas) a le `bank_name` réservé `manual` : jamais synchronisé, ses transactions sont saisies à la main. |
 | `bank_transaction` | Transactions. `uuid` unique sert au dédoublonnage ; `bank_name` et `account_number` indiquent le compte synchronisé d'origine (ou le compte lu dans un relevé importé, `bank_name` `NULL`), `NULL` pour les transactions enregistrées avant leur ajout ; `user` = premier utilisateur ayant ajouté le compte (`MIN(user_id)`), sans effet sur la visibilité ; suppression de l'utilisateur interdite tant qu'il a des transactions (`ON DELETE RESTRICT`) ; index `transaction_date` sur `date`. `split_of` = id de la transaction dont une **part** a été détachée (répartition sur plusieurs catégories ; la transaction garde le reste, supprimée avec ses parts) ; saisie à la main = `uuid` commençant par `manual` (jamais celui d'une banque, un md5 en
-hexadécimal), ou `bank_name` `manual` (compte manuel, saisies antérieures). `category_source` = origine de la catégorie : `rule` (une règle), `manual` (choisie à la main, jamais écrasée par les règles), `NULL` (inconnue, catégorie posée avant son ajout). |
+hexadécimal), ou `bank_name` `manual` (compte manuel, saisies antérieures). `category_source` = origine de la catégorie : `rule` (une règle), `manual` (choisie à la main, jamais écrasée par les règles), `NULL` (inconnue, catégorie posée avant son ajout). `comment` = commentaire libre du foyer (500 caractères, `NULL` sans commentaire), jamais écrit par la synchronisation ni l'import. |
 | `tag` | Tags d'un projet limités dans le temps (`name` unique sans le `#`, `color`, `start_date`, `end_date` `NULL` = en cours), indépendants des catégories. |
 | `transaction_tag` | Tags des transactions (`transaction_id`, `tag_id`) ; supprimés avec la transaction ou le tag. |
 | `bank_transaction_deleted` | Transactions supprimées par un utilisateur (`uuid`, `deleted_at`, `user_id` mis à `NULL` si l'utilisateur est supprimé) : la synchronisation et l'import d'un relevé ignorent ces UUID, une transaction supprimée ne revient pas. |
@@ -254,6 +255,7 @@ main, ou par `sql/carbure.sql`). Voir [Développement](developpement.md#migratio
 | `2026-11-02_category_source` | Origine de la catégorie d'une transaction (`bank_transaction.category_source` : `rule`, `manual`, `NULL` inconnue) : les règles n'écrasent pas une catégorie choisie à la main |
 | `2026-11-03_insight_alert` | Alertes des utilisateurs sur les insights (table `insight_alert`) |
 | `2026-11-04_insight_largest_expense` | L'insight de départ « Plus grosse dépense » compte une transaction répartie une fois, avec le montant de la banque (seulement si sa requête n'a pas été modifiée) |
+| `2026-11-19_transaction_comment` | Commentaire libre d'une transaction (`bank_transaction.comment`, `NULL` pour les transactions existantes) |
 
 ## Modèle « foyer »
 

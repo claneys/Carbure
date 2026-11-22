@@ -219,6 +219,12 @@ test('the accounts grouped under their bank are readable', async ({ adminPage: p
 
 test('the menus, modals and the synchronization log are readable', async ({ adminPage: page, api }) => {
     const problems = [];
+    // A transaction with a comment: shown under its date in the list
+    const [commented] = await (await api.get('/api/transaction')).json();
+    await api.put('/api/transaction/comment', { data: { id: commented.id, comment: 'Remboursé par Paul en juin, la moitié du montant' } });
+    await page.reload();
+    await expect(page.locator('.transaction-comment')).toBeVisible();
+    problems.push(...await contrastProblems(page, tr('transactionComment')));
 
     await page.locator('.user-menu-toggle').click();
     problems.push(...await contrastProblems(page, 'user menu'));
@@ -233,6 +239,11 @@ test('the menus, modals and the synchronization log are readable', async ({ admi
     await expect(countedOn).toHaveAccessibleDescription(tr('transactionCountedOnHelp'));
     await countedOn.focus();
     problems.push(...await contrastProblems(page, `${tr('transactionCountedOn')} (focus)`));
+    // The comment: a labelled field, with its help, readable on focus
+    const comment = detail.getByLabel(tr('transactionComment'));
+    await expect(comment).toHaveAccessibleDescription(tr('transactionCommentHelp'));
+    await comment.focus();
+    problems.push(...await contrastProblems(page, `${tr('transactionComment')} (focus)`));
     // Split of the transaction, with the amount left to allocate and why it cannot be saved yet
     await detail.getByRole('button', { name: tr('splitButton') }).click();
     const split = page.getByRole('dialog', { name: tr('splitTitle') });
