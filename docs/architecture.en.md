@@ -47,7 +47,7 @@ flowchart LR
 | `Mailer` | Built-in SMTP client (no dependency): sends email notifications |
 | `Messages` | Notification texts (push and email) in the recipient's language |
 | `BankFile`, `import/` | Reading imported statements (OFX/QFX, QIF, CAMT.053, CSV with one profile per bank) |
-| `WoobRepository` | Repository of woob bank modules: fingerprint of its key, approval by an administrator |
+| `WoobRepository` | Repository of woob bank modules: fingerprint of its key, official key pinned (approved at the first start), otherwise approval by an administrator |
 | `Logger` | Buffered logs in `data/logs/carbure_YYYYMMDD.log`, one JSON entry per line: ISO 8601 time, level, request identifier (`uid`), client IP, user, method and path, message and context; one closing line per request (status, duration); purged after `log_retention_days` days |
 
 ## Handling a request { #traitement-dune-requete }

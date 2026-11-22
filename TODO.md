@@ -78,6 +78,11 @@ keeps track of what was done).
       in the budget editor (`POST /budget` with `note`, `""` to remove it; without `note`
       the current one is kept).
 
+- [ ] **Mobile apps — transactions put on a parent category (#492)**: in a sub-level of the
+      budgets they are in no card. Ask `GET /budget?category=<parent>&own=1` and show the
+      item with `own: true` (no budget, not to open again); its transactions:
+      `GET /transaction?category=<parent>&own=1`.
+
 - [ ] **Deployment of the order of the insights (#467)**: the migration
       `2026-11-07_insight_position` (column `budget_insight.position`) is applied at container
       start; the insights keep their order (by id) until the household orders them. Before it,

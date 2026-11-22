@@ -53,12 +53,32 @@ test('budgetGroups: expenses, incomes, off-budget or empty', () => {
     const groups = budget.computed.budgetGroups.call({ currentBudgetList: [
         { name: 'Logement', type: 'DEBIT', budget: '1000.00', consummed: 950 },
         { name: 'Vacances', type: 'DEBIT', budget: '0.00', consummed: 0 },
+        // #491: an expense without budget is not an overspending
+        { name: 'Cadeaux', type: 'DEBIT', budget: '0.00', consummed: 45 },
         { name: 'Salaire', type: 'CREDIT', budget: '0.00', consummed: 3200 },
         { name: 'Épargne', type: 'HORS-BUDGET', budget: '0.00', consummed: 500 },
     ] });
     assert.deepEqual(groups.expenses.map(i => i.name), ['Logement']);
     assert.deepEqual(groups.incomes.map(i => i.name), ['Salaire']);
-    assert.deepEqual(groups.others.map(i => i.name), ['Vacances', 'Épargne']);
+    assert.deepEqual(groups.others.map(i => i.name), ['Vacances', 'Cadeaux', 'Épargne']);
+});
+
+test('submitBudgetEdit: "no budget" saves 0 without an amount (#491)', async () => {
+    const saved = [];
+    const context = {
+        budgetUseChildren: false, budgetNone: true, budgetNewValue: '', budgetNote: ' ',
+        selectedMonth: 11, selectedYear: 2026, savingBudget: false,
+        showToast(message) { saved.push(['toast', message]); },
+        t: key => key,
+        async handleBudgetSave(amount, month, year, note) { saved.push([amount, month, year, note]); },
+    };
+    await budget.methods.submitBudgetEdit.call(context);
+    assert.deepEqual(saved, [[0, 11, 2026, '']]);
+
+    // Without it, an empty amount is still refused
+    saved.length = 0;
+    await budget.methods.submitBudgetEdit.call({ ...context, budgetNone: false });
+    assert.deepEqual(saved, [['toast', 'budgetInvalidAmount']]);
 });
 
 test('budgetSummary: totals of the budgeted expenses', () => {
@@ -1665,4 +1685,61 @@ test('rules: the optional amount, shown with 2 decimals, sent with the rule and 
     assert.equal(context.newRule.amount, '');
     await context.addRule();
     assert.deepEqual(sent.at(-1), ['create', 'PAYPAL', 1, false, '']);
+});
+
+test('budget: the own item of a parent lists only its transactions, without going into it again (#492)', async () => {
+    const navigated = [];
+    const fetched = [];
+    const store = { navigateToChildren: async (item) => { navigated.push(item.id); return true; } };
+    const api = { fetchCategoryTransactions: async (month, year, category, own) => { fetched.push([category, own]); return [{ id: 9 }]; } };
+    const module = createBudgetModule(() => store, () => api);
+    const context = {
+        budgetCategory: null,
+        budgetTransactions: [],
+        t: (key, params) => `${key}:${params.category}`,
+        ensureCategories() {},
+        showToast() {},
+        $nextTick() {},
+    };
+    for (const [name, method] of Object.entries(module.methods)) {
+        context[name] = method.bind(context);
+    }
+
+    await context.handleBudgetClick({ id: 1, name: 'Alimentation', own: true }, 11, 2026);
+    assert.deepEqual(navigated, []);
+    assert.deepEqual(fetched, [[1, true]]);
+    assert.deepEqual(context.budgetCategory, { id: 1, name: 'budgetOwnTransactions:Alimentation', own: true });
+    assert.equal(context.isBudgetCategorySelected({ id: 1, own: true }), true);
+    assert.equal(context.isBudgetCategorySelected({ id: 1 }), false);
+
+    await context.handleBudgetClick({ id: 1, name: 'Alimentation' }, 11, 2026);
+    assert.deepEqual(navigated, [1]);
+    assert.deepEqual(fetched[1], [1, false]);
+    assert.equal(context.budgetItemName({ id: 2, name: 'Supermarché' }), 'Supermarché');
+});
+
+test('importAccountOf: the account of the household with the number read in the file, else none (#485)', async () => {
+    const { importAccountOf } = await import('../../portal/modules/importModule.js');
+    const accounts = [{ id: 3, account_number: 'FR76 3000 1234' }, { id: 5, account_number: 'cash' }];
+    assert.equal(importAccountOf({ account: 'FR7630001234' }, accounts), 3);
+    assert.equal(importAccountOf({ account: 'cash' }, accounts), 5);
+    assert.equal(importAccountOf({ account: 'other' }, accounts), '');
+    assert.equal(importAccountOf({ account: null }, accounts), '');
+    assert.equal(importAccountOf(null, []), '');
+});
+
+test('confirmImport sends the account chosen, none for the one of the file (#485)', async () => {
+    const { createImportModule } = await import('../../portal/modules/importModule.js');
+    const calls = [];
+    const api = { importTransactions: async (...args) => { calls.push(args.slice(2)); return { imported: 1, categorized: 0, to: null }; } };
+    const module = createImportModule(() => api);
+    const context = {
+        importFile: { name: 'releve.csv', content: 'eA==' }, importSelection: { 0: true, 1: false }, importAccountId: 3,
+        importing: false, t: key => key, showToast() {}, loadPeriods() {}, loadTransactions() {}, closeImport() {},
+        selectedMonth: 11, selectedYear: 2026,
+    };
+    context.importSelectedCount = 1;
+    await module.methods.confirmImport.call(context);
+    await module.methods.confirmImport.call({ ...context, importAccountId: '' });
+    assert.deepEqual(calls, [[[0], 3], [[0], null]]);
 });

@@ -29,12 +29,16 @@ final class Budget {
      * @param int|string|null $month    The month to get the budget
      * @param int|string|null $year     The year to get the budget
      * @param int|string|null $category The parent category id
+     * @param bool|int|string|null $own With a parent category: also an item for the transactions
+     *               put on the parent itself, which no sub-category shows ("true"/"1" from a query string)
      * @return list<array<string, mixed>> The list of budget items; besides budget, note (of the
      *               budget of the month, null if none), consummed and progress: budget_mode ('own' or 'children': sum of the sub-categories),
-     *               children (number of sub-categories) and children_budget (their sum)
+     *               children (number of sub-categories) and children_budget (their sum); with $own, the item
+     *               of the transactions of the parent itself has own = true (id of the parent, no budget)
      */
     #[ApiRoute('/budget', method: 'GET')]
-    public static function get(int|string|null $month = null, int|string|null $year = null, int|string|null $category = 0): array
+    public static function get(int|string|null $month = null, int|string|null $year = null, int|string|null $category = 0,
+        bool|int|string|null $own = false): array
     {
         [$from, $to] = Month::range($month, $year);
 
@@ -83,10 +87,39 @@ final class Budget {
             $budget[] = $row;
         }
 
+        // Transactions put on the parent itself (rules may target it): shown apart, or they would be in no card
+        if ((int)$category !== 0 && filter_var($own, FILTER_VALIDATE_BOOLEAN) && isset($totals[$category])) {
+            $budget[] = self::ownItem((int)$category, (float)$totals[$category]);
+        }
+
         // Most consumed first
         usort($budget, fn($a, $b) => $b['consummed'] <=> $a['consummed']);
 
         return $budget;
+    }
+
+    /**
+     * Budget item of the transactions put on a parent category itself rather than on
+     * one of its sub-categories: no budget of its own, only what they consume.
+     *
+     * @param int   $category The parent category id
+     * @param float $total    Sum of the transactions of the month put on the parent
+     * @return array<string, mixed> The item, with the columns of the parent and own = true
+     */
+    private static function ownItem(int $category, float $total): array
+    {
+        $row = Db::queryOne("SELECT id, name, type, icon, color FROM bank_transaction_category WHERE id = ?", "i", $category)
+            ?? ['id' => $category, 'name' => '', 'type' => 'DEBIT', 'icon' => '', 'color' => ''];
+        return $row + [
+            'budget' => '0.00',
+            'note' => null,
+            'budget_mode' => 'own',
+            'children' => 0,
+            'children_budget' => 0,
+            'consummed' => self::consummed((string)$row['type'], $total),
+            'progress' => 0,
+            'own' => true,
+        ];
     }
 
     /**

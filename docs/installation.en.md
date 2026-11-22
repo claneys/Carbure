@@ -426,7 +426,8 @@ https://gitlab.com/search?group_id=11540390&project_id=25520182&scope=work_items
 Replace `<module>` with the name of the woob module (for example `bnp`, `creditmutuel`,
 `boursorama`). Once the fix is published, update the bank modules from
 the **Accounts** tab (**Update the bank modules** button, administrator; the
-first time, it asks you to approve the woob repository key, see [Security](securite.md)),
+first time, it asks you to approve the woob repository key unless it is the official one,
+approved on its own at the first start of the container, see [Security](securite.md)),
 or restart the Docker container: once the repository is approved, `woob config update` is
 run on every start and updates all bank modules. The
 `woob_auto_update=true` option is not enough: woob only offers a new version of a module

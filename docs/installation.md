@@ -427,7 +427,8 @@ https://gitlab.com/search?group_id=11540390&project_id=25520182&scope=work_items
 Remplacez `<module>` par le nom du module woob (par exemple `bnp`, `creditmutuel`,
 `boursorama`). Une fois le correctif publié, mettez à jour les modules bancaires depuis
 l'onglet **Comptes** (bouton **Mettre à jour les modules bancaires**, administrateur ; la
-première fois, il fait approuver la clé du dépôt de woob, voir [Sécurité](securite.md)),
+première fois, il fait approuver la clé du dépôt de woob si ce n'est pas la clé officielle,
+approuvée d'elle-même au premier démarrage du conteneur, voir [Sécurité](securite.md)),
 ou redémarrez le conteneur Docker : une fois le dépôt approuvé, `woob config update` est
 lancé à chaque démarrage et met à jour tous les modules bancaires. L'option
 `woob_auto_update=true` ne suffit pas : woob ne propose une nouvelle version d'un module

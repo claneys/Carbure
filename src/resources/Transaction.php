@@ -19,6 +19,7 @@ use Carbure\Lib\Db;
 use Carbure\Lib\Jwt;
 use Carbure\Lib\Logger;
 use Carbure\Lib\Month;
+use Carbure\Lib\SpendingAnalysis;
 use Carbure\Lib\TransactionSearch;
 use Carbure\Lib\Webservice;
 use DateTime;
@@ -101,16 +102,22 @@ final class Transaction {
      * @param int|string|null $month    The month of the transactions
      * @param int|string|null $year     The year of the transactions
      * @param int|string|null $category Only this category and its sub-categories (optional)
+     * @param bool|int|string|null $own With a category: only the transactions put on the category itself,
+     *                                   not on its sub-categories ("true"/"1" from a query string)
      * @return list<array<string, mixed>> The list of transactions, with the ids of their tags
      */
     #[ApiRoute('/transaction', method: 'GET')]
-    public static function get(int|string|null $month = null, int|string|null $year = null, int|string|null $category = null): array
+    public static function get(int|string|null $month = null, int|string|null $year = null, int|string|null $category = null,
+        bool|int|string|null $own = false): array
     {
         [$from, $to] = Month::range($month, $year);
 
         if ($category === null || $category === '') {
             $sql = "SELECT * FROM bank_transaction WHERE date >= ? AND date < ? ORDER BY rdate DESC";
             $stmt = Db::execute($sql, "ss", $from, $to);
+        } elseif (filter_var($own, FILTER_VALIDATE_BOOLEAN)) {
+            $sql = "SELECT * FROM bank_transaction WHERE date >= ? AND date < ? AND category = ? ORDER BY rdate DESC";
+            $stmt = Db::execute($sql, "ssi", $from, $to, $category);
         } else {
             $sql = "SELECT * FROM bank_transaction WHERE date >= ? AND date < ?
                     AND (category = ? OR category IN (SELECT id FROM bank_transaction_category WHERE parent_category = ? AND id <> 0))
@@ -244,9 +251,9 @@ final class Transaction {
     {
         $groups = [];
         foreach ($rows as $row) {
-            $name = trim(preg_replace('/[^\p{L}]+/u', ' ', preg_replace('/\d+/', '', (string)$row['label']) ?? '') ?? '');
-            if ($name !== '') {
-                $groups[((float)$row['amount'] < 0 ? '-' : '+') . $name][] = $row;
+            $key = SpendingAnalysis::seriesKey((string)$row['label'], $row['amount']);
+            if ($key !== '') {
+                $groups[$key][] = $row;
             }
         }
         return $groups;
@@ -342,7 +349,9 @@ final class Transaction {
             Logger::warn("$unlabeled transactions without a label (raw and label empty) from "
                 . ($origin['bank_name'] ?? 'a file') . ": check the woob module");
         }
-        return self::store($rows, $userId, $origin);
+        // Labels changed by the woob module (setting woob_relabel): the transaction saved takes them.
+        // Only for a synchronization: never for a file imported on that account
+        return self::store($rows, $userId, $origin, TransactionRelabel::apply(array_values($rows), $userId, $origin));
     }
 
     /**
@@ -351,12 +360,13 @@ final class Transaction {
      * @param array<array<string, mixed>> $rows   The transactions, as returned by prepareAll(), with
      *                                            their raw label to send it as a progress event
      * @param int                         $userId The user owning the transactions
-     * @param array<string, string|null>  $origin bank_name and account_number of the account they come from
+     * @param array<string, string|null>  $origin    bank_name and account_number of the account they come from
+     * @param array<string, true>         $relabeled UUIDs that relabeled a saved transaction (TransactionRelabel): not saved
      * @return list<array{label: string, amount: float, uuid: string, date: string|null}> The transactions
      *              that were not known yet (label cleaned, amount, uuid, real date); the deleted ones
      *              are skipped
      */
-    private static function store(array $rows, int $userId, array $origin = []): array
+    private static function store(array $rows, int $userId, array $origin = [], array $relabeled = []): array
     {
         $created = [];
         // Deleted by a user: never saved again
@@ -366,7 +376,7 @@ final class Transaction {
             if (isset($row['raw'])) {
                 Webservice::sendProgress($row['raw']);
             }
-            if (!isset($deleted[$row['uuid']]) && !($repair && self::relabel($row, $userId, $origin))
+            if (!isset($deleted[$row['uuid']]) && !isset($relabeled[$row['uuid']]) && !($repair && self::relabel($row, $userId, $origin))
                 && self::create($row, $userId, $origin)) {
                 $created[] = ['label' => $row['label'], 'amount' => (float)$row['amount'], 'uuid' => $row['uuid'],
                     'date' => $row['rdate'] ?? $row['date'] ?? null];
@@ -562,13 +572,17 @@ final class Transaction {
      * @param string|null                           $filename The name of the file
      * @param array<int|string>|int|string|null     $selected Indexes of the rows to import (by default:
      *                                                        the new ones)
+     * @param int|string|null                       $account  Account of the transactions (id of GET /bank); by
+     *                                                        default the account number read in the file, if any
      * @return array{imported: int, categorized: int, from: string|null, to: string|null}
      *              imported (number of new transactions), categorized, from, to
-     * @throws Error If the file is not understood
+     * @throws Error If the file is not understood, or the account does not exist (404)
      */
     #[ApiRoute('/transaction/import', method: 'POST', changes: ['transactions'])]
-    public static function import(?string $file, ?string $filename = null, array|int|string|null $selected = null): array
+    public static function import(?string $file, ?string $filename = null, array|int|string|null $selected = null,
+        int|string|null $account = null): array
     {
+        $origin = self::importOrigin($account);
         [$parsed, $rows, $prepared] = self::analyzeImport($file ?? '', $filename);
         $selected = $selected === null ? null : array_map('intval', (array)$selected);
 
@@ -581,7 +595,7 @@ final class Transaction {
             }
         }
 
-        $created = self::store($data, (int)Jwt::getUserIdFromToken(), ['account_number' => $parsed['account']]);
+        $created = self::store($data, (int)Jwt::getUserIdFromToken(), $origin ?? ['account_number' => $parsed['account']]);
 
         // The rules categorize the new transactions, whatever their date
         $categorized = self::categorizeImported($created);
@@ -600,6 +614,27 @@ final class Transaction {
             'from' => $dates ? min($dates) : null,
             'to' => $dates ? max($dates) : null,
         ];
+    }
+
+    /**
+     * Account chosen for the transactions of an imported file.
+     *
+     * @param int|string|null $account Id of the account (bank_account), null or "" for none
+     * @return array{bank_name: string, account_number: string|null}|null Its bank and number (null for an
+     *              account without number, as its synchronized transactions), null when none was chosen
+     * @throws Error If the account does not exist (404)
+     */
+    private static function importOrigin(int|string|null $account): ?array
+    {
+        if ($account === null || $account === '') {
+            return null;
+        }
+        $bank = Db::queryOne("SELECT bank_name, account_number FROM bank_account WHERE id = ?", "i", (int)$account);
+        if ($bank === null) {
+            throw new ApiError("Account not found", 404, 'account_not_found');
+        }
+        $number = $bank['account_number'];
+        return ['bank_name' => (string)$bank['bank_name'], 'account_number' => $number === null ? null : (string)$number];
     }
 
     /**

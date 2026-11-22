@@ -392,6 +392,20 @@ empreinte est exactement celle confirmée ; après la mise à jour, la clé que 
 conservée (`/data/woob/.local/share/woob/keyrings/`) doit aussi être celle-là, sinon elle
 est supprimée et la mise à jour échoue.
 
+**La clé du dépôt officiel est épinglée dans Carbure** : son empreinte
+SHA-256 (`a1755b379793ff4922a7bfb5f566c019205f805b96f3420aee95938cd0d1634a`, soit le SHA-1
+`b5fc136c2d500b8483696a0ee722865842a4cc45` affiché par woob ; clés des mainteneurs de woob,
+inchangée depuis février 2023) est vérifiée une fois pour toutes par les mainteneurs de Carbure
+(`WoobRepository::OFFICIAL_KEYRINGS`). Au premier démarrage du conteneur
+(`tools/woob-trust.php`), Carbure télécharge la clé du dépôt officiel et, si son empreinte
+est **exactement** celle épinglée, l'approuve sans rien demander et installe les modules,
+avec les mêmes contrôles qu'une approbation manuelle : les banques se connectent tout de
+suite. Une autre clé (changée, ou servie par un attaquant), un autre dépôt
+(`woob_repository`) ou un dépôt injoignable au démarrage attendent toujours l'approbation
+d'un administrateur, comme ci-dessous. L'épinglage se fait en SHA-256 et non en SHA-1 :
+SHA-1 n'est plus sûr face aux collisions à préfixe choisi, une clé GPG peut porter des
+paquets de remplissage, et cette approbation-là se fait sans regard humain.
+
 Tant que le dépôt n'est pas approuvé, Carbure refuse aussi (`409`, « Trust the woob
 repository first ») :
 

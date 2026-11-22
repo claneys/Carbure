@@ -157,7 +157,11 @@ taskbar or the home screen.
   `GET /transaction/search` across all months and shows the **total** of the transactions
   found; the filters (unchecked, without a category) also apply to the results. The cross clears the search.
 - **Manual categorization**: a transaction without a category offers a
-  "Categorize…" picker (icons, colors, search); the transaction is also checked. For an administrator, a banner
+  "Categorize…" picker (icons, colors, search); the transaction is also checked. This
+  picker, like those of the detail, of the manual entry and of the split, shows first the
+  categories of the direction of the transaction (income for a credit, expenses for a
+  debit), then the off-budget categories, then the others (a refund is a credit on an
+  expense category). For an administrator, a banner
   then offers to **Create a rule** to classify this label automatically: it opens
   the Rules tab with the label and the category pre-filled, the keyword can be
   shortened (dates, card numbers…).
@@ -212,6 +216,9 @@ taskbar or the home screen.
   with another label: not ticked) or **already there** (same identifier: ignored).
   Each transaction has its box: untick those not to import (or "Check all" to
   tick or untick everything); the button shows the number of transactions imported.
+  The **Account of the transactions** list attaches the file to an account of the
+  household (manual or synchronized); it offers the account whose number is read in the
+  file, else the number of the file is kept as is.
   Imported transactions belong to the logged-in user and go through the
   categorization rules; the list then opens on the last imported month
   (`POST /transaction/import/preview`, `POST /transaction/import`). No synchronized account
@@ -239,19 +246,17 @@ Two sub-tabs: **Flow** (shown by default) and **Budgets**.
   left to right as the budget is used (green up to 105% of the budget, red
   beyond). The budget of a parent category preceded by "Σ" is the sum of its
   sub-categories.
-- Separate sections: **budgeted expenses**, **income**, **off-budget and
-  inactive**.
+- Separate sections: **budgeted expenses**, **income**, **not budgeted and
+  off-budget**. An expense category without a budget (amount at 0) shows there what it
+  spent, without gauge nor overspending, and does not count in the summary.
 - **Click on a category**: list of its transactions of the month (sub-categories
   included) with their total and the checking; if it has sub-categories, their
-  cards are shown, with a breadcrumb to go back up.
-- **Change the category of a transaction**: in both sub-tabs, a click (or Enter) on the
-  label of a listed transaction opens the same details window as the Transactions tab.
-  Once saved, the cards, the diagram and the list are computed again without leaving the
-  level or the category shown; the rule creation banner also appears for a transaction
-  that had no category. "Similar transactions" switches to the Transactions tab to show
-  the search.
+  cards are shown, with a breadcrumb to go back up. The transactions put directly on
+  the parent category have their own card, "*Category* (no sub-category)", without a
+  budget: the total of the category adds up in its cards.
 - Settings button of a card: changes the budgeted amount for the month. For a
-  parent category, the **Sum of the sub-categories** box uses their sum; unticked,
+  category without sub-categories, the **No budget for this category** box saves a budget
+  at 0. For a parent category, the **Sum of the sub-categories** box uses their sum; unticked,
   the amount typed replaces it. The **Note** field keeps a reminder of what the budget
   covers (200 characters at most), shown under the amounts of the card and copied with
   the budget to the next month; emptying it removes the note.
@@ -532,7 +537,7 @@ The configuration file (`data/conf/prod.ini`) section by section,
 with a description of each setting. Secrets (`db_password`, `jwtsecret`,
 `password_salt`, `sync_token`…) are never shown. Only the risk-free settings
 can be edited — `log_level`, `log_retention_days`, `savings_category`, `public_url`, `mfa_required` (two-factor authentication required), `woob_transactions`,
-`woob_logging`, `woob_debug`, `woob_auto_update`, the push notification service
+`woob_logging`, `woob_debug`, `woob_auto_update`, `woob_relabel`, the push notification service
 (`push_api_key`, with the instance key shown on request) and the SMTP server for emails — with
 lists, switches and fields checked by the server; the others carry a
 padlock. Changed settings are highlighted; the bottom bar saves or

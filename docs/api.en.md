@@ -588,6 +588,7 @@ chose (see [`GET /user/notifications`](#get-usernotifications)).
 |---|---|---|
 | `month`, `year` | no | Month of the transactions (current month by default) |
 | `category` | no | Limits to the transactions of this category **and its subcategories** |
+| `own` | no | With `category`: `1` limits to the transactions put on the category itself, without its subcategories |
 
 Transactions are sorted by actual date, newest first. Fields: `id`, `uuid`,
 `imported`, `date`, `rdate`, `type`, `label`, `category`, `amount`, `card`, `bank_name`
@@ -689,7 +690,9 @@ transactions), `422` (unrecognized format, CSV columns not found, invalid XML).
 ### `POST /transaction/import` { #post-transactionimport }
 
 Same parameters, plus `selected` (optional): the `index` of the lines to import; by
-default, the `new` lines. `known` lines are never imported. The transactions
+default, the `new` lines. `account` (optional): the `id` of an account of `GET /bank`, to
+which the transactions are attached (404 `account_not_found` if it does not exist); by
+default, the account number read in the file. `known` lines are never imported. The transactions
 belong to the logged-in user, then the categorization rules apply
 whatever their date. Returns `imported`, `categorized`, `from` and `to` (period of the
 chosen lines).
@@ -799,6 +802,11 @@ of a `CREDIT` category, never negative — a refund larger than the spending of 
 (number of subcategories), `children_budget` (sum of their budgets) and `budget_mode`:
 `own` (amount set for the category) or `children` (category with subcategories and
 no amount set: `budget` is then the sum of the subcategories' budgets).
+
+With `own=1` and a parent category, the list adds an item for the transactions put on the
+parent category itself rather than on a subcategory: `own: true`, `id` of the parent, no
+budget (`budget` at 0), with what they consume. It only appears when the month has some;
+without `own`, the response is unchanged.
 
 ### `GET /budget/flow` { #get-budgetflow }
 
@@ -1311,7 +1319,7 @@ The configuration file, by section: `file` (path in the instance), `writable`, a
 
 `values`: the new values by key, only among the editable settings
 (`log_level`, `log_retention_days`, `savings_category`, `public_url`, `currency`, `next_month_day`, `woob_transactions`, `woob_logging`,
-`woob_debug`, `woob_auto_update`, `woob_2fa_wait`, `woob_2fa_retries`, `push_api_key`, `smtp_host`, `smtp_port`, `smtp_encryption`, `smtp_auth`,
+`woob_debug`, `woob_auto_update`, `woob_relabel`, `woob_2fa_wait`, `woob_2fa_retries`, `push_api_key`, `smtp_host`, `smtp_port`, `smtp_encryption`, `smtp_auth`,
 `smtp_username`, `smtp_password`, `smtp_from`, `smtp_from_name`). All values are checked before anything
 is written (`400` otherwise, file unchanged); the old file is kept as `.bak`. Returns the
 configuration as `GET` does.

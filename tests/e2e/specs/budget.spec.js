@@ -1,5 +1,5 @@
-// Budget tab: money flow, budgets by category, sub-categories, editing a budget, recategorizing
-const { test, expect, tr, openTab, pickCategory, euros, currentMonth, offerBudgetCopy } = require('../fixtures');
+// Budget tab: money flow, budgets by category, sub-categories, editing a budget
+const { test, expect, tr, openTab, euros, currentMonth, offerBudgetCopy, escapeRegExp } = require('../fixtures');
 
 /**
  * Checks the amounts of a budget card: spent / budget
@@ -119,8 +119,9 @@ test('edits the budget of a sub-category', async ({ adminPage: page, api }) => {
     await card(page, 'Alimentation').click();
 
     const modal = await editBudget(page, 'Supermarché');
-    // A category without sub-categories has no "sum" option
-    await expect(modal.getByRole('checkbox')).toHaveCount(0);
+    // A category without sub-categories has no "sum" option, only "no budget"
+    await expect(modal.getByRole('checkbox')).toHaveCount(1);
+    await expect(modal.getByRole('checkbox', { name: tr('budgetNone') })).not.toBeChecked();
     await modal.getByLabel(tr('budgetEditLabel')).fill('350');
     await modal.getByRole('button', { name: tr('save') }).click();
 
@@ -343,62 +344,57 @@ test('the sub-categories follow a transaction recategorized elsewhere (#402)', a
     await expect(card(page, 'Supermarché').locator('.spent')).toHaveText(euros(89.2));
 });
 
-/**
- * Moves a listed transaction to another category from its detail modal
- * @param {import('@playwright/test').Locator} list - Transactions listed in the Budget tab
- * @param {string} label - Label of the transaction
- * @param {string} category - New category
- */
-async function recategorize(list, label, category) {
-    const page = list.page();
-    await list.locator('.transaction-item').filter({ hasText: label })
-        .getByRole('button', { name: new RegExp(tr('transactionDetail')) }).click();
-    const modal = page.getByRole('dialog', { name: tr('transactionDetail') });
-    await pickCategory(modal, category);
-    await modal.getByRole('button', { name: tr('save') }).click();
-    await expect(modal).toHaveCount(0);
-    await expect(page.locator('.toast')).toHaveText(tr('transactionSaved'));
-}
-
-test('changes the category of a transaction listed under the budgets', async ({ adminPage: page, api }) => {
-    await openBudgets(page);
-    await card(page, 'Alimentation').click();
-    const list = page.locator('.budget-transactions');
-    await expect(list.locator('.transaction-item')).toHaveCount(2);
-    await expect(list.locator('.transaction-item').filter({ hasText: 'CB SUPERMARCHE CASINO' })).toContainText('Supermarché');
-
-    await recategorize(list, 'CB SUPERMARCHE CASINO', 'Logement');
-
-    // Still on the sub-categories: the amount left Supermarché and the list
-    await expect(page.locator('.budget-breadcrumb')).toContainText('Alimentation');
-    await expectAmounts(card(page, 'Supermarché'), 0, `/ ${euros(300)}`);
-    await expect(list.locator('.transaction-item')).toHaveCount(1);
-    await page.getByRole('button', { name: tr('allCategories') }).click();
-    await expectAmounts(card(page, 'Logement'), 1032.4, `/ ${euros(1000)}`);
-
+test('the transactions put on a parent category have their own card in its sub-categories (#492)', async ({ adminPage: page, api }) => {
+    // The bakery put on Alimentation itself, not on one of its sub-categories
     const { month, year } = currentMonth();
-    const saved = await (await api.get(`/api/transaction?month=${month}&year=${year}`)).json();
-    expect(Number(saved.find(t => t.label === 'CB SUPERMARCHE CASINO').category)).toBe(4);
+    const transactions = await (await api.get(`/api/transaction?month=${month}&year=${year}`)).json();
+    const bakery = transactions.find(t => t.label === 'CB BOULANGERIE PAUL');
+    expect((await api.put('/api/transaction/category', { data: { id: bakery.id, category: 1 } })).ok()).toBeTruthy();
+
+    await openBudgets(page);
+    await expect(card(page, 'Alimentation').locator('.spent')).toHaveText(euros(134.2));
+    await card(page, 'Alimentation').click();
+    await expect(card(page, 'Supermarché').locator('.spent')).toHaveText(euros(82.4));
+
+    // Its card: what it spent, no budget to set, nor a gauge
+    const name = tr('budgetOwnTransactions', { category: 'Alimentation' });
+    const own = card(page, escapeRegExp(name));
+    await expect(own.locator('.spent')).toHaveText(euros(6.8));
+    await expect(own.locator('.of')).toHaveCount(0);
+    await expect(own.getByRole('button', { name: tr('budgetEditTitle') })).toHaveCount(0);
+
+    // A click lists only its transactions and stays on the level
+    await own.click();
+    const list = page.locator('.budget-transactions');
+    await expect(list).toContainText(tr('categoryTransactions', { category: name }));
+    await expect(list.locator('.transaction-item')).toHaveCount(1);
+    await expect(list).toContainText('CB BOULANGERIE PAUL');
+    await expect(own).toHaveClass(/selected/);
+    await expect(card(page, 'Supermarché')).toBeVisible();
+    await expect(page.locator('.budget-breadcrumb')).toContainText('Alimentation');
 });
 
-test('changes the category of a transaction of the money flow, an uncategorized one proposing a rule', async ({ adminPage: page }) => {
-    await openTab(page, tr('tabBudget'));
-    const node = page.locator('.flow-node[role="button"]').filter({ hasText: 'Alimentation' });
-    await node.click();
-    const list = page.locator('.flow-transactions');
-    await expect(list.locator('.search-total strong')).toContainText('127,40');
+test('a category without budget shows what it spent, not an overspending (#491)', async ({ adminPage: page, api }) => {
+    await openBudgets(page);
 
-    await recategorize(list, 'CB RESTAURANT LE PETIT ZINC', 'Logement');
+    const modal = await editBudget(page, 'Logement');
+    await modal.getByRole('checkbox', { name: tr('budgetNone') }).check();
+    await expect(modal.getByLabel(tr('budgetEditLabel'))).toHaveCount(0);
+    await modal.getByRole('button', { name: tr('save') }).click();
+    await expect(page.locator('.toast')).toHaveText(tr('budgetUpdatedToast'));
 
-    // The node stays selected, its transactions and the diagram reloaded
-    await expect(node).toHaveAttribute('aria-pressed', 'true');
-    await expect(list.locator('.transaction-item')).toHaveCount(1);
-    await expect(list.locator('.search-total strong')).toContainText('82,40');
-    await page.getByRole('button', { name: tr('flowShowTable') }).click();
-    await expect(page.locator('.flow-table').getByRole('row').filter({ hasText: 'Logement' })).toContainText(euros(995).replace(' €', ''));
+    // Saved as 0, with the categories without budget: its spending, no gauge nor overspending
+    expect(Number((await apiBudget(api, 'Logement')).budget)).toBe(0);
+    const logement = page.locator('.budget-section-others .budget-card')
+        .filter({ has: page.locator('.budget-card-name', { hasText: /^Logement$/ }) });
+    await expect(logement.locator('.spent')).toHaveText(euros(950));
+    await expect(logement.locator('.of')).toHaveCount(0);
+    await expect(logement).not.toContainText(tr('overspentAmount', { amount: euros(950) }));
+    await expect(page.locator('.budget-section-others .budget-section-title')).toHaveText(tr('othersSection'));
 
-    // An uncategorized transaction: the rule is proposed in the Budget tab too
-    await page.locator('.flow-node[role="button"]').filter({ hasText: tr('uncategorized') }).click();
-    await recategorize(list, 'CB BOULANGERIE PAUL', 'Alimentation');
-    await expect(page.locator('.rule-suggestion')).toContainText(tr('ruleSuggestion', { label: 'CB BOULANGERIE PAUL', category: 'Alimentation' }));
+    // Out of the summary of the budgeted expenses: only Alimentation, 127.40 of 400
+    await expect(page.locator('.budget-section-expenses .budget-card')).toHaveCount(1);
+    const summary = page.locator('.budget-summary');
+    await expect(summary).toContainText(euros(127.4));
+    await expect(summary).toContainText(euros(400));
 });

@@ -47,7 +47,7 @@ flowchart LR
 | `Mailer` | Client SMTP intégré (sans dépendance) : envoi des notifications par email |
 | `Messages` | Textes des notifications (push et email) dans la langue du destinataire |
 | `BankFile`, `import/` | Lecture des relevés importés (OFX/QFX, QIF, CAMT.053, CSV avec un profil par banque) |
-| `WoobRepository` | Dépôt des modules bancaires de woob : empreinte de sa clé, approbation par un administrateur |
+| `WoobRepository` | Dépôt des modules bancaires de woob : empreinte de sa clé, clé officielle épinglée (approuvée au premier démarrage), sinon approbation par un administrateur |
 | `Logger` | Logs bufferisés dans `data/logs/carbure_AAAAMMJJ.log`, une entrée JSON par ligne : heure ISO 8601, niveau, identifiant de requête (`uid`), IP du client, utilisateur, méthode et chemin, message et contexte ; une ligne de fin par requête (statut, durée) ; purge après `log_retention_days` jours |
 
 ## Traitement d'une requête

@@ -7202,6 +7202,23 @@ button.recurring-calendar-entry:hover {
     color: var(--text-secondary);
 }
 
+/* Risk of a setting (woob_relabel): dark orange text on its light tint (WCAG AA 5.6:1) */
+.config-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin-top: 4px;
+    padding: 6px 8px;
+    font-size: 12px;
+    color: var(--warning-color);
+    background: var(--warning-light);
+    border-radius: var(--border-radius-sm);
+}
+
+.config-warning .material-icons {
+    font-size: 16px;
+}
+
 .config-value {
     display: flex;
     align-items: center;

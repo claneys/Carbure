@@ -113,6 +113,9 @@ test('the notifications of the profile and the test email are readable', async (
     try {
         await page.locator('.tabs').getByRole('button', { name: tr('tabAdministration'), exact: true }).click();
         await page.getByRole('tab', { name: tr('tabSettings'), exact: true }).click();
+        // The warning of a setting with a risk (woob_relabel)
+        await expect(page.locator('.config-warning').first()).toBeVisible();
+        problems.push(...await contrastProblems(page, `${tr('configWarningLabel')} (woob_relabel)`));
         await page.getByRole('button', { name: tr('smtpTestButton') }).click();
         await expect(page.locator('.smtp-test-result[role="alert"]')).toBeVisible();
         problems.push(...await contrastProblems(page, `${tr('smtpTestTitle')} (error)`));

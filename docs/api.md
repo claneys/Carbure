@@ -591,6 +591,7 @@ choisis (voir [`GET /user/notifications`](#get-usernotifications)).
 |---|---|---|
 | `month`, `year` | non | Mois des transactions (mois courant par défaut) |
 | `category` | non | Limite aux transactions de cette catégorie **et de ses sous-catégories** |
+| `own` | non | Avec `category` : `1` limite aux transactions rangées sur la catégorie elle-même, sans ses sous-catégories |
 
 Les transactions sont triées par date réelle décroissante. Champs : `id`, `uuid`,
 `imported`, `date`, `rdate`, `type`, `label`, `category`, `amount`, `card`, `bank_name`
@@ -692,7 +693,9 @@ transactions), `422` (format non reconnu, colonnes CSV introuvables, XML invalid
 ### `POST /transaction/import`
 
 Mêmes paramètres, plus `selected` (facultatif) : les `index` des lignes à importer ; par
-défaut, les lignes `new`. Les lignes `known` ne sont jamais importées. Les transactions
+défaut, les lignes `new`. `account` (facultatif) : l'`id` d'un compte de `GET /bank`, auquel
+les transactions sont rattachées (404 `account_not_found` s'il n'existe pas) ; par défaut,
+le numéro de compte lu dans le fichier. Les lignes `known` ne sont jamais importées. Les transactions
 appartiennent à l'utilisateur connecté, puis les règles de catégorisation s'appliquent
 quelle que soit leur date. Renvoie `imported`, `categorized`, `from` et `to` (période des
 lignes choisies).
@@ -802,6 +805,11 @@ du mois donne 0 ; valeur absolue pour `HORS-BUDGET`), `progress` (%), `children`
 (nombre de sous-catégories), `children_budget` (somme de leurs budgets) et `budget_mode` :
 `own` (montant défini pour la catégorie) ou `children` (catégorie avec sous-catégories et
 sans montant défini : `budget` est alors la somme des budgets des sous-catégories).
+
+Avec `own=1` et une catégorie parente, la liste ajoute un élément pour les transactions
+rangées sur la catégorie parente elle-même plutôt que sur une sous-catégorie : `own: true`,
+`id` de la parente, sans budget (`budget` à 0), avec ce qu'elles consomment. Il n'apparaît
+que si le mois en a ; sans `own`, la réponse est inchangée.
 
 ### `GET /budget/flow`
 
@@ -1318,7 +1326,7 @@ Le fichier de configuration, par section : `file` (chemin dans l'instance), `wri
 
 `values` : les nouvelles valeurs par clé, uniquement parmi les réglages modifiables
 (`log_level`, `log_retention_days`, `savings_category`, `public_url`, `currency`, `next_month_day`, `woob_transactions`, `woob_logging`,
-`woob_debug`, `woob_auto_update`, `woob_2fa_wait`, `woob_2fa_retries`, `push_api_key`, `smtp_host`, `smtp_port`, `smtp_encryption`, `smtp_auth`,
+`woob_debug`, `woob_auto_update`, `woob_relabel`, `woob_2fa_wait`, `woob_2fa_retries`, `push_api_key`, `smtp_host`, `smtp_port`, `smtp_encryption`, `smtp_auth`,
 `smtp_username`, `smtp_password`, `smtp_from`, `smtp_from_name`). Toutes les valeurs sont vérifiées avant d'écrire quoi que
 ce soit (`400` sinon, fichier inchangé) ; l'ancien fichier est gardé en `.bak`. Renvoie la
 configuration comme `GET`.
