@@ -686,6 +686,61 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
     }
 
     /**
+     * Fetches the monthly series of a category (sub-categories included) or of an insight
+     * @param {string} type - 'category' or 'insight'
+     * @param {number} id - Category or insight id
+     * @param {number} months - Number of months
+     * @param {number} offset - Months between the current month and the end of the period
+     * @returns {Promise<Array>} Array of {month, amount, planned}, oldest first
+     * @throws {Error} If request fails
+     */
+    async function fetchTrendSeries(type, id, months = 12, offset = 0) {
+        const params = new URLSearchParams({ type, id: String(id), months: String(months), offset: String(offset) });
+        const data = await request(`${baseUrl}/budget/trends/series?${params}`, {}, 'Failed to fetch the series');
+        return Array.isArray(data) ? data : [];
+    }
+
+    /**
+     * Fetches the monthly amounts of the categories of a type, to compare them on one chart
+     * @param {string} type - 'DEBIT', 'CREDIT' or 'HORS-BUDGET'
+     * @param {string} level - 'top' (sub-categories counted in their parent) or 'sub'
+     * @param {number} months - Number of months
+     * @param {number} offset - Months between the current month and the end of the period
+     * @returns {Promise<{months: Array<string>, categories: Array<Object>}>} The months (oldest
+     *          first) and the categories {id, name, icon, color, parent_category, total, amounts}
+     * @throws {Error} If request fails
+     */
+    async function fetchTrendCategories(type = 'DEBIT', level = 'top', months = 12, offset = 0) {
+        const params = new URLSearchParams({ type, level, months: String(months), offset: String(offset) });
+        const data = await request(`${baseUrl}/budget/trends/categories?${params}`, {}, 'Failed to fetch the categories');
+        return {
+            months: Array.isArray(data?.months) ? data.months : [],
+            categories: Array.isArray(data?.categories) ? data.categories : []
+        };
+    }
+
+    /**
+     * Fetches the custom charts of the Trends tab
+     * @returns {Promise<Array>} Array of {type, id, name, icon, color}
+     * @throws {Error} If request fails
+     */
+    async function fetchTrendCharts() {
+        const data = await request(`${baseUrl}/budget/trends/charts`, {}, 'Failed to fetch the charts');
+        return Array.isArray(data) ? data : [];
+    }
+
+    /**
+     * Replaces the custom charts of the Trends tab (administrators)
+     * @param {Array<{type: string, id: number}>} charts - Charts in display order
+     * @returns {Promise<Array>} The saved charts: {type, id, name, icon, color}
+     * @throws {Error} If request fails
+     */
+    async function saveTrendCharts(charts) {
+        const data = await request(`${baseUrl}/budget/trends/charts`, { method: 'PUT', body: JSON.stringify({ charts }) }, 'Failed to save the charts');
+        return Array.isArray(data) ? data : [];
+    }
+
+    /**
      * Sets the category of a transaction (the transaction is checked too)
      * @param {number} id - Transaction ID
      * @param {number} category - Category ID
@@ -705,6 +760,19 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
             method: 'PUT',
             body: JSON.stringify({ id, category: Number(category) })
         }, 'Failed to update the category');
+    }
+
+    /**
+     * Sets one category on several transactions at once, and checks them
+     * @param {Array<number>} ids - Transaction ids
+     * @param {number} category - Category id (0: uncategorized)
+     * @returns {Promise<{updated: number}>}
+     */
+    async function setTransactionsCategory(ids, category) {
+        return request(`${baseUrl}/transaction/categories`, {
+            method: 'PUT',
+            body: JSON.stringify({ ids, category: Number(category) })
+        }, 'Failed to update the categories');
     }
 
     /**
@@ -1610,6 +1678,7 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
         updateCategory,
         deleteCategory,
         setTransactionCategory,
+        setTransactionsCategory,
         setTransactionDate,
         splitTransaction,
         createTransaction,
@@ -1632,6 +1701,10 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
         fetchRuleSettings,
         updateRuleSettings,
         fetchTrends,
+        fetchTrendSeries,
+        fetchTrendCategories,
+        fetchTrendCharts,
+        saveTrendCharts,
         deleteDevice,
         fetchBrowsers,
         deleteBrowser,

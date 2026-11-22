@@ -95,12 +95,12 @@ is enough (see below).
 
 | Kind | Bumped by |
 |---|---|
-| `transactions` | synchronization (new or modified transaction, category found), `POST /transaction/import`, `POST /transaction`, `PUT /transaction`, `PUT /transaction/category`, `PUT /transaction/date`, `PUT /transaction/pointed`, `PUT /transaction/split`, `PUT /transaction/tags`, `DELETE /tag`, `DELETE /transaction`, rules applied to the history, `DELETE /category` |
+| `transactions` | synchronization (new or modified transaction, category found), `POST /transaction/import`, `POST /transaction`, `PUT /transaction`, `PUT /transaction/category`, `PUT /transaction/categories`, `PUT /transaction/date`, `PUT /transaction/pointed`, `PUT /transaction/split`, `PUT /transaction/tags`, `DELETE /tag`, `DELETE /transaction`, rules applied to the history, `DELETE /category` |
 | `accounts` | synchronization (account in error, repaired or another error), `POST`/`PUT`/`DELETE /bank`, `/bank/backend` |
 | `categories` | `POST`/`PUT`/`DELETE /category`, `/category/keyword`, `PUT /category/keyword/settings` |
 | `budgets` | `POST /budget`, `POST /budget/copy`, `DELETE /category` |
 | `insights` | `POST`/`PUT`/`DELETE /insight`, `PUT /insight/enabled`, `PUT /insight/order` |
-| `settings` | `PUT /system/config` |
+| `settings` | `PUT /system/config`, `PUT /budget/trends/charts` |
 | `tags` | `POST`/`PUT`/`DELETE /tag` |
 
 `POST /backup/import` bumps every kind; `POST /purge` every kind but `accounts` and `settings`. The insights and the trends are computed from the
@@ -709,6 +709,19 @@ curl -X POST https://exemple.fr/api/transaction/import -H "Authorization: Bearer
 to leave it unchecked). The category is chosen by hand (`category_source` `manual`): the
 rules no longer change it.
 
+### `PUT /transaction/categories` { #put-transactioncategories }
+
+`ids` (1 to 500 transactions), `category`: assigns the same category to all of them at once
+(all or none; `400 tag_selection_limit`, `404 category_not_found`), and checks them off with
+the parts of the split ones (`autoPointed=false` to leave them unchecked). As for a single
+one, the category is chosen by hand (`category_source` `manual`). Returns `{updated}`: the
+number of transactions whose category changed.
+
+```bash
+curl -X PUT https://exemple.fr/api/transaction/categories -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' -d '{"ids":[42,43],"category":5}'
+```
+
 ### `PUT /transaction/pointed` { #put-transactionpointed }
 
 `id`, `pointed` (boolean, default `true`): marks the transaction as checked or not.
@@ -867,8 +880,8 @@ month, `YYYY-MM`), `copied` (budgets written) and `overwrite`.
 
 | Parameter | Required | Description |
 |---|---|---|
-| `months` | no | Number of months (1 to 60, default 24) |
-| `offset` | no | Number of months between the current month and the last month of the period (default 0). Used for comparisons: `offset=months` for the previous period, `offset=12` for the same period last year |
+| `months` | no | Number of months (1 to 240, default 24) |
+| `offset` | no | Number of months between the current month and the last month of the period (0 to 240, default 0). Used for comparisons: `offset=months` for the previous period, `offset=12` for the same period last year |
 
 Returns one item per month (oldest to newest, empty months included):
 
@@ -888,6 +901,83 @@ curl "https://exemple.fr/api/budget/trends?months=6&offset=12" -H "Authorization
 ```json
 [{ "month": "2025-05", "debit": 2130.37, "credit": 5114, "offBudget": -500, "planned": 2330, "savings": 2983.63 }]
 ```
+
+### `GET /budget/trends/series` { #get-budgettrendsseries }
+
+Monthly trend of a category or of an insight, for the custom charts of the Trends tab.
+
+| Parameter | Required | Description |
+|---|---|---|
+| `type` | yes | `category` or `insight` |
+| `id` | yes | Id of the category or of the insight (positive integer) |
+| `months` | no | Number of months (1 to 240, default 24) |
+| `offset` | no | Number of months between the current month and the last month of the period (0 to 240, default 0) |
+
+Returns one item per month (oldest to newest, empty months at `0`):
+
+| Field | Description |
+|---|---|
+| `month` | `YYYY-MM` |
+| `amount` | Category: total of its transactions and of those of its subcategories, positive for spending in a `DEBIT` category (a refund lowers it), raw for the other types. Insight: value of its query for the month (`0` when it fails) |
+| `planned` | Category: budget of the month as in the Budget tab (amount set, or sum of the subcategories), `null` without a budget. Insight: always `null` |
+
+`400` for an invalid type or id, `404` for an unknown category or insight.
+
+```bash
+curl "https://exemple.fr/api/budget/trends/series?type=category&id=1&months=36" -H "Authorization: Bearer $TOKEN"
+```
+
+```json
+[{ "month": "2026-09", "amount": 412.5, "planned": 450 }, { "month": "2026-10", "amount": 127.4, "planned": null }]
+```
+
+### `GET /budget/trends/categories` { #get-budgettrendscategories }
+
+Monthly trend of every category of a type, to compare them on one chart ("By category"
+card of the Trends tab).
+
+| Parameter | Required | Description |
+|---|---|---|
+| `type` | no | `DEBIT` (default), `CREDIT` or `HORS-BUDGET` |
+| `level` | no | `top` (default): top-level categories, subcategories counted in their parent (the type is the one of the parent); `sub`: every category on its own |
+| `months` | no | Number of months (1 to 240, default 24) |
+| `offset` | no | Number of months between the current month and the last month of the period (0 to 240, default 0) |
+
+Returns `months` (the `YYYY-MM` months of the period, oldest to newest) and `categories`:
+`id`, `name`, `icon`, `color`, `parent_category`, `total` of the period and `amounts` (one
+amount per month of `months`, empty months at `0`). The amounts are positive for spending
+in a `DEBIT` category (a refund lowers them), raw for the other types. Only the categories
+with an amount in the period are returned, largest first; category `0` (uncategorized) is
+left out.
+
+`400` for an unknown type or level.
+
+```bash
+curl "https://exemple.fr/api/budget/trends/categories?type=DEBIT&level=top&months=3" -H "Authorization: Bearer $TOKEN"
+```
+
+```json
+{
+  "months": ["2026-08", "2026-09", "2026-10"],
+  "categories": [
+    { "id": 4, "name": "Logement", "icon": "home", "color": "blue", "parent_category": 0, "total": 2850, "amounts": [950, 950, 950] },
+    { "id": 1, "name": "Alimentation", "icon": "restaurant", "color": "green", "parent_category": 0, "total": 247.4, "amounts": [0, 120, 127.4] }
+  ]
+}
+```
+
+### `GET /budget/trends/charts` { #get-budgettrendscharts }
+
+Custom charts of the Trends tab, shared by the household, in display order: `type`, `id`,
+`name`, `icon`, `color` of the category or of the insight. Charts whose category or insight
+was deleted are left out.
+
+### `PUT /budget/trends/charts` (administrator) { #put-budgettrendscharts-administrateur }
+
+Replaces the list. Body: `{"charts": [{"type": "category", "id": 1}, {"type": "insight", "id": 2}]}`
+(12 charts at most, no duplicates, existing categories and insights; otherwise `400`). Returns
+the saved list, as `GET` does. It is stored in the `trend_charts` setting
+(e.g. `["c1","i2"]`), without a migration.
 
 ## Tags { #tags }
 

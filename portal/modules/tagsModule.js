@@ -263,7 +263,7 @@ export function createTagsModule(getApiService) {
                 tagChartWidth: 640,
                 tagChartHeight: TAG_CHART_HEIGHT,
                 tagChartActive: null,
-                // Selection of transactions of the list, to tag them at once
+                // Selection of transactions of the list, to tag, categorize or delete them at once
                 selectingTransactions: false,
                 selectedTransactionIds: [],
                 // Tag chosen in the selection bar, applied by its button

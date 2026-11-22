@@ -184,6 +184,59 @@ class TransactionIntegrationTest extends DatabaseTestCase
         $this->assertSame(1, $this->transaction('u4')['pointed']);
     }
 
+    public function testUpdateCategoriesOfASelection()
+    {
+        $supermarket = (int)$this->transaction('u1')['id'];
+        $bio = (int)$this->transaction('u4')['id'];
+        // u1 split: its part is pointed with it
+        Transaction::split($supermarket, [['category' => 3, 'amount' => -30]]);
+
+        // Ids sent as numbers or strings; u4 counted once
+        $this->assertSame(['updated' => 2], Transaction::updateCategories([$supermarket, (string)$bio, $bio], 1));
+
+        foreach (['u1', 'u4'] as $uuid) {
+            $row = $this->transaction($uuid);
+            $this->assertSame([1, 1, 'manual'], [$row['category'], $row['pointed'], $row['category_source']], $uuid);
+        }
+        $part = Db::queryOne("SELECT category, pointed FROM bank_transaction WHERE split_of = ?", "i", $supermarket);
+        $this->assertSame([3, 1], [$part['category'], $part['pointed']]);
+        // The others did not change
+        $this->assertSame(4, $this->transaction('u3')['category']);
+        // Already in the category: nothing changed
+        $this->assertSame(['updated' => 0], Transaction::updateCategories([$bio], 1));
+
+        // Back to uncategorized, without pointing (u3 stays unpointed)
+        $salary = (int)$this->transaction('u3')['id'];
+        $this->assertSame(['updated' => 1], Transaction::updateCategories([$salary], 0, 'false'));
+        $this->assertSame([0, 0], [$this->transaction('u3')['category'], $this->transaction('u3')['pointed']]);
+    }
+
+    public function testUpdateCategoriesRejectsAnInvalidSelection()
+    {
+        $bio = (int)$this->transaction('u4')['id'];
+        $errors = [
+            'empty' => [fn() => Transaction::updateCategories([], 1), 400, 'tag_selection_limit'],
+            'too large' => [fn() => Transaction::updateCategories(range(1, 501), 1), 400, 'tag_selection_limit'],
+            'unknown category' => [fn() => Transaction::updateCategories([$bio], 999), 404, 'category_not_found'],
+        ];
+        foreach ($errors as $name => [$call, $status, $code]) {
+            try {
+                $call();
+                $this->fail("No error: $name");
+            } catch (ApiError $e) {
+                $this->assertSame([$status, $code], [$e->getCode(), $e->getErrorCode()], $name);
+            }
+        }
+        try {
+            Transaction::updateCategories(['x'], 1);
+            $this->fail('No error: invalid id');
+        } catch (Error $e) {
+            $this->assertSame(400, $e->getCode());
+        }
+        // Nothing changed
+        $this->assertSame([0, 0], [$this->transaction('u4')['category'], $this->transaction('u4')['pointed']]);
+    }
+
     public function testCountUnpointedOfTheMonth()
     {
         $this->assertSame(3, Transaction::countUnpointed());
