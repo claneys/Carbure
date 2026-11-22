@@ -82,6 +82,10 @@ depuis Internet (voir [Synology](synology.md), étape 8).
 | `spending_by_category` | Total et nombre de transactions par catégorie sur une période (`YYYY-MM`) |
 | `get_budget` | Dépensé et budget prévu par catégorie pour un mois |
 | `get_trends` | Débit, crédit, hors budget, budget prévu et épargne mois par mois |
+| `spending_by_month` | Dépenses, revenus et solde de chaque mois d'une période explicite (`from`, `to` : `YYYY-MM`), avec le total, la moyenne mensuelle et le mois le plus dépensier ; catégories retenues (`category_ids`) ou écartées (`exclude_category_ids`), sous-catégories comprises. Un identifiant inconnu est refusé avec la liste des identifiants valides. Hors budget exclu, comme `get_trends` |
+| `recurring_transactions` | Séries récurrentes de la détection du portail encore actives en fin de période : jour habituel, montant moyen et dernier, montant de chaque mois et ses changements (une hausse de tarif et son mois) |
+| `duplicate_transactions` | Doublons possibles : transactions du même compte, du même jour, de même libellé et de même montant (parfois deux vrais paiements identiques) |
+| `one_off_transactions` | Transactions dont le libellé (sans ses chiffres) n'apparaît qu'une fois sur la période, de la plus grosse à la plus petite : achats ponctuels, paiements annuels (`kind`, `limit`) |
 | `list_rules` | Règles de catégorisation automatique |
 | `get_insight_guide` | Tout ce qu'il faut pour écrire un insight : règles de la requête, tables et colonnes lisibles, expressions courantes, couleurs, exemples et insights déjà définis (leur requête pour un administrateur) |
 | `check_insight_query` | Vérifie une requête d'insight avec les règles du portail et l'exécute en lecture seule sur un mois et jusqu'à 5 mois avant (administrateurs) : son montant par mois, ou l'erreur à corriger. Rien n'est enregistré |

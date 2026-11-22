@@ -767,11 +767,11 @@
                                     <!-- Selected: its picker changes the category of the whole selection -->
                                     <div class="transaction-category" :title="selectingTransactions && selectedTransactionIds.includes(Number(transaction.id)) ? t('selectionCategoryHelp', { count: selectedTransactionIds.length }) : null">
                                         <category-picker v-if="selectingTransactions && selectedTransactionIds.includes(Number(transaction.id)) && ruleCategories.length > 0" compact with-default
-                                                         :model-value="isUncategorized(transaction) ? '' : Number(transaction.category)" :categories="ruleCategories" :t="t"
+                                                         :model-value="isUncategorized(transaction) ? '' : Number(transaction.category)" :categories="ruleCategories" :t="t" :amount="transaction.amount"
                                                          :placeholder="t('chooseCategory')" :icon-for="categoryIcon" :color-for="categoryColor"
                                                          @update:model-value="categorizeSelectedTransactions($event)"></category-picker>
                                         <category-picker v-else-if="isUncategorized(transaction) && ruleCategoryOptions.length > 0" compact
-                                                         model-value="" :categories="ruleCategories" :t="t" :placeholder="t('chooseCategory')"
+                                                         model-value="" :categories="ruleCategories" :t="t" :placeholder="t('chooseCategory')" :amount="transaction.amount"
                                                          :icon-for="categoryIcon" :color-for="categoryColor"
                                                          @update:model-value="categorizeTransaction(transaction, $event)"></category-picker>
                                         <span v-else-if="categoryName(transaction)" class="category-chip" :title="categoryName(transaction)">{{ categoryName(transaction) }}</span>
@@ -938,21 +938,21 @@
                             <section v-if="group.items.length > 0" class="budget-section" :class="'budget-section-' + group.key">
                                 <h3 class="budget-section-title">{{ group.title }}</h3>
                                 <div class="budget-grid">
-                                    <article v-for="item in group.items" :key="item.id" class="budget-card"
-                                             :class="[group.key === 'expenses' ? 'status-' + budgetStatus(item) + ' budget-card-filled' : '', { selected: budgetCategory && budgetCategory.id === item.id }]"
-                                             :style="group.key === 'expenses' ? { '--budget-fill': Math.min(Number(item.progress) || 0, 100) + '%' } : null"
+                                    <article v-for="item in group.items" :key="(item.own ? 'own-' : '') + item.id" class="budget-card"
+                                             :class="[group.key === 'expenses' && !item.own ? 'status-' + budgetStatus(item) + ' budget-card-filled' : '', { selected: isBudgetCategorySelected(item), 'budget-card-own': item.own }]"
+                                             :style="group.key === 'expenses' && !item.own ? { '--budget-fill': Math.min(Number(item.progress) || 0, 100) + '%' } : null"
                                              tabindex="0" @click="navigateToBudget(item)" @keydown.enter="navigateToBudget(item)">
                                         <div class="budget-card-head">
                                             <span class="budget-card-icon" :style="categoryBadgeStyle(item)">
                                                 <span class="material-icons" aria-hidden="true">{{ categoryIcon(item) }}</span>
                                             </span>
-                                            <span class="budget-card-name">{{ item.name }}</span>
-                                            <button class="budget-card-edit" :title="t('budgetEditTitle')" @click.stop="openBudgetModal(item)" :aria-label="t('budgetEditTitle')">
+                                            <span class="budget-card-name">{{ budgetItemName(item) }}</span>
+                                            <button v-if="!item.own" class="budget-card-edit" :title="t('budgetEditTitle')" @click.stop="openBudgetModal(item)" :aria-label="t('budgetEditTitle')">
                                                 <span class="material-icons" aria-hidden="true">tune</span>
                                             </button>
                                         </div>
 
-                                        <template v-if="group.key === 'expenses'">
+                                        <template v-if="group.key === 'expenses' && !item.own">
                                             <div class="budget-card-amounts">
                                                 <span class="spent">{{ formatAmount(item.consummed) }} {{ currencySymbol }}</span>
                                                 <span class="of" :title="item.budget_mode === 'children' ? t('budgetSumOfChildren') : null">/ {{ item.budget_mode === 'children' ? 'Σ ' : '' }}{{ formatAmount(item.budget) }} {{ currencySymbol }}</span>
@@ -1894,6 +1894,10 @@
                                     <div class="config-label">
                                         <label :for="'config-' + setting.key"><code>{{ setting.key }}</code></label>
                                         <span v-if="configHelp(setting.key)" class="config-help">{{ configHelp(setting.key) }}</span>
+                                        <span v-if="configWarning(setting.key)" class="config-warning" role="note">
+                                            <span class="material-icons" aria-hidden="true">warning</span>
+                                            <span><span class="visually-hidden">{{ t('configWarningLabel') }}: </span>{{ configWarning(setting.key) }}</span>
+                                        </span>
                                     </div>
                                     <div class="config-value">
                                         <template v-if="setting.editable && configData.writable">
@@ -2894,6 +2898,13 @@
                             <p v-if="importPreview.counts.duplicate" class="rules-help">
                                 <span class="material-icons inline-icon" aria-hidden="true">content_copy</span>{{ t('importDuplicateHelp') }}
                             </p>
+                            <div v-if="manualAccounts.length" class="form-group import-account">
+                                <label for="import-account">{{ t('importAccountLabel') }}</label>
+                                <select id="import-account" v-model="importAccountId" :disabled="importing">
+                                    <option value="">{{ importPreview.account ? t('importAccountOfFile', { account: importPreview.account }) : t('importAccountNone') }}</option>
+                                    <option v-for="a in manualAccounts" :key="a.id" :value="a.id">{{ a.label || accountName(a) }}</option>
+                                </select>
+                            </div>
                         </div>
 
                         <div class="import-list-head">
@@ -2975,7 +2986,7 @@
                     </div>
                     <div class="form-group">
                         <label>{{ t('categoryLabel') }}</label>
-                        <category-picker v-model="transactionDetailCategory" :categories="ruleCategories" :t="t" with-default
+                        <category-picker v-model="transactionDetailCategory" :categories="ruleCategories" :t="t" with-default :amount="transactionDetail.amount"
                                          :icon-for="categoryIcon" :color-for="categoryColor"></category-picker>
                     </div>
                     <label class="setup-checkbox">
@@ -3114,7 +3125,7 @@
                     </div>
                     <div v-if="manualForm.id === null" class="form-group">
                         <label>{{ t('categoryLabel') }}</label>
-                        <category-picker v-model="manualForm.category" :categories="ruleCategories" :t="t" with-default
+                        <category-picker v-model="manualForm.category" :categories="ruleCategories" :t="t" with-default :amount="manualForm.direction === 'income' ? 1 : -1"
                                          :placeholder="t('manualCategoryAuto')" :icon-for="categoryIcon" :color-for="categoryColor"></category-picker>
                     </div>
                 </div>
@@ -3231,7 +3242,7 @@
                     </p>
                     <ul class="split-parts">
                         <li v-for="(part, index) in splitParts" :key="index" class="split-part">
-                            <category-picker v-model="part.category" :categories="ruleCategories" :t="t" with-default
+                            <category-picker v-model="part.category" :categories="ruleCategories" :t="t" with-default :amount="splitBankAmount"
                                              :placeholder="t('chooseCategory')" :icon-for="categoryIcon" :color-for="categoryColor"></category-picker>
                             <input type="number" step="0.01" min="0" inputmode="decimal" v-model="part.amount"
                                    :aria-label="t('splitPartAmount', { number: index + 1 })" @keydown.enter="splitValid && saveSplit()" />
@@ -4045,7 +4056,11 @@
                         <input type="checkbox" v-model="budgetUseChildren" />
                         {{ t('budgetUseChildren', { amount: formatAmount(budgetToEdit.children_budget) + ' ' + currencySymbol }) }}
                     </label>
-                    <template v-if="!budgetUseChildren">
+                    <label v-else class="setup-checkbox">
+                        <input type="checkbox" v-model="budgetNone" />
+                        {{ t('budgetNone') }}
+                    </label>
+                    <template v-if="!budgetUseChildren && !budgetNone">
                         <label for="budget-edit-amount">{{ Number(budgetToEdit.children) > 0 ? t('budgetOverrideLabel') : t('budgetEditLabel') }}</label>
                         <input id="budget-edit-amount" type="number" step="0.01" min="0" v-model="budgetNewValue" @keydown.enter="submitBudgetEdit" />
                     </template>

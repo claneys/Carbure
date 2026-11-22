@@ -39,7 +39,7 @@ final class Mcp {
     /**
      * Version of the server
      */
-    private const SERVER_VERSION = '1.1.0';
+    private const SERVER_VERSION = '1.2.0';
 
     /**
      * Web sites allowed to call the server from a browser, besides the server itself:
@@ -261,7 +261,9 @@ final class Mcp {
             'serverInfo' => ['name' => 'carbure', 'title' => 'Carbure', 'version' => self::SERVER_VERSION],
             'instructions' => "Carbure holds the bank transactions, budgets and categories of a household (amounts in euros; "
                 . "negative amounts are expenses). Use list_categories to know the categories, then the other tools to "
-                . "analyse spending, budgets and savings. To propose an insight (a card of the Insights tab computed by an SQL "
+                . "analyse spending, budgets and savings: for a period of months, spending_by_month gives each month and the most "
+                . "expensive one, recurring_transactions the subscriptions and their price changes, duplicate_transactions the "
+                . "payments charged twice and one_off_transactions the one-off purchases. To propose an insight (a card of the Insights tab computed by an SQL "
                 . "query) for a need of the user, read get_insight_guide, then check the query with check_insight_query. "
                 . "All the tools are read-only: an administrator adds the insight proposed in the portal.",
         ];
@@ -367,6 +369,7 @@ final class Mcp {
                 ]],
                 'annotations' => $readOnly,
             ],
+            ...McpAnalysis::tools($readOnly),
         ];
     }
 
@@ -456,7 +459,7 @@ final class Mcp {
     }
 
     /**
-     * Run a tool helping to propose an insight.
+     * Run a tool helping to propose an insight, or an analysis tool (McpAnalysis).
      *
      * @param string       $name      The tool
      * @param array<mixed> $arguments Its arguments
@@ -467,6 +470,9 @@ final class Mcp {
     {
         $int = fn($key, $default = null) => isset($arguments[$key]) && $arguments[$key] !== '' ? (int)$arguments[$key] : $default;
 
+        if (in_array($name, McpAnalysis::TOOLS, true)) {
+            return McpAnalysis::run($name, $arguments);
+        }
         if ($name === 'get_insight_guide') {
             return self::insightGuide();
         }

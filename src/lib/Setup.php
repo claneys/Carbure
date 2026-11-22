@@ -280,6 +280,18 @@ final class Setup {
     }
 
     /**
+     * Command of woob written by the installation: CARBURE_WOOB_PATH (Docker image), else
+     * woob keeping the banks (and their credentials) in data/woob.
+     *
+     * @param string $root Root directory of Carbure
+     * @return string The command
+     */
+    public static function defaultWoobPath(string $root): string
+    {
+        return getenv('CARBURE_WOOB_PATH') ?: 'env HOME=' . $root . '/data/woob woob';
+    }
+
+    /**
      * Write the configuration file (database, woob command).
      *
      * @param array<mixed> $data Database fields of the request
@@ -294,8 +306,7 @@ final class Setup {
             'db_username' => $data['db_user'],
             'db_password' => $this->password($data),
             'db_name' => $data['db_name'],
-            // woob keeps the banks (and their credentials) in data/woob
-            'woob_path' => getenv('CARBURE_WOOB_PATH') ?: 'env HOME=' . $this->root . '/data/woob woob',
+            'woob_path' => self::defaultWoobPath($this->root),
         ]);
         if (@file_put_contents($this->configFile, $ini) === false) {
             throw new SetupError("Cannot write the configuration file: check the permissions of data/conf/", 500);

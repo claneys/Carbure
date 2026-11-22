@@ -390,6 +390,19 @@ fingerprint is exactly the confirmed one; after the update, the key woob has
 kept (`/data/woob/.local/share/woob/keyrings/`) must also be that one, otherwise it
 is deleted and the update fails.
 
+**The key of the official repository is pinned in Carbure**: its SHA-256
+fingerprint (`a1755b379793ff4922a7bfb5f566c019205f805b96f3420aee95938cd0d1634a`, i.e. the SHA-1
+`b5fc136c2d500b8483696a0ee722865842a4cc45` displayed by woob; keys of woob's maintainers,
+unchanged since February 2023) is checked once and for all by Carbure's maintainers
+(`WoobRepository::OFFICIAL_KEYRINGS`). On the first start of the container
+(`tools/woob-trust.php`), Carbure downloads the key of the official repository and, if its
+fingerprint is **exactly** the pinned one, approves it without asking and installs the
+modules, with the same checks as a manual approval: banks can be connected at once. Another
+key (changed, or served by an attacker), another repository (`woob_repository`) or a
+repository not reachable at start still wait for the approval of an administrator, as below. The pin is a SHA-256, not a SHA-1: SHA-1 is broken against
+chosen-prefix collisions, a GPG keyring can carry filler packets, and this approval happens
+with no human looking.
+
 As long as the repository is not approved, Carbure also refuses (`409`, “Trust the woob
 repository first”):
 

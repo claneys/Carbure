@@ -31,6 +31,40 @@ class BudgetTest extends DatabaseTestCase
         $this->assertEquals(0, $budget['Supermarché']['budget']);
     }
 
+    public function testTransactionsOfAParentCategoryItself()
+    {
+        // #492: a transaction put on the parent Alimentation (1), not on its sub-category Supermarché
+        Db::execute("INSERT INTO bank_transaction (uuid, date, rdate, type, label, category, amount, card, pointed, user)
+            VALUES ('p1', ?, ?, 7, 'CB MARCHE', 1, -15.00, '', 0, 1)", "ss", $this->day(1), $this->day(1));
+
+        // Counted for the parent
+        $this->assertEquals(95, $this->byName(Budget::get())['Alimentation']['consummed']);
+
+        // Without own (mobile apps): only the sub-categories, as before
+        $this->assertSame(['Supermarché'], array_column(Budget::get(null, null, 1), 'name'));
+        $this->assertSame(['Supermarché'], array_column(Budget::get(null, null, 1, 'false'), 'name'));
+
+        // With own: an item for the parent itself, without budget, so that the level adds up to the parent
+        $items = Budget::get(null, null, 1, '1');
+        $this->assertSame(['Supermarché', 'Alimentation'], array_column($items, 'name'));
+        $own = $items[1];
+        $this->assertTrue($own['own']);
+        $this->assertEquals(1, $own['id']);
+        $this->assertSame('DEBIT', $own['type']);
+        $this->assertEquals(15, $own['consummed']);
+        $this->assertEquals(0, $own['budget']);
+        $this->assertSame(0, $own['children']);
+        $this->assertArrayNotHasKey('own', $items[0]);
+        $this->assertEquals(95, array_sum(array_column($items, 'consummed')));
+    }
+
+    public function testNoOwnItemWithoutTransactionsOnTheParent()
+    {
+        $this->assertSame(['Supermarché'], array_column(Budget::get(null, null, 1, 'true'), 'name'));
+        // Top level: nothing to add
+        $this->assertNotContains(true, array_column(Budget::get(null, null, 0, 'true'), 'own'));
+    }
+
     public function testCreateOrUpdate()
     {
         Budget::create(1, 300);

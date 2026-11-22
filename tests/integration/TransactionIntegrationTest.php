@@ -32,6 +32,18 @@ class TransactionIntegrationTest extends DatabaseTestCase
         $this->assertSame([], Transaction::get(null, null, 4 + 100));
     }
 
+    public function testGetOnlyTheTransactionsOfTheCategoryItself()
+    {
+        // #492: a transaction put on the parent Alimentation (1), not on its sub-category
+        Db::execute("INSERT INTO bank_transaction (uuid, date, rdate, type, label, category, amount, card, pointed, user)
+            VALUES ('p1', ?, ?, 7, 'CB MARCHE', 1, -15.00, '', 0, 1)", "ss", $this->day(1), $this->day(1));
+
+        $this->assertEqualsCanonicalizing(['CB SUPERMARCHE', 'CB MARCHE'], array_column(Transaction::get(null, null, 1), 'label'));
+        $this->assertSame(['CB MARCHE'], array_column(Transaction::get(null, null, 1, 'true'), 'label'));
+        $this->assertSame(['CB SUPERMARCHE'], array_column(Transaction::get(null, null, 2, '1'), 'label'));
+        $this->assertCount(2, Transaction::get(null, null, 1, 'false'));
+    }
+
     public function testSearch()
     {
         $labels = array_column(Transaction::search('supermarche'), 'label');

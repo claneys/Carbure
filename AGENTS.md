@@ -26,6 +26,7 @@ built by the GitHub release workflow; committing/pushing is not deploying.
 | `swagger/` | OpenAPI via reflection + Swagger UI |
 | `sql/carbure.sql`, `sql/migrations/` | Full schema; dated migrations (`Migrator`, table `schema_migrations`) |
 | `tools/migrate.php` | CLI migrations (run by the Docker entrypoint) |
+| `tools/woob-trust.php` | CLI run by the Docker entrypoint while woob trusts no keyring: trusts the official woob repository when its keyring is the pinned one (`WoobRepository::OFFICIAL_KEYRINGS`), then installs the modules |
 | `tools/install.php` | CLI installation without the web wizard (`Carbure\Lib\InstallCommand`, same path as `Setup`): scripted installs, YunoHost package |
 | `docker/` | `Dockerfile`, `nginx.conf`, `docker-compose.yml`, `docker-compose.dev.yml`; `demo/` (`Dockerfile`, `entrypoint.sh`, `docker-compose.yml`, `run.sh`) = demo image (MariaDB + `seed.php --demo` inside) |
 | `data/` | Untracked instance data: `conf/prod.ini`, `logs/`, `cache/`, `woob/` |
