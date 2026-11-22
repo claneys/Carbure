@@ -333,6 +333,7 @@ test('reloadBudgetLevel: reloads the budgets, then the transactions of the selec
     const module = createBudgetModule(() => store, () => api);
     const context = { budgetCategory: { id: 4, name: 'Logement' }, ensureCategories() {}, showToast() {}, $nextTick() {} };
     context.loadBudgetTransactions = module.methods.loadBudgetTransactions.bind(context);
+    context.budgetItemName = module.methods.budgetItemName.bind(context);
     await module.methods.reloadBudgetLevel.call(context, 10, 2026);
     await new Promise(resolve => setTimeout(resolve));
     assert.deepEqual(calls, [['reloadBudgets', 10, 2026], ['transactions', 10, 2026, 4]]);
