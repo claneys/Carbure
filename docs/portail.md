@@ -48,6 +48,12 @@ d'authentification, ou un code de secours. À la première connexion, il affiche
 navigateur ; **Retour** revient au mot de passe. Un code faux est compté comme un échec
 de connexion.
 
+Si l'instance propose une **passkey** (clé d'accès native, WebAuthn), un bouton
+**Utiliser une passkey** apparaît sous le mot de passe (absent si le
+navigateur ne gère pas WebAuthn, ou en dehors d'un contexte sécurisé HTTPS/localhost) :
+aucun identifiant à taper, la vérification (empreinte, visage ou code de l'appareil) tient
+aussi lieu de double authentification.
+
 Si l'instance propose la **connexion unique (SSO)** par OpenID Connect, un lien
 **Connexion unique (SSO)** apparaît aussi sous le mot de passe : il envoie le navigateur
 au fournisseur, qui revient ensuite sur le portail, authentifié (session ouverte sans
@@ -669,8 +675,9 @@ vide : laissez passer `X-Frame-Options: SAMEORIGIN` / `frame-ancestors 'self'`, 
 
 ## Mon profil
 
-Quatre sous-onglets, comme l'administration : **Profil**, **Double authentification**,
-**Notifications** et **Mes appareils** (ouvert sur **Profil** depuis le menu utilisateur).
+Cinq sous-onglets, comme l'administration : **Profil**, **Double authentification**,
+**Passkeys**, **Notifications** et **Mes appareils** (ouvert sur **Profil** depuis le
+menu utilisateur).
 
 - **Profil** : modification de l'e-mail, du prénom, du nom et du mot de passe (laisser
   vide pour le conserver). L'identifiant n'est pas modifiable. **Langue** (Français,
@@ -707,6 +714,13 @@ Quatre sous-onglets, comme l'administration : **Profil**, **Double authentificat
   fois. Une fois activée, un code de l'application permet d'obtenir de **nouveaux codes de
   secours**, et un code de l'application ou de secours de la **désactiver** (après
   confirmation). Les navigateurs de confiance sont dans **Mes appareils**.
+- **Passkeys** (sous-onglet dédié, absent tant que la migration n'est pas appliquée ou
+  que le navigateur ne gère pas WebAuthn) : liste des passkeys enregistrées (nom, date
+  d'ajout, dernière utilisation, badge **Synchronisée** si l'authentificateur la
+  sauvegarde). **Ajouter une passkey** (nom pré-rempli avec le navigateur et le
+  système) déclenche l'invite native de l'appareil (empreinte, visage ou code) ; la
+  corbeille supprime une passkey (après confirmation), elle ne permettra plus de se
+  connecter (`GET`/`POST`/`DELETE /user/passkey`).
 - **Mes appareils** :
   - **Connecter l'application mobile** : QR code
     `https://carbure.org/app/?server=<adresse de l'API>` à scanner avec l'appareil photo du

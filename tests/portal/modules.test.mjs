@@ -827,12 +827,17 @@ test('accountsByBank: the followed accounts under their bank, then the others', 
 
 test('profile: sub-tabs, the two-factor one hidden before its migration; platform, model and versions of a device', async () => {
     const { createProfileModule, PROFILE_TABS } = await import('../../portal/modules/profileModule.js');
-    assert.deepEqual(PROFILE_TABS.map(tab => tab.key), ['profile', 'security', 'notifications', 'devices']);
+    assert.deepEqual(PROFILE_TABS.map(tab => tab.key), ['profile', 'security', 'passkeys', 'notifications', 'devices']);
     const module = createProfileModule(() => null);
-    const tabs = mfaStatus => module.computed.visibleProfileTabs.call({ profileTabs: PROFILE_TABS, mfaStatus }).map(tab => tab.key);
+    const tabs = (mfaStatus, loginMethods = [], passkeySupported = false) => module.computed.visibleProfileTabs
+        .call({ profileTabs: PROFILE_TABS, mfaStatus, loginMethods, passkeySupported }).map(tab => tab.key);
     assert.deepEqual(tabs(null), ['profile', 'security', 'notifications', 'devices']);
     assert.deepEqual(tabs({ available: true }), ['profile', 'security', 'notifications', 'devices']);
     assert.deepEqual(tabs({ available: false }), ['profile', 'notifications', 'devices']);
+    // Passkeys shown only once offered by the server and supported by the browser
+    assert.deepEqual(tabs({ available: true }, ['passkey'], true), ['profile', 'security', 'passkeys', 'notifications', 'devices']);
+    assert.deepEqual(tabs({ available: true }, ['passkey'], false), ['profile', 'security', 'notifications', 'devices']);
+    assert.deepEqual(tabs({ available: true }, [], true), ['profile', 'security', 'notifications', 'devices']);
 
     const { devicePlatform } = module.methods;
     assert.deepEqual(devicePlatform({ platform: 'android' }), { icon: 'android', label: 'devicePlatform_android' });

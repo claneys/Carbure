@@ -17,6 +17,7 @@ erDiagram
     users ||--o{ mfa_recovery_code : "secours"
     users ||--o{ mfa_trusted_browser : "fait confiance"
     users ||--o{ user_browser : "se connecte"
+    users ||--o{ user_passkey : "connexion"
     users ||--o{ api_tokens : "possède"
     users ||--o{ user_notification : "choisit"
     users ||--o{ budget_alert : "alerté"
@@ -188,6 +189,24 @@ erDiagram
         varchar name PK
         varchar value
     }
+    user_passkey {
+        int id PK
+        int user_id FK
+        varbinary credential_id UK "jusqu'à 1023 octets"
+        char credential_hash UK "SHA-256 de credential_id"
+        text public_key "PEM SubjectPublicKeyInfo"
+        smallint alg "COSE : -7 (ES256) ou -257 (RS256)"
+        int sign_count
+        varchar name
+        varchar transports
+        tinyint backed_up "synchronisée (iCloud, Google…)"
+        datetime created_at
+        datetime last_used_at
+    }
+    passkey_used_challenge {
+        char challenge_hash PK "SHA-256 d'un défi de connexion ou d'enregistrement consommé"
+        datetime expires_at
+    }
     schema_migrations {
         varchar version PK
         timestamp applied_at
@@ -204,6 +223,8 @@ erDiagram
 | `mfa_recovery_code` | Codes de secours de la double authentification : seule l'empreinte SHA-256 (`code_hash`) est stockée, la ligne est supprimée à l'usage. Supprimés avec l'utilisateur. |
 | `mfa_trusted_browser` | Navigateurs de confiance (6 mois) : empreinte SHA-256 du jeton du cookie (`token_hash`), `label` (User-Agent), `created_at`, `expires_at`, `last_used_at`. Supprimés avec l'utilisateur, quand son mot de passe change ou que sa double authentification est désactivée ou réinitialisée. |
 | `user_browser` | Navigateurs web des connexions au portail : empreinte SHA-256 du jeton du cookie `carbure_browser` (`token_hash`, unique par utilisateur : plusieurs utilisateurs du foyer partagent le cookie d'un navigateur), `label` (User-Agent), `created_at`, `last_login`. Oubliés après 6 mois sans connexion ou à la demande de l'utilisateur, supprimés avec lui. Ni notification ni dispense de la double authentification. |
+| `user_passkey` | Clés d'accès (passkey) d'un utilisateur : `credential_id` (jusqu'à 1023 octets) et son empreinte SHA-256 unique (`credential_hash`, recherche) ; `public_key` (PEM) et `alg` (COSE : `-7` ES256, `-257` RS256) ; `sign_count` (compteur de signature : refuse une clé clonée, reste à 0 pour une clé synchronisée) ; `name` (nom affiché), `backed_up` (synchronisée, ex. iCloud, Google). Supprimée avec l'utilisateur et par `POST /user/mfa/reset` (une connexion par passkey tient lieu de second facteur). Jamais dans une sauvegarde. |
+| `passkey_used_challenge` | Défis de connexion ou d'enregistrement d'une passkey déjà consommés (`challenge_hash`, empreinte SHA-256, `expires_at`) : empêche de rejouer un même défi. Lignes expirées purgées à chaque insertion. Jamais dans une sauvegarde. |
 | `user_notification` | Canaux choisis par un utilisateur pour un type de notification (`kind` : `sync`, `rule`, `expense`, `budget`) : `push` vers ses appareils, `email` vers l'adresse de son profil. Sans ligne pour un type : push oui, email non, sauf `budget` (ni l'un ni l'autre). Supprimés avec l'utilisateur. |
 | `budget_alert_threshold` | Seuil des alertes de budget d'un utilisateur pour une catégorie (`threshold`, de 50 à 200 %), à la place de son seuil global (`users.budget_threshold`, appliqué à tous les budgets si `users.budget_alert_all`). Supprimé avec l'utilisateur ou la catégorie. |
 | `insight_alert` | Alerte d'un utilisateur sur un insight : `direction` (`above` ou `below`) et `threshold`, comparé à la valeur du mois sans son signe ; `notified_month` = premier jour du dernier mois alerté (`NULL` quand le seuil change : l'alerte est réarmée). Supprimée avec l'utilisateur ou l'insight, et quand l'insight est masqué. |
@@ -256,6 +277,7 @@ main, ou par `sql/carbure.sql`). Voir [Développement](developpement.md#migratio
 | `2026-11-03_insight_alert` | Alertes des utilisateurs sur les insights (table `insight_alert`) |
 | `2026-11-04_insight_largest_expense` | L'insight de départ « Plus grosse dépense » compte une transaction répartie une fois, avec le montant de la banque (seulement si sa requête n'a pas été modifiée) |
 | `2026-11-19_transaction_comment` | Commentaire libre d'une transaction (`bank_transaction.comment`, `NULL` pour les transactions existantes) |
+| `2026-11-25_user_passkey` | Connexion par clé d'accès (passkey, WebAuthn) : tables `user_passkey` et `passkey_used_challenge` |
 
 ## Modèle « foyer »
 

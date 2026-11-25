@@ -247,6 +247,45 @@ Revokes a trusted browser of the logged-in user (`404` otherwise).
 user who lost their phone; they will set up a new authenticator app at their
 next login if two-factor authentication is enforced.
 
+### `POST /user/login/passkey/options` — public { #post-userloginpasskeyoptions-publique }
+
+Options of a passkey sign-in: no username typed (discoverable credential). Returns
+`challenge_token` (5 minutes) and `publicKey`
+(`challenge`, `rpId`, `timeout`, `userVerification: "required"`, `allowCredentials: []`).
+`409` as long as the `2026-11-25_user_passkey` migration is not applied.
+
+### `POST /user/login/passkey` — public { #post-userloginpasskey-publique }
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `challenge_token` | string | yes | Token returned by `POST /user/login/passkey/options` |
+| `credential` | object `{id, rawId, type, response: {clientDataJSON, authenticatorData, signature, userHandle}}` | yes | Assertion returned by `navigator.credentials.get()` (binary fields base64url) |
+
+Response: the session (`exp`, `sub`, `iat`, `token`, `username`), as `POST /user/login`,
+never asking for two-factor authentication (user verification by the key already stands
+for it). `401` if the key is unknown or the assertion is invalid, `403` if the challenge
+has expired or was already used (replay), `423` if the account is locked, `409` as long
+as the migration is not applied.
+
+### `GET /user/passkey`, `POST /user/passkey/options`, `POST /user/passkey`, `DELETE /user/passkey` { #get-userpasskey-post-userpasskeyoptions-post-userpasskey-delete-userpasskey }
+
+Passkeys of the logged-in user (My profile → Passkeys); adding one does not ask for the
+password again (the session is enough):
+
+- `GET /user/passkey`: list (`id`, `name`, `created_at`, `last_used_at`, `backed_up`);
+- `POST /user/passkey/options`: registration options (`challenge_token`, `rp`, `user`,
+  `pubKeyCredParams` [-7 ES256, -257 RS256], `authenticatorSelection`
+  {`residentKey: "required"`, `userVerification: "required"`}, `attestation: "none"`,
+  `excludeCredentials`);
+- `POST /user/passkey` (`challenge_token`, `credential` {`id`, `rawId`, `type`,
+  `response: {clientDataJSON, attestationObject}`}, `name`): registers the key, returns
+  the created passkey; `401` if the attestation is invalid, `403` if the challenge has
+  expired, was already used or is not the logged-in user's, `409` if the key is already
+  registered;
+- `DELETE /user/passkey` (`id`): `404` if it belongs to another user.
+
+`409` for these four routes as long as the migration is not applied.
+
 ### `POST /user/unlock` — administrator { #post-userunlock-administrateur }
 
 `id`: unlocks an account locked after too many failed logins (`404` if the user
@@ -1371,7 +1410,8 @@ also contains `"demo":true`: the portal then shows the public account (`demo` / 
 on the login screen. The field is absent on a regular instance.
 `login_methods` lists the ways to sign in besides the password that the portal must
 offer: `oidc` (single sign-on configured, see
-[Configuration](configuration.en.md#connexion-unique-oidc)). Empty array by default.
+[Configuration](configuration.en.md#connexion-unique-oidc)), `passkey`
+(`2026-11-25_user_passkey` migration applied). Empty array by default.
 
 ### `GET /system/logs` — administrator { #get-systemlogs-administrateur }
 

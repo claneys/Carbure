@@ -81,9 +81,41 @@ l'activer pour lui seul depuis **Mon profil**.
   les jetons OAuth (l'autorisation d'un agent passe par la connexion au portail, donc par
   le second facteur), et le `sync_token` du planificateur.
 
+### Connexion par clé d'accès (passkey, WebAuthn)
+
+En plus du mot de passe (et de la double authentification), le portail propose de se
+connecter avec une **clé d'accès** (passkey) : une identification biométrique ou un code
+de l'appareil (Face ID, Touch ID, Windows Hello, clé de sécurité USB) vérifiée par le
+navigateur, sans dépendance (implémentation WebAuthn en PHP : `Carbure\Lib\WebAuthn`,
+`Cbor`, `CoseKey`). La **vérification de l'utilisateur étant exigée**, une connexion par
+passkey tient lieu de second facteur : la double authentification n'est jamais redemandée.
+
+- **Identifiant résident** (discoverable credential) : le navigateur propose les clés déjà
+  enregistrées sans que l'utilisateur tape son identifiant.
+- **Attestation `none`** (non vérifiée : Carbure ne restreint pas les modèles de clé
+  acceptés) ; algorithmes **ES256** et **RS256** (`openssl_verify`).
+- **Défis signés**, jamais stockés en base (`Carbure\Lib\SignedToken`, 5 minutes, deux
+  usages distincts : `passkey-register` et `passkey-login`, un jeton de l'un n'est jamais
+  accepté pour l'autre) : à usage unique, l'empreinte SHA-256 du défi est insérée dans
+  `passkey_used_challenge` **une fois l'assertion ou l'attestation acceptée** (jamais
+  avant) — une requête anonyme qui échoue n'écrit donc rien en base, et rejouer le même
+  défi répond `403`.
+- **Origine et identifiant RP (`rpId`)** comparés strictement à `public_url` (ou à l'hôte
+  de la requête sans elle) : changer le domaine de l'instance invalide toutes les
+  passkeys déjà enregistrées (voir [Configuration](configuration.md)).
+- **Compteur de signature** : une clé déjà utilisée avec un compteur positif qui
+  n'augmente pas est refusée (clonage) ; les clés synchronisées (iCloud, Google) restent
+  à 0 et ne sont jamais bloquées par cette règle.
+- L'ajout d'une passkey (**Mon profil → Passkeys**) ne redemande pas le mot de passe (la
+  session suffit) ; sa suppression répond `404` pour la passkey d'un autre utilisateur.
+  Une **réinitialisation de la double authentification** par un administrateur
+  (`POST /user/mfa/reset`) supprime aussi les passkeys de l'utilisateur.
+- Tant que la migration `2026-11-25_user_passkey` n'est pas appliquée, les routes de
+  passkey répondent `409` et `login_methods` ne propose pas `passkey`.
+
 ### Connexion unique (OIDC) { #connexion-unique-oidc }
 
-En plus du mot de passe et de la double authentification, le portail
+En plus du mot de passe, de la double authentification et de la passkey, le portail
 propose de se connecter via un fournisseur **OpenID Connect** (Authelia, Keycloak, tout
 fournisseur avec un document de découverte), quand les 3 réglages de la section `[auth]`
 sont renseignés (voir [Configuration](configuration.md#connexion-unique-oidc)) :
@@ -122,7 +154,8 @@ flux d'autorisation **avec PKCE (S256)** et secret du client envoyé au point de
 ### Limitation des connexions
 
 L'image Docker limite dans nginx les routes de connexion (`POST /api/user/login`,
-`/api/user/login/mfa`, `/api/oauth/token`) à **30 requêtes par minute par adresse du
+`/api/user/login/mfa`, `/api/user/login/passkey`, `/api/user/login/passkey/options`,
+`/api/oauth/token`) à **30 requêtes par minute par adresse du
 client**, avec une rafale de 10 (un mot de passe puis le code du second facteur, une
 faute de frappe…) : au-delà, nginx répond `429` (`{"error": …, "code": 429}`,
 `Retry-After: 60`) sans appeler PHP, et le portail affiche « Trop de tentatives de
@@ -294,6 +327,8 @@ Seules ces routes ne demandent pas de JWT (un test unitaire le vérifie) :
 - `POST /user/login`, et `POST /user/login/mfa`, la seconde étape de la connexion, qui
   exige le défi de 5 minutes donné par la première (mot de passe vérifié) et le code de
   l'application ;
+- `POST /user/login/passkey/options` et `POST /user/login/passkey` (connexion par clé
+  d'accès, voir [ci-dessus](#connexion-par-cle-dacces-passkey-webauthn)) ;
 - `GET /user/login/oidc`, `GET /user/login/oidc/callback` et `POST /user/login/oidc`
   (connexion unique OIDC, 404 tant qu'elle n'est pas configurée, voir
   [ci-dessus](#connexion-unique-oidc)) ;
@@ -312,9 +347,9 @@ Seules ces routes ne demandent pas de JWT (un test unitaire le vérifie) :
 - Les logs masquent les champs `password` et `token` des requêtes, les secrets OAuth
   (`code`, `code_verifier`, `refresh_token`, `access_token`, `client_secret`), et le
   paramètre `token=` des URL (synchronisation, MCP), ainsi que le défi, le secret, l'URI
-  `otpauth` et les codes de secours de la double authentification (requêtes et réponses
-  journalisées en niveau `debug`). Le corps des réponses du serveur MCP et d'OAuth n'est
-  pas journalisé.
+  `otpauth` et les codes de secours de la double authentification, et la `credential` et
+  le `challenge_token` d'une passkey (requêtes et réponses journalisées en niveau `debug`).
+  Le corps des réponses du serveur MCP et d'OAuth n'est pas journalisé.
 - Le log d'accès de nginx (image Docker, `docker logs`) remplace aussi par `***` les
   paramètres `token=`, `access_token=` et `code=` des URL (format `carbure` de
   `docker/nginx.conf`) : le jeton d'une tâche planifiée pas encore migrée vers l'en-tête

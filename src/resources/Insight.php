@@ -50,8 +50,8 @@ final class Insight {
      * the schema) and the system schemas
      */
     public const REFUSED_TABLES = ['api_tokens', 'bank_transaction_deleted', 'budget_alert', 'budget_alert_threshold', 'budget_insight', 'data_change', 'devices', 'insight_alert',
-        'mfa_recovery_code', 'mfa_trusted_browser', 'oauth_clients', 'oauth_codes', 'schema_migrations', 'settings',
-        'user_browser', 'user_mfa', 'user_notification', 'users',
+        'mfa_recovery_code', 'mfa_trusted_browser', 'oauth_clients', 'oauth_codes', 'passkey_used_challenge', 'schema_migrations', 'settings',
+        'user_browser', 'user_mfa', 'user_notification', 'user_passkey', 'users',
         'mysql', 'information_schema', 'performance_schema', 'sys'];
 
     /**

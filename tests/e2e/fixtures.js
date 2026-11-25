@@ -70,6 +70,64 @@ async function openPortal(page, token, username) {
     await base.expect(page.locator('.user-menu-name')).toHaveText(username);
 }
 
+/**
+ * Base URL of the portal on localhost (not 127.0.0.1, the baseURL of every other spec):
+ * an IP address is not a valid WebAuthn RP ID, so the passkey ceremonies need the page
+ * opened here (the server derives the RP ID from the request Host header, see
+ * src/resources/OAuth.php baseUrl(), no public_url in conf/e2e.ini).
+ * @returns {string} e.g. http://localhost:8091
+ */
+function passkeyLocalhostUrl() {
+    const port = Number(process.env.E2E_PORT || 8091);
+    return process.env.E2E_BASE_URL ? process.env.E2E_BASE_URL.replace('127.0.0.1', 'localhost') : `http://localhost:${port}`;
+}
+
+/**
+ * Opens the portal as a logged-in user, on localhost (see passkeyLocalhostUrl): token
+ * stored like the login screen does (openPortal stays on the configured baseURL).
+ * @param {import('@playwright/test').Page} page
+ * @param {import('@playwright/test').APIRequestContext} request
+ * @param {string} user - Key of USERS
+ */
+async function openPortalOnLocalhost(page, request, user) {
+    const token = await apiLogin(request, user);
+    await page.addInitScript(([token, username]) => {
+        if (window !== window.top) {
+            return;
+        }
+        if (!sessionStorage.getItem('e2e-init')) {
+            sessionStorage.setItem('e2e-init', '1');
+            localStorage.setItem('authToken', token);
+            localStorage.setItem('username', username);
+        }
+    }, [token, user]);
+    await page.goto(`${passkeyLocalhostUrl()}/portal/`);
+    await base.expect(page.locator('.user-menu-name')).toHaveText(user);
+}
+
+/**
+ * Adds a virtual authenticator to the page's browser context (Chromium CDP WebAuthn
+ * domain), standing in for a real one: a discoverable (resident key) credential, user
+ * verification simulated as always satisfied.
+ * @param {import('@playwright/test').Page} page
+ * @returns {Promise<import('@playwright/test').CDPSession>} The CDP session
+ */
+async function addVirtualAuthenticator(page) {
+    const client = await page.context().newCDPSession(page);
+    await client.send('WebAuthn.enable');
+    await client.send('WebAuthn.addVirtualAuthenticator', {
+        options: {
+            protocol: 'ctap2',
+            transport: 'internal',
+            hasResidentKey: true,
+            hasUserVerification: true,
+            isUserVerified: true,
+            automaticPresenceSimulation: true
+        }
+    });
+    return client;
+}
+
 const test = base.test.extend({
     resetDatabase: [async ({ request }, use) => {
         const response = await request.get('/api/__e2e/reset');
@@ -263,4 +321,4 @@ async function chooseLanguage(page, from, to) {
     await base.expect(page.locator('.tabs').getByRole('button', { name: tr('tabTransactions', {}, to), exact: true })).toBeVisible();
 }
 
-module.exports = { test, expect: base.expect, USERS, openTab, clickMainTab, tr, pickCategory, euros, currentMonth, offerBudgetCopy, escapeRegExp, woobFile, trustWoobRepository, chooseLanguage, asDemoInstance };
+module.exports = { test, expect: base.expect, USERS, openTab, clickMainTab, tr, pickCategory, euros, currentMonth, offerBudgetCopy, escapeRegExp, woobFile, trustWoobRepository, chooseLanguage, asDemoInstance, passkeyLocalhostUrl, openPortalOnLocalhost, addVirtualAuthenticator };

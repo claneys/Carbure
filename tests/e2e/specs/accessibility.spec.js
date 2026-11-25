@@ -1,6 +1,6 @@
 // Accessibility: every text of the portal is readable (WCAG 2.2 AA contrast), the
 // buttons at rest and on hover, on every tab and in the modals (see a11y.js)
-const { test, expect, tr, openTab, currentMonth, offerBudgetCopy, trustWoobRepository, asDemoInstance, woobFile } = require('../fixtures');
+const { test, expect, tr, openTab, currentMonth, offerBudgetCopy, trustWoobRepository, asDemoInstance, woobFile, addVirtualAuthenticator, openPortalOnLocalhost } = require('../fixtures');
 const { contrastProblems } = require('../a11y');
 const { startFakeSmtp } = require('../fake-smtp');
 const { startFakePushRelay } = require('../fake-push-relay');
@@ -15,9 +15,10 @@ test.beforeEach(async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
 });
 
-test('the login screen is readable', async ({ page }) => {
+test('the login screen is readable, the passkey login button included', async ({ page }) => {
     await page.goto('/portal/');
-    await expect(page.getByRole('button', { name: tr('loginButton') })).toBeVisible();
+    await expect(page.getByRole('button', { name: tr('loginButton'), exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: tr('passkeyLoginButton') })).toBeVisible();
     expect(await contrastProblems(page, 'login')).toEqual([]);
 });
 
@@ -450,7 +451,7 @@ test('the two-factor authentication is readable: login steps and profile', async
     await page.goto('/portal/');
     await page.getByLabel(tr('username')).fill('marie');
     await page.getByLabel(tr('password')).fill('marie-password');
-    await page.getByRole('button', { name: tr('loginButton') }).click();
+    await page.getByRole('button', { name: tr('loginButton'), exact: true }).click();
     await expect(page.getByRole('img', { name: tr('mfaQrLabel') })).toBeVisible();
     problems.push(...await contrastProblems(page, tr('mfaEnrollTitle')));
     const secret = (await page.locator('.mfa-secret').textContent()).trim();
@@ -483,7 +484,7 @@ test('the two-factor authentication is readable: login steps and profile', async
     await page.getByRole('menuitem', { name: tr('logout') }).click();
     await page.getByLabel(tr('username')).fill('marie');
     await page.getByLabel(tr('password')).fill('marie-password');
-    await page.getByRole('button', { name: tr('loginButton') }).click();
+    await page.getByRole('button', { name: tr('loginButton'), exact: true }).click();
     await expect(page.getByRole('heading', { name: tr('mfaVerifyTitle') })).toBeVisible();
     problems.push(...await contrastProblems(page, tr('mfaVerifyTitle')));
 
@@ -498,6 +499,27 @@ test('the registration of an app in the profile is readable', async ({ userPage:
     await expect(page.locator('.profile-mfa').getByRole('img', { name: tr('mfaQrLabel') })).toBeVisible();
 
     expect(await contrastProblems(page, tr('mfaSetupButton'))).toEqual([]);
+});
+
+test('the Passkeys tab of the profile is readable: empty, added, deleted', async ({ page, request }) => {
+    await addVirtualAuthenticator(page);
+    await openPortalOnLocalhost(page, request, 'marie');
+    await page.locator('.user-menu-toggle').click();
+    await page.getByRole('menuitem', { name: tr('myProfile') }).click();
+    await page.getByRole('tab', { name: tr('passkeyTabTitle'), exact: true }).click();
+    const problems = await contrastProblems(page, `${tr('passkeyTabTitle')} (empty)`);
+
+    await page.getByLabel(tr('passkeyNameLabel')).fill('My security key');
+    await page.getByRole('button', { name: tr('passkeyAddButton') }).click();
+    await expect(page.locator('.profile-passkeys .device-item')).toHaveCount(1);
+    problems.push(...await contrastProblems(page, `${tr('passkeyTabTitle')} (added)`));
+
+    await page.getByRole('button', { name: new RegExp(tr('passkeyDeleteTitle')) }).click();
+    const dialog = page.getByRole('dialog', { name: tr('passkeyDeleteTitle') });
+    await expect(dialog).toBeVisible();
+    problems.push(...await contrastProblems(page, tr('passkeyDeleteTitle')));
+
+    expect(problems).toEqual([]);
 });
 
 test('the confirmation resetting the two-factor authentication of a user is readable', async ({ adminPage: page }) => {

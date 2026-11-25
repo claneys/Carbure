@@ -43,6 +43,9 @@ keeps track of what was done).
       ones first) and to change it (`PUT /transaction`). Entered by hand = `uuid` starting
       with `manual`, or `bank_name` = `manual` (older entries, #431).
 
+- [ ] **Deployment of passkey sign-in (#542)**: the migration `2026-11-25_user_passkey`
+      (`user_passkey`, `passkey_used_challenge` tables) is applied at container start; the
+      passkey routes answer `409` and `login_methods` omits `passkey` until it is.
 - [ ] **Production — single sign-on (OIDC, #541)**: setting `oidc_issuer`,
       `oidc_client_id` and `oidc_client_secret` enables the single sign-on button; before
       that, **declare the Carbure client at the identity provider** (Authelia, Keycloak…)
@@ -193,6 +196,11 @@ keeps track of what was done).
       on from its detail (`PUT /transaction/date` with `id`, `date`; the real date `rdate`
       stays the one of the bank). No migration: the synchronization never updates the
       `date` of a known transaction.
+
+- [ ] **iOS and Android apps — passkey sign-in (#542)**: the portal already offers native
+      passkey sign-in (`POST /user/login/passkey/options`, `POST /user/login/passkey`); the
+      apps still only send a password. Use the platform's native passkey API
+      (`ASAuthorization` on iOS, Credential Manager on Android) with the same routes.
 
 - [ ] **iOS and Android apps — single sign-on (OIDC, #541)**: the portal already offers
       OIDC single sign-on (`GET /user/login/oidc`, redirect flow with cookies); the apps,

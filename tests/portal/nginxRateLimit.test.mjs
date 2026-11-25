@@ -64,10 +64,12 @@ test('the login routes are limited per client, with a 429 in the format of the A
 test('the limited routes are exactly the login ones', () => {
     // nginx regexes (PCRE) of the conf are also valid JavaScript regexes
     const regex = new RegExp(loginLocation[1]);
-    for (const path of ['/api/user/login', '/api/user/login/mfa', '/api/oauth/token']) {
+    for (const path of ['/api/user/login', '/api/user/login/mfa', '/api/user/login/passkey',
+        '/api/user/login/passkey/options', '/api/oauth/token']) {
         assert.match(path, regex);
     }
-    for (const path of ['/api/user/me', '/api/user/login/other', '/api/user/loginx', '/api/oauth/authorize',
+    for (const path of ['/api/user/me', '/api/user/login/other', '/api/user/loginx', '/api/user/login/passkey/x',
+        '/api/user/passkey', '/api/user/passkey/options', '/api/oauth/authorize',
         '/api/oauth/register', '/api/oauth/token/x', '/portal/api/user/login', '/api/health']) {
         assert.doesNotMatch(path, regex);
     }

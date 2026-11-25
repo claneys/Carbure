@@ -250,8 +250,9 @@ final class Mfa {
 
     /**
      * Reset the two-factor authentication of a user who lost his phone (administrators):
-     * his authenticator, recovery codes and trusted browsers are removed; he registers a
-     * new authenticator at his next login if the administrator enforces it.
+     * his authenticator, recovery codes, trusted browsers and passkeys are removed (a
+     * passkey login also stands for the second factor); he registers a new one at his
+     * next login if the administrator enforces it.
      *
      * @param int $id The user
      * @return bool True if reset
@@ -265,6 +266,7 @@ final class Mfa {
             throw new ApiError("User not found", 404, 'user_not_found');
         }
         self::remove($id);
+        Passkey::removeAllOf($id);
         Logger::warn("Two-factor authentication of user $id reset by user " . Jwt::getUserIdFromToken());
         return true;
     }

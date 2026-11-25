@@ -58,6 +58,7 @@ export function isLoopbackUrl(url) {
 export const PROFILE_TABS = [
     { key: 'profile', icon: 'person', label: 'profileTabProfile' },
     { key: 'security', icon: 'lock', label: 'mfaTitle' },
+    { key: 'passkeys', icon: 'fingerprint', label: 'passkeyTabTitle' },
     { key: 'notifications', icon: 'notifications', label: 'notificationsTitle' },
     { key: 'devices', icon: 'smartphone', label: 'myDevices' }
 ];
@@ -169,12 +170,14 @@ export function createProfileModule(getApiService) {
 
             /**
              * Sub-tabs of the profile page shown: the two-factor authentication only once
-             * its migration is applied
+             * its migration is applied, the passkeys only when the instance offers them and
+             * this browser supports WebAuthn
              * @returns {Array<{key: string, icon: string, label: string}>}
              */
             visibleProfileTabs() {
                 const mfaUnavailable = this.mfaStatus && !this.mfaStatus.available;
-                return this.profileTabs.filter(tab => tab.key !== 'security' || !mfaUnavailable);
+                const passkeyUnavailable = !this.loginMethods.includes('passkey') || !this.passkeySupported;
+                return this.profileTabs.filter(tab => (tab.key !== 'security' || !mfaUnavailable) && (tab.key !== 'passkeys' || !passkeyUnavailable));
             },
 
             /**
@@ -400,6 +403,7 @@ export function createProfileModule(getApiService) {
                 this.loadAppServer();
                 this.loadNotifications();
                 this.loadMfaStatus();
+                this.loadPasskeys();
             },
 
             /**

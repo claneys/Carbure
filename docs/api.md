@@ -250,6 +250,45 @@ Révoque un navigateur de confiance de l'utilisateur connecté (`404` sinon).
 utilisateur qui a perdu son téléphone ; il configurera une nouvelle application à sa
 prochaine connexion si la double authentification est imposée.
 
+### `POST /user/login/passkey/options` — publique
+
+Options d'une connexion par clé d'accès (passkey) : aucun identifiant saisi (identifiant
+résident). Renvoie `challenge_token` (5 minutes) et `publicKey`
+(`challenge`, `rpId`, `timeout`, `userVerification: "required"`, `allowCredentials: []`).
+`409` tant que la migration `2026-11-25_user_passkey` n'est pas appliquée.
+
+### `POST /user/login/passkey` — publique
+
+| Paramètre | Type | Requis | Description |
+|---|---|---|---|
+| `challenge_token` | string | oui | Jeton renvoyé par `POST /user/login/passkey/options` |
+| `credential` | objet `{id, rawId, type, response: {clientDataJSON, authenticatorData, signature, userHandle}}` | oui | Assertion renvoyée par `navigator.credentials.get()` (champs binaires en base64url) |
+
+Réponse : la session (`exp`, `sub`, `iat`, `token`, `username`), comme `POST /user/login`,
+sans jamais demander la double authentification (la vérification de l'utilisateur par la
+clé en tient déjà lieu). `401` si la clé est inconnue ou l'assertion invalide, `403` si le
+défi a expiré ou a déjà été utilisé (rejeu), `423` si le compte est bloqué, `409` tant que
+la migration n'est pas appliquée.
+
+### `GET /user/passkey`, `POST /user/passkey/options`, `POST /user/passkey`, `DELETE /user/passkey`
+
+Clés d'accès de l'utilisateur connecté (Mon profil → Passkeys) ; l'ajout ne redemande pas
+le mot de passe (la session suffit) :
+
+- `GET /user/passkey` : liste (`id`, `name`, `created_at`, `last_used_at`, `backed_up`) ;
+- `POST /user/passkey/options` : options d'enregistrement (`challenge_token`, `rp`, `user`,
+  `pubKeyCredParams` [-7 ES256, -257 RS256], `authenticatorSelection`
+  {`residentKey: "required"`, `userVerification: "required"`}, `attestation: "none"`,
+  `excludeCredentials`) ;
+- `POST /user/passkey` (`challenge_token`, `credential` {`id`, `rawId`, `type`,
+  `response: {clientDataJSON, attestationObject}`}, `name`) : enregistre la clé, renvoie
+  la passkey créée ; `401` si l'attestation est invalide, `403` si le défi a expiré, a déjà
+  été utilisé ou n'est pas celui de l'utilisateur connecté, `409` si la clé est déjà
+  enregistrée ;
+- `DELETE /user/passkey` (`id`) : `404` si elle appartient à un autre utilisateur.
+
+`409` pour ces quatre routes tant que la migration n'est pas appliquée.
+
 ### `GET /user/login/oidc`, `GET /user/login/oidc/callback`, `POST /user/login/oidc` — publiques
 
 Connexion unique par OpenID Connect (voir
@@ -1404,7 +1443,8 @@ contient en plus `"demo":true` : le portail affiche alors le compte public (`dem
 sur l'écran de connexion. Le champ est absent sur une instance normale.
 `login_methods` liste les façons de se connecter en plus du mot de passe que le portail
 doit proposer : `oidc` (connexion unique configurée, voir
-[Configuration](configuration.md#connexion-unique-oidc)). Tableau vide par défaut.
+[Configuration](configuration.md#connexion-unique-oidc)), `passkey` (migration
+`2026-11-25_user_passkey` appliquée). Tableau vide par défaut.
 
 ### `GET /system/logs` — administrateur
 

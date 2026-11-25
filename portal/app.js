@@ -37,6 +37,7 @@ import { createConfigModule } from './modules/configModule.js';
 import { createConfirmModule } from './modules/confirmModule.js';
 import { createNotificationsModule } from './modules/notificationsModule.js';
 import { createMfaModule } from './modules/mfaModule.js';
+import { createPasskeyModule } from './modules/passkeyModule.js';
 import { createOidcLoginModule } from './modules/oidcLoginModule.js';
 import { createBackupModule } from './modules/backupModule.js';
 import { createPurgeModule } from './modules/purgeModule.js';
@@ -125,6 +126,7 @@ const app = createApp({
         createConfirmModule(),
         createNotificationsModule(() => apiService),
         createMfaModule(() => apiService),
+        createPasskeyModule(() => apiService),
         createOidcLoginModule(() => apiService),
         createBackupModule(() => apiService),
         createPurgeModule(() => apiService),
@@ -208,7 +210,7 @@ const app = createApp({
          * @returns {string[]}
          */
         loginAlternatives() {
-            return this.loginMethods;
+            return this.loginMethods.filter(method => method !== 'passkey' || this.passkeySupported);
         },
 
         /**

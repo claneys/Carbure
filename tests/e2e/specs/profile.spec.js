@@ -1,16 +1,17 @@
-// Profile page, in four sub-tabs: personal information and language, two-factor
-// authentication, notifications (channels, large expense threshold, budget watched and
-// its threshold), devices (mobile apps, web browsers and trusted web browsers)
+// Profile page, in five sub-tabs: personal information and language, two-factor
+// authentication, passkeys (native WebAuthn login), notifications (channels, large
+// expense threshold, budget watched and its threshold), devices (mobile apps, web
+// browsers and trusted web browsers)
 const { test, expect, tr } = require('../fixtures');
 const { startFakeSmtp } = require('../fake-smtp');
 
 /** Heading of each sub-tab of the profile page */
-const HEADINGS = { profileTabProfile: 'myProfile', mfaTitle: 'mfaTitle', notificationsTitle: 'notificationsTitle', myDevices: 'myDevices' };
+const HEADINGS = { profileTabProfile: 'myProfile', mfaTitle: 'mfaTitle', passkeyTabTitle: 'passkeyTabTitle', notificationsTitle: 'notificationsTitle', myDevices: 'myDevices' };
 
 /**
  * Opens the profile page from the user menu, on one of its sub-tabs
  * @param {import('@playwright/test').Page} page
- * @param {string} [tab] - Label of the sub-tab: profileTabProfile (shown first), mfaTitle, notificationsTitle or myDevices
+ * @param {string} [tab] - Label of the sub-tab: profileTabProfile (shown first), mfaTitle, passkeyTabTitle, notificationsTitle or myDevices
  */
 async function openProfile(page, tab = 'profileTabProfile') {
     await page.locator('.user-menu-toggle').click();
@@ -32,11 +33,11 @@ async function showProfileTab(page, tab) {
     await expect(page.getByRole('heading', { name: tr(HEADINGS[tab]), exact: true })).toBeVisible();
 }
 
-test('splits the profile into profile, two-factor authentication, notifications and devices sub-tabs', async ({ userPage: page }) => {
+test('splits the profile into profile, two-factor authentication, passkeys, notifications and devices sub-tabs', async ({ userPage: page }) => {
     await openProfile(page);
     // In this order, the icon of each before its label
     await expect(page.getByRole('tablist', { name: tr('myProfile') }).getByRole('tab'))
-        .toHaveText(['profileTabProfile', 'mfaTitle', 'notificationsTitle', 'myDevices'].map(key => new RegExp(`${tr(key)}$`)));
+        .toHaveText(['profileTabProfile', 'mfaTitle', 'passkeyTabTitle', 'notificationsTitle', 'myDevices'].map(key => new RegExp(`${tr(key)}$`)));
 
     // The profile first, without the notification settings
     await expect(page.getByRole('tab', { name: tr('profileTabProfile'), exact: true })).toHaveAttribute('aria-selected', 'true');
@@ -48,6 +49,11 @@ test('splits the profile into profile, two-factor authentication, notifications 
     // The two-factor authentication in its own sub-tab
     await showProfileTab(page, 'mfaTitle');
     await expect(page.getByRole('button', { name: tr('mfaSetupButton') })).toBeVisible();
+    await expect(page.getByLabel(tr('firstname'))).toHaveCount(0);
+
+    // The passkeys (native WebAuthn login) in its own sub-tab
+    await showProfileTab(page, 'passkeyTabTitle');
+    await expect(page.locator('.profile-passkeys')).toContainText(tr('passkeyEmpty'));
     await expect(page.getByLabel(tr('firstname'))).toHaveCount(0);
 
     await showProfileTab(page, 'notificationsTitle');

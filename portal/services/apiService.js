@@ -1370,6 +1370,44 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
     }
 
     /**
+     * Passkeys of the authenticated user, for his profile
+     * @returns {Promise<Array>} {id, name, created_at, last_used_at, backed_up}
+     */
+    async function fetchPasskeys() {
+        const data = await request(`${baseUrl}/user/passkey`, {}, 'Failed to fetch the passkeys');
+        return Array.isArray(data) ? data : [];
+    }
+
+    /**
+     * Options to register a new passkey of the authenticated user
+     * @returns {Promise<Object>} {challenge_token, rp, user, pubKeyCredParams, authenticatorSelection, attestation, excludeCredentials}
+     */
+    async function passkeyRegisterOptions() {
+        return request(`${baseUrl}/user/passkey/options`, { method: 'POST' }, 'Failed to start the passkey registration');
+    }
+
+    /**
+     * Registers a new passkey of the authenticated user
+     * @param {string} challengeToken - The token given by passkeyRegisterOptions()
+     * @param {Object} credential - The credential encoded by encodeCredential() of passkeyModule
+     * @param {string} name - Name shown in the profile
+     * @returns {Promise<Object>} The created passkey: id, name, created_at, last_used_at, backed_up
+     */
+    async function registerPasskey(challengeToken, credential, name) {
+        return request(`${baseUrl}/user/passkey`, { method: 'POST', body: JSON.stringify({ challenge_token: challengeToken, credential, name }) },
+            'Failed to register the passkey');
+    }
+
+    /**
+     * Deletes a passkey of the authenticated user
+     * @param {number} id - Passkey ID
+     * @returns {Promise<void>}
+     */
+    async function deletePasskey(id) {
+        await request(`${baseUrl}/user/passkey`, { method: 'DELETE', body: JSON.stringify({ id }) }, 'Failed to delete the passkey');
+    }
+
+    /**
      * Agent asking for an OAuth authorization (consent page)
      * @param {string} oauthRequest - Authorization request (query string given to the portal)
      * @returns {Promise<{name: string, redirect_host: string}>}
@@ -1731,6 +1769,10 @@ export function createApiService(baseUrl, authToken = null, onUnauthorized = nul
         renewRecoveryCodes,
         deleteTrustedBrowser,
         resetUserMfa,
+        fetchPasskeys,
+        passkeyRegisterOptions,
+        registerPasskey,
+        deletePasskey,
         searchTransactions,
         fetchCategoryTransactions,
         setTransactionPointed,

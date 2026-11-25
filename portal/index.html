@@ -314,14 +314,20 @@
                     </div>
 
                     <button type="submit" class="btn-login" :disabled="loggingIn">
-                        <span v-if="loggingIn" class="material-icons spin">refresh</span>
-                        <span v-else class="material-icons">login</span>
+                        <span v-if="loggingIn" class="material-icons spin" aria-hidden="true">refresh</span>
+                        <span v-else class="material-icons" aria-hidden="true">login</span>
                         {{ loggingIn ? t('loggingIn') : t('loginButton') }}
                     </button>
 
                     <!-- Other ways to log in offered by the instance (GET /api/health: login_methods) -->
                     <div v-if="loginAlternatives.length" class="login-alternatives">
                         <p class="login-or">{{ t('loginOr') }}</p>
+                        <button v-if="loginAlternatives.includes('passkey')" type="button" class="btn-login-alt"
+                                @click="loginWithPasskey" :disabled="passkeyLoggingIn">
+                            <span v-if="passkeyLoggingIn" class="material-icons spin">refresh</span>
+                            <span v-else class="material-icons" aria-hidden="true">fingerprint</span>
+                            {{ passkeyLoggingIn ? t('passkeyLoggingIn') : t('passkeyLoginButton') }}
+                        </button>
                         <a v-if="loginAlternatives.includes('oidc')" class="btn-login-alt" :href="`${apiBaseUrl}/user/login/oidc`">
                             <span class="material-icons" aria-hidden="true">badge</span>
                             {{ t('oidcLoginButton') }}
@@ -2786,6 +2792,50 @@
 
                             <p class="rules-help mfa-browsers-hint">{{ t('mfaBrowsersHint') }}</p>
                             </template>
+                        </section>
+
+                        <!-- Passkeys sub-tab: native WebAuthn login, add and delete (passkeyModule) -->
+                        <section v-else-if="profileView === 'passkeys'" class="profile-container profile-devices profile-passkeys" aria-labelledby="passkeys-title">
+                            <div class="users-header">
+                                <h2 id="passkeys-title">{{ t('passkeyTabTitle') }}</h2>
+                            </div>
+                            <p class="rules-help">{{ t('passkeyHelp') }}</p>
+                            <p v-if="passkeyError" class="sync-step-error" role="alert">{{ passkeyError }}</p>
+
+                            <div v-if="passkeys === null" class="transactions-hint">{{ t('loadingMessage') }}</div>
+                            <p v-else-if="!passkeys.length" class="rules-help">{{ t('passkeyEmpty') }}</p>
+                            <ul v-else class="device-list" :aria-label="t('passkeyTabTitle')">
+                                <li v-for="passkey in passkeys" :key="passkey.id" class="device-item">
+                                    <span class="material-icons device-icon" aria-hidden="true">fingerprint</span>
+                                    <div class="device-details">
+                                        <div class="device-name" :title="passkey.name">
+                                            {{ passkey.name }}
+                                            <span v-if="passkey.backed_up" class="device-current">{{ t('passkeySynced') }}</span>
+                                        </div>
+                                        <div class="device-meta">{{ t('passkeyCreatedAt', { date: formatDate(passkey.created_at) }) }}</div>
+                                        <div v-if="passkey.last_used_at" class="device-meta">{{ t('passkeyLastUsed', { date: formatDate(passkey.last_used_at) }) }}</div>
+                                    </div>
+                                    <div class="device-actions">
+                                        <button type="button" class="btn-icon btn-icon-delete" :disabled="passkeyBusy" @click="deletePasskey(passkey)"
+                                                :title="t('passkeyDeleteTitle')" :aria-label="t('passkeyDeleteTitle') + ' ' + passkey.name">
+                                            <span class="material-icons" aria-hidden="true">delete</span>
+                                        </button>
+                                    </div>
+                                </li>
+                            </ul>
+
+                            <form class="mfa-setup" @submit.prevent="addPasskey">
+                                <div class="form-group">
+                                    <label for="passkey-name">{{ t('passkeyNameLabel') }}</label>
+                                    <input id="passkey-name" type="text" v-model="passkeyName" maxlength="100" :disabled="passkeyBusy" />
+                                </div>
+                                <div class="mfa-actions">
+                                    <button type="submit" :disabled="passkeyBusy">
+                                        <span class="material-icons" aria-hidden="true">add</span>
+                                        {{ t('passkeyAddButton') }}
+                                    </button>
+                                </div>
+                            </form>
                         </section>
 
                         <!-- Channels of each kind of notification, the settings of an alert under its label -->

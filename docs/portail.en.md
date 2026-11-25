@@ -48,6 +48,12 @@ app, or a recovery code. At the first login, it shows the
 browser; **Back** returns to the password. A wrong code counts as a failed
 login.
 
+If the instance offers a **passkey** (native passkey login, WebAuthn), a
+**Use a passkey** button appears below the password (absent if the browser
+does not support WebAuthn, or outside a secure context HTTPS/localhost): nothing to
+type, the device's verification (fingerprint, face or PIN) also stands for the second
+factor.
+
 If the instance offers **single sign-on (SSO)** through OpenID Connect, a **Single
 sign-on (SSO)** link also appears below the password: it sends the browser to the
 provider, which then returns to the portal, either signed in (session opened without
@@ -659,8 +665,9 @@ frame: allow `X-Frame-Options: SAMEORIGIN` / `frame-ancestors 'self'`, or use
 
 ## My profile { #mon-profil }
 
-Four sub-tabs, like the administration: **Profile**, **Two-factor authentication**,
-**Notifications** and **My devices** (opened on **Profile** from the user menu).
+Five sub-tabs, like the administration: **Profile**, **Two-factor authentication**,
+**Passkeys**, **Notifications** and **My devices** (opened on **Profile** from the
+user menu).
 
 - **Profile**: change of the email, first name, last name and password (leave
   empty to keep it). The login cannot be changed. **Language** (Français,
@@ -697,6 +704,12 @@ Four sub-tabs, like the administration: **Profile**, **Two-factor authentication
   once. Once enabled, a code from the app gives **New recovery
   codes**, and a code from the app or a recovery code can **Disable** it (after
   confirmation). Trusted browsers are in **My devices**.
+- **Passkeys** (dedicated sub-tab, absent as long as the migration is not applied or
+  the browser does not support WebAuthn): list of the registered passkeys (name, date
+  added, last used, **Synced** badge when the authenticator backs it up). **Add a
+  passkey** (name prefilled with the browser and system) triggers the device's native
+  prompt (fingerprint, face or PIN); the bin deletes a passkey (after confirmation), it
+  will no longer allow logging in (`GET`/`POST`/`DELETE /user/passkey`).
 - **My devices**:
   - **Connect the mobile app**: QR code
     `https://carbure.org/app/?server=<API URL>` to scan with the camera of the phone,

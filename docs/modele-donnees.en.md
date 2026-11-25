@@ -17,6 +17,7 @@ erDiagram
     users ||--o{ mfa_recovery_code : "recovery"
     users ||--o{ mfa_trusted_browser : "trusts"
     users ||--o{ user_browser : "logs in from"
+    users ||--o{ user_passkey : "signs in"
     users ||--o{ api_tokens : "owns"
     users ||--o{ user_notification : "chooses"
     users ||--o{ budget_alert : "alerted"
@@ -188,6 +189,24 @@ erDiagram
         varchar name PK
         varchar value
     }
+    user_passkey {
+        int id PK
+        int user_id FK
+        varbinary credential_id UK "up to 1023 bytes"
+        char credential_hash UK "SHA-256 of credential_id"
+        text public_key "PEM SubjectPublicKeyInfo"
+        smallint alg "COSE: -7 (ES256) or -257 (RS256)"
+        int sign_count
+        varchar name
+        varchar transports
+        tinyint backed_up "synced (iCloud, Google…)"
+        datetime created_at
+        datetime last_used_at
+    }
+    passkey_used_challenge {
+        char challenge_hash PK "SHA-256 of a consumed sign-in or registration challenge"
+        datetime expires_at
+    }
     schema_migrations {
         varchar version PK
         timestamp applied_at
@@ -204,6 +223,8 @@ erDiagram
 | `mfa_recovery_code` | Two-factor authentication recovery codes: only the SHA-256 hash (`code_hash`) is stored, the row is deleted when used. Deleted with the user. |
 | `mfa_trusted_browser` | Trusted browsers (6 months): SHA-256 hash of the cookie token (`token_hash`), `label` (User-Agent), `created_at`, `expires_at`, `last_used_at`. Deleted with the user, when their password changes or when their two-factor authentication is disabled or reset. |
 | `user_browser` | Web browsers of the portal logins: SHA-256 hash of the token of the `carbure_browser` cookie (`token_hash`, unique per user: several users of the household share the cookie of a browser), `label` (User-Agent), `created_at`, `last_login`. Forgotten after 6 months without a login or when the user asks, deleted with the user. Neither notifications nor exemption from two-factor authentication. |
+| `user_passkey` | Passkeys of a user: `credential_id` (up to 1023 bytes) and its unique SHA-256 hash (`credential_hash`, lookup); `public_key` (PEM) and `alg` (COSE: `-7` ES256, `-257` RS256); `sign_count` (sign counter: refuses a cloned key, stays at 0 for a synced key); `name` (shown label), `backed_up` (synced, e.g. iCloud, Google). Deleted with the user and by `POST /user/mfa/reset` (a passkey sign-in stands for the second factor). Never in a backup. |
+| `passkey_used_challenge` | Already consumed passkey sign-in or registration challenges (`challenge_hash`, SHA-256 hash, `expires_at`): prevents replaying the same challenge. Expired rows purged on each insert. Never in a backup. |
 | `user_notification` | Channels chosen by a user for a notification type (`kind`: `sync`, `rule`, `expense`, `budget`): `push` to their devices, `email` to the address in their profile. With no row for a type: push yes, email no, except `budget` (neither). Deleted with the user. |
 | `budget_alert_threshold` | Budget alert threshold of a user for one category (`threshold`, 50 to 200%), instead of their global threshold (`users.budget_threshold`, applied to all the budgets if `users.budget_alert_all`). Deleted with the user or the category. |
 | `insight_alert` | Alert of a user on an insight: `direction` (`above` or `below`) and `threshold`, compared with the value of the month without its sign; `notified_month` = first day of the last month alerted (`NULL` when the threshold changes: the alert is armed again). Deleted with the user or the insight, and when the insight is hidden. |
@@ -256,6 +277,7 @@ already been applied (by hand, or by `sql/carbure.sql`). See
 | `2026-11-03_insight_alert` | Alerts of the users on the insights (`insight_alert` table) |
 | `2026-11-04_insight_largest_expense` | The starter insight "Largest expense" counts a split transaction once, with the amount of the bank (only when its query was not changed) |
 | `2026-11-19_transaction_comment` | Free-text comment of a transaction (`bank_transaction.comment`, `NULL` for the existing transactions) |
+| `2026-11-25_user_passkey` | Passkey sign-in (WebAuthn): `user_passkey` and `passkey_used_challenge` tables |
 
 ## "Household" model { #modele-foyer }
 

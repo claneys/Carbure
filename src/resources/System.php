@@ -101,6 +101,9 @@ final class System {
         if (Oidc::enabled()) {
             $methods[] = 'oidc';
         }
+        if (Passkey::available()) {
+            $methods[] = 'passkey';
+        }
         return $methods;
     }
 
