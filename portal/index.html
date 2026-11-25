@@ -318,6 +318,11 @@
                         <span v-else class="material-icons">login</span>
                         {{ loggingIn ? t('loggingIn') : t('loginButton') }}
                     </button>
+
+                    <!-- Other ways to log in offered by the instance (GET /api/health: login_methods) -->
+                    <div v-if="loginAlternatives.length" class="login-alternatives">
+                        <p class="login-or">{{ t('loginOr') }}</p>
+                    </div>
                 </form>
 
             </div>

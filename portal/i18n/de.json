@@ -914,6 +914,7 @@
     "loggingIn": "Anmeldung...",
     "loginRequired": "Benutzername und Passwort erforderlich",
     "loginError": "Anmeldefehler",
+    "loginOr": "oder",
     "sessionExpired": "Ihre Sitzung ist abgelaufen, bitte melden Sie sich erneut an.",
     "logout": "Abmelden",
     "myProfile": "Mein Profil",

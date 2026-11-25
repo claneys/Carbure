@@ -25,6 +25,7 @@
 namespace Carbure\Resources;
 
 use Carbure\Lib\ApiRoute;
+use Carbure\Lib\Base64Url;
 use Carbure\Lib\Config;
 use Carbure\Lib\Db;
 use Carbure\Lib\Jwt;
@@ -423,7 +424,7 @@ final class OAuth {
             return self::error(400, 'invalid_grant', 'Invalid or expired authorization code');
         }
         if ($verifier === null || !preg_match('/^[A-Za-z0-9\-._~]{43,128}$/', $verifier)
-            || !hash_equals($row['code_challenge'], self::base64url(hash('sha256', $verifier, true)))) {
+            || !hash_equals($row['code_challenge'], Base64Url::encode(hash('sha256', $verifier, true)))) {
             return self::error(400, 'invalid_grant', 'Invalid code_verifier');
         }
         return self::issueTokens((int)$row['user_id'], $client);
@@ -599,17 +600,6 @@ final class OAuth {
             return null;
         }
         return array_map('urldecode', explode(':', $decoded, 2));
-    }
-
-    /**
-     * Base64url without padding (PKCE).
-     *
-     * @param string $bytes The bytes
-     * @return string The encoded value
-     */
-    private static function base64url(string $bytes): string
-    {
-        return rtrim(strtr(base64_encode($bytes), '+/', '-_'), '=');
     }
 
     /**

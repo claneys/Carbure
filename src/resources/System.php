@@ -72,9 +72,10 @@ final class System {
      * mobile app (no authentication, no data): the database answers. Polled every few
      * minutes: its successful calls are logged at the DEBUG level only (quiet).
      *
-     * @return array<string, string|bool|null> status (ok), version (of Carbure), database (ok), schema (version),
+     * @return array<string, string|bool|list<string>|null> status (ok), version (of Carbure), database (ok), schema (version),
      *               min_mobile_version (lowest version of the mobile app supported, MobileApp::MIN_VERSION),
      *               currency (of the amounts: setting currency, ISO 4217 code, EUR by default),
+     *               login_methods (the ways to log in next to the password, see loginMethods()),
      *               demo (true, only on a demonstration instance: setting demo, Docker image carbure:demo)
      * @throws Exception If the database does not answer (HTTP 500)
      */
@@ -83,9 +84,21 @@ final class System {
     {
         Db::query("SELECT 1");
         $health = ['status' => 'ok', 'version' => self::version(), 'database' => 'ok', 'schema' => (new Migrator(Db::getConnection()))->version(),
-            'min_mobile_version' => MobileApp::MIN_VERSION, 'currency' => Messages::currency()];
+            'min_mobile_version' => MobileApp::MIN_VERSION, 'currency' => Messages::currency(), 'login_methods' => self::loginMethods()];
         // Demonstration instance: the portal shows its public credentials on the login screen
         return Config::has('demo') ? $health + ['demo' => true] : $health;
+    }
+
+    /**
+     * The ways to log in offered by this instance next to the password, for the login
+     * screen of the portal: none by default.
+     *
+     * @return list<string> The methods
+     */
+    public static function loginMethods(): array
+    {
+        $methods = [];
+        return $methods;
     }
 
     /**

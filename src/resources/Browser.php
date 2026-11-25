@@ -21,6 +21,7 @@ namespace Carbure\Resources;
 use Carbure\Lib\ApiRoute;
 use Carbure\Lib\Db;
 use Carbure\Lib\Jwt;
+use Carbure\Lib\LoginCookie;
 use Carbure\Lib\Webservice;
 use Error;
 
@@ -137,16 +138,7 @@ final class Browser {
      */
     private static function sendCookie(string $token): void
     {
-        if (headers_sent()) {
-            return;
-        }
-        setcookie(self::COOKIE, $token, [
-            'expires' => time() + self::COOKIE_DAYS * 86400,
-            'path' => self::cookiePath(),
-            'secure' => TrustedBrowser::isHttps(),
-            'httponly' => true,
-            'samesite' => 'Strict',
-        ]);
+        LoginCookie::send(self::COOKIE, $token, self::COOKIE_DAYS * 86400, self::cookiePath());
     }
 
     /**
@@ -157,7 +149,7 @@ final class Browser {
      */
     public static function cookiePath(): string
     {
-        $login = TrustedBrowser::cookiePath();
+        $login = LoginCookie::path();
         return $login === '/' ? '/' : substr($login, 0, -strlen('/login'));
     }
 

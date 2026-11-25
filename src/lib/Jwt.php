@@ -58,16 +58,16 @@ final class Jwt {
         $payload = json_encode($data, JSON_THROW_ON_ERROR);
 
         // Encode Header to Base64Url String
-        $base64UrlHeader = self::encode($header);
+        $base64UrlHeader = Base64Url::encode($header);
 
         // Encode Payload to Base64Url String
-        $base64UrlPayload = self::encode($payload);
+        $base64UrlPayload = Base64Url::encode($payload);
 
         // Create Signature Hash
         $signature = self::sign($base64UrlHeader, $base64UrlPayload);
 
         // Encode Signature to Base64Url String
-        $base64UrlSignature = self::encode($signature);
+        $base64UrlSignature = Base64Url::encode($signature);
 
         // Create JWT
         $jwt = $base64UrlHeader . "." . $base64UrlPayload . "." . $base64UrlSignature;
@@ -94,17 +94,6 @@ final class Jwt {
     }
 
     /**
-     * Encode a string to base64Url.
-     *
-     * @param string $data The data to encode
-     * @return string The base64Url encoded string
-     */
-    private static function encode(string $data): string
-    {
-        return str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($data));
-    }
-
-    /**
      * Parse a JWT token.
      *
      * @param string $jwt The JWT token
@@ -116,7 +105,7 @@ final class Jwt {
         // We check the signature
         if (self::isTokenSigned($jwt)) {
             $parts = explode('.', $jwt);
-            $data = json_decode(base64_decode(strtr($parts[1], '-_', '+/')));
+            $data = json_decode(Base64Url::decode($parts[1]) ?? '');
 
             // Check expiration date
             if (is_object($data) && isset($data->exp, $data->sub) && $data->exp > time()) {
@@ -141,7 +130,7 @@ final class Jwt {
         }
 
         $signature = self::sign($jwt[0], $jwt[1]);
-        $signature = self::encode($signature);
+        $signature = Base64Url::encode($signature);
 
         return hash_equals($signature, $jwt[2]);
     }

@@ -914,6 +914,7 @@
     "loggingIn": "Connexion...",
     "loginRequired": "Nom d'utilisateur et mot de passe requis",
     "loginError": "Erreur de connexion",
+    "loginOr": "ou",
     "sessionExpired": "Votre session a expiré, veuillez vous reconnecter.",
     "logout": "Déconnexion",
     "myProfile": "Mon profil",

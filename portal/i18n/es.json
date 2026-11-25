@@ -914,6 +914,7 @@
     "loggingIn": "Iniciando sesión…",
     "loginRequired": "Usuario y contraseña obligatorios",
     "loginError": "Error de inicio de sesión",
+    "loginOr": "o",
     "sessionExpired": "Tu sesión ha caducado, vuelve a iniciar sesión.",
     "logout": "Cerrar sesión",
     "myProfile": "Mi perfil",

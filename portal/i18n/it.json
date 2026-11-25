@@ -914,6 +914,7 @@
     "loggingIn": "Accesso...",
     "loginRequired": "Nome utente e password obbligatori",
     "loginError": "Errore di accesso",
+    "loginOr": "oppure",
     "sessionExpired": "La tua sessione è scaduta, accedi di nuovo.",
     "logout": "Esci",
     "myProfile": "Il mio profilo",

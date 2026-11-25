@@ -307,6 +307,18 @@ test('loadLocale: the currency of the instance is told by GET /api/health', asyn
     }
 });
 
+test('loadLocale: the other ways to log in are told by GET /api/health', async () => {
+    const page = load({ health: { version: '1.14.0', login_methods: ['passkey', 'oidc', 7] } });
+    await page.i18n.loadLocale();
+    assert.deepEqual([...page.i18n.serverLoginMethods()], ['passkey', 'oidc']);
+    // An older server, or one that does not answer: the password only
+    for (const health of [null, { version: '1.13.0' }, { login_methods: 'oidc' }]) {
+        const other = load({ health });
+        await other.i18n.loadLocale();
+        assert.deepEqual([...other.i18n.serverLoginMethods()], []);
+    }
+});
+
 test('loadLocale: a language that cannot be loaded falls back to the reference one', async () => {
     const page = load({ stored: 'en', files: { fr: TEXTS.fr, en: 500 } });
     assert.equal(await page.i18n.loadLocale(), 'fr');

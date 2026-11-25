@@ -359,14 +359,6 @@ class MfaTest extends DatabaseTestCase
         $this->assertSame('verify', User::login('user', 'userpass', null, true)['mfa']);
     }
 
-    public function testCookieOfTheLoginRoutes()
-    {
-        $_SERVER['REQUEST_URI'] = '/api/user/login/mfa';
-        $this->assertSame('/api/user/login', TrustedBrowser::cookiePath());
-        $_SERVER['REQUEST_URI'] = '/carbure/api/user/login/mfa?x=1';
-        $this->assertSame('/carbure/api/user/login', TrustedBrowser::cookiePath());
-    }
-
     public function testListAndRevokeTrustedBrowsers()
     {
         $this->enroll(self::USER);

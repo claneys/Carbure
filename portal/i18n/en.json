@@ -914,6 +914,7 @@
     "loggingIn": "Logging in...",
     "loginRequired": "Username and password required",
     "loginError": "Login error",
+    "loginOr": "or",
     "sessionExpired": "Your session has expired, please log in again.",
     "logout": "Log out",
     "myProfile": "My profile",

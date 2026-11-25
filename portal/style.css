@@ -357,6 +357,52 @@ body {
     font-size: 20px;
 }
 
+/* Other ways to log in (passkey, single sign-on), under the login form */
+.login-alternatives {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.login-or {
+    margin: 0;
+    text-align: center;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.btn-login-alt {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: var(--surface);
+    color: var(--text-primary);
+    border: 1px solid var(--text-secondary);
+    border-radius: var(--border-radius-md);
+    font-size: 16px;
+    font-weight: 500;
+    font-family: inherit;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.btn-login-alt:hover:not(:disabled) {
+    background: var(--hover-surface);
+    color: var(--text-primary);
+}
+
+.btn-login-alt:disabled {
+    cursor: not-allowed;
+    color: var(--text-secondary);
+}
+
+.btn-login-alt .material-icons {
+    font-size: 20px;
+}
+
 .login-lang-switcher {
     margin-top: 24px;
     justify-content: center;

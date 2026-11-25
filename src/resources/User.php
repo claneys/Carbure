@@ -157,6 +157,21 @@ final class User {
     }
 
     /**
+     * Open the session of a user who proved his identity without his password (passkey,
+     * single sign-on) in the portal: refused while his account is locked.
+     *
+     * @param array<string, mixed> $user The user row
+     * @return array{exp: int, sub: int, iat: int, token: string, username: string} The JWT token data, and
+     *               the username (the portal did not ask it)
+     * @throws Error If the account is locked (423)
+     */
+    public static function openSession(array $user): array
+    {
+        self::checkNotLocked($user);
+        return self::completeLogin($user, null) + ['username' => (string)$user['username']];
+    }
+
+    /**
      * Hash a password.
      *
      * @param string $password The clear password

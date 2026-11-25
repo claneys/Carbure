@@ -22,7 +22,7 @@ const REFERENCE_LOCALE = 'fr';
 const i18n = {};
 
 /** State of the loader: active language, version of the server, keys already reported */
-const i18nState = { locale: null, version: null, demo: false, currency: 'EUR', debug: false, reported: new Set(), pluralRules: {} };
+const i18nState = { locale: null, version: null, demo: false, currency: 'EUR', loginMethods: [], debug: false, reported: new Set(), pluralRules: {} };
 
 /**
  * Language before login: the browser one (the profile language applies after login)
@@ -88,6 +88,15 @@ function serverDemo() {
  */
 function serverCurrency() {
     return i18nState.currency;
+}
+
+/**
+ * Ways to log in next to the password offered by the instance (GET /api/health:
+ * login_methods), none if the server does not give them
+ * @returns {string[]}
+ */
+function serverLoginMethods() {
+    return i18nState.loginMethods;
 }
 
 /**
@@ -321,6 +330,7 @@ async function loadLocale() {
     i18nState.version = health && typeof health.version === 'string' ? health.version : null;
     i18nState.demo = Boolean(health && health.demo === true);
     i18nState.currency = health && typeof health.currency === 'string' && /^[A-Z]{3}$/.test(health.currency) ? health.currency : 'EUR';
+    i18nState.loginMethods = health && Array.isArray(health.login_methods) ? health.login_methods.filter(method => typeof method === 'string') : [];
     const locales = fallbackChain(wanted);
     const results = await Promise.allSettled(locales.map(locale => fetchTexts(locale, i18nState.version)));
     results.forEach((result, index) => {
@@ -353,5 +363,5 @@ function showLocaleError() {
 
 // Export for the tests run by Node
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { i18n, t, apiErrorText, setLocale, loadLocale, translate, resolveText, currentLocale, defaultLocale, intlLocale, serverVersion, serverDemo, serverCurrency, showLocaleError, LOCALES, REFERENCE_LOCALE };
+    module.exports = { i18n, t, apiErrorText, setLocale, loadLocale, translate, resolveText, currentLocale, defaultLocale, intlLocale, serverVersion, serverDemo, serverCurrency, serverLoginMethods, showLocaleError, LOCALES, REFERENCE_LOCALE };
 }

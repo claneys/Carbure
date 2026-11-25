@@ -18,9 +18,9 @@ namespace Carbure\Resources;
 
 use Carbure\Lib\ApiError;
 use Carbure\Lib\ApiRoute;
-use Carbure\Lib\Config;
 use Carbure\Lib\Db;
 use Carbure\Lib\Jwt;
+use Carbure\Lib\LoginCookie;
 use Carbure\Lib\Webservice;
 use Error;
 
@@ -79,7 +79,8 @@ final class TrustedBrowser {
             VALUES (?, ?, ?, NOW(), NOW() + INTERVAL " . self::DAYS . " DAY)", "iss", $userId, hash('sha256', $token), $label);
         // The expired ones of the user are not kept
         Db::execute("DELETE FROM mfa_trusted_browser WHERE user_id = ? AND expires_at <= NOW()", "i", $userId);
-        self::sendCookie($userId, $token);
+        // HttpOnly, SameSite=Strict, Secure over HTTPS, sent only to the login routes
+        LoginCookie::send(self::COOKIE . $userId, $token, self::DAYS * 86400);
         return $token;
     }
 
@@ -109,54 +110,5 @@ final class TrustedBrowser {
     public static function revokeAll(int $userId): void
     {
         Db::execute("DELETE FROM mfa_trusted_browser WHERE user_id = ?", "i", $userId);
-    }
-
-    /**
-     * Send the cookie of a trusted browser: HttpOnly (out of reach of the scripts),
-     * SameSite=Strict, Secure over HTTPS, sent only to the login routes.
-     *
-     * @param int    $userId The user
-     * @param string $token  The token
-     * @return void
-     */
-    private static function sendCookie(int $userId, string $token): void
-    {
-        if (headers_sent()) {
-            return;
-        }
-        setcookie(self::COOKIE . $userId, $token, [
-            'expires' => time() + self::DAYS * 86400,
-            'path' => self::cookiePath(),
-            'secure' => self::isHttps(),
-            'httponly' => true,
-            'samesite' => 'Strict',
-        ]);
-    }
-
-    /**
-     * Path of the cookie: the login routes of the API (/api/user/login and
-     * /api/user/login/mfa), also when Carbure is served under a sub-path.
-     *
-     * @return string
-     */
-    public static function cookiePath(): string
-    {
-        $path = (string)strtok((string)($_SERVER['REQUEST_URI'] ?? ''), '?');
-        $position = strpos($path, '/user/login');
-        return $position === false ? '/' : substr($path, 0, $position) . '/user/login';
-    }
-
-    /**
-     * Whether the request came over HTTPS (directly, through a reverse proxy, or the
-     * public address of the server): the cookie is then Secure. Over plain HTTP (a
-     * local network), a Secure cookie would be dropped by the browser.
-     *
-     * @return bool
-     */
-    public static function isHttps(): bool
-    {
-        return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-            || strtolower((string)Webservice::getHeader('X-Forwarded-Proto')) === 'https'
-            || (Config::has('public_url') && str_starts_with((string)Config::get('public_url'), 'https://'));
     }
 }
