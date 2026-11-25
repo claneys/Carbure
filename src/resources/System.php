@@ -98,6 +98,9 @@ final class System {
     public static function loginMethods(): array
     {
         $methods = [];
+        if (Oidc::enabled()) {
+            $methods[] = 'oidc';
+        }
         return $methods;
     }
 

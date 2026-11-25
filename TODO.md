@@ -43,6 +43,15 @@ keeps track of what was done).
       ones first) and to change it (`PUT /transaction`). Entered by hand = `uuid` starting
       with `manual`, or `bank_name` = `manual` (older entries, #431).
 
+- [ ] **Production — single sign-on (OIDC, #541)**: setting `oidc_issuer`,
+      `oidc_client_id` and `oidc_client_secret` enables the single sign-on button; before
+      that, **declare the Carbure client at the identity provider** (Authelia, Keycloak…)
+      with the redirect URI `<public_url>/api/user/login/oidc/callback`, PKCE S256 and
+      `client_secret_basic`, see [Configuration](docs/configuration.md#connexion-unique-oidc).
+      An `http://` issuer works but gives no protection (code and `id_token` in clear
+      text): use `https://` in production. An internal CA on the provider's certificate
+      must be trusted by the Carbure container (custom image, or a volume mounted on
+      `/etc/ssl/certs`), otherwise discovery and the code exchange fail.
 - [ ] **Deployment of the tags (#354)**: the migration `2026-10-31_tags` (tables `tag`,
       `transaction_tag`) is applied at container start; before it, the transactions are
       returned without tags.
@@ -184,6 +193,13 @@ keeps track of what was done).
       on from its detail (`PUT /transaction/date` with `id`, `date`; the real date `rdate`
       stays the one of the bank). No migration: the synchronization never updates the
       `date` of a known transaction.
+
+- [ ] **iOS and Android apps — single sign-on (OIDC, #541)**: the portal already offers
+      OIDC single sign-on (`GET /user/login/oidc`, redirect flow with cookies); the apps,
+      which have no cookie jar shared with a browser and no redirect flow, still only send
+      a password. Open an issue to design it (an in-app browser tab with PKCE, or an
+      `ASWebAuthenticationSession`/Custom Tabs flow that exchanges the code for the
+      session through a dedicated route) before implementing it.
 
 - [ ] **Production**: test the connection of Claude to the MCP server from claude.ai
       (Settings → Connectors → Add custom connector). The Docker image applies the OAuth

@@ -48,6 +48,14 @@ app, or a recovery code. At the first login, it shows the
 browser; **Back** returns to the password. A wrong code counts as a failed
 login.
 
+If the instance offers **single sign-on (SSO)** through OpenID Connect, a **Single
+sign-on (SSO)** link also appears below the password: it sends the browser to the
+provider, which then returns to the portal, either signed in (session opened without
+asking for two-factor authentication again) or with an error message (login refused by
+the provider, no Carbure account matches this identity, account locked, or single
+sign-on failed), depending on the cause returned by the API (see
+[Security](securite.en.md#connexion-unique-oidc)).
+
 There are two profiles:
 
 | Profile | Tabs |

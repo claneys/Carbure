@@ -322,6 +322,10 @@
                     <!-- Other ways to log in offered by the instance (GET /api/health: login_methods) -->
                     <div v-if="loginAlternatives.length" class="login-alternatives">
                         <p class="login-or">{{ t('loginOr') }}</p>
+                        <a v-if="loginAlternatives.includes('oidc')" class="btn-login-alt" :href="`${apiBaseUrl}/user/login/oidc`">
+                            <span class="material-icons" aria-hidden="true">badge</span>
+                            {{ t('oidcLoginButton') }}
+                        </a>
                     </div>
                 </form>
 

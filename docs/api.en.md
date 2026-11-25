@@ -1369,6 +1369,9 @@ once the new version is published on the App Store.
 On a demo instance (`demo` setting, `ltoinel/carbure:demo` image), the response
 also contains `"demo":true`: the portal then shows the public account (`demo` / `carbure`)
 on the login screen. The field is absent on a regular instance.
+`login_methods` lists the ways to sign in besides the password that the portal must
+offer: `oidc` (single sign-on configured, see
+[Configuration](configuration.en.md#connexion-unique-oidc)). Empty array by default.
 
 ### `GET /system/logs` — administrator { #get-systemlogs-administrateur }
 

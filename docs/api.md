@@ -250,6 +250,31 @@ Révoque un navigateur de confiance de l'utilisateur connecté (`404` sinon).
 utilisateur qui a perdu son téléphone ; il configurera une nouvelle application à sa
 prochaine connexion si la double authentification est imposée.
 
+### `GET /user/login/oidc`, `GET /user/login/oidc/callback`, `POST /user/login/oidc` — publiques
+
+Connexion unique par OpenID Connect (voir
+[Configuration](configuration.md#connexion-unique-oidc) et
+[Sécurité](securite.md#connexion-unique-oidc)) :
+
+- `GET /user/login/oidc` : redirige le navigateur vers le fournisseur (flux
+  d'autorisation, PKCE S256), pose le cookie d'état (`carbure_oidc_state`,
+  `SameSite=Lax`, 10 minutes). `404` (`oidc_disabled`) si la connexion unique n'est pas
+  configurée.
+- `GET /user/login/oidc/callback` : retour du fournisseur (`code`, `state`, ou
+  `error`/`error_description` en cas de refus ; les paramètres supplémentaires de
+  certains fournisseurs, comme `iss` ou `session_state`, sont ignorés). Vérifie l'état,
+  échange le code, valide l'`id_token` (signature non vérifiée : reçu directement du
+  fournisseur par TLS) et trouve l'utilisateur dont le claim choisi par
+  `oidc_username_claim` correspond. Toujours un `302` vers `<adresse publique>/portal/` :
+  `?oidc=ok` (succès, cookie ticket posé — `carbure_oidc_ticket`, `SameSite=Strict`,
+  60 secondes) ou `?oidc=error&reason=<denied|unknown_user|locked|failed>` (refus du
+  fournisseur, claim sans utilisateur, compte bloqué, autre échec ; la cause réelle est
+  journalisée, jamais renvoyée au navigateur).
+- `POST /user/login/oidc` : seconde étape appelée par le portail après `?oidc=ok` — lit le
+  cookie ticket, le supprime, renvoie la session comme `POST /user/login`, sans jamais
+  demander la double authentification. `401` (`oidc_ticket_invalid`) si le ticket est
+  absent, expiré ou déjà utilisé.
+
 ### `POST /user/unlock` — administrateur
 
 `id` : débloque un compte bloqué après trop d'échecs de connexion (`404` si l'utilisateur
@@ -1377,6 +1402,9 @@ une fois la nouvelle version publiée sur l'App Store.
 Sur une instance de démonstration (réglage `demo`, image `ltoinel/carbure:demo`), la réponse
 contient en plus `"demo":true` : le portail affiche alors le compte public (`demo` / `carbure`)
 sur l'écran de connexion. Le champ est absent sur une instance normale.
+`login_methods` liste les façons de se connecter en plus du mot de passe que le portail
+doit proposer : `oidc` (connexion unique configurée, voir
+[Configuration](configuration.md#connexion-unique-oidc)). Tableau vide par défaut.
 
 ### `GET /system/logs` — administrateur
 

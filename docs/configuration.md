@@ -87,6 +87,77 @@ transaction importée.
 | `password_salt` | Sel des anciens mots de passe SHA-256, utilisé seulement pour les migrer vers bcrypt à la connexion |
 | `mfa_required` | `true` : double authentification (code d'une application TOTP) imposée à la connexion de tous les utilisateurs, sauf depuis un appareil mobile (iOS, Android) déjà enregistré ou un navigateur de confiance (6 mois) ; `false` par défaut. Modifiable dans **Administration › Paramètres** ; le repasser à `false` dans le fichier est le recours d'un administrateur qui a perdu son téléphone et ses codes de secours. Voir [Sécurité](securite.md#double-authentification-totp). |
 | `sync_token` | Secret permettant au planificateur d'appeler `/api/bank/sync` sans JWT, dans l'en-tête `X-Sync-Token` (`?token=` dans l'URL : obsolète). Vide = seul un utilisateur connecté peut lancer la synchro. |
+| `oidc_issuer` | Émetteur (URL) du fournisseur OpenID Connect (Authelia, Keycloak, tout fournisseur avec `/.well-known/openid-configuration`) ; vide = connexion unique désactivée |
+| `oidc_client_id` | Identifiant du client déclaré auprès du fournisseur |
+| `oidc_client_secret` | Secret du client (authentification `client_secret_basic` au point de jeton) |
+| `oidc_username_claim` | Claim de l'`id_token` comparé à un utilisateur Carbure : `preferred_username` (comparé à `users.username`, par défaut) ou `email` (comparé à `users.email`) |
+
+### Connexion unique (OIDC) { #connexion-unique-oidc }
+
+La connexion unique s'active en renseignant les trois réglages `oidc_issuer`,
+`oidc_client_id` et `oidc_client_secret` (`Carbure\Resources\Oidc::enabled()`) : tant que
+l'un des trois est vide, le bouton **Connexion unique (SSO)** n'apparaît pas et les 3
+routes (`GET /user/login/oidc`, `GET /user/login/oidc/callback`, `POST /user/login/oidc`)
+répondent `404`. Le protocole (flux autorisation + PKCE S256, authentification du client
+par `client_secret_basic`) est implémenté sans dépendance par `Carbure\Lib\Oidc` ; voir
+[Sécurité](securite.md#connexion-unique-oidc) pour le détail du flux et
+[Référence de l'API](api.md#utilisateurs) pour les 3 routes.
+
+**URI de redirection** : le fournisseur doit connaître
+`<adresse publique>/api/user/login/oidc/callback` (`public_url`, ou l'adresse déduite de
+la requête) : déclarez le client avec cette URI avant d'activer le réglage (voir les
+exemples ci-dessous).
+
+**Correspondance de compte** : à chaque connexion, le claim choisi par
+`oidc_username_claim` (`preferred_username` par défaut, comparé à `users.username` ; ou
+`email`, comparé à `users.email`) doit correspondre à un utilisateur Carbure déjà créé :
+la connexion unique ne crée aucun compte, un claim sans utilisateur correspondant est
+refusé.
+
+!!! warning "Émetteur (`issuer`)"
+    `oidc_issuer` doit être **l'émetteur exact** du document de découverte
+    (`{oidc_issuer}/.well-known/openid-configuration`, champ `issuer`) : une différence
+    (`/` final, port, chemin) fait échouer la découverte. Un émetteur `http://`
+    fonctionne (utile en test local) **mais n'offre aucune protection** : le code
+    d'autorisation et l'`id_token` circulent en clair ; préférez toujours `https://` en
+    production. Si le fournisseur présente un certificat d'une autorité interne, le
+    conteneur Carbure doit lui faire confiance (image personnalisée qui l'ajoute à son
+    magasin, ou volume monté sur `/etc/ssl/certs`) : sans cela, la découverte et
+    l'échange de code échouent et la connexion est impossible.
+
+**Exemple Authelia** (`configuration.yml`, section `identity_providers.oidc.clients`) :
+
+```yaml
+identity_providers:
+  oidc:
+    clients:
+      - client_id: carbure
+        client_name: Carbure
+        # hachage du secret (authelia crypto hash generate pbkdf2) : jamais le secret en
+        # clair dans ce fichier ; c'est le secret en clair qui va dans oidc_client_secret
+        client_secret: '$pbkdf2-sha512$...'
+        redirect_uris:
+          - https://carbure.exemple.fr/api/user/login/oidc/callback
+        scopes:
+          - openid
+          - profile
+          - email
+        token_endpoint_auth_method: client_secret_basic
+        authorization_policy: one_factor
+        pkce_challenge_method: S256
+```
+
+**Keycloak** : dans le realm choisi,
+
+1. **Clients → Create client** : type `OpenID Connect`, Client ID `carbure`.
+2. **Capability config** : `Client authentication` activé (client confidentiel),
+   `Standard flow` activé, `Direct access grants` désactivé.
+3. **Login settings** : `Valid redirect URIs` =
+   `https://carbure.exemple.fr/api/user/login/oidc/callback`.
+4. Onglet **Credentials** : copier le `Client secret` dans `oidc_client_secret`.
+5. Onglet **Advanced** : `Proof Key for Code Exchange Code Challenge Method` = `S256`.
+6. `oidc_issuer` = `https://<keycloak>/realms/<realm>`.
+
 
 ## `[woob]`
 

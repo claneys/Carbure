@@ -23,6 +23,7 @@ use Carbure\Lib\WoobRepository;
 
 require_once __DIR__ . '/../src/autoload.php';
 require_once __DIR__ . '/FakePushRelay.php';
+require_once __DIR__ . '/FakeOidc.php';
 require_once __DIR__ . '/FakeSmtpServer.php';
 require_once __DIR__ . '/integration/DatabaseTestCase.php';
 

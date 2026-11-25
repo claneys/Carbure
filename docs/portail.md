@@ -48,6 +48,14 @@ d'authentification, ou un code de secours. À la première connexion, il affiche
 navigateur ; **Retour** revient au mot de passe. Un code faux est compté comme un échec
 de connexion.
 
+Si l'instance propose la **connexion unique (SSO)** par OpenID Connect, un lien
+**Connexion unique (SSO)** apparaît aussi sous le mot de passe : il envoie le navigateur
+au fournisseur, qui revient ensuite sur le portail, authentifié (session ouverte sans
+redemander la double authentification) ou avec un message d'erreur (connexion refusée
+par le fournisseur, aucun compte Carbure ne correspond à cette identité, compte
+verrouillé, ou échec de la connexion unique), selon la cause renvoyée par l'API (voir
+[Sécurité](securite.md#connexion-unique-oidc)).
+
 Deux profils existent :
 
 | Profil | Onglets |

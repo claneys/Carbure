@@ -60,8 +60,9 @@ class ApiResolverTest extends TestCase
         $this->assertSame([
             'GET /.well-known/oauth-authorization-server', 'GET /.well-known/oauth-protected-resource',
             'GET /.well-known/oauth-protected-resource/api/mcp', 'GET /bank/sync', 'GET /health', 'GET /mcp',
-            'GET /oauth/authorize', 'POST /mcp', 'POST /oauth/register', 'POST /oauth/token', 'POST /user/login',
-            'POST /user/login/mfa',
+            'GET /oauth/authorize', 'GET /user/login/oidc', 'GET /user/login/oidc/callback', 'POST /mcp',
+            'POST /oauth/register', 'POST /oauth/token', 'POST /user/login', 'POST /user/login/mfa',
+            'POST /user/login/oidc',
         ], $public);
     }
 
@@ -144,6 +145,8 @@ class ApiResolverTest extends TestCase
         'GET /transaction/search' => 'user',
         'GET /user' => 'user',
         'GET /user/browser' => 'user',
+        'GET /user/login/oidc' => 'public',
+        'GET /user/login/oidc/callback' => 'public',
         'GET /user/me' => 'user',
         'GET /user/mfa' => 'user',
         'GET /user/notifications' => 'user',
@@ -179,6 +182,7 @@ class ApiResolverTest extends TestCase
         'POST /user' => 'admin',
         'POST /user/login' => 'public',
         'POST /user/login/mfa' => 'public',
+        'POST /user/login/oidc' => 'public',
         'POST /user/mfa/enable' => 'user',
         'POST /user/mfa/recovery-codes' => 'user',
         'POST /user/mfa/reset' => 'admin',

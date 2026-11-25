@@ -21,6 +21,16 @@ test('the login screen is readable', async ({ page }) => {
     expect(await contrastProblems(page, 'login')).toEqual([]);
 });
 
+test('the login screen with single sign-on is readable', async ({ page, api }) => {
+    const response = await api.put('/api/system/config', { data: { values: {
+        oidc_issuer: 'https://auth.example.com', oidc_client_id: 'e2e-client', oidc_client_secret: 'e2e-secret',
+    } } });
+    expect(response.ok(), await response.text()).toBeTruthy();
+    await page.goto('/portal/');
+    await expect(page.getByRole('link', { name: tr('oidcLoginButton') })).toBeVisible();
+    expect(await contrastProblems(page, 'login sso')).toEqual([]);
+});
+
 test('the login screen of a demonstration instance is readable', async ({ page }) => {
     await asDemoInstance(page);
     await page.goto('/portal/');

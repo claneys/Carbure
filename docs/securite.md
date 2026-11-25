@@ -81,6 +81,44 @@ l'activer pour lui seul depuis **Mon profil**.
   les jetons OAuth (l'autorisation d'un agent passe par la connexion au portail, donc par
   le second facteur), et le `sync_token` du planificateur.
 
+### Connexion unique (OIDC) { #connexion-unique-oidc }
+
+En plus du mot de passe et de la double authentification, le portail
+propose de se connecter via un fournisseur **OpenID Connect** (Authelia, Keycloak, tout
+fournisseur avec un document de découverte), quand les 3 réglages de la section `[auth]`
+sont renseignés (voir [Configuration](configuration.md#connexion-unique-oidc)) :
+flux d'autorisation **avec PKCE (S256)** et secret du client envoyé au point de jeton
+(`client_secret_basic`), implémenté sans dépendance (`Carbure\Lib\Oidc`,
+`Carbure\Resources\Oidc`).
+
+- **État et ticket**, deux jetons signés (`Carbure\Lib\SignedToken`), jamais en base,
+  portés par des cookies : l'**état** de la requête d'autorisation (état, nonce,
+  vérificateur PKCE), `SameSite=Lax` (le retour du fournisseur est une navigation
+  intersite), valable **10 minutes** ; puis, une fois le fournisseur revenu, un
+  **ticket** `SameSite=Strict`, valable **60 secondes**, que le portail échange contre la
+  session par un simple `POST` (jamais de secret dans l'URL vers laquelle le navigateur a
+  été redirigé).
+- **Claims vérifiés** de l'`id_token` : `iss` égal à l'émetteur configuré, `aud` contient
+  l'identifiant du client (chaîne ou tableau ; avec plusieurs audiences, `azp` doit être
+  l'identifiant du client), `exp` dans le futur, `nonce` égal à celui de la requête
+  d'autorisation.
+- **Signature non vérifiée** : l'`id_token` est reçu directement du point de jeton du
+  fournisseur par TLS (OIDC Core §3.1.3.7 l'autorise) ; curl vérifie toujours le
+  certificat du serveur (jamais désactivé).
+- **Correspondance de compte** : le claim choisi par `oidc_username_claim`
+  (`preferred_username` ou `email`) doit correspondre à un utilisateur Carbure déjà créé ;
+  aucun compte n'est créé par la connexion unique, un compte inconnu ou bloqué est refusé.
+- **Jamais de double authentification** : une connexion unique réussie tient lieu de
+  second facteur, même avec `mfa_required` (le fournisseur porte son propre second
+  facteur).
+- **Déconnexion locale uniquement** : `POST /user/logout` ferme la session Carbure sans
+  déconnexion côté fournisseur (pas de *RP-initiated logout*) ; aucun réglage ne masque le
+  formulaire de mot de passe.
+- Chaque échec redirige vers le portail avec `?oidc=error&reason=<denied|unknown_user|
+  locked|failed>` (liste fermée) ; la cause réelle (refus du fournisseur, claim sans
+  utilisateur, compte bloqué, échec technique) est journalisée, jamais le code,
+  les jetons ni le secret du client.
+
 ### Limitation des connexions
 
 L'image Docker limite dans nginx les routes de connexion (`POST /api/user/login`,
@@ -256,6 +294,9 @@ Seules ces routes ne demandent pas de JWT (un test unitaire le vérifie) :
 - `POST /user/login`, et `POST /user/login/mfa`, la seconde étape de la connexion, qui
   exige le défi de 5 minutes donné par la première (mot de passe vérifié) et le code de
   l'application ;
+- `GET /user/login/oidc`, `GET /user/login/oidc/callback` et `POST /user/login/oidc`
+  (connexion unique OIDC, 404 tant qu'elle n'est pas configurée, voir
+  [ci-dessus](#connexion-unique-oidc)) ;
 - `GET /bank/sync`, qui exige **soit** un JWT, **soit** le `sync_token` de la
   configuration (en-tête `X-Sync-Token` ; `?token=` est encore accepté mais obsolète, voir
   [API](api.md#bank-sync)). Sans `sync_token`

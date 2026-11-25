@@ -18,7 +18,7 @@ built by the GitHub release workflow; committing/pushing is not deploying.
 |---|---|
 | `src/api.php` | HTTP entry (`/api/*`); without `conf/<env>.ini` serves only `/api/setup` |
 | `src/autoload.php` | Registers `ClassLoader` (PSR-4, on demand, no Composer), then `Config::load(getenv('APP_ENV') ?: 'prod')` |
-| `src/lib/` | Namespace `Carbure\Lib`: `ClassLoader`, `Config`, `Db` (mysqli), `Logger`, `Jwt`, `Webservice` (+ security headers), `ApiError` (error with a stable code), `ApiResolver`, `ApiRoute`, `Woob`, `PushRelay` (client of Carbure Push), `Mailer` (SMTP), `Messages` (fr/en texts of the notifications), `Setup`/`Installer`, `Migrator`, `Setting`, `SqlTables` (tables read by an insight query), `Network` (request from the local network) |
+| `src/lib/` | Namespace `Carbure\Lib`: `ClassLoader`, `Config`, `Db` (mysqli), `Logger`, `Jwt`, `Webservice` (+ security headers), `ApiError` (error with a stable code), `ApiResolver`, `ApiRoute`, `Woob`, `PushRelay` (client of Carbure Push), `Mailer` (SMTP), `Messages` (fr/en texts of the notifications), `Setup`/`Installer`, `Migrator`, `Setting`, `SqlTables` (tables read by an insight query), `Network` (request from the local network), login steps: `SignedToken` (short-lived token of one purpose), `LoginCookie`, `Base64Url`, `Oidc` (single sign-on client) |
 | `src/lib/import/` | Namespace `Carbure\Lib\Import`: statement import behind `BankFile::parse()`: `OfxReader`, `QifReader`, `CamtReader`, `CsvReader` (+ `CsvGeneric` fallback), `BankProfiles` (schema) |
 | `src/lib/import/banks/` | One CSV profile per bank (`<id>.php` returns an array, no class: loaded by path by `BankProfiles`); fixtures `tests/fixtures/import/`, snapshots `…/expected/` |
 | `src/resources/` | Namespace `Carbure\Resources`: `User`, `Bank`, `Transaction`, `Budget`, `Category`, `Insight`, `Device`, `Notification`, `ApiToken`, `Mcp`, `OAuth`, `System`, `Backup`, `Purge` |
@@ -143,10 +143,16 @@ git config core.hooksPath .githooks   # pre-commit lint, pre-push unit tests
   start, by setup wizard, or portal admin banner. Code must not depend on an unapplied
   migration; flag it as a deployment action.
 - **Public routes** limited to: `POST /user/login`, `POST /user/login/mfa` (second step:
-  needs the 5-minute challenge given by the password step), `GET /bank/sync` (JWT or
-  `sync_token`), `GET|POST /mcp` (token or JWT), `GET /health`, MCP OAuth
-  (`/.well-known/oauth-*`, `POST /oauth/register`, `GET /oauth/authorize`,
-  `POST /oauth/token`). A unit test fails on any new public route.
+  needs the 5-minute challenge given by the password step), single sign-on
+  (`GET /user/login/oidc`, `GET /user/login/oidc/callback`, `POST /user/login/oidc`; 404
+  unless OIDC is configured), `GET /bank/sync` (JWT or `sync_token`), `GET|POST /mcp`
+  (token or JWT), `GET /health`, MCP OAuth (`/.well-known/oauth-*`,
+  `POST /oauth/register`, `GET /oauth/authorize`, `POST /oauth/token`). A unit test
+  fails on any new public route.
+- **Login without a password** (single sign-on): its steps are `SignedToken`s of their
+  own purpose, its cookies go through `LoginCookie`, and it ends with
+  `User::openSession()` (locked account refused); `System::loginMethods()` tells the
+  portal which buttons to show.
 - **Secrets**: nothing secret/personal/logs in the repo; samples use fake values. Never
   print or copy `data/conf/prod.ini`. Tests must not write to `data/logs/`.
 - Security headers: API via PHP; portal via nginx (`docker/nginx.conf`, no `.htaccess`).

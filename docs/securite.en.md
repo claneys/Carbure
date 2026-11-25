@@ -81,6 +81,40 @@ enable it for themselves only from **My profile**.
   OAuth tokens (authorizing an agent goes through signing in to the portal, hence through
   the second factor), and the scheduler's `sync_token`.
 
+### Single sign-on (OIDC) { #connexion-unique-oidc }
+
+Besides the password and two-factor authentication, the portal offers signing
+in through an **OpenID Connect** provider (Authelia, Keycloak, any provider with a
+discovery document), once the 3 settings of the `[auth]` section are filled in (see
+[Configuration](configuration.en.md#connexion-unique-oidc)): authorization flow **with
+PKCE (S256)** and the client secret sent at the token endpoint (`client_secret_basic`),
+implemented with no dependency (`Carbure\Lib\Oidc`, `Carbure\Resources\Oidc`).
+
+- **State and ticket**, two signed tokens (`Carbure\Lib\SignedToken`), never stored in
+  the database, carried by cookies: the **state** of the authorization request (state,
+  nonce, PKCE verifier), `SameSite=Lax` (the return from the provider is a cross-site
+  navigation), valid for **10 minutes**; then, once the provider answers, a **ticket**
+  `SameSite=Strict`, valid for **60 seconds**, that the portal exchanges for the session
+  with a plain `POST` (no secret in the URL the browser was redirected to).
+- **Claims checked** in the `id_token`: `iss` equal to the configured issuer, `aud`
+  contains the client id (string or array; with several audiences, `azp` must be the
+  client id), `exp` in the future, `nonce` equal to the one of the authorization request.
+- **Signature not verified**: the `id_token` is received straight from the provider's
+  token endpoint over TLS (OIDC Core §3.1.3.7 allows it); curl always verifies the
+  server's certificate (never disabled).
+- **Account mapping**: the claim chosen by `oidc_username_claim` (`preferred_username` or
+  `email`) must match an already created Carbure user; single sign-on never creates an
+  account, an unknown or locked account is refused.
+- **Never a second factor**: a successful single sign-on stands for the second factor,
+  even with `mfa_required` (the provider carries its own second factor).
+- **Logout stays local**: `POST /user/logout` only closes the Carbure session, with no
+  logout on the provider side (no *RP-initiated logout*); no setting hides the password
+  form.
+- Every failure redirects to the portal with `?oidc=error&reason=<denied|unknown_user|
+  locked|failed>` (closed list); the real cause (refused by the provider, claim with no
+  matching user, locked account, technical failure) is logged, never the code, the
+  tokens nor the client secret.
+
 ### Login rate limit { #limitation-des-connexions }
 
 The Docker image limits in nginx the sign-in routes (`POST /api/user/login`,
@@ -256,6 +290,9 @@ Only these routes do not require a JWT (a unit test checks it):
 - `POST /user/login`, and `POST /user/login/mfa`, the second step of sign-in, which
   requires the 5-minute challenge given by the first one (password verified) and the
   app's code;
+- `GET /user/login/oidc`, `GET /user/login/oidc/callback` and `POST /user/login/oidc`
+  (OIDC single sign-on, 404 as long as it is not configured, see
+  [above](#connexion-unique-oidc));
 - `GET /bank/sync`, which requires **either** a JWT **or** the configuration's
   `sync_token` (`X-Sync-Token` header; `?token=` is still accepted but deprecated, see
   [API](api.md#bank-sync)). Without a configured

@@ -37,6 +37,7 @@ import { createConfigModule } from './modules/configModule.js';
 import { createConfirmModule } from './modules/confirmModule.js';
 import { createNotificationsModule } from './modules/notificationsModule.js';
 import { createMfaModule } from './modules/mfaModule.js';
+import { createOidcLoginModule } from './modules/oidcLoginModule.js';
 import { createBackupModule } from './modules/backupModule.js';
 import { createPurgeModule } from './modules/purgeModule.js';
 import { createChangesModule } from './modules/changesModule.js';
@@ -124,6 +125,7 @@ const app = createApp({
         createConfirmModule(),
         createNotificationsModule(() => apiService),
         createMfaModule(() => apiService),
+        createOidcLoginModule(() => apiService),
         createBackupModule(() => apiService),
         createPurgeModule(() => apiService),
         createChangesModule(() => apiService)

@@ -34,7 +34,7 @@ final class Settings {
 
     /** Settings whose value is never sent in the configuration (apns_certificate_password:
      *  files older than the push service; push_api_key is shown by GET /system/push) */
-    const SECRETS = ['db_password', 'jwtsecret', 'password_salt', 'sync_token', 'apns_certificate_password', 'smtp_password', 'push_api_key'];
+    const SECRETS = ['db_password', 'jwtsecret', 'password_salt', 'sync_token', 'apns_certificate_password', 'smtp_password', 'push_api_key', 'oidc_client_secret'];
 
     /**
      * Settings the portal can change: kind (select, bool, number, text, url, email,
@@ -77,6 +77,12 @@ final class Settings {
         'smtp_password' => ['kind' => 'password', 'pattern' => '/^[^\x00-\x1F\x7F"\\\\$]{1,200}$/u', 'empty' => true],
         'smtp_from' => ['kind' => 'email', 'empty' => true],
         'smtp_from_name' => ['kind' => 'text', 'pattern' => '/^[\p{L}\p{N} .,\'&()\-]{1,100}$/u', 'empty' => true],
+        // Single sign-on (OpenID Connect: Authelia, Keycloak...), disabled while any of
+        // the 3 first is empty (Oidc::enabled())
+        'oidc_issuer' => ['kind' => 'url', 'empty' => true],
+        'oidc_client_id' => ['kind' => 'text', 'pattern' => '/^[A-Za-z0-9_.\-]{1,200}$/', 'empty' => true],
+        'oidc_client_secret' => ['kind' => 'password', 'pattern' => '/^[^\x00-\x1F\x7F"\\\\$]{1,200}$/u', 'empty' => true],
+        'oidc_username_claim' => ['kind' => 'select', 'options' => ['preferred_username', 'email']],
     ];
 
     /** Section of the settings that the file may not have yet */
@@ -89,6 +95,7 @@ final class Settings {
         'push_api_key' => 'push',
         'smtp_host' => 'smtp', 'smtp_port' => 'smtp', 'smtp_encryption' => 'smtp', 'smtp_auth' => 'smtp',
         'smtp_username' => 'smtp', 'smtp_password' => 'smtp', 'smtp_from' => 'smtp', 'smtp_from_name' => 'smtp',
+        'oidc_issuer' => 'auth', 'oidc_client_id' => 'auth', 'oidc_client_secret' => 'auth', 'oidc_username_claim' => 'auth',
     ];
 
     /** Settings no longer used, not shown even if an older file has them (push_url: the
